@@ -1,0 +1,601 @@
+#!/usr/bin/env python
+
+#*******************************************************************************
+# ikos: A static analyzer for C and C++ programs (python)
+#
+# Author: Jorge A. Navas
+#
+# Contributors: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2016 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+#*****************************************************************************/
+
+import sys
+import atexit
+import os
+import os.path
+import resource
+import shutil
+import stats
+import subprocess as sub
+import tempfile
+import threading
+from out import get_analysis_results, print_checks
+from ikosview import IkosView
+
+analyses = {
+    'boa': {'db': 'boa', 'description': 'Buffer overflow analysis'},
+    'dbz': {'db': 'dbz', 'description': 'Division by zero analysis'},
+    'uva': {'db': 'uva', 'description': 'Uninitialized variables analysis'},
+    'nullity': {'db': 'nullity', 'description': 'Null dereference analysis'},
+    'prover': {'db': 'prover', 'description': 'Assertion prover'},
+}
+
+# ikos install directory
+root = None
+
+# current running process
+running_process = None
+
+
+def parse_opt(argv):
+    import argparse
+
+    usage = '%(prog)s [options] file[.c|.bc]'
+    parser = argparse.ArgumentParser(usage=usage)
+
+    parser.add_argument('-a', '--analysis', dest='analyses',
+                        help='Type of analysis (boa, dbz, uva, prover, nullity)',
+                        action='append',
+                        required=True,
+                        choices=analyses.keys())
+    parser.add_argument('-e', '--entry-points', dest='entry_points',
+                        help='The entry point(s) of the program (default: main)',
+                        action='append')
+    parser.add_argument('--show-checks', dest='print_checks',
+                        help='Print analysis checks to standard output',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--ikos-pp', dest='ikos_pp',
+                        help='Enable all preprocessing optimizations',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--inline-all', dest='inline',
+                        help='Front-end inline all functions',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--intra', dest='intraprocedural',
+                        help='Run an intraprocedural analysis instead of an interprocedural analysis',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--no-liveness', dest='no_liveness',
+                        help='Do not run the lieness analysis',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--no-pointer', dest='no_pointer',
+                        help='Do not run the pointer analysis',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('-p', '--precision-level', dest='precision_level',
+                        help='The precision level (reg, ptr, mem). Default to mem',
+                        default='mem',
+                        choices=['reg', 'ptr', 'mem'])
+    parser.add_argument('--gv-init-all', dest='gv_init_all',
+                        help='Initialize all global variables (default: initialize scalars and pointers)',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--gv-init-scalars-only', dest='gv_init_scalars_only',
+                        help='Initialize only scalar global variables',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--gv-init-pointers-only', dest='gv_init_pointers_only',
+                        help='Initialize only pointer global variables',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--summaries', dest='use_summaries',
+                        help='Use function summarization',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--pointer-summaries', dest='use_pointer_summaries',
+                        help='Use function summarization for the pointer analysis',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--verify-bitecode', dest='verify',
+                        help='Verify LLVM bitecode is well formed',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--save-temps', dest='save_temps',
+                        help='Do not delete temporary files',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--temp-dir', dest='temp_dir', metavar='DIR',
+                        help='Temporary directory',
+                        default=None)
+    parser.add_argument('--output-db', '--db', dest='output_db', metavar='FILE',
+                        help='The output database file',
+                        default='output.db')
+    parser.add_argument('-d', '--dot-cfg', dest='dot_cfg',
+                        help="Print CFG of all functions to 'dot' file",
+                        action='store_true',
+                        default=False)
+    parser.add_argument('-i', '--ikosview', dest='ikosview',
+                        help='Show analysis results using ikosview GUI',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--cpu', type=int, dest='cpu',
+                        help='CPU time limit (seconds)', default=-1)
+    parser.add_argument('--mem', type=int, dest='mem',
+                        help='MEM limit (MB)', default=-1)
+
+    # internal use
+    parser.add_argument('--arbos-opt', dest='arbos_optimize',
+                        help=argparse.SUPPRESS,
+                        # help='Enable some arbos optimizations',
+                        action='store_true',
+                        default=True)
+    parser.add_argument('--disable-arbos-opt', dest='arbos_optimize',
+                        help=argparse.SUPPRESS,
+                        # help='Disable arbos optimizations',
+                        action='store_false')
+
+    # for debugging
+    parser.add_argument('--print-command', dest='print_command',
+                        help=argparse.SUPPRESS,
+                        action='store_true',
+                        default=False)
+
+    # positional argument
+    parser.add_argument('file', metavar='file[.c|.bc]', help='The file to analyze')
+
+    return parser.parse_args(argv)
+
+
+def printf(fmt, *args):
+    sys.stdout.write(fmt % args if args else fmt)
+    sys.stdout.flush()
+
+
+def is_executable(fpath):
+    return fpath and os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
+def which(program):
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_executable(program):
+            return program
+    else:
+        for path in os.environ['PATH'].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_executable(exe_file):
+                return exe_file
+
+    return None
+
+
+def kill(proc):
+    try:
+        printf('TIMEOUT\n')
+        proc.terminate()
+        proc.kill()
+        proc.wait()
+        global running_process
+        running_process = None
+    except OSError:
+        pass
+
+
+def shared_lib(base):
+    if sys.platform.startswith('darwin'):
+        ext = '.dylib'
+    else:
+        ext = '.so'
+    return base + ext
+
+
+def create_work_dir(dname=None, save=False):
+    if dname is None:
+        workdir = tempfile.mkdtemp(prefix='ikos-')
+    else:
+        workdir = dname
+
+    if not save:
+        atexit.register(shutil.rmtree, path=workdir)
+    else:
+        printf('Temporary files will be kept in directory: %s\n', workdir)
+
+    return workdir
+
+
+def load_env(filename):
+    if not os.path.isfile(filename):
+        return
+
+    with open(filename) as f:
+        for line in f:
+            sl = line.split('=', 1)
+
+            # skip lines without equality
+            if len(sl) != 2:
+                continue
+
+            key, val = sl
+            os.environ[key.strip()] = os.path.expanduser(os.path.expandvars(val.strip()))
+
+
+def bc_name(name, wd=None):
+    base = os.path.basename(name)
+    if not wd:
+        wd = os.path.dirname(name)
+    fname = os.path.splitext(base)[0] + '.bc'
+    return os.path.join(wd, fname)
+
+
+def ppbc_name(name, wd=None):
+    base = os.path.basename(name)
+    if not wd:
+        wd = os.path.dirname(name)
+    fname = os.path.splitext(base)[0] + '.pp.bc'
+    return os.path.join(wd, fname)
+
+
+def ar_name(name, wd=None):
+    base = os.path.basename(name)
+    if not wd:
+        wd = os.path.dirname(name)
+    fname = os.path.splitext(base)[0] + '.ar'
+    return os.path.join(wd, fname)
+
+
+def get_llvm_clang():
+    llvmclang = None
+    if 'LLVM_CLANG' in os.environ:
+        llvmclang = os.environ['LLVM_CLANG']
+    if not is_executable(llvmclang):
+        llvmclang = which('clang')
+    if not is_executable(llvmclang):
+        raise IOError('Cannot find llvm-clang. Set LLVM_CLANG.')
+
+    return llvmclang
+
+
+def get_opt():
+    opt = None
+    if 'OPT' in os.environ:
+        opt = os.environ['OPT']
+    if not is_executable(opt):
+        opt = which('opt')
+    if not is_executable(opt):
+        raise IOError('Cannot find opt. Set OPT.')
+
+    return opt
+
+
+def get_ikos_pp():
+    ikospp = None
+    if 'IKOS_PP' in os.environ:
+        ikospp = os.environ['IKOS_PP']
+    if not is_executable(ikospp):
+        ikospp = which('ikos-pp')
+    if not is_executable(ikospp):
+        raise IOError('Cannot find ikos-pp. Set IKOS_PP.')
+
+    return ikospp
+
+
+def get_arbos():
+    arbos = None
+    if 'ARBOS' in os.environ:
+        arbos = os.environ['ARBOS']
+    if not is_executable(arbos):
+        arbos = which('arbos')
+    if not is_executable(arbos):
+        raise IOError('Cannot find arbos. Set ARBOS.')
+
+    return arbos
+
+
+def get_llvm_to_ar_lib():
+    llvm_to_ar_lib = shared_lib('llvm-to-ar')
+    llvm_to_ar_lib = os.path.join(root, 'lib', llvm_to_ar_lib)
+
+    if not os.path.exists(llvm_to_ar_lib):
+        if 'LLVM_TO_AR_LIB' in os.environ:
+            llvm_to_ar_lib = os.environ['LLVM_TO_AR_LIB']
+        else:
+            raise IOError('Cannot find llvm-to-ar. Set LLVM_TO_AR_LIB.')
+
+    return llvm_to_ar_lib
+
+
+# compile the C program and generate initial bitecode
+def llvm_clang(in_name, out_name, wd):
+    if not out_name:
+        out_name = bc_name(in_name, wd)
+
+    llvm_clang_cmd = [get_llvm_clang(),
+                      '-emit-llvm', '-c', '-S', '-g', '-D_FORTIFY_SOURCE=0',
+                      in_name, '-o', out_name]
+    try:
+        sub.check_call(llvm_clang_cmd)
+    except sub.CalledProcessError as e:
+        returnvalue = e.returncode
+        printf('*** This error occurred while compiling the C program.\n')
+        sys.exit(returnvalue)
+
+
+def do_ar(in_name, out_name, opt, wd):
+    if not out_name:
+        out_name = ar_name(in_name, wd)
+
+    in_base, in_ext = os.path.splitext(in_name)
+    if in_ext == '.c':
+        bc = bc_name(in_name, wd)
+        with stats.timer('llvm-clang'):
+            llvm_clang(in_name, bc, wd)
+        stat('Progress', 'LLVM-CLANG')
+        in_name = bc
+
+    # preprocess bitecode
+    pp_out_name = ppbc_name(in_name, wd)
+    pp_cmd = [get_ikos_pp()]
+
+    if opt.ikos_pp:
+        pp_cmd.append('-ikospp-level=full')
+    else:
+        pp_cmd.append('-ikospp-level=simple')
+
+    if opt.inline:
+        pp_cmd.append('-ikospp-inline-all')
+    if opt.verify:
+        pp_cmd.append('-ikospp-verify')
+
+    pp_cmd += [in_name, '-S', '-o', pp_out_name]
+    with stats.timer('ikos-pp'):
+        try:
+            sub.check_call(pp_cmd)
+        except sub.CalledProcessError as e:
+            returnvalue = e.returncode
+            printf('*** This error occurred while preprocessing LLVM bitecode.\n')
+            printf('*** Check that LLVM bitecode has been generated by llvm-clang 3.7\n')
+            sys.exit(returnvalue)
+    stat('Progress', 'ikos-pp')
+
+    in_name = pp_out_name
+
+    # translate bitecode to arbos ar
+    opt_cmd = [get_opt(), '-load', get_llvm_to_ar_lib(), '-arbos', '-disable-output']
+
+    with stats.timer('llvm-to-ar'):
+        opt = sub.Popen(opt_cmd, stdin=open(in_name), stdout=open(out_name, 'w'))
+        opt.communicate()[0]
+        if opt.returncode != 0:
+            raise sub.CalledProcessError(opt.returncode, opt_cmd)
+    stat('Progress', 'LLVM To AR')
+
+
+def do_arbos_plugins(in_name, opt):
+    def set_limits():
+        if opt.mem > 0:
+            mem_bytes = opt.mem * 1024 * 1024
+            resource.setrlimit(resource.RLIMIT_AS, [mem_bytes, mem_bytes])
+
+    passes = []
+
+    if opt.arbos_optimize:
+        passes.append((os.path.join(root, 'lib'), 'pointer-shift-opt', 'ps-opt'))
+        passes.append((os.path.join(root, 'lib'), 'inline-init-gv', 'inline-init-gv'))
+
+    passes.append((os.path.join(root, 'lib'), 'analyzer', 'analyzer'))
+
+    if opt.dot_cfg:
+        passes.append((os.path.join(root, 'lib'), 'ar-to-dot', 'cfg-dot'))
+
+    libpaths = []
+    passnames = []
+    options = []
+
+    for libpath, libname, passname in passes:
+        fulllibname = os.path.join(libpath, 'lib' + shared_lib(libname))
+        libpaths.append('-load=%s' % fulllibname)
+        passnames.append('-%s' % passname)
+
+    # Analysis options
+    for analysis in opt.analyses:
+        options += ['--analysis', analysis]
+
+    if opt.entry_points:
+        for entry_point in opt.entry_points:
+            options += ['--entry-points', entry_point]
+
+    if opt.intraprocedural:
+        options.append('--intra')
+    if opt.no_liveness:
+        options.append('--no-liveness')
+    if opt.no_pointer:
+        options.append('--no-pointer')
+
+    options += ['--precision-level', opt.precision_level]
+
+    if opt.arbos_optimize and not opt.gv_init_all:
+        assert not(opt.gv_init_scalars_only and opt.gv_init_pointers_only), \
+            'options --gv-init-scalars-only and --gv-init-pointers-only are mutually exclusive'
+
+        if not opt.gv_init_pointers_only:
+            options.append('--only-scalars')
+        if not opt.gv_init_scalars_only:
+            options.append('--only-pointers')
+
+    if opt.use_summaries:
+        options.append('--summaries')
+    if opt.use_pointer_summaries:
+        options.append('--pointer-summaries')
+
+    options += ['--output-db', opt.output_db]
+
+    fullcommand = [get_arbos()] + libpaths + passnames + options
+
+    if opt.print_command:
+        printf(' '.join(fullcommand) + '\n')
+        return
+
+    p = sub.Popen(fullcommand, stdin=open(in_name), preexec_fn=set_limits)
+
+    global running_process
+    running_process = p
+
+    timer = threading.Timer(opt.cpu, kill, [p])
+    if opt.cpu > 0:
+        timer.start()
+
+    try:
+        pid, returnvalue, ru_child = os.wait4(p.pid, 0)
+        running_process = None
+    finally:
+        # kill the timer if the process has terminated already
+        if timer.isAlive():
+            timer.cancel()
+
+    # if it did not terminate properly, propagate this error code
+    if returnvalue != 0:
+        printf('\nikos: some run-time error occurred.\n')
+        sys.exit(returnvalue)
+
+
+def stat(key, val):
+    stats.put(key, val)
+
+
+def main(argv):
+    global root
+
+    stat('Progress', 'UNKNOWN')
+
+    # disable unix signals forwarding
+    os.setpgrp()
+
+    # the following code updates the environment variables PATH and LD_LIBRARY_PATH
+
+    if 'LLVM_INSTALL' in os.environ:
+        llvm_binaries = os.path.join(os.environ['LLVM_INSTALL'], 'bin')
+        os.environ['PATH'] = llvm_binaries + os.pathsep + os.environ['PATH']
+
+    if 'IKOS_INSTALL' in os.environ:
+        root = os.environ['IKOS_INSTALL']
+    else:
+        # guess ikos install directory using __file__
+        root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+    ikos_binaries = os.path.join(root, 'bin')
+    ikos_libraries = os.path.join(root, 'lib')
+    os.environ['PATH'] = ikos_binaries + os.pathsep + os.environ['PATH']
+
+    if sys.platform.startswith('darwin'):
+        os.environ['DYLD_LIBRARY_PATH'] = ikos_libraries + os.pathsep + os.environ.get('DYLD_LIBRARY_PATH', '')
+    else:
+        os.environ['LD_LIBRARY_PATH'] = ikos_libraries + os.pathsep + os.environ.get('LD_LIBRARY_PATH', '')
+
+    # load custom environment variables from a file
+    load_env(os.path.join(root, 'env.common'))
+
+    opt = parse_opt(argv)
+    in_name = opt.file
+
+    workdir = create_work_dir(opt.temp_dir, opt.save_temps)
+
+    # Convert from llvm bitecode to arbos ar
+    out_name = ar_name(in_name, workdir)
+    do_ar(in_name, out_name, opt, workdir)
+
+    # Run arbos plugins
+    in_name = out_name
+    if not os.path.exists(in_name):
+        raise IOError('cannot find ar file')
+
+    with stats.timer('arbos_plugins'):
+        do_arbos_plugins(in_name, opt)
+    stat('Progress', 'ARBOS Plugins')
+
+    if opt.print_command:
+        return
+
+    total, ok, error, warning, unreachable = 0, 0, 0, 0, 0
+    for analysis in opt.analyses:
+        results = get_analysis_results(opt.output_db, analyses[analysis]['db'])
+        total += results[0]
+        ok += results[1]
+        error += results[2]
+        warning += results[3]
+        unreachable += results[4]
+
+    stat('Progress', 'Get Analysis Results')
+
+    printf('Summary:\n')
+    printf('Total number of checks                : %d\n', total)
+    printf('Total number of unreachable checks    : %d\n', unreachable)
+    printf('Total number of safe checks           : %d\n', ok)
+    printf('Total number of definite unsafe checks: %d\n', error)
+    printf('Total number of warnings              : %d\n', warning)
+
+    if error == 0 and warning == 0:
+        printf('\nThe program is SAFE\n')
+    else:
+        if error != 0:
+            printf('\nThe program is definitely UNSAFE\n')
+        else:
+            printf('\nThe program is potentially UNSAFE\n')
+
+    if opt.print_checks:
+        for analysis in opt.analyses:
+            printf('\n%s checks:\n' % analyses[analysis]['description'])
+            print_checks(opt.output_db, not opt.intraprocedural, analyses[analysis]['db'])
+    if opt.ikosview:
+        for analysis in opt.analyses:
+            IkosView(opt.output_db, not opt.intraprocedural, analyses[analysis]['db'])
+
+
+def killall():
+    global running_process
+    if running_process is not None:
+        running_process.terminate()
+        running_process.kill()
+        running_process.wait()
+        running_process = None
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+    stats.brunch_print()

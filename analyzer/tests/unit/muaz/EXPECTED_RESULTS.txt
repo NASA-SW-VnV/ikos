@@ -1,0 +1,604 @@
+--- Program 1
+entry:
+  n1 = 1;
+  i = 0;
+--> [bb1]
+
+bb1:
+--> [bb1_f, bb1_t]
+
+bb1_f:
+  assert(-i <= -10);
+--> [ret]
+
+ret:
+  tmp3 = i-n1;
+  tmp5 = A[tmp3];
+  tmp6 = A[i];
+  checkpoint end_of_program;
+--> []
+
+bb1_t:
+  assert(i <= 9);
+--> [bb2]
+
+bb2:
+  A[i] = 123456;
+  i = i+n1;
+  checkpoint end_of_loop;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; i; A}
+Pre at bb1_f: {n1; i; A}
+Pre at bb1: {n1; i; A}
+Pre at bb2: {n1; i; A}
+Pre at bb1_t: {n1; i; A}
+Pre at entry: {A}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp3 -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp3 -> I; tmp5 -> I}
+
+--- Program 2
+entry:
+  n1 = 1;
+  i = 0;
+--> [bb1]
+
+bb1:
+--> [bb1_f, bb1_t]
+
+bb1_f:
+  assert(-i <= -10);
+--> [ret]
+
+ret:
+  tmp3 = i-n1;
+  tmp4 = A[tmp3];
+  tmp5 = A[i];
+  checkpoint end_of_program;
+--> []
+
+bb1_t:
+  assert(i <= 9);
+--> [bb2]
+
+bb2:
+  A[i] = 123456;
+  tmp1 = i;
+  tmp2 = tmp1+n1;
+  i = tmp2;
+  checkpoint end_of_loop;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; i; A}
+Pre at bb1_f: {n1; i; A}
+Pre at bb1: {n1; i; A}
+Pre at bb2: {n1; i; A}
+Pre at bb1_t: {n1; i; A}
+Pre at entry: {A}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I; tmp1 -> I; tmp2 -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp3 -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I; tmp1 -> I; tmp2 -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp3 -> I; tmp4 -> I}
+
+--- Program 3
+loop1_entry:
+  n1 = 1;
+  i = 0;
+--> [loop1_bb1]
+
+loop1_bb1:
+--> [loop1_bb1_f, loop1_bb1_t]
+
+loop1_bb1_f:
+  assert(-i <= -10);
+--> [loop2_entry]
+
+loop2_entry:
+  j = 0;
+--> [loop2_bb1]
+
+loop2_bb1:
+--> [loop2_bb1_f, loop2_bb1_t]
+
+loop2_bb1_f:
+  assert(-j <= -10);
+--> [ret]
+
+ret:
+  tmp2 = j-n1;
+  tmp3 = B[tmp2];
+  tmp4 = B[j];
+  checkpoint end_of_program;
+--> []
+
+loop2_bb1_t:
+  assert(j <= 9);
+--> [loop2_bb2]
+
+loop2_bb2:
+  tmp1 = A[j];
+  B[j] = tmp1;
+  j = j+n1;
+  checkpoint end_of_loop;
+--> [loop2_bb1]
+
+loop1_bb1_t:
+  assert(i <= 9);
+--> [loop1_bb2]
+
+loop1_bb2:
+  A[i] = 123456;
+  i = i+n1;
+  checkpoint end_of_loop;
+--> [loop1_bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; j; B}
+Pre at loop2_bb1_f: {n1; j; B}
+Pre at loop2_bb1: {n1; j; A; B}
+Pre at loop2_bb2: {n1; j; A; B}
+Pre at loop2_bb1_t: {n1; j; A; B}
+Pre at loop2_entry: {n1; A; B}
+Pre at loop1_bb1_f: {n1; i; A; B}
+Pre at loop1_bb1: {n1; i; A; B}
+Pre at loop1_bb2: {n1; i; A; B}
+Pre at loop1_bb1_t: {n1; i; A; B}
+Pre at loop1_entry: {A; B}
+Running scalar uva domain
+Pre at loop1_entry: {}
+Post at loop1_entry: {n1 -> I; i -> I}
+Pre at loop1_bb1: {n1 -> I; i -> I}
+Post at loop1_bb1: {n1 -> I; i -> I}
+Pre at loop1_bb1_t: {n1 -> I; i -> I}
+Post at loop1_bb1_t: {n1 -> I; i -> I}
+Pre at loop1_bb2: {n1 -> I; i -> I}
+Post at loop1_bb2: {n1 -> I; i -> I}
+Pre at loop1_bb1_f: {n1 -> I; i -> I}
+Post at loop1_bb1_f: {n1 -> I; i -> I}
+Pre at loop2_entry: {n1 -> I; i -> I}
+Post at loop2_entry: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb1: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb1: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb1_t: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb1_t: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb2: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb2: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb1_f: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb1_f: {n1 -> I; i -> I; j -> I}
+Pre at ret: {n1 -> I; i -> I; j -> I}
+Post at ret: {n1 -> I; i -> I; j -> I; tmp2 -> I}
+Running scalar+array uva domain
+Pre at loop1_entry: {}
+Post at loop1_entry: {n1 -> I; i -> I}
+Pre at loop1_bb1: {n1 -> I; i -> I}
+Post at loop1_bb1: {n1 -> I; i -> I}
+Pre at loop1_bb1_t: {n1 -> I; i -> I}
+Post at loop1_bb1_t: {n1 -> I; i -> I}
+Pre at loop1_bb2: {n1 -> I; i -> I}
+Post at loop1_bb2: {n1 -> I; i -> I}
+Pre at loop1_bb1_f: {n1 -> I; i -> I}
+Post at loop1_bb1_f: {n1 -> I; i -> I}
+Pre at loop2_entry: {n1 -> I; i -> I}
+Post at loop2_entry: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb1: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb1: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb1_t: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb1_t: {n1 -> I; i -> I; j -> I}
+Pre at loop2_bb2: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb2: {n1 -> I; i -> I; j -> I; tmp1 -> I}
+Pre at loop2_bb1_f: {n1 -> I; i -> I; j -> I}
+Post at loop2_bb1_f: {n1 -> I; i -> I; j -> I}
+Pre at ret: {n1 -> I; i -> I; j -> I}
+Post at ret: {n1 -> I; i -> I; j -> I; tmp2 -> I; tmp3 -> I}
+
+--- Program 4
+entry:
+  n1 = 1;
+  i = 0;
+--> [bb1]
+
+bb1:
+--> [bb1_f, bb1_t]
+
+bb1_f:
+  assert(-i <= -10);
+--> [ret]
+
+ret:
+  tmp3 = i-n1;
+  tmp5 = A[tmp3];
+  tmp6 = B[tmp3];
+  checkpoint end_of_program;
+--> []
+
+bb1_t:
+  assert(i <= 9);
+--> [bb2]
+
+bb2:
+  A[i] = 8;
+  B[i] = 5;
+  i = i+n1;
+  checkpoint end_of_loop;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; i; A; B}
+Pre at bb1_f: {n1; i; A; B}
+Pre at bb1: {n1; i; A; B}
+Pre at bb2: {n1; i; A; B}
+Pre at bb1_t: {n1; i; A; B}
+Pre at entry: {A; B}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp3 -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp3 -> I; tmp5 -> I; tmp6 -> I}
+
+--- Program 5
+entry:
+  assert(-n <= -1);
+  n1 = 1;
+  i = 0;
+--> [bb1]
+
+bb1:
+--> [bb1_f, bb1_t]
+
+bb1_f:
+  assert(-i+n <= 0);
+--> [ret]
+
+ret:
+  tmp1 = i-n1;
+  tmp2 = A[tmp1];
+  checkpoint end_of_program;
+--> []
+
+bb1_t:
+  assert(i-n <= -1);
+--> [bb2]
+
+bb2:
+  A[i] = 123456;
+  i = i+n1;
+  checkpoint end_of_loop;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; i; A}
+Pre at bb1_f: {n1; i; n; A}
+Pre at bb1: {n1; i; n; A}
+Pre at bb2: {n1; i; n; A}
+Pre at bb1_t: {n1; i; n; A}
+Pre at entry: {n; A}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp1 -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp1 -> I; tmp2 -> I}
+
+--- Program 6
+entry:
+  assert(-n <= -2);
+  n1 = 1;
+  i = 0;
+  A[i] = 89;
+  i = 1;
+--> [bb1]
+
+bb1:
+--> [bb1_f, bb1_t]
+
+bb1_f:
+  assert(-i+n <= 0);
+--> [ret]
+
+ret:
+  tmp3 = n-n1;
+  tmp4 = A[tmp3];
+  checkpoint end_of_program;
+--> []
+
+bb1_t:
+  assert(i-n <= -1);
+--> [bb2]
+
+bb2:
+  tmp1 = i-n1;
+  tmp2 = A[tmp1];
+  A[i] = tmp2;
+  i = i+n1;
+  checkpoint end_of_loop;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; n; A}
+Pre at bb1_f: {n1; i; n; A}
+Pre at bb1: {n1; i; n; A}
+Pre at bb2: {n1; i; n; A}
+Pre at bb1_t: {n1; i; n; A}
+Pre at entry: {n; A}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I; tmp1 -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i -> I}
+Pre at bb1: {n1 -> I; i -> I}
+Post at bb1: {n1 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; i -> I}
+Post at bb1_t: {n1 -> I; i -> I}
+Pre at bb2: {n1 -> I; i -> I}
+Post at bb2: {n1 -> I; i -> I; tmp1 -> I; tmp2 -> I}
+Pre at bb1_f: {n1 -> I; i -> I}
+Post at bb1_f: {n1 -> I; i -> I}
+Pre at ret: {n1 -> I; i -> I}
+Post at ret: {n1 -> I; i -> I; tmp4 -> I}
+
+--- Program 7
+entry:
+  assert(-n <= -1);
+  n1 = 1;
+  n2 = 2;
+  i = 0;
+--> [bb1]
+
+bb1:
+--> [bb1_f, bb1_t]
+
+bb1_f:
+  assert(-i <= -10);
+--> [ret]
+
+ret:
+  tmp1 = 6;
+  tmp2 = A[tmp1];
+  checkpoint end_of_program;
+--> []
+
+bb1_t:
+  assert(i <= 9);
+--> [bb2]
+
+bb2:
+  A[i] = 123456;
+  i1 = i+n1;
+  A[i1] = 123;
+  i = i+n2;
+  checkpoint end_of_loop;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {A}
+Pre at bb1_f: {i; A}
+Pre at bb1: {n1; n2; i; A}
+Pre at bb2: {n1; n2; i; A}
+Pre at bb1_t: {n1; n2; i; A}
+Pre at entry: {n; A}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; n2 -> I; i -> I}
+Pre at bb1: {n1 -> I; n2 -> I; i -> I}
+Post at bb1: {n1 -> I; n2 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; n2 -> I; i -> I}
+Post at bb1_t: {n1 -> I; n2 -> I; i -> I}
+Pre at bb2: {n1 -> I; n2 -> I; i -> I}
+Post at bb2: {n1 -> I; n2 -> I; i -> I; i1 -> I}
+Pre at bb1_f: {n1 -> I; n2 -> I; i -> I}
+Post at bb1_f: {n1 -> I; n2 -> I; i -> I}
+Pre at ret: {n1 -> I; n2 -> I; i -> I}
+Post at ret: {n1 -> I; n2 -> I; i -> I; tmp1 -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; n2 -> I; i -> I}
+Pre at bb1: {n1 -> I; n2 -> I; i -> I}
+Post at bb1: {n1 -> I; n2 -> I; i -> I}
+Pre at bb1_t: {n1 -> I; n2 -> I; i -> I}
+Post at bb1_t: {n1 -> I; n2 -> I; i -> I}
+Pre at bb2: {n1 -> I; n2 -> I; i -> I}
+Post at bb2: {n1 -> I; n2 -> I; i -> I; i1 -> I}
+Pre at bb1_f: {n1 -> I; n2 -> I; i -> I}
+Post at bb1_f: {n1 -> I; n2 -> I; i -> I}
+Pre at ret: {n1 -> I; n2 -> I; i -> I}
+Post at ret: {n1 -> I; n2 -> I; i -> I; tmp1 -> I; tmp2 -> I}
+
+--- Program 8
+entry:
+  assert(-n <= -1);
+  n1 = 1;
+  i1 = 0;
+  i2 = 0;
+--> [bb1]
+
+bb1:
+--> [bb1_f1, bb1_f2, bb1_t]
+
+bb1_f1:
+  assert(-i1+n <= 0);
+--> [bb1_f]
+
+bb1_f:
+--> [ret]
+
+ret:
+  tmp1 = n-n1;
+  tmp2 = A[tmp1];
+  checkpoint end_of_program;
+--> []
+
+bb1_f2:
+  assert(-i2+n <= 0);
+--> [bb1_f]
+
+bb1_t:
+  assert(i1-n <= -1);
+  assert(i2-n <= -1);
+--> [bb2a, bb2b]
+
+bb2a:
+  A[i1] = 123456;
+  i1 = i1+n1;
+--> [bb1]
+
+bb2b:
+  A[i2] = 9;
+  i2 = i2+n1;
+--> [bb1]
+
+
+Running liveness domain
+Pre at ret: {n1; n; A}
+Pre at bb1_f: {n1; n; A}
+Pre at bb1_f1: {n1; i1; n; A}
+Pre at bb1_f2: {n1; i2; n; A}
+Pre at bb1: {n1; i1; i2; n; A}
+Pre at bb2a: {n1; i1; i2; n; A}
+Pre at bb2b: {n1; i1; i2; n; A}
+Pre at bb1_t: {n1; i1; i2; n; A}
+Pre at entry: {n; A}
+Running scalar uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_t: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_t: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb2a: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb2a: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb2b: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb2b: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_f1: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_f1: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_f2: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_f2: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_f: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_f: {n1 -> I; i1 -> I; i2 -> I}
+Pre at ret: {n1 -> I; i1 -> I; i2 -> I}
+Post at ret: {n1 -> I; i1 -> I; i2 -> I}
+Running scalar+array uva domain
+Pre at entry: {}
+Post at entry: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_t: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_t: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb2a: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb2a: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb2b: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb2b: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_f1: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_f1: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_f2: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_f2: {n1 -> I; i1 -> I; i2 -> I}
+Pre at bb1_f: {n1 -> I; i1 -> I; i2 -> I}
+Post at bb1_f: {n1 -> I; i1 -> I; i2 -> I}
+Pre at ret: {n1 -> I; i1 -> I; i2 -> I}
+Post at ret: {n1 -> I; i1 -> I; i2 -> I; tmp2 -> I}

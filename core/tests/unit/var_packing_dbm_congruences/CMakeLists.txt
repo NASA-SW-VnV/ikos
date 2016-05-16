@@ -1,0 +1,4 @@
+add_executable(test_var_packing_dbm_congruences test_var_packing_dbm_congruences.cpp)
+target_link_libraries(test_var_packing_dbm_congruences ${GMPXX_LIB} ${GMP_LIB})
+
+install(TARGETS test_var_packing_dbm_congruences RUNTIME DESTINATION bin)

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+source ../../../utils/test_config.sh
+
+clang++ -emit-llvm -o test.bc -g -c test.cpp
+[ -f test.bc ] || { echo >&2 "Test Failed! Cannot generate LLVM bitcode.  Aborting."; exit 1; }
+
+opt -load="$LLVM_PASSES_DIR/$llvm_arbos_module" $LLVM_PASSES $PRE_ARBOS_PASSES -arbos -disable-output < test.bc > test.ar
+[ -f test.ar ] || { echo >&2 "Test Failed! Cannot generate AR.  Aborting."; exit 1; }
+
+arbos -load="$ARBOS_PASSES_DIR/$basic_parsing_ar_pass" -hello < test.ar >/dev/null 2>&1 || { echo >&2 "Test Passed! Expected failure where arbos is currently unable to parse LLVM vector"; }
+
+rm *.bc *.ar

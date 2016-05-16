@@ -1,0 +1,39 @@
+/// @mainpage IkosCC
+///
+/// @section Introduction
+///
+/// IkosCC is static analyzer based on abstract interpretation
+/// customized for proving absence of certain runtime errors on avionics
+/// software written in C.  
+///
+/// Currently, IkosCC proves abscence of the following runtime errors:
+///
+/// - buffer overflow
+/// - integer division by zero
+/// - null dereference 
+/// - use of uninitialized integer variables
+/// - user-defined properties (similar to C assert)
+///
+/// IkosCC takes as input ARBOS AR \cite ikos code obtained after 
+/// preprocessing LLVM bitecode \cite llvm.  At its core,
+/// IkosCC relies on a value analysis 'a la' Mine \cite Mine06 that
+/// allows reasoning about scalars, pointers and memory
+/// contents. The value analysis has been extended with nullity and uninitialized variable 
+/// information and it is parametric on the numerical domain 
+/// (e.g., intervals \cite intervals, DBMs \cite dbm, octagons \cite octagons, etc). 
+/// IkosCC uses a state-of-the-art fixpoint iterator \cite amatoSAS13.
+///
+/// All the analyses in IkosCC are implemented as ARBOS plugins. 
+/// The design of IkosCC is such that it significantly facilitates the 
+/// tedious and non-trivial task of implementing new analyses.
+///
+/// @section Documentation
+///
+/// The documentation is, for now only, composed of the Doxygen 
+/// documentation of the code. 
+///  
+/// @section People
+///
+/// Jorge A. Navas (jorge.a.navaslaserna@nasa.gov)
+///
+

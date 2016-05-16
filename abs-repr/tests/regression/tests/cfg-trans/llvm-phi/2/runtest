@@ -1,0 +1,20 @@
+#!/bin/bash
+
+source ../../../../utils/test_config.sh
+
+# Check existence of passes
+[ -f "$ARBOS_PASSES_DIR/libtest-cfg-trans-llvm-phi-2.$DYNLIB_EXT" ] || { echo >&2 "libunittest-cfg-trans-llvm-phi-2.$DYNLIB_EXT not found.  Aborting."; exit 1; }
+[ -f "$ARBOS_PASSES_DIR/libcheck-srcloc.$DYNLIB_EXT" ] || { echo >&2 "libcheck-srcloc.$DYNLIB_EXT not found.  Aborting."; exit 1; }
+
+# test.bc generated using command: clang -emit-llvm -o test.bc -g -c test.c
+
+ikos-pp -ikospp-level=simple test.bc -o test.pp.bc
+
+opt -load="$LLVM_PASSES_DIR/$llvm_arbos_module" $LLVM_PASSES $PRE_ARBOS_PASSES -arbos -disable-output < test.bc > test.ar
+[ -f test.ar ] || { echo >&2 "Test Failed! Cannot generate AR.  Aborting."; exit 1; }
+
+arbos -load="$ARBOS_PASSES_DIR/libtest-cfg-trans-llvm-phi-2.$DYNLIB_EXT" -load="$ARBOS_PASSES_DIR/libcheck-srcloc.$DYNLIB_EXT" -unittest-cfg-trans-llvm-phi-2 -check-srcloc < test.ar >/dev/null 2>&1 || { echo >&2 "Test Failed! Cannot parse test.ar"; exit 1; }
+
+echo "Test Passed!"
+
+rm test.pp.bc test.ar
