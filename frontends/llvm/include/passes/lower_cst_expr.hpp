@@ -43,12 +43,12 @@
 #ifndef IKOSPP_LOWER_CST_EXPR_HPP
 #define IKOSPP_LOWER_CST_EXPR_HPP
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 
 namespace ikos_pp {
 using namespace llvm;

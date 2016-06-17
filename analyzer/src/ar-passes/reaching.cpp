@@ -44,9 +44,9 @@
 
 #include <ikos/domains/reaching.hpp>
 
-#include <analyzer/ikos-wrapper/iterators.hpp>
 #include <analyzer/ar-wrapper/cfg.hpp>
 #include <analyzer/ar-wrapper/literal.hpp>
+#include <analyzer/ikos-wrapper/iterators.hpp>
 
 namespace analyzer {
 
@@ -64,7 +64,7 @@ class reaching_analyzer
   typedef reaching_domain< varname_t > reaching_domain_t;
   typedef fwd_fixpoint_iterator< Basic_Block_ref, arbos_cfg, reaching_domain_t >
       fwd_fixpoint_iterator_t;
-  typedef boost::unordered_map< uint64_t, reaching_domain_t > definitions_t;
+  typedef std::unordered_map< uint64_t, reaching_domain_t > definitions_t;
 
   VariableFactory& _vfac;
   //! _DEFS[y] is the set of definitions that assign to variable y

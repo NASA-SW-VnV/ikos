@@ -191,11 +191,11 @@
 # **Warning**: when you specify /path/to/boost-install to bootstrap.sh, do not use ~
 # 
 # ```
-# $ ./bootstrap.sh --prefix=/path/to/boost-install --with-libraries=program_options
+# $ ./bootstrap.sh --prefix=/path/to/boost-install --with-libraries=program_options --with-libraries=filesystem
 # $ ./b2 install
 # ```
 # 
-# Now, set your BOOST_ROOT and LDFLAGS (consider adding this is your *.bashrc*):
+# Now, set your BOOST_ROOT and LDFLAGS (consider adding this in your *.bashrc*):
 # 
 # ```
 # $ export BOOST_ROOT=/path/to/boost-install
@@ -314,6 +314,24 @@ version_ge() {
 INSTALL_DIR="$(abspath "$1")"
 BUILD_DIR="$(abspath "$2")"
 IKOS_SRC_DIR="$(abspath "$3")"
+
+# Version settings
+IKOS_VERSION="1.1.0"
+CMAKE_REQUIRED_VERSION="2.8.12.2"
+CMAKE_INSTALL_VERSION="3.5.2"
+GCC_REQUIRED_VERSION="5.0"
+CLANG_REQUIRED_VERSION="3.4"
+GCC_INSTALL_VERSION="6.1.0"
+GMP_INSTALL_VERSION="6.1.0"
+MPFR_INSTALL_VERSION="3.1.4"
+MPC_INSTALL_VERSION="1.0.3"
+ISL_INSTALL_VERSION="0.16.1"
+LLVM_REQUIRED_VERSION="3.7"
+LLVM_INSTALL_VERSION="3.7.1"
+BOOST_REQUIRED_VERSION="1.55.0"
+BOOST_INSTALL_VERSION="1.60.0"
+
+# OS / Architecture
 OS=$(uname)
 ARCH=$(uname -m)
 NPROC=$(nproc)
@@ -347,26 +365,26 @@ else
     CMAKE_VERSION=$(cmake --version | head -n1 | cut -d' ' -f3)
     echo "[-] CMake $CMAKE_VERSION found."
 
-    if ! version_ge "$CMAKE_VERSION" "2.8.12.2"; then
+    if ! version_ge "$CMAKE_VERSION" "$CMAKE_REQUIRED_VERSION"; then
         INSTALL_CMAKE=1
     fi
 fi
 
 if (( INSTALL_CMAKE )); then
     # Check if CMake is already installed
-    if [ -x "$INSTALL_DIR/cmake-3.5.2/bin/cmake" ]; then
-        echo "[-] Using already built cmake 3.5.2"
+    if [ -x "$INSTALL_DIR/cmake-$CMAKE_INSTALL_VERSION/bin/cmake" ]; then
+        echo "[-] Using already built cmake $CMAKE_INSTALL_VERSION"
     else
-        echo "[-] Downloading cmake 3.5.2"
+        echo "[-] Downloading cmake $CMAKE_INSTALL_VERSION"
         cd "$BUILD_DIR/download"
-        download "https://cmake.org/files/v3.5/cmake-3.5.2-$OS-$ARCH.tar.gz"
+        download "https://cmake.org/files/v${CMAKE_INSTALL_VERSION%.*}/cmake-$CMAKE_INSTALL_VERSION-$OS-$ARCH.tar.gz"
 
-        echo "[-] Installing cmake 3.5.2"
-        tar xf "cmake-3.5.2-$OS-$ARCH.tar.gz"
-        mv "cmake-3.5.2-$OS-$ARCH" "$INSTALL_DIR/cmake-3.5.2"
+        echo "[-] Installing cmake $CMAKE_INSTALL_VERSION"
+        tar xf "cmake-$CMAKE_INSTALL_VERSION-$OS-$ARCH.tar.gz"
+        mv "cmake-$CMAKE_INSTALL_VERSION-$OS-$ARCH" "$INSTALL_DIR/cmake-$CMAKE_INSTALL_VERSION"
     fi
 
-    PATH="$INSTALL_DIR/cmake-3.5.2/bin:$PATH"
+    PATH="$INSTALL_DIR/cmake-$CMAKE_INSTALL_VERSION/bin:$PATH"
 fi
 
 #
@@ -387,7 +405,7 @@ if ! command -v gcc >/dev/null 2>&1; then
         CLANG_VERSION=$(clang --version | head -n1 | cut -d' ' -f3)
         echo "[-] Clang $CLANG_VERSION found."
 
-        if version_ge "$CLANG_VERSION" "3.4"; then
+        if version_ge "$CLANG_VERSION" "$CLANG_REQUIRED_VERSION"; then
             export CC=$(command -v clang)
             export CXX=$(command -v clang++)
         else
@@ -398,7 +416,7 @@ else
     GCC_VERSION=$(gcc --version | head -n1 | cut -d' ' -f3)
     echo "[-] GCC $GCC_VERSION found."
 
-    if version_ge "$GCC_VERSION" "5.0"; then
+    if version_ge "$GCC_VERSION" "$GCC_REQUIRED_VERSION"; then
         export CC=$(command -v gcc)
         export CXX=$(command -v g++)
     else
@@ -407,36 +425,36 @@ else
 fi
 
 if (( INSTALL_GCC )); then
-    if [ -x "$INSTALL_DIR/gcc-6.1.0/bin/gcc" ]; then
-        echo "[-] Using already built gcc 6.1.0"
+    if [ -x "$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/bin/gcc" ]; then
+        echo "[-] Using already built gcc $GCC_INSTALL_VERSION"
     else
-        echo "[-] Downloading GCC 6.1.0"
+        echo "[-] Downloading GCC $GCC_INSTALL_VERSION"
         cd "$BUILD_DIR/download"
-        download "ftp://gcc.gnu.org/pub/gcc/releases/gcc-6.1.0/gcc-6.1.0.tar.gz"
-        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-6.1.0.tar.bz2"
-        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-3.1.4.tar.bz2"
-        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-1.0.3.tar.gz"
-        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.16.1.tar.bz2"
+        download "ftp://gcc.gnu.org/pub/gcc/releases/gcc-$GCC_INSTALL_VERSION/gcc-$GCC_INSTALL_VERSION.tar.gz"
+        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-$GMP_INSTALL_VERSION.tar.bz2"
+        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-$MPFR_INSTALL_VERSION.tar.bz2"
+        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-$MPC_INSTALL_VERSION.tar.gz"
+        download "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-$ISL_INSTALL_VERSION.tar.bz2"
 
         echo "[-] Extracting GCC sources"
-        rm -rf "$BUILD_DIR/gcc-6.1.0"
-        tar xf "gcc-6.1.0.tar.gz"
-        mv "gcc-6.1.0" "$BUILD_DIR/gcc-6.1.0"
-        tar xf "gmp-6.1.0.tar.bz2"
-        mv "gmp-6.1.0" "$BUILD_DIR/gcc-6.1.0/gmp"
-        tar xf "mpfr-3.1.4.tar.bz2"
-        mv "mpfr-3.1.4" "$BUILD_DIR/gcc-6.1.0/mpfr"
-        tar xf "mpc-1.0.3.tar.gz"
-        mv "mpc-1.0.3" "$BUILD_DIR/gcc-6.1.0/mpc"
-        tar xf "isl-0.16.1.tar.bz2"
-        mv "isl-0.16.1" "$BUILD_DIR/gcc-6.1.0/isl"
+        rm -rf "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION"
+        tar xf "gcc-$GCC_INSTALL_VERSION.tar.gz"
+        mv "gcc-$GCC_INSTALL_VERSION" "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION"
+        tar xf "gmp-$GMP_INSTALL_VERSION.tar.bz2"
+        mv "gmp-$GMP_INSTALL_VERSION" "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION/gmp"
+        tar xf "mpfr-$MPFR_INSTALL_VERSION.tar.bz2"
+        mv "mpfr-$MPFR_INSTALL_VERSION" "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION/mpfr"
+        tar xf "mpc-$MPC_INSTALL_VERSION.tar.gz"
+        mv "mpc-$MPC_INSTALL_VERSION" "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION/mpc"
+        tar xf "isl-$ISL_INSTALL_VERSION.tar.bz2"
+        mv "isl-$ISL_INSTALL_VERSION" "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION/isl"
 
-        echo "[-] Building GCC 6.1.0"
-        cd "$BUILD_DIR/gcc-6.1.0"
+        echo "[-] Building GCC $GCC_INSTALL_VERSION"
+        cd "$BUILD_DIR/gcc-$GCC_INSTALL_VERSION"
         mkdir build
         cd build
         ../configure \
-            --prefix="$INSTALL_DIR/gcc-6.1.0" \
+            --prefix="$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION" \
             --enable-languages=c,c++ \
             --enable-threads=posix \
             --enable-threads=posix \
@@ -448,15 +466,15 @@ if (( INSTALL_GCC )); then
         make install
     fi
 
-    PATH="$INSTALL_DIR/gcc-6.1.0/bin:$PATH"
-    export CC="$INSTALL_DIR/gcc-6.1.0/bin/gcc"
-    export CXX="$INSTALL_DIR/gcc-6.1.0/bin/g++"
-    if [ -d "$INSTALL_DIR/gcc-6.1.0/lib64" ]; then
+    PATH="$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/bin:$PATH"
+    export CC="$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/bin/gcc"
+    export CXX="$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/bin/g++"
+    if [ -d "$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/lib64" ]; then
         LIB_DIR="lib64"
     else
         LIB_DIR="lib"
     fi
-    export LDFLAGS="-L$INSTALL_DIR/gcc-6.1.0/$LIB_DIR -Wl,-rpath,$INSTALL_DIR/gcc-6.1.0/$LIB_DIR"
+    export LDFLAGS="-L$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/$LIB_DIR -Wl,-rpath,$INSTALL_DIR/gcc-$GCC_INSTALL_VERSION/$LIB_DIR"
 fi
 
 #
@@ -476,32 +494,32 @@ else
     LLVM_VERSION=$(opt --version | head -n2 | tail -n1 | cut -d' ' -f5)
     echo "[-] LLVM $LLVM_VERSION found."
 
-    if ! version_ge "$LLVM_VERSION" "3.7"; then
+    if ! version_ge "$LLVM_VERSION" "$LLVM_REQUIRED_VERSION"; then
         INSTALL_LLVM=1
     fi
 fi
 
 if (( INSTALL_LLVM )); then
-    if [ -x "$INSTALL_DIR/llvm-3.7.1/bin/opt" ]; then
-        echo "[-] Using already built llvm 3.7.1"
+    if [ -x "$INSTALL_DIR/llvm-$LLVM_INSTALL_VERSION/bin/opt" ]; then
+        echo "[-] Using already built llvm $LLVM_INSTALL_VERSION"
     else
-        echo "[-] Downloading LLVM 3.7.1"
+        echo "[-] Downloading LLVM $LLVM_INSTALL_VERSION"
 
         if ! command -v svn >/dev/null 2>&1; then
             echo "$progname: error: could not find svn."
             exit 1
         fi
 
-        rm -rf "$BUILD_DIR/llvm-3.7.1"
-        svn co "http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_371/final" "$BUILD_DIR/llvm-3.7.1" >/dev/null
-        cd "$BUILD_DIR/llvm-3.7.1"
-        svn co "http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_371/final" tools/clang >/dev/null
-        svn co "http://llvm.org/svn/llvm-project/compiler-rt/tags/RELEASE_371/final" projects/compiler-rt >/dev/null
+        rm -rf "$BUILD_DIR/llvm-$LLVM_INSTALL_VERSION"
+        svn co "http://llvm.org/svn/llvm-project/llvm/tags/RELEASE_${LLVM_INSTALL_VERSION//./}/final" "$BUILD_DIR/llvm-$LLVM_INSTALL_VERSION" >/dev/null
+        cd "$BUILD_DIR/llvm-$LLVM_INSTALL_VERSION"
+        svn co "http://llvm.org/svn/llvm-project/cfe/tags/RELEASE_${LLVM_INSTALL_VERSION//./}/final" tools/clang >/dev/null
+        svn co "http://llvm.org/svn/llvm-project/compiler-rt/tags/RELEASE_${LLVM_INSTALL_VERSION//./}/final" projects/compiler-rt >/dev/null
 
-        echo "[-] Building LLVM 3.7.1"
+        echo "[-] Building LLVM $LLVM_INSTALL_VERSION"
         mkdir build
         cd build
-        cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/llvm-3.7.1" \
+        cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/llvm-$LLVM_INSTALL_VERSION" \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_TARGETS_TO_BUILD=X86 \
             -DLLVM_ENABLE_RTTI=ON \
@@ -512,7 +530,7 @@ if (( INSTALL_LLVM )); then
         make install
     fi
 
-    PATH="$INSTALL_DIR/llvm-3.7.1/bin:$PATH"
+    PATH="$INSTALL_DIR/llvm-$LLVM_INSTALL_VERSION/bin:$PATH"
 fi
 
 #
@@ -531,38 +549,40 @@ elif [ ! -d /usr/include/boost ]; then
 fi
 
 if (( INSTALL_BOOST )); then
-    if [ -d "$INSTALL_DIR/boost-1.60.0/include/boost" ]; then
-        echo "[-] Using already built boost 1.60.0"
+    if [ -d "$INSTALL_DIR/boost-$BOOST_INSTALL_VERSION/include/boost" ]; then
+        echo "[-] Using already built boost $BOOST_INSTALL_VERSION"
     else
-        echo "[-] Downloading Boost 1.60.0"
+        echo "[-] Downloading Boost $BOOST_INSTALL_VERSION"
         cd "$BUILD_DIR/download"
-        download "https://sourceforge.net/projects/boost/files/boost/1.60.0/boost_1_60_0.tar.gz"
+        download "https://sourceforge.net/projects/boost/files/boost/$BOOST_INSTALL_VERSION/boost_${BOOST_INSTALL_VERSION//./_}.tar.gz"
 
         echo "[-] Extracting Boost sources"
-        tar xf "boost_1_60_0.tar.gz"
-        mv "boost_1_60_0" "$BUILD_DIR/boost-1.60.0"
+        tar xf "boost_${BOOST_INSTALL_VERSION//./_}.tar.gz"
+        mv "boost_${BOOST_INSTALL_VERSION//./_}" "$BUILD_DIR/boost-$BOOST_INSTALL_VERSION"
 
-        echo "[-] Building Boost 1.60.0"
-        cd "$BUILD_DIR/boost-1.60.0"
-        ./bootstrap.sh --prefix="$INSTALL_DIR/boost-1.60.0" --with-libraries=program_options
+        echo "[-] Building Boost $BOOST_INSTALL_VERSION"
+        cd "$BUILD_DIR/boost-$BOOST_INSTALL_VERSION"
+        ./bootstrap.sh --prefix="$INSTALL_DIR/boost-$BOOST_INSTALL_VERSION" \
+            --with-libraries=program_options \
+            --with-libraries=filesystem
         ./b2 install
     fi
 
-    export BOOST_ROOT="$INSTALL_DIR/boost-1.60.0"
-    export LDFLAGS="$LDFLAGS -L$INSTALL_DIR/boost-1.60.0/lib -Wl,-rpath,$INSTALL_DIR/boost-1.60.0/lib"
+    export BOOST_ROOT="$INSTALL_DIR/boost-$BOOST_INSTALL_VERSION"
+    export LDFLAGS="$LDFLAGS -L$INSTALL_DIR/boost-$BOOST_INSTALL_VERSION/lib -Wl,-rpath,$INSTALL_DIR/boost-$BOOST_INSTALL_VERSION/lib"
 fi
 
 #
 # IKOS
 #
 
-if [ -x "$INSTALL_DIR/ikos-1.0.0/bin/arbos" ]; then
+if [ -x "$INSTALL_DIR/ikos-$IKOS_VERSION/bin/arbos" ]; then
     echo "[-] IKOS already built"
 else
-    echo "[-] Building IKOS 1.0.0"
-    mkdir -p "$BUILD_DIR/ikos-1.0.0"
-    cd "$BUILD_DIR/ikos-1.0.0"
-    cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/ikos-1.0.0" "$IKOS_SRC_DIR"
+    echo "[-] Building IKOS $IKOS_VERSION"
+    mkdir -p "$BUILD_DIR/ikos-$IKOS_VERSION"
+    cd "$BUILD_DIR/ikos-$IKOS_VERSION"
+    cmake -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/ikos-$IKOS_VERSION" "$IKOS_SRC_DIR"
     make -j$NPROC
     make install
 fi
@@ -571,10 +591,10 @@ echo "[-] IKOS has been successfully installed"
 echo ""
 echo "Set the following environment variables to use IKOS (consider adding this in your .bashrc):"
 echo ""
-echo "export IKOS_INSTALL=\"$INSTALL_DIR/ikos-1.0.0\""
-echo "PATH=\"$INSTALL_DIR/ikos-1.0.0/bin:$INSTALL_DIR/llvm-3.7.1/bin:\$PATH\""
+echo "export IKOS_INSTALL=\"$INSTALL_DIR/ikos-$IKOS_VERSION\""
+echo "PATH=\"$INSTALL_DIR/ikos-$IKOS_VERSION/bin:$INSTALL_DIR/llvm-$LLVM_INSTALL_VERSION/bin:\$PATH\""
 echo ""
-echo "If you want to launch IKOS tests, move under $BUILD_DIR/ikos-1.0.0 and follow the instructions from README.md"
+echo "If you want to launch IKOS tests, move under $BUILD_DIR/ikos-$IKOS_VERSION and follow the instructions from README.md"
 echo ""
 echo "You can remove the build directory $BUILD_DIR if you don't want to run the tests anymore."
 

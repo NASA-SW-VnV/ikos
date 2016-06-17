@@ -42,7 +42,7 @@
 #ifndef ANALYZER_LIVENESS_HPP
 #define ANALYZER_LIVENESS_HPP
 
-#include <boost/range/algorithm/copy.hpp>
+#include <algorithm>
 
 #include <ikos/domains/dataflow_domain.hpp>
 
@@ -90,8 +90,11 @@ public:
 
   liveness_domain(const liveness_domain_t& other)
       : ikos::writeable(), _is_top(other._is_top) {
-    if (!is_top())
-      boost::copy(other._inv, std::inserter(this->_inv, this->_inv.end()));
+    if (!is_top()) {
+      std::copy(other._inv.begin(),
+                other._inv.end(),
+                std::inserter(this->_inv, this->_inv.end()));
+    }
   }
 
   liveness_domain_t& operator=(liveness_domain_t other) {
@@ -295,16 +298,16 @@ public:
 private:
   friend class LivenessPass;
 
-  typedef boost::unordered_map< Basic_Block_ref, unord_varname_set_t >
+  typedef std::unordered_map< Basic_Block_ref, unord_varname_set_t >
       varset_map_t;
-  typedef boost::unordered_map< Basic_Block_ref, std::vector< varname_t > >
+  typedef std::unordered_map< Basic_Block_ref, std::vector< varname_t > >
       varvec_map_t;
   typedef backward_fixpoint_iterator< Basic_Block_ref,
                                       arbos_cfg,
                                       liveness_domain_t >
       backward_fixpoint_iterator_t;
   typedef std::pair< liveness_domain_t, liveness_domain_t > kill_gen_t;
-  typedef boost::unordered_map< Basic_Block_ref, kill_gen_t > kill_gen_map_t;
+  typedef std::unordered_map< Basic_Block_ref, kill_gen_t > kill_gen_map_t;
 
 public:
   typedef varset_map_t::const_iterator live_const_iterator;
@@ -403,9 +406,9 @@ private:
 
 //! Compute liveness for a whole bundle (module)
 class LivenessPass {
-  typedef boost::shared_ptr< Liveness > liveness_ptr;
-  typedef boost::unordered_map< std::string, liveness_ptr > map_t;
-  typedef boost::shared_ptr< map_t > map_ptr;
+  typedef std::shared_ptr< Liveness > liveness_ptr;
+  typedef std::unordered_map< std::string, liveness_ptr > map_t;
+  typedef std::shared_ptr< map_t > map_ptr;
 
 public:
   typedef map_t::iterator iterator;
@@ -484,13 +487,13 @@ public:
   std::ostream& dump(std::ostream& o) {
     for (LivenessPass::const_iterator F = begin(); F != end(); ++F) {
       o << "function " << F->first << std::endl;
-      boost::shared_ptr< Liveness > L = F->second;
+      std::shared_ptr< Liveness > L = F->second;
       for (Liveness::live_const_iterator B = L->live_begin();
            B != L->live_end();
            ++B) {
         o << ar::getName(B->first) << " :";
         o << "{";
-        for (unord_varname_set_t::iterator V = B->second.begin();
+        for (unord_varname_set_t::const_iterator V = B->second.begin();
              V != B->second.end();
              ++V) {
           o << *V << ";";

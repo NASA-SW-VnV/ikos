@@ -45,15 +45,16 @@
 #ifndef ANALYZER_SYM_EXEC_API_HPP
 #define ANALYZER_SYM_EXEC_API_HPP
 
-#include <boost/unordered_set.hpp>
-#include <boost/shared_ptr.hpp>
+#include <unordered_set>
+
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/optional.hpp>
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ar-wrapper/cfg.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 #include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/liveness.hpp>
+#include <analyzer/ar-wrapper/cfg.hpp>
+#include <analyzer/ikos-wrapper/domains_traits.hpp>
 
 namespace analyzer {
 
@@ -86,6 +87,9 @@ public:
   virtual void exec(MemMove_ref stmt) = 0;
   virtual void exec(MemSet_ref stmt) = 0;
   virtual void exec(Call_ref stmt) = 0; //! only for external calls
+  virtual void exec_external_call(boost::optional< Internal_Variable_ref > lhs,
+                                  std::string fun_name,
+                                  OpRange arguments) = 0;
   virtual void exec(Invoke_ref stmt) = 0;
   virtual void exec(Landing_Pad_ref stmt) = 0;
   virtual void exec(Resume_ref stmt) = 0;
@@ -112,8 +116,8 @@ protected:
 
 public:
   typedef sym_exec_call< FunctionAnalyzer, AbsDomain > sym_exec_call_t;
-  typedef boost::unordered_set< std::string > function_names_t;
-  typedef boost::shared_ptr< sym_exec_call_t > sym_exec_call_ptr_t;
+  typedef std::unordered_set< std::string > function_names_t;
+  typedef std::shared_ptr< sym_exec_call_t > sym_exec_call_ptr_t;
 
 public:
   sym_exec_call(TrackedPrecision level) : _prec_level(level) {}

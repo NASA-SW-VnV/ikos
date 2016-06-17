@@ -319,7 +319,7 @@ public:
 
 //! A factory of literals
 class LiteralFactory : public boost::noncopyable {
-  typedef boost::unordered_map< size_t, Literal > map_t;
+  typedef std::unordered_map< size_t, Literal > map_t;
   typedef map_t::iterator iterator;
   typedef map_t::value_type binding_t;
 

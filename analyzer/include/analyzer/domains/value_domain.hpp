@@ -7,11 +7,11 @@
  *
  * Contributors: Maxime Arthaud
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * Based on the paper "Field-Sensitive Value Analysis of Embedded C
  * Programs with Union Types and Pointer Arithmetics" by A. Mine
  * (LCTES'06)
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -52,14 +52,14 @@
 
 #include <boost/optional.hpp>
 
-#include <ikos/common/types.hpp>
-#include <ikos/common/bignums.hpp>
 #include <ikos/algorithms/linear_constraints.hpp>
-#include <ikos/domains/intervals.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/discrete_domains.hpp>
+#include <ikos/domains/intervals.hpp>
+#include <ikos/domains/nullity.hpp>
 #include <ikos/domains/separate_domains.hpp>
 #include <ikos/domains/uninitialized.hpp>
-#include <ikos/domains/nullity.hpp>
 
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/ikos-wrapper/domains_traits.hpp>
@@ -1393,7 +1393,11 @@ public:
     interval_t dest_intv = _ptr[dest] & interval_t(0, bound_t::plus_infinity());
     interval_t src_intv = _ptr[src] & interval_t(0, bound_t::plus_infinity());
     interval_t size_intv = _ptr[size] & interval_t(1, bound_t::plus_infinity());
-    assert(!dest_intv.is_bottom() && !src_intv.is_bottom());
+
+    if (dest_intv.is_bottom() || src_intv.is_bottom()) { // buffer overflow
+      *this = bottom();
+      return;
+    }
 
     if (size_intv.is_bottom())
       return;
@@ -1474,7 +1478,11 @@ public:
     // Get size and pointer offsets approximation
     interval_t dest_intv = _ptr[dest] & interval_t(0, bound_t::plus_infinity());
     interval_t size_intv = _ptr[size] & interval_t(1, bound_t::plus_infinity());
-    assert(!dest_intv.is_bottom());
+
+    if (dest_intv.is_bottom()) { // buffer overflow
+      *this = bottom();
+      return;
+    }
 
     if (size_intv.is_bottom())
       return;

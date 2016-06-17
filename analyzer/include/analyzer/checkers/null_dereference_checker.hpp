@@ -44,8 +44,8 @@
 #define ANALYZER_NULL_DEREFERENCE_CHECKER_HPP
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/checkers/checker_api.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
+#include <analyzer/checkers/checker_api.hpp>
 
 namespace analyzer {
 
@@ -58,7 +58,11 @@ private:
   typedef typename analysis_db::db_ptr db_ptr_t;
 
 public:
-  null_dereference_checker(context& ctx, db_ptr_t db) : checker_t(ctx, db) {}
+  null_dereference_checker(context& ctx,
+                           db_ptr_t db,
+                           display_settings display_invariants,
+                           display_settings display_checks)
+      : checker_t(ctx, db, display_invariants, display_checks) {}
 
   virtual const char* name() { return "nullity"; }
   virtual const char* description() { return "Null dereference checker"; }
@@ -68,7 +72,7 @@ public:
                      const std::string& call_context) {
     location loc = ar::getSrcLoc(store);
     Operand_ref ptr = ar::getPointer(store);
-    check_null_dereference(ptr, inv, call_context, loc);
+    check_null_dereference(ptr, inv, call_context, loc, ar::getUID(store));
   }
 
   virtual void check(Load_ref load,
@@ -76,7 +80,7 @@ public:
                      const std::string& call_context) {
     location loc = ar::getSrcLoc(load);
     Operand_ref ptr = ar::getPointer(load);
-    check_null_dereference(ptr, inv, call_context, loc);
+    check_null_dereference(ptr, inv, call_context, loc, ar::getUID(load));
   }
 
   virtual void check(MemCpy_ref memcpy,
@@ -84,9 +88,13 @@ public:
                      const std::string& call_context) {
     location loc = ar::getSrcLoc(memcpy);
     Operand_ref ptr_src = ar::getSource(memcpy);
-    check_null_dereference(ptr_src, inv, call_context, loc);
     Operand_ref ptr_dest = ar::getSource(memcpy);
-    check_null_dereference(ptr_dest, inv, call_context, loc);
+    check_null_dereference(ptr_src, inv, call_context, loc, ar::getUID(memcpy));
+    check_null_dereference(ptr_dest,
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(memcpy));
   }
 
   virtual void check(MemMove_ref memmove,
@@ -94,9 +102,17 @@ public:
                      const std::string& call_context) {
     location loc = ar::getSrcLoc(memmove);
     Operand_ref ptr_src = ar::getSource(memmove);
-    check_null_dereference(ptr_src, inv, call_context, loc);
     Operand_ref ptr_dest = ar::getSource(memmove);
-    check_null_dereference(ptr_dest, inv, call_context, loc);
+    check_null_dereference(ptr_src,
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(memmove));
+    check_null_dereference(ptr_dest,
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(memmove));
   }
 
   virtual void check(MemSet_ref memset,
@@ -104,64 +120,95 @@ public:
                      const std::string& call_context) {
     location loc = ar::getSrcLoc(memset);
     Operand_ref ptr = ar::getBase(memset);
-    check_null_dereference(ptr, inv, call_context, loc);
+    check_null_dereference(ptr, inv, call_context, loc, ar::getUID(memset));
   }
 
 private:
   void check_null_dereference(Operand_ref ptr,
                               AbsDomain inv,
                               const std::string& call_context,
-                              location loc) {
+                              const location& loc,
+                              unsigned long stmt_uid) {
     // this is always a non-null dereference
     if (ar::isGlobalVar(ptr) || ar::isAllocaVar(ptr))
       return;
 
     if (inv.is_bottom()) {
+      if (this->display_check(UNREACHABLE)) {
+        std::cout << location_to_string(loc)
+                  << ": [unreachable] check_null_dereference(" << ptr << ")"
+                  << std::endl;
+      }
+      if (this->display_invariant(UNREACHABLE)) {
+        std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                  << inv << std::endl;
+      }
+
       this->_db->write("nullity",
                        call_context,
-                       loc.first,
-                       loc.second,
+                       loc.file,
+                       loc.line,
+                       loc.column,
+                       stmt_uid,
                        "unreachable");
       return;
     }
 
     LiteralFactory& lfac = this->_context.lit_factory();
     Literal ptr_lit = lfac[ptr];
-    varname_t ptr_var = ptr_lit.get_var();
-
     analysis_result res = WARNING;
-    if (ptr_lit.is_null_cst() || ptr_lit.is_undefined_cst() ||
-        value_domain_impl::is_null(inv, ptr_var)) {
+
+    if (ptr_lit.is_var()) {
+      varname_t ptr_var = ptr_lit.get_var();
+
+      if (value_domain_impl::is_null(inv, ptr_var)) {
+        if (this->display_check(ERR)) {
+          std::cout << location_to_string(loc)
+                    << ": [error] check_null_dereference(" << ptr
+                    << "): ptr is null" << std::endl;
+        }
+
+        res = ERR;
+      } else if (value_domain_impl::is_non_null(inv, ptr_var)) {
+        if (this->display_check(OK)) {
+          std::cout << location_to_string(loc)
+                    << ": [ok] check_null_dereference(" << ptr
+                    << "): ptr is non null" << std::endl;
+        }
+
+        res = OK;
+      } else {
+        if (this->display_check(WARNING)) {
+          std::cout << location_to_string(loc)
+                    << ": [warning] check_null_dereference(" << ptr
+                    << "): ptr may be null" << std::endl;
+        }
+
+        res = WARNING;
+      }
+    } else if (ptr_lit.is_null_cst() || ptr_lit.is_undefined_cst()) {
+      if (this->display_check(ERR)) {
+        std::cout << location_to_string(loc)
+                  << ": [error] check_null_dereference(" << ptr
+                  << "): ptr is null or undefined" << std::endl;
+      }
+
       res = ERR;
-    } else if (value_domain_impl::is_non_null(inv, ptr_var)) {
-      res = OK;
+    } else {
+      assert(false && "unexpected operand");
     }
 
-    if (res == OK) {
-      this->_db->write("nullity", call_context, loc.first, loc.second, "ok");
-#ifdef DISPLAY_CHECKS
-      std::cout << "safe"
-                << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-    } else if (res == ERR) {
-      this->_db->write("nullity", call_context, loc.first, loc.second, "error");
-#ifdef DISPLAY_CHECKS
-      std::cout << "unsafe"
-                << "|" << loc.first << "|" << loc.second << std::endl;
-      std::cout << "Null dereference " << ptr << "\n\t" << inv << std::endl;
-#endif
-    } else {
-      this->_db->write("nullity",
-                       call_context,
-                       loc.first,
-                       loc.second,
-                       "warning");
-#ifdef DISPLAY_CHECKS
-      std::cout << "warning"
-                << "|" << loc.first << "|" << loc.second << std::endl;
-      std::cout << "May null dereference " << ptr << "\n\t" << inv << std::endl;
-#endif
+    if (this->display_invariant(res)) {
+      std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                << inv << std::endl;
     }
+    this->_db->write("nullity",
+                     call_context,
+                     loc.file,
+                     loc.line,
+                     loc.column,
+                     stmt_uid,
+                     tostr(res));
   }
 }; // end class null_dereference_checker
 

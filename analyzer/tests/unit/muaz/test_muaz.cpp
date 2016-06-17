@@ -2,19 +2,19 @@
 
 #include <iostream>
 
-#include <ikos/common/bignums.hpp>
 #include <ikos/algorithms/linear_constraints.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/domains/cpa.hpp>
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/octagons.hpp>
-#include <ikos/domains/cpa.hpp>
 #include <ikos/domains/uninitialized.hpp>
 #include <ikos/iterators/fwd_fixpoint_iterators.hpp>
 
 #include <analyzer/analysis/common.hpp>
+#include <analyzer/analysis/liveness.hpp>
+#include <analyzer/domains/uninitialized_array.hpp>
 #include <analyzer/examples/muaz.hpp>
 #include <analyzer/ikos-wrapper/iterators.hpp>
-#include <analyzer/domains/uninitialized_array.hpp>
-#include <analyzer/analysis/liveness.hpp>
 
 using namespace ikos;
 using namespace ikos::muaz;

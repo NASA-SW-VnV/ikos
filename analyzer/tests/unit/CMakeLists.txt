@@ -96,7 +96,8 @@ if (CUSTOM_BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS "ON")
 endif()
 
-find_package(Boost 1.55.0 REQUIRED)
+find_package(Boost 1.55.0 REQUIRED
+             COMPONENTS filesystem system)
 include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(GMP REQUIRED)
@@ -120,7 +121,6 @@ include_directories(${ARBOS_INCLUDE_DIR})
 
 add_cxx_flag("-std=c++1y" "CXX14")
 add_cxx_flag("-Wall" "WALL")
-add_cxx_flag("-Wno-unused-local-typedefs" "WNO_UNUSED_LOCAL_TYPEDEFS")
 add_definitions("-DBOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS")
 
 #

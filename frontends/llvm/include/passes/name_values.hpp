@@ -41,9 +41,9 @@
 #ifndef IKOSPP_NAME_VALUES_HPP
 #define IKOSPP_NAME_VALUES_HPP
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 
 namespace ikos_pp {
 using namespace llvm;

@@ -94,7 +94,6 @@ struct MkInEdge : public std::unary_function<
 namespace boost {
 
 // Convert a Bundle to a BGL graph
-
 template <>
 struct graph_traits< arbos::Bundle_ref > {
   typedef arbos::Bundle_ref graph_t;
@@ -126,80 +125,78 @@ struct graph_traits< arbos::Bundle_ref > {
 
 }; // end class graph_traits
 
+} // end namespace boost
+
+namespace arbos {
+
 // For graph = Bundle_ref
-graph_traits< arbos::Bundle_ref >::vertex_descriptor source(
-    graph_traits< arbos::Bundle_ref >::edge_descriptor e, arbos::Bundle_ref g) {
+boost::graph_traits< Bundle_ref >::vertex_descriptor source(
+    boost::graph_traits< Bundle_ref >::edge_descriptor e, Bundle_ref g) {
   return e.first;
 }
 
-graph_traits< arbos::Bundle_ref >::vertex_descriptor target(
-    graph_traits< arbos::Bundle_ref >::edge_descriptor e, arbos::Bundle_ref g) {
+boost::graph_traits< Bundle_ref >::vertex_descriptor target(
+    boost::graph_traits< Bundle_ref >::edge_descriptor e, Bundle_ref g) {
   return e.second;
 }
 
-std::pair< graph_traits< arbos::Bundle_ref >::in_edge_iterator,
-           graph_traits< arbos::Bundle_ref >::in_edge_iterator >
-in_edges(graph_traits< arbos::Bundle_ref >::vertex_descriptor v,
-         arbos::Bundle_ref g) {
-  std::pair< arbos::function_iterator, arbos::function_iterator > callers =
-      v->getCallers();
-  return std::make_pair(make_transform_iterator(callers.first,
-                                                arbos::graph::MkInEdge<
-                                                    arbos::Bundle_ref >(v)),
-                        make_transform_iterator(callers.second,
-                                                arbos::graph::MkInEdge<
-                                                    arbos::Bundle_ref >(v)));
+std::pair< boost::graph_traits< Bundle_ref >::in_edge_iterator,
+           boost::graph_traits< Bundle_ref >::in_edge_iterator >
+in_edges(boost::graph_traits< Bundle_ref >::vertex_descriptor v, Bundle_ref g) {
+  std::pair< function_iterator, function_iterator > callers = v->getCallers();
+  return std::make_pair(boost::make_transform_iterator(callers.first,
+                                                       graph::MkInEdge<
+                                                           Bundle_ref >(v)),
+                        boost::make_transform_iterator(callers.second,
+                                                       graph::MkInEdge<
+                                                           Bundle_ref >(v)));
 }
 
-std::size_t in_degree(graph_traits< arbos::Bundle_ref >::vertex_descriptor v,
-                      arbos::Bundle_ref g) {
-  std::pair< arbos::function_iterator, arbos::function_iterator > callers =
-      v->getCallers();
+std::size_t in_degree(boost::graph_traits< Bundle_ref >::vertex_descriptor v,
+                      Bundle_ref g) {
+  std::pair< function_iterator, function_iterator > callers = v->getCallers();
   return std::distance(callers.first, callers.second);
 }
 
-std::pair< graph_traits< arbos::Bundle_ref >::out_edge_iterator,
-           graph_traits< arbos::Bundle_ref >::out_edge_iterator >
-out_edges(graph_traits< arbos::Bundle_ref >::vertex_descriptor v,
-          arbos::Bundle_ref g) {
-  std::pair< arbos::function_iterator, arbos::function_iterator > callees =
-      v->getCallees();
-  return std::make_pair(make_transform_iterator(callees.first,
-                                                arbos::graph::MkOutEdge<
-                                                    arbos::Bundle_ref >(v)),
-                        make_transform_iterator(callees.second,
-                                                arbos::graph::MkOutEdge<
-                                                    arbos::Bundle_ref >(v)));
+std::pair< boost::graph_traits< Bundle_ref >::out_edge_iterator,
+           boost::graph_traits< Bundle_ref >::out_edge_iterator >
+out_edges(boost::graph_traits< Bundle_ref >::vertex_descriptor v,
+          Bundle_ref g) {
+  std::pair< function_iterator, function_iterator > callees = v->getCallees();
+  return std::make_pair(boost::make_transform_iterator(callees.first,
+                                                       graph::MkOutEdge<
+                                                           Bundle_ref >(v)),
+                        boost::make_transform_iterator(callees.second,
+                                                       graph::MkOutEdge<
+                                                           Bundle_ref >(v)));
 }
 
-std::size_t out_degree(graph_traits< arbos::Bundle_ref >::vertex_descriptor v,
-                       arbos::Bundle_ref g) {
-  std::pair< arbos::function_iterator, arbos::function_iterator > callees =
-      v->getCallees();
+std::size_t out_degree(boost::graph_traits< Bundle_ref >::vertex_descriptor v,
+                       Bundle_ref g) {
+  std::pair< function_iterator, function_iterator > callees = v->getCallees();
   return std::distance(callees.first, callees.second);
 }
 
-std::size_t degree(graph_traits< arbos::Bundle_ref >::vertex_descriptor v,
-                   arbos::Bundle_ref g) {
+std::size_t degree(boost::graph_traits< Bundle_ref >::vertex_descriptor v,
+                   Bundle_ref g) {
   return out_degree(v, g) + in_degree(v, g);
 }
 
-std::pair< graph_traits< arbos::Bundle_ref >::vertex_iterator,
-           graph_traits< arbos::Bundle_ref >::vertex_iterator >
-vertices(arbos::Bundle_ref g) {
+std::pair< boost::graph_traits< Bundle_ref >::vertex_iterator,
+           boost::graph_traits< Bundle_ref >::vertex_iterator >
+vertices(Bundle_ref g) {
   return std::make_pair(g->getFunctions().begin(), g->getFunctions().end());
 }
 
-std::size_t num_vertices(arbos::Bundle_ref g) {
+std::size_t num_vertices(Bundle_ref g) {
   return g->getFunctions().size();
 }
 
-} // namespace boost
+} // end namespace arbos
 
 namespace boost {
 
 // Convert a Function to a BGL graph
-
 template <>
 struct graph_traits< arbos::Function_ref > {
   typedef arbos::Function_ref graph_t;
@@ -227,80 +224,86 @@ struct graph_traits< arbos::Function_ref > {
 
 }; // end class graph_traits
 
+} // end namespace boost
+
+namespace arbos {
+
 // For graph = Function_ref
-graph_traits< arbos::Function_ref >::vertex_descriptor source(
-    graph_traits< arbos::Function_ref >::edge_descriptor e,
-    arbos::Function_ref g) {
+boost::graph_traits< Function_ref >::vertex_descriptor source(
+    boost::graph_traits< Function_ref >::edge_descriptor e, Function_ref g) {
   return e.first;
 }
 
-graph_traits< arbos::Function_ref >::vertex_descriptor target(
-    graph_traits< arbos::Function_ref >::edge_descriptor e,
-    arbos::Function_ref g) {
+boost::graph_traits< Function_ref >::vertex_descriptor target(
+    boost::graph_traits< Function_ref >::edge_descriptor e, Function_ref g) {
   return e.second;
 }
 
-std::pair< graph_traits< arbos::Function_ref >::in_edge_iterator,
-           graph_traits< arbos::Function_ref >::in_edge_iterator >
-in_edges(graph_traits< arbos::Function_ref >::vertex_descriptor v,
-         arbos::Function_ref g) {
-  std::pair< arbos::bblock_iterator, arbos::bblock_iterator > prev_blocks =
+std::pair< boost::graph_traits< Function_ref >::in_edge_iterator,
+           boost::graph_traits< Function_ref >::in_edge_iterator >
+in_edges(boost::graph_traits< Function_ref >::vertex_descriptor v,
+         Function_ref g) {
+  std::pair< bblock_iterator, bblock_iterator > prev_blocks =
       v->getPreviousBlocks();
-  return std::make_pair(make_transform_iterator(prev_blocks.first,
-                                                arbos::graph::MkInEdge<
-                                                    arbos::Function_ref >(v)),
-                        make_transform_iterator(prev_blocks.second,
-                                                arbos::graph::MkInEdge<
-                                                    arbos::Function_ref >(v)));
+  return std::make_pair(boost::make_transform_iterator(prev_blocks.first,
+                                                       graph::MkInEdge<
+                                                           Function_ref >(v)),
+                        boost::make_transform_iterator(prev_blocks.second,
+                                                       graph::MkInEdge<
+                                                           Function_ref >(v)));
 }
 
-std::size_t in_degree(graph_traits< arbos::Function_ref >::vertex_descriptor v,
-                      arbos::Function_ref g) {
-  std::pair< arbos::bblock_iterator, arbos::bblock_iterator > prev_blocks =
+std::size_t in_degree(boost::graph_traits< Function_ref >::vertex_descriptor v,
+                      Function_ref g) {
+  std::pair< bblock_iterator, bblock_iterator > prev_blocks =
       v->getPreviousBlocks();
   return std::distance(prev_blocks.first, prev_blocks.second);
 }
 
-std::pair< graph_traits< arbos::Function_ref >::out_edge_iterator,
-           graph_traits< arbos::Function_ref >::out_edge_iterator >
-out_edges(graph_traits< arbos::Function_ref >::vertex_descriptor v,
-          arbos::Function_ref g) {
-  std::pair< arbos::bblock_iterator, arbos::bblock_iterator > succs_blocks =
+std::pair< boost::graph_traits< Function_ref >::out_edge_iterator,
+           boost::graph_traits< Function_ref >::out_edge_iterator >
+out_edges(boost::graph_traits< Function_ref >::vertex_descriptor v,
+          Function_ref g) {
+  std::pair< bblock_iterator, bblock_iterator > succs_blocks =
       v->getNextBlocks();
-  return std::make_pair(make_transform_iterator(succs_blocks.first,
-                                                arbos::graph::MkOutEdge<
-                                                    arbos::Function_ref >(v)),
-                        make_transform_iterator(succs_blocks.second,
-                                                arbos::graph::MkOutEdge<
-                                                    arbos::Function_ref >(v)));
+  return std::make_pair(boost::make_transform_iterator(succs_blocks.first,
+                                                       graph::MkOutEdge<
+                                                           Function_ref >(v)),
+                        boost::make_transform_iterator(succs_blocks.second,
+                                                       graph::MkOutEdge<
+                                                           Function_ref >(v)));
 }
 
-std::size_t out_degree(graph_traits< arbos::Function_ref >::vertex_descriptor v,
-                       arbos::Function_ref g) {
-  std::pair< arbos::bblock_iterator, arbos::bblock_iterator > succs_blocks =
+std::size_t out_degree(boost::graph_traits< Function_ref >::vertex_descriptor v,
+                       Function_ref g) {
+  std::pair< bblock_iterator, bblock_iterator > succs_blocks =
       v->getNextBlocks();
   return std::distance(succs_blocks.first, succs_blocks.second);
 }
 
-std::size_t degree(graph_traits< arbos::Function_ref >::vertex_descriptor v,
-                   arbos::Function_ref g) {
+std::size_t degree(boost::graph_traits< Function_ref >::vertex_descriptor v,
+                   Function_ref g) {
   return out_degree(v, g) + in_degree(v, g);
 }
 
-std::pair< graph_traits< arbos::Function_ref >::vertex_iterator,
-           graph_traits< arbos::Function_ref >::vertex_iterator >
-vertices(arbos::Function_ref g) {
+std::pair< boost::graph_traits< Function_ref >::vertex_iterator,
+           boost::graph_traits< Function_ref >::vertex_iterator >
+vertices(Function_ref g) {
   return std::make_pair(g->getFunctionBody()->getBlocks().begin(),
                         g->getFunctionBody()->getBlocks().end());
 }
 
-std::size_t num_vertices(arbos::Function_ref g) {
+std::size_t num_vertices(Function_ref g) {
   return g->getFunctionBody()->getBlocks().size();
 }
 
+} // end namespace arbos
+
+namespace boost {
+
 template < typename Graph >
 void write_graph(Graph g) {
-  std::size_t n = boost::num_vertices(g);
+  std::size_t n = num_vertices(g);
   std::cout << "Num of vertices: " << n << std::endl;
 
   typedef
@@ -311,24 +314,20 @@ void write_graph(Graph g) {
       typename boost::graph_traits< Graph >::in_edge_iterator pred_iterator_t;
 
   boost::iterator_range< vertex_iterator_t > range =
-      boost::make_iterator_range(boost::vertices(g));
+      boost::make_iterator_range(vertices(g));
   for (vertex_iterator_t it = range.begin(), et = range.end(); it != et; ++it) {
     std::cout << "Vertex: " << *it << std::endl;
-    std::cout << " Num of predecessors=" << boost::in_degree(*it, g)
-              << std::endl;
-    std::cout << " Num of successors=" << boost::out_degree(*it, g)
-              << std::endl;
-    std::cout << " Num of neighbors=" << boost::degree(*it, g) << std::endl;
+    std::cout << " Num of predecessors=" << in_degree(*it, g) << std::endl;
+    std::cout << " Num of successors=" << out_degree(*it, g) << std::endl;
+    std::cout << " Num of neighbors=" << degree(*it, g) << std::endl;
     std::cout << " Succs={";
-    std::pair< succ_iterator_t, succ_iterator_t > succs =
-        boost::out_edges(*it, g);
+    std::pair< succ_iterator_t, succ_iterator_t > succs = out_edges(*it, g);
     for (succ_iterator_t s_it = succs.first; s_it != succs.second; ++s_it)
-      std::cout << boost::target(*s_it, g) << ";";
+      std::cout << target(*s_it, g) << ";";
     std::cout << "}" << std::endl << " Preds={ ";
-    std::pair< pred_iterator_t, pred_iterator_t > preds =
-        boost::in_edges(*it, g);
+    std::pair< pred_iterator_t, pred_iterator_t > preds = in_edges(*it, g);
     for (pred_iterator_t p_it = preds.first; p_it != preds.second; ++p_it)
-      std::cout << boost::source(*p_it, g) << ";";
+      std::cout << source(*p_it, g) << ";";
     std::cout << "}" << std::endl;
   }
 }

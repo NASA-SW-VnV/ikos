@@ -46,9 +46,9 @@
 #include <iostream>
 
 #include <ikos/common/types.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
 
 namespace ikos {
 

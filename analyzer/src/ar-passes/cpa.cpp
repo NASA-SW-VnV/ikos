@@ -43,8 +43,8 @@
 
 #include <iostream>
 
-#include <ikos/common/types.hpp>
 #include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/cpa.hpp>
 
 #include <analyzer/ar-wrapper/cfg.hpp>
@@ -224,7 +224,7 @@ class cpa_analyzer
       fwd_fixpoint_iterator_t;
 
   typedef cpa_visitor< number_t, varname_t > cpa_visitor_t;
-  typedef boost::shared_ptr< cpa_visitor_t > cpa_visitor_ptr;
+  typedef std::shared_ptr< cpa_visitor_t > cpa_visitor_ptr;
 
   VariableFactory& _vfac;
   LiteralFactory& _lfac;

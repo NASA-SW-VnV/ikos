@@ -38,8 +38,8 @@
  *
  ******************************************************************************/
 
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "passes/lower_gv_initializers.hpp"
 

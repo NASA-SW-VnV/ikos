@@ -5,7 +5,6 @@
  * Authors: Nija Shi
  *          Arnaud J. Venet
  *
- *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -43,16 +42,15 @@
  ******************************************************************************/
 
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
-
-#include <boost/shared_ptr.hpp>
 
 #include <arbos/semantics/ar.hpp>
 
 using namespace arbos;
 
-void AR_Integer_Comparison::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Integer_Comparison::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Left Operand");
   (*_left_op).accept(visitor);
@@ -63,7 +61,7 @@ void AR_Integer_Comparison::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_FP_Comparison::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_FP_Comparison::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Left Operand");
   (*_left_op).accept(visitor);
@@ -74,7 +72,7 @@ void AR_FP_Comparison::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Assignment::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Assignment::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Left Operand");
   (*_left_op).accept(visitor);
@@ -85,7 +83,7 @@ void AR_Assignment::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Load::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Load::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Result");
   (*_result).accept(visitor);
@@ -96,7 +94,7 @@ void AR_Load::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Return_Value::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Return_Value::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   if (_value.getUID() > 0) {
     visitor->attributeStart(*this, "Return Value");
@@ -106,25 +104,17 @@ void AR_Return_Value::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Unwind::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Unwind::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Unreachable::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Unreachable::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Landing_Pad::accept(boost::shared_ptr< Visitor > visitor) {
-  visitor->nodeStart(*this);
-  visitor->attributeStart(*this, "Exception Value");
-  (*_exception).accept(visitor);
-  visitor->attributeEnd(*this, "Exception Value");
-  visitor->nodeEnd(*this);
-}
-
-void AR_Resume::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Landing_Pad::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Exception Value");
   (*_exception).accept(visitor);
@@ -132,7 +122,15 @@ void AR_Resume::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Function_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Resume::accept(std::shared_ptr< Visitor > visitor) {
+  visitor->nodeStart(*this);
+  visitor->attributeStart(*this, "Exception Value");
+  (*_exception).accept(visitor);
+  visitor->attributeEnd(*this, "Exception Value");
+  visitor->nodeEnd(*this);
+}
+
+void AR_Function_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Return Type");
   AR_Node_Ref< AR_Type > return_ty_ref(_return_type);
@@ -154,12 +152,12 @@ void AR_Function_Type::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Integer_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Integer_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Structure_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Structure_Type::accept(std::shared_ptr< Visitor > visitor) {
   if (visitor->checkVisited(getUID()))
     return;
 
@@ -178,7 +176,7 @@ void AR_Structure_Type::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Pointer_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Pointer_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Cell Type");
   AR_Node_Ref< AR_Type > ty_ref(_cell_type);
@@ -187,7 +185,7 @@ void AR_Pointer_Type::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Array_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Array_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Cell Type");
   AR_Node_Ref< AR_Type > ty_ref(_cell_type);
@@ -196,37 +194,29 @@ void AR_Array_Type::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_FP_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_FP_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Void_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Void_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Opaque_Type::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Opaque_Type::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Undefined_Constant::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Undefined_Constant::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Type");
   (*_type).accept(visitor);
   visitor->attributeEnd(*this, "Type");
   visitor->nodeEnd(*this);
 }
-void AR_Integer_Constant::accept(boost::shared_ptr< Visitor > visitor) {
-  visitor->nodeStart(*this);
-  visitor->attributeStart(*this, "Type");
-  (*_type).accept(visitor);
-  visitor->attributeEnd(*this, "Type");
-  visitor->nodeEnd(*this);
-}
-
-void AR_Null_Constant::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Integer_Constant::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Type");
   (*_type).accept(visitor);
@@ -234,7 +224,7 @@ void AR_Null_Constant::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_FP_Constant::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Null_Constant::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Type");
   (*_type).accept(visitor);
@@ -242,7 +232,15 @@ void AR_FP_Constant::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Var_Addr_Constant::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_FP_Constant::accept(std::shared_ptr< Visitor > visitor) {
+  visitor->nodeStart(*this);
+  visitor->attributeStart(*this, "Type");
+  (*_type).accept(visitor);
+  visitor->attributeEnd(*this, "Type");
+  visitor->nodeEnd(*this);
+}
+
+void AR_Var_Addr_Constant::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Variable");
   AR_Node_Ref< AR_Variable > var(_variable);
@@ -251,12 +249,12 @@ void AR_Var_Addr_Constant::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Function_Addr_Constant::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Function_Addr_Constant::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_Global_Variable::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Global_Variable::accept(std::shared_ptr< Visitor > visitor) {
   if (visitor->checkVisited(getUID()))
     return;
 
@@ -276,7 +274,7 @@ void AR_Global_Variable::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Local_Variable::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Local_Variable::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Type");
   (*_type).accept(visitor);
@@ -284,7 +282,7 @@ void AR_Local_Variable::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Cst_Operand::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Cst_Operand::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Constant");
   (*_constant).accept(visitor);
@@ -292,7 +290,7 @@ void AR_Cst_Operand::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Var_Operand::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Var_Operand::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Internal Variable");
   (*_internal_variable).accept(visitor);
@@ -300,7 +298,7 @@ void AR_Var_Operand::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Internal_Variable::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Internal_Variable::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Type");
   (*_type).accept(visitor);
@@ -308,7 +306,7 @@ void AR_Internal_Variable::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Arith_Op::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Arith_Op::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Result");
   (*_result).accept(visitor);
@@ -322,7 +320,7 @@ void AR_Arith_Op::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Conv_Op::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Conv_Op::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Operand");
   (*_operand).accept(visitor);
@@ -333,7 +331,7 @@ void AR_Conv_Op::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Bitwise_Op::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Bitwise_Op::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Type");
   (*_type).accept(visitor);
@@ -350,7 +348,7 @@ void AR_Bitwise_Op::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_FP_Op::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_FP_Op::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Result");
   (*_result).accept(visitor);
@@ -364,7 +362,7 @@ void AR_FP_Op::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Store::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Store::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Value");
   (*_value).accept(visitor);
@@ -375,7 +373,7 @@ void AR_Store::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Load_Element::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Load_Element::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Result");
   (*_result).accept(visitor);
@@ -389,7 +387,7 @@ void AR_Load_Element::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Store_Element::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Store_Element::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Result");
   (*_result).accept(visitor);
@@ -406,7 +404,7 @@ void AR_Store_Element::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Pointer_Shift::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Pointer_Shift::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Result");
   (*_result).accept(visitor);
@@ -420,7 +418,7 @@ void AR_Pointer_Shift::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Call::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Call::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   if (_return_value.getUID() > 0) {
     visitor->attributeStart(*this, "Return Value");
@@ -446,7 +444,7 @@ void AR_Call::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Invoke::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Invoke::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   /*
   TODO: Write a generic visitor
@@ -463,12 +461,12 @@ void AR_Invoke::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_NOP::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_NOP::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void AR_MemSet::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_MemSet::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Operand");
   (*_ptr).accept(visitor);
@@ -482,7 +480,7 @@ void AR_MemSet::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_MemCpy::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_MemCpy::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Target");
   (*_tgt_pointer).accept(visitor);
@@ -496,7 +494,7 @@ void AR_MemCpy::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_MemMove::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_MemMove::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Target");
   (*_tgt_pointer).accept(visitor);
@@ -510,7 +508,7 @@ void AR_MemMove::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_VA_Start::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_VA_Start::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "va_list_ptr");
   (*_va_list_ptr).accept(visitor);
@@ -518,7 +516,7 @@ void AR_VA_Start::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_VA_End::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_VA_End::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "va_list_ptr");
   (*_va_list_ptr).accept(visitor);
@@ -526,7 +524,7 @@ void AR_VA_End::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_VA_Copy::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_VA_Copy::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "dest_va_list_ptr");
   (*_dest_va_list_ptr).accept(visitor);
@@ -537,7 +535,7 @@ void AR_VA_Copy::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_VA_Arg::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_VA_Arg::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "result");
   (*_result).accept(visitor);
@@ -551,7 +549,7 @@ void AR_VA_Arg::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Abstract_Memory::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Abstract_Memory::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "ptr");
   (*_ptr).accept(visitor);
@@ -562,7 +560,7 @@ void AR_Abstract_Memory::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Abstract_Variable::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Abstract_Variable::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "var");
   (*_variable).accept(visitor);
@@ -570,7 +568,7 @@ void AR_Abstract_Variable::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Basic_Block::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Basic_Block::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Body");
   visitor->listStart();
@@ -586,7 +584,7 @@ void AR_Basic_Block::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Code::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Code::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Blocks");
   visitor->listStart();
@@ -603,7 +601,7 @@ void AR_Code::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Function::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Function::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Function Body");
   (*_function_body).accept(visitor);
@@ -614,7 +612,7 @@ void AR_Function::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Bundle::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Bundle::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->attributeStart(*this, "Global Variables");
   visitor->listStart();
@@ -646,11 +644,11 @@ void AR_Bundle::accept(boost::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Source_Location::accept(boost::shared_ptr< Visitor > visitor) {
+void AR_Source_Location::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);
 }
 
-void ARModel::accept(boost::shared_ptr< Visitor > visitor) {
+void ARModel::accept(std::shared_ptr< Visitor > visitor) {
   (*_bundle).accept(visitor);
 }

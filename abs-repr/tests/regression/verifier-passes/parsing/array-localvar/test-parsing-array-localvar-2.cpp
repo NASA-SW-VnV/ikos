@@ -40,12 +40,12 @@
  *
  ******************************************************************************/
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
-#include <arbos/semantics/ar.hpp>
 #include <arbos/common/common.hpp>
+#include <arbos/semantics/ar.hpp>
 
 using namespace arbos;
 
@@ -93,7 +93,7 @@ public:
     std::cout << "This pass verifies regression test parsing/gv-int"
               << std::endl
               << std::endl;
-    boost::shared_ptr< Verifier > v(new Verifier());
+    std::shared_ptr< Verifier > v(new Verifier());
     (*bundle).accept(v);
     if (v->testPassed()) {
       v->print(std::cout);

@@ -47,11 +47,11 @@
 #include <ikos/domains/discrete_domains.hpp>
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ar-wrapper/wrapper.hpp>
-#include <analyzer/ar-wrapper/transformations.hpp>
+#include <analyzer/ar-wrapper/cfg.hpp>
 #include <analyzer/ar-wrapper/constant_folding.hpp>
 #include <analyzer/ar-wrapper/literal.hpp>
-#include <analyzer/ar-wrapper/cfg.hpp>
+#include <analyzer/ar-wrapper/transformations.hpp>
+#include <analyzer/ar-wrapper/wrapper.hpp>
 
 namespace arbos {
 namespace passes {

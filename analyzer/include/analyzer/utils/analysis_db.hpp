@@ -72,6 +72,8 @@ public:
                      const std::string& context,
                      const std::string& file,
                      sqlite::db_int line,
+                     sqlite::db_int col,
+                     sqlite::db_int stmt_uid,
                      const std::string& status) = 0;
 
 }; // end analysis_db
@@ -85,28 +87,41 @@ public:
       : analysis_db(analysis_name, db),
         _results_table(analysis_name + "_results") {
     // Results table
-    std::pair< std::string, sqlite::db_type > results_cols[4] =
+    std::pair< std::string, sqlite::db_type > results_cols[6] =
         {{"safety_check", sqlite::db_type::Text},
          {"file", sqlite::db_type::Text},
          {"line", sqlite::db_type::Integer},
+         {"column", sqlite::db_type::Integer},
+         {"stmt_uid", sqlite::db_type::Integer},
          {"status", sqlite::db_type::Text}};
     _db.delete_table(_results_table);
-    _db.create_table(_results_table, results_cols, 4);
+    _db.create_table(_results_table, results_cols, 6);
     _db.create_index(analysis_name + "_results_index_1",
                      _results_table,
-                     "file");
+                     "safety_check");
     _db.create_index(analysis_name + "_results_index_2",
                      _results_table,
+                     "file");
+    _db.create_index(analysis_name + "_results_index_3",
+                     _results_table,
                      "line");
+    _db.create_index(analysis_name + "_results_index_4",
+                     _results_table,
+                     "column");
+    _db.create_index(analysis_name + "_results_index_5",
+                     _results_table,
+                     "stmt_uid");
   }
 
   void write(const std::string& check,
              const std::string&,
              const std::string& file,
              sqlite::db_int line,
+             sqlite::db_int col,
+             sqlite::db_int stmt_uid,
              const std::string& status) {
-    sqlite::db_ostream o(_db, _results_table, 4);
-    o << check << file << line << status << sqlite::end_row;
+    sqlite::db_ostream o(_db, _results_table, 6);
+    o << check << file << line << col << stmt_uid << status << sqlite::end_row;
   }
 }; // end class intra_db
 
@@ -119,14 +134,16 @@ public:
       : analysis_db(analysis_name, db),
         _results_table(analysis_name + "_results") {
     // Results table
-    std::pair< std::string, sqlite::db_type > results_cols[5] =
+    std::pair< std::string, sqlite::db_type > results_cols[7] =
         {{"safety_check", sqlite::db_type::Text},
          {"context", sqlite::db_type::Text},
          {"file", sqlite::db_type::Text},
          {"line", sqlite::db_type::Integer},
+         {"column", sqlite::db_type::Integer},
+         {"stmt_uid", sqlite::db_type::Integer},
          {"status", sqlite::db_type::Text}};
     _db.delete_table(_results_table);
-    _db.create_table(_results_table, results_cols, 5);
+    _db.create_table(_results_table, results_cols, 7);
     _db.create_index(analysis_name + "_results_index_1",
                      _results_table,
                      "safety_check");
@@ -136,15 +153,24 @@ public:
     _db.create_index(analysis_name + "_results_index_3",
                      _results_table,
                      "line");
+    _db.create_index(analysis_name + "_results_index_4",
+                     _results_table,
+                     "column");
+    _db.create_index(analysis_name + "_results_index_5",
+                     _results_table,
+                     "stmt_uid");
   }
 
   void write(const std::string& kind,
              const std::string& context,
              const std::string& file,
              sqlite::db_int line,
+             sqlite::db_int col,
+             sqlite::db_int stmt_uid,
              const std::string& status) {
-    sqlite::db_ostream o(_db, _results_table, 5);
-    o << kind << context << file << line << status << sqlite::end_row;
+    sqlite::db_ostream o(_db, _results_table, 7);
+    o << kind << context << file << line << col << stmt_uid << status
+      << sqlite::end_row;
   }
 };
 } // end namespace analyzer

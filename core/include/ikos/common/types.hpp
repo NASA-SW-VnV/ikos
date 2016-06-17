@@ -46,13 +46,12 @@
 #define IKOS_TYPES_HPP
 
 #include <stdint.h>
-#include <string>
 #include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 #include <boost/container/slist.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/iterator/iterator_facade.hpp>
-#include <boost/unordered_map.hpp>
 
 namespace ikos {
 
@@ -102,44 +101,15 @@ public:
 
 private:
   typedef boost::container::slist< Element > slist_t;
-  typedef boost::shared_ptr< slist_t > slist_ptr;
+
+public:
+  typedef typename slist_t::const_iterator iterator;
 
 private:
-  slist_ptr _slist;
+  slist_t _slist;
 
 public:
-  class iterator
-      : public boost::iterator_facade< iterator,
-                                       const Element,
-                                       boost::forward_traversal_tag > {
-    friend class boost::iterator_core_access;
-
-  private:
-    typename slist_t::const_iterator _it;
-    slist_ptr _l;
-
-  public:
-    iterator(slist_ptr l, bool b) : _it(b ? l->begin() : l->end()), _l(l) {}
-
-  private:
-    void increment() { ++(this->_it); }
-
-    bool equal(const iterator& other) const {
-      return this->_l == other._l && this->_it == other._it;
-    }
-
-    const Element& dereference() const {
-      if (this->_it != this->_l->end()) {
-        return *(this->_it);
-      } else {
-        throw ikos_error("Collection: trying to dereference an empty iterator");
-      }
-    }
-
-  }; // class iterator
-
-public:
-  collection() : _slist(slist_ptr(new slist_t)) {}
+  collection() : _slist() {}
 
   collection(const collection_t& c) : writeable(), _slist(c._slist) {}
 
@@ -149,15 +119,13 @@ public:
   }
 
   collection_t& operator+=(const Element& e) {
-    this->_slist = slist_ptr(new slist_t(*this->_slist));
-    this->_slist->push_front(e);
+    this->_slist.push_front(e);
     return *this;
   }
 
   collection_t& operator+=(const collection_t& c) {
-    this->_slist = slist_ptr(new slist_t(*this->_slist));
     for (iterator it = c.begin(); it != c.end(); ++it) {
-      this->_slist->push_front(*it);
+      this->_slist.push_front(*it);
     }
     return *this;
   }
@@ -168,11 +136,11 @@ public:
     return r;
   }
 
-  iterator begin() const { return iterator(this->_slist, true); }
+  iterator begin() const { return this->_slist.begin(); }
 
-  iterator end() const { return iterator(this->_slist, false); }
+  iterator end() const { return this->_slist.end(); }
 
-  std::size_t size() const { return this->_slist->size(); }
+  std::size_t size() const { return this->_slist.size(); }
 
   void write(std::ostream& o) {
     o << "{";
@@ -227,12 +195,12 @@ public:
     friend class string_factory;
 
   private:
-    boost::shared_ptr< std::string > _s;
+    std::shared_ptr< std::string > _s;
     index64_t _id;
 
   private:
     indexed_string();
-    indexed_string(boost::shared_ptr< std::string > s, index64_t id)
+    indexed_string(std::shared_ptr< std::string > s, index64_t id)
         : _s(s), _id(id) {}
 
   public:
@@ -262,7 +230,7 @@ public:
   }; // class indexed_string
 
 private:
-  typedef boost::unordered_map< std::string, indexed_string > map_t;
+  typedef std::unordered_map< std::string, indexed_string > map_t;
 
 private:
   index64_t _next_id;
@@ -276,7 +244,7 @@ public:
   indexed_string operator[](const std::string& s) {
     map_t::iterator it = this->_map.find(s);
     if (it == this->_map.end()) {
-      indexed_string is(boost::shared_ptr< std::string >(new std::string(s)),
+      indexed_string is(std::shared_ptr< std::string >(new std::string(s)),
                         this->_next_id++);
       this->_map.insert(std::pair< std::string, indexed_string >(s, is));
       return is;
@@ -285,11 +253,26 @@ public:
     }
   }
 
-}; // class string_factory
+}; // end class string_factory
 
 std::size_t hash_value(const string_factory::indexed_string& v) {
   return v.index();
 }
+
+} // namespace ikos
+
+namespace std {
+
+template <>
+struct hash< ikos::string_factory::indexed_string > {
+  std::size_t operator()(const ikos::string_factory::indexed_string& v) const {
+    return v.index();
+  }
+};
+
+} // end namespace std
+
+namespace ikos {
 
 // Enumeration type for basic arithmetic operations
 typedef enum {
@@ -299,6 +282,6 @@ typedef enum {
   OP_DIVISION
 } operation_t;
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_TYPES_HPP

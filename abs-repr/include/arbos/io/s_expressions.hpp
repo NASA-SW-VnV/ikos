@@ -45,25 +45,27 @@
 #ifndef ARBOS_S_EXPRESSIONS_HPP
 #define ARBOS_S_EXPRESSIONS_HPP
 
-#include <string>
-#include <iostream>
+#include <algorithm>
+#include <functional>
 #include <iomanip>
-#include <sstream>
-#include <list>
+#include <iostream>
 #include <iterator>
+#include <list>
+#include <memory>
+#include <sstream>
+#include <string>
 
-#include <boost/optional.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/shared_array.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/flyweight.hpp>
 #include <boost/flyweight/intermodule_holder.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/optional.hpp>
+#include <boost/shared_array.hpp>
+#include <boost/tokenizer.hpp>
 
-#include <arbos/common/types.hpp>
 #include <arbos/common/bignums.hpp>
+#include <arbos/common/types.hpp>
 #include <arbos/semantics/fp.hpp>
 
 namespace arbos {
@@ -101,7 +103,7 @@ protected:
   std::size_t _hash_value;
 
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 public:
   operator atom_ptr() { return this->clone(); }
@@ -123,16 +125,16 @@ public:
 template < typename Visitor >
 class internal_index64_atom : public internal_atom< Visitor > {
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 private:
   index64_t _index;
 
 public:
-  static boost::shared_ptr< internal_index64_atom< Visitor > > parse(
+  static std::shared_ptr< internal_index64_atom< Visitor > > parse(
       std::string s) {
     try {
-      return boost::shared_ptr< internal_index64_atom< Visitor > >(
+      return std::shared_ptr< internal_index64_atom< Visitor > >(
           new internal_index64_atom< Visitor >(
               boost::lexical_cast< index64_t >(s)));
     } catch (const boost::bad_lexical_cast&) {
@@ -145,12 +147,11 @@ private:
 
 public:
   internal_index64_atom(index64_t index) : _index(index) {
-    boost::hash< index64_t > hasher;
-    this->_hash_value = hasher(this->_index);
+    this->_hash_value = std::hash< index64_t >()(this->_index);
   }
 
   atom_ptr clone() {
-    return boost::shared_ptr< internal_index64_atom< Visitor > >(
+    return std::shared_ptr< internal_index64_atom< Visitor > >(
         new internal_index64_atom< Visitor >(*this));
   }
 
@@ -171,16 +172,16 @@ public:
 template < typename Visitor >
 class internal_z_number_atom : public internal_atom< Visitor > {
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 private:
   z_number _n;
 
 public:
-  static boost::shared_ptr< internal_z_number_atom< Visitor > > parse(
+  static std::shared_ptr< internal_z_number_atom< Visitor > > parse(
       std::string s) {
     try {
-      return boost::shared_ptr< internal_z_number_atom< Visitor > >(
+      return std::shared_ptr< internal_z_number_atom< Visitor > >(
           new internal_z_number_atom< Visitor >(z_number(s)));
     } catch (const bignum_error&) {
       throw s_expression_error("Incorrect z_number format: " + s);
@@ -189,12 +190,11 @@ public:
 
 public:
   internal_z_number_atom(z_number n) : _n(n) {
-    boost::hash< z_number > hasher;
-    this->_hash_value = hasher(this->_n);
+    this->_hash_value = std::hash< z_number >()(this->_n);
   }
 
   atom_ptr clone() {
-    return boost::shared_ptr< internal_z_number_atom< Visitor > >(
+    return std::shared_ptr< internal_z_number_atom< Visitor > >(
         new internal_z_number_atom< Visitor >(*this));
   }
 
@@ -215,16 +215,16 @@ public:
 template < typename Visitor >
 class internal_q_number_atom : public internal_atom< Visitor > {
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 private:
   q_number _n;
 
 public:
-  static boost::shared_ptr< internal_q_number_atom< Visitor > > parse(
+  static std::shared_ptr< internal_q_number_atom< Visitor > > parse(
       std::string s) {
     try {
-      return boost::shared_ptr< internal_q_number_atom< Visitor > >(
+      return std::shared_ptr< internal_q_number_atom< Visitor > >(
           new internal_q_number_atom< Visitor >(q_number(s)));
     } catch (const bignum_error&) {
       throw s_expression_error("Incorrect q_number format: " + s);
@@ -233,12 +233,11 @@ public:
 
 public:
   internal_q_number_atom(q_number n) : _n(n) {
-    boost::hash< q_number > hasher;
-    this->_hash_value = hasher(this->_n);
+    this->_hash_value = std::hash< q_number >()(this->_n);
   }
 
   atom_ptr clone() {
-    return boost::shared_ptr< internal_q_number_atom< Visitor > >(
+    return std::shared_ptr< internal_q_number_atom< Visitor > >(
         new internal_q_number_atom< Visitor >(*this));
   }
 
@@ -259,16 +258,16 @@ public:
 template < typename Visitor >
 class internal_fp_number_atom : public internal_atom< Visitor > {
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 private:
   fp_number _fp;
 
 public:
-  static boost::shared_ptr< internal_fp_number_atom< Visitor > > parse(
+  static std::shared_ptr< internal_fp_number_atom< Visitor > > parse(
       std::string s) {
     try {
-      return boost::shared_ptr< internal_fp_number_atom< Visitor > >(
+      return std::shared_ptr< internal_fp_number_atom< Visitor > >(
           new internal_fp_number_atom< Visitor >(fp_number(s)));
     } catch (const fp_error&) {
       throw s_expression_error("Incorrect fp_number format: " + s);
@@ -277,12 +276,11 @@ public:
 
 public:
   internal_fp_number_atom(fp_number fp) : _fp(fp) {
-    boost::hash< fp_number > hasher;
-    this->_hash_value = hasher(this->_fp);
+    this->_hash_value = std::hash< fp_number >()(this->_fp);
   }
 
   atom_ptr clone() {
-    return boost::shared_ptr< internal_fp_number_atom< Visitor > >(
+    return std::shared_ptr< internal_fp_number_atom< Visitor > >(
         new internal_fp_number_atom< Visitor >(*this));
   }
 
@@ -303,13 +301,13 @@ public:
 template < typename Visitor >
 class internal_string_atom : public internal_atom< Visitor > {
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 private:
   std::string _s;
 
 public:
-  static boost::shared_ptr< internal_string_atom< Visitor > > parse(
+  static std::shared_ptr< internal_string_atom< Visitor > > parse(
       std::string s) {
     std::string content;
     content.reserve(s.size());
@@ -333,18 +331,17 @@ public:
       }
     }
 
-    return boost::shared_ptr< internal_string_atom< Visitor > >(
+    return std::shared_ptr< internal_string_atom< Visitor > >(
         new internal_string_atom< Visitor >(content));
   }
 
 public:
   internal_string_atom(std::string s) : _s(s) {
-    boost::hash< std::string > hasher;
-    this->_hash_value = hasher(this->_s);
+    this->_hash_value = std::hash< std::string >()(this->_s);
   }
 
   atom_ptr clone() {
-    return boost::shared_ptr< internal_string_atom< Visitor > >(
+    return std::shared_ptr< internal_string_atom< Visitor > >(
         new internal_string_atom< Visitor >(*this));
   }
 
@@ -388,13 +385,13 @@ public:
 template < typename Visitor >
 class internal_byte_sequence_atom : public internal_atom< Visitor > {
 public:
-  typedef boost::shared_ptr< internal_atom< Visitor > > atom_ptr;
+  typedef std::shared_ptr< internal_atom< Visitor > > atom_ptr;
 
 private:
   std::vector< char > _b;
 
 public:
-  static boost::shared_ptr< internal_byte_sequence_atom< Visitor > > parse(
+  static std::shared_ptr< internal_byte_sequence_atom< Visitor > > parse(
       std::string s) {
     std::vector< char > seq;
     seq.reserve(s.size() / 3);
@@ -429,7 +426,7 @@ public:
       throw s_expression_error(
           "Incorrect string format in byte_sequence_atom constructor [5]");
     }
-    return boost::shared_ptr< internal_byte_sequence_atom< Visitor > >(
+    return std::shared_ptr< internal_byte_sequence_atom< Visitor > >(
         new internal_byte_sequence_atom< Visitor >(seq));
   }
 
@@ -445,7 +442,7 @@ public:
   }
 
   atom_ptr clone() {
-    return boost::shared_ptr< internal_byte_sequence_atom< Visitor > >(
+    return std::shared_ptr< internal_byte_sequence_atom< Visitor > >(
         new internal_byte_sequence_atom< Visitor >(*this));
   }
 
@@ -564,45 +561,45 @@ public:
   bool operator==(s_expr_atom other) const {
     if (this->_atom->atom_type() == INDEX64_ATOM &&
         other._atom->atom_type() == INDEX64_ATOM) {
-      boost::shared_ptr< index64_atom > a1 =
-          boost::static_pointer_cast< index64_atom, atom >(this->_atom);
-      boost::shared_ptr< index64_atom > a2 =
-          boost::static_pointer_cast< index64_atom, atom >(other._atom);
+      std::shared_ptr< index64_atom > a1 =
+          std::static_pointer_cast< index64_atom, atom >(this->_atom);
+      std::shared_ptr< index64_atom > a2 =
+          std::static_pointer_cast< index64_atom, atom >(other._atom);
       return a1->operator==(*a2);
     } else if (this->_atom->atom_type() == ZNUMBER_ATOM &&
                other._atom->atom_type() == ZNUMBER_ATOM) {
-      boost::shared_ptr< z_number_atom > a1 =
-          boost::static_pointer_cast< z_number_atom, atom >(this->_atom);
-      boost::shared_ptr< z_number_atom > a2 =
-          boost::static_pointer_cast< z_number_atom, atom >(other._atom);
+      std::shared_ptr< z_number_atom > a1 =
+          std::static_pointer_cast< z_number_atom, atom >(this->_atom);
+      std::shared_ptr< z_number_atom > a2 =
+          std::static_pointer_cast< z_number_atom, atom >(other._atom);
       return a1->operator==(*a2);
     } else if (this->_atom->atom_type() == QNUMBER_ATOM &&
                other._atom->atom_type() == QNUMBER_ATOM) {
-      boost::shared_ptr< q_number_atom > a1 =
-          boost::static_pointer_cast< q_number_atom, atom >(this->_atom);
-      boost::shared_ptr< q_number_atom > a2 =
-          boost::static_pointer_cast< q_number_atom, atom >(other._atom);
+      std::shared_ptr< q_number_atom > a1 =
+          std::static_pointer_cast< q_number_atom, atom >(this->_atom);
+      std::shared_ptr< q_number_atom > a2 =
+          std::static_pointer_cast< q_number_atom, atom >(other._atom);
       return a1->operator==(*a2);
     } else if (this->_atom->atom_type() == FPNUMBER_ATOM &&
                other._atom->atom_type() == FPNUMBER_ATOM) {
-      boost::shared_ptr< fp_number_atom > a1 =
-          boost::static_pointer_cast< fp_number_atom, atom >(this->_atom);
-      boost::shared_ptr< fp_number_atom > a2 =
-          boost::static_pointer_cast< fp_number_atom, atom >(other._atom);
+      std::shared_ptr< fp_number_atom > a1 =
+          std::static_pointer_cast< fp_number_atom, atom >(this->_atom);
+      std::shared_ptr< fp_number_atom > a2 =
+          std::static_pointer_cast< fp_number_atom, atom >(other._atom);
       return a1->operator==(*a2);
     } else if (this->_atom->atom_type() == STRING_ATOM &&
                other._atom->atom_type() == STRING_ATOM) {
-      boost::shared_ptr< string_atom > a1 =
-          boost::static_pointer_cast< string_atom, atom >(this->_atom);
-      boost::shared_ptr< string_atom > a2 =
-          boost::static_pointer_cast< string_atom, atom >(other._atom);
+      std::shared_ptr< string_atom > a1 =
+          std::static_pointer_cast< string_atom, atom >(this->_atom);
+      std::shared_ptr< string_atom > a2 =
+          std::static_pointer_cast< string_atom, atom >(other._atom);
       return a1->operator==(*a2);
     } else if (this->_atom->atom_type() == BYTESEQ_ATOM &&
                other._atom->atom_type() == BYTESEQ_ATOM) {
-      boost::shared_ptr< byte_sequence_atom > a1 =
-          boost::static_pointer_cast< byte_sequence_atom, atom >(this->_atom);
-      boost::shared_ptr< byte_sequence_atom > a2 =
-          boost::static_pointer_cast< byte_sequence_atom, atom >(other._atom);
+      std::shared_ptr< byte_sequence_atom > a1 =
+          std::static_pointer_cast< byte_sequence_atom, atom >(this->_atom);
+      std::shared_ptr< byte_sequence_atom > a2 =
+          std::static_pointer_cast< byte_sequence_atom, atom >(other._atom);
       return a1->operator==(*a2);
     } else {
       return false;
@@ -643,7 +640,7 @@ public:
   s_expr(atom_ptr functor, hashed_s_expr_list arguments)
       : _n_args(arguments.size()),
         _functor(functor),
-        _arguments(hashed_s_expr_array(new placeholder[arguments.size()])) {
+        _arguments(new placeholder[arguments.size()]) {
     std::size_t seed = functor->hash_value();
     std::size_t i = 0;
     for (hashed_s_expr_list::iterator it = arguments.begin();
@@ -841,7 +838,7 @@ public:
 
 }; // class s_pattern_internal
 
-typedef boost::shared_ptr< s_pattern_internal > s_pattern_internal_ptr;
+typedef std::shared_ptr< s_pattern_internal > s_pattern_internal_ptr;
 
 class s_any_pattern_internal : public s_pattern_internal {
 public:
@@ -1465,6 +1462,6 @@ public:
 
 }; // class s_expresion_formatter
 
-} // namespace ikos
+} // namespace arbos
 
 #endif // ARBOS_S_EXPRESSIONS_HPP

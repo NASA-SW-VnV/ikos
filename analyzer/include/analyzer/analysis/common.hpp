@@ -43,15 +43,15 @@
 #define ANALYZER_COMMON_HPP
 
 #include <stdint.h>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 
-#include <ikos/common/types.hpp>
 #include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/discrete_domains.hpp>
 #include <ikos/domains/intervals.hpp>
 
@@ -76,6 +76,9 @@ std::string tostr(analysis_result r) {
   return "warning";
 }
 
+//! Display invariants/checks settings
+enum class display_settings { ALL, FAIL, OFF };
+
 //! Numerical type for indexed objects
 typedef uint64_t index_t;
 
@@ -85,11 +88,11 @@ public:
   class indexed_string {
     friend class VariableFactory;
 
-    boost::shared_ptr< std::string > _s;
+    std::shared_ptr< std::string > _s;
     index_t _id;
     VariableFactory* _vfac;
 
-    indexed_string(boost::shared_ptr< std::string > s,
+    indexed_string(std::shared_ptr< std::string > s,
                    index_t id,
                    VariableFactory* vfac)
         : _s(s), _id(id), _vfac(vfac) {}
@@ -126,7 +129,7 @@ public:
   }; // class indexed_string
 
 private:
-  typedef boost::unordered_map< std::string, indexed_string > map_t;
+  typedef std::unordered_map< std::string, indexed_string > map_t;
 
   index_t _next_id;
   map_t _map;
@@ -141,7 +144,7 @@ public:
   indexed_string operator[](const std::string& s) {
     map_t::iterator it = _map.find(s);
     if (it == _map.end()) {
-      indexed_string is(boost::shared_ptr< std::string >(new std::string(s)),
+      indexed_string is(std::shared_ptr< std::string >(new std::string(s)),
                         _next_id++,
                         this);
       _map.insert(std::pair< std::string, indexed_string >(s, is));
@@ -153,17 +156,24 @@ public:
 
 typedef VariableFactory::varname_t varname_t;
 
-inline std::size_t hash_value(varname_t v) {
-  boost::hash< index_t > hasher;
-  return hasher(v.index());
+inline std::size_t hash_value(const varname_t& v) {
+  return std::hash< index_t >()(v.index());
 }
 
-inline std::size_t hash_value(ikos::z_number n) {
-  std::ostringstream buf;
-  buf << n;
-  boost::hash< std::string > hasher;
-  return hasher(buf.str());
-}
+} // end namespace analyzer
+
+namespace std {
+
+template <>
+struct hash< analyzer::varname_t > {
+  std::size_t operator()(const analyzer::varname_t& v) const {
+    return std::hash< analyzer::index_t >()(v.index());
+  }
+};
+
+} // end namespace std
+
+namespace analyzer {
 
 inline std::string ntostr(ikos::z_number n) {
   std::ostringstream buf;
@@ -172,16 +182,16 @@ inline std::string ntostr(ikos::z_number n) {
 }
 
 typedef ikos::discrete_domain< varname_t > varname_set_t;
-typedef boost::unordered_set< varname_t > unord_varname_set_t;
+typedef std::unordered_set< varname_t > unord_varname_set_t;
 typedef boost::optional< unord_varname_set_t > opt_unord_varname_set_t;
 
 class PointerInfo {
   typedef varname_t VariableName;
-  typedef boost::unordered_map<
+  typedef std::unordered_map<
       VariableName,
       std::pair< ikos::discrete_domain< VariableName >, ikos::z_interval > >
       ptr_map_t;
-  boost::shared_ptr< ptr_map_t > _ptr_map;
+  std::shared_ptr< ptr_map_t > _ptr_map;
 
 public:
   typedef ikos::discrete_domain< VariableName > ptr_set_t;

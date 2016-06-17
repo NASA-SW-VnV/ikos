@@ -45,8 +45,8 @@
 
 #include <analyzer/analysis/common.hpp>
 
-#include <ikos/domains/intervals.hpp>
 #include <ikos/domains/congruences.hpp>
+#include <ikos/domains/intervals.hpp>
 #include <ikos/domains/intervals_congruences.hpp>
 #include <ikos/domains/octagons.hpp>
 #include <ikos/domains/var_packing_dbm_congruences.hpp>

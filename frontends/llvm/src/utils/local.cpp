@@ -1,15 +1,15 @@
 #include "utils/local.hpp"
 
-#include "llvm/Transforms/Utils/Local.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/Statistic.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
-#include "llvm/IR/CFG.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Transforms/Utils/Local.h"
 
 #define DEBUG_TYPE "remove-unreachable-bb"
 
@@ -37,7 +37,13 @@ void ikos_pp::changeToUnreachable(Instruction* I, bool UseLLVMTrap) {
   new UnreachableInst(I->getContext(), I);
 
   // All instructions after this are dead.
-  BasicBlock::iterator BBI = I, BBE = BB->end();
+#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR == 7)
+  BasicBlock::iterator BBI = I;
+#else
+  BasicBlock::iterator BBI = I->getIterator();
+#endif
+  BasicBlock::iterator BBE = BB->end();
+
   while (BBI != BBE) {
     if (!BBI->use_empty())
       BBI->replaceAllUsesWith(UndefValue::get(BBI->getType()));
@@ -85,7 +91,7 @@ static bool markAliveBlocks(BasicBlock* BB,
           ++BBI;
           if (!isa< UnreachableInst >(BBI)) {
             // Don't insert a call to llvm.trap right before the unreachable.
-            ikos_pp::changeToUnreachable(BBI, false);
+            ikos_pp::changeToUnreachable(&*BBI, false);
             Changed = true;
           }
           break;
@@ -142,7 +148,7 @@ static bool markAliveBlocks(BasicBlock* BB,
 /// change was made, false otherwise.
 bool ikos_pp::removeUnreachableBlocks(Function& F) {
   SmallPtrSet< BasicBlock*, 128 > Reachable;
-  bool Changed = markAliveBlocks(F.begin(), Reachable);
+  bool Changed = markAliveBlocks(&*F.begin(), Reachable);
 
   // If there are unreachable blocks in the CFG...
   if (Reachable.size() == F.size())
@@ -154,17 +160,18 @@ bool ikos_pp::removeUnreachableBlocks(Function& F) {
   // Loop over all of the basic blocks that are not reachable, dropping all of
   // their internal references...
   for (Function::iterator BB = ++F.begin(), E = F.end(); BB != E; ++BB) {
-    if (Reachable.count(BB))
+    if (Reachable.count(&*BB))
       continue;
 
-    for (succ_iterator SI = succ_begin(BB), SE = succ_end(BB); SI != SE; ++SI)
+    for (succ_iterator SI = succ_begin(&*BB), SE = succ_end(&*BB); SI != SE;
+         ++SI)
       if (Reachable.count(*SI))
-        (*SI)->removePredecessor(BB);
+        (*SI)->removePredecessor(&*BB);
     BB->dropAllReferences();
   }
 
   for (Function::iterator I = ++F.begin(); I != F.end();)
-    if (!Reachable.count(I))
+    if (!Reachable.count(&*I))
       I = F.getBasicBlockList().erase(I);
     else
       ++I;

@@ -23,7 +23,7 @@ void util_log(util_log_level_t const level,
 
 types_reset_t bsp_reset_get();
 
-void handle_reset(void) {
+int main(int argc, char** argv) {
   const types_reset_t reset = bsp_reset_get();
 
   static const char* const STRING_MAP[] = {"brown-out",
@@ -41,4 +41,6 @@ void handle_reset(void) {
   strcpy(msg, "The cause of the last reset was ");
   strcat(msg, reset_string);
   { util_log(INFO, "../../src/init/init.c", 356, msg, ""); };
+
+  return 0;
 }

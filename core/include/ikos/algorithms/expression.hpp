@@ -46,7 +46,7 @@
 #ifndef IKOS_EXPRESSION_HPP
 #define IKOS_EXPRESSION_HPP
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include <ikos/algorithms/patricia_trees.hpp>
 
@@ -59,11 +59,11 @@ template < typename VariableName, typename Number >
 class _expression : public writeable {
 public:
   typedef _expression< VariableName, Number > _expression_t;
-  typedef boost::shared_ptr< _expression_t > _expression_ptr;
+  typedef std::shared_ptr< _expression_t > _expression_ptr;
   typedef patricia_tree_set< VariableName > variable_set_t;
 
 public:
-  typedef boost::shared_ptr< expression_visitor< VariableName, Number > >
+  typedef std::shared_ptr< expression_visitor< VariableName, Number > >
       expression_visitor_ptr;
 
 protected:
@@ -279,7 +279,7 @@ public:
   variable_set_t variables() { return this->_ptr->variables(); }
 
   void accept(
-      boost::shared_ptr< expression_visitor< VariableName, Number > > visitor) {
+      std::shared_ptr< expression_visitor< VariableName, Number > > visitor) {
     this->_ptr->accept(visitor);
   }
 

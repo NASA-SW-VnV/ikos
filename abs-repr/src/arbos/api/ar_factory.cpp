@@ -5,7 +5,6 @@
  * Authors: Nija Shi
  *          Arnaud J. Venet
  *
- *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -90,7 +89,7 @@ AR_Node_Ref< AR_Type > ARFactory::createType(index64_t id) {
   if (kind == FUNCTION_TYPE) {
     type.setUID(AR_Function_Type::create(e)->getUID());
   } else if (kind == INTEGER_TYPE) {
-    boost::shared_ptr< AR_Integer_Type > int_type(AR_Integer_Type::create(e));
+    std::shared_ptr< AR_Integer_Type > int_type(AR_Integer_Type::create(e));
     type.setUID(int_type->getUID());
   } else if (kind == FLOAT_TYPE) {
     type.setUID(AR_FP_Type::create(e)->getUID());
@@ -230,12 +229,12 @@ std::vector< AR_Node_Ref< AR_Statement > > ARFactory::createStatements(
       AR_Node_Ref< AR_Statement > stmt;
       std::string kind = (static_cast< string_atom& >(**k)).data();
       if (kind == "i") {
-        boost::shared_ptr< AR_Integer_Comparison > icmp(
+        std::shared_ptr< AR_Integer_Comparison > icmp(
             AR_Integer_Comparison::create(parent_bblock, *cmp));
         (*icmp).setSourceLocation(source_location);
         stmt.setUID(icmp->getUID());
       } else if (kind == "fp") {
-        boost::shared_ptr< AR_FP_Comparison > fcmp(
+        std::shared_ptr< AR_FP_Comparison > fcmp(
             AR_FP_Comparison::create(parent_bblock, *cmp));
         (*fcmp).setSourceLocation(source_location);
         stmt.setUID(fcmp->getUID());
@@ -431,9 +430,9 @@ const std::string ARFactory::CST_UNDEFINED = "undefined";
 const std::string ARFactory::LINE = "line";
 
 AR_Node_Ref< AR_Constant > ARFactory::createConstant(s_expression e) {
-  boost::shared_ptr< AR_Constant > cst;
+  std::shared_ptr< AR_Constant > cst;
   if (s_pattern(CST_INTEGER, s_pattern(), s_pattern()) ^ e) {
-    boost::shared_ptr< AR_Integer_Constant > int_cst(
+    std::shared_ptr< AR_Integer_Constant > int_cst(
         AR_Integer_Constant::create(e));
     cst = int_cst;
   } else if (s_pattern(CST_FLOAT, s_pattern(), s_pattern()) ^ e) {
@@ -508,7 +507,7 @@ AR_Node_Ref< AR_Source_Location > ARFactory::createSourceLocation(
 
 AR_Node_Ref< AR_Code > ARFactory::createCode(index64_t parent_function,
                                              s_expression e) {
-  boost::shared_ptr< AR_Code > ar_code(AR_Code::create(parent_function, e));
+  std::shared_ptr< AR_Code > ar_code(AR_Code::create(parent_function, e));
   return AR_Node_Ref< AR_Code >(ar_code->getUID());
 }
 

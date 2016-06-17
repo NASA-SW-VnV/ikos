@@ -1,6 +1,8 @@
 /*******************************************************************************
  *
- * Author: Jorge A. Navas
+ * Utility functions to demangle C++ symbols.
+ *
+ * Authors: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
@@ -38,24 +40,21 @@
  *
  ******************************************************************************/
 
-#ifndef IKOSPP_REMOVE_UNREACHABLE_BLOCKS_HPP
-#define IKOSPP_REMOVE_UNREACHABLE_BLOCKS_HPP
+#ifndef ANALYZER_DEMANGLE_HPP
+#define ANALYZER_DEMANGLE_HPP
 
-#include "llvm/IR/Function.h"
-#include "llvm/Pass.h"
+#include <boost/core/demangle.hpp>
 
-namespace ikos_pp {
-using namespace llvm;
+namespace analyzer {
 
-struct RemoveUnreachableBlocks : public llvm::FunctionPass {
-  static char ID;
-
-  RemoveUnreachableBlocks() : llvm::FunctionPass(ID) {}
-
-  virtual bool runOnFunction(llvm::Function& F);
-
-  virtual void getAnalysisUsage(llvm::AnalysisUsage& AU) const;
-};
+std::string demangle(const std::string& name) {
+  return boost::core::demangle(name.c_str());
 }
 
-#endif // IKOSPP_REMOVE_UNREACHABLE_BLOCKS_HPP
+std::string demangle(const char* name) {
+  return boost::core::demangle(name);
+}
+
+} // end namespace analyzer
+
+#endif // ANALYZER_DEMANGLE_HPP

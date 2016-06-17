@@ -41,12 +41,12 @@
 #ifndef IKOSPP_REMOVE_PRINTF_CALLS_HPP
 #define IKOSPP_REMOVE_PRINTF_CALLS_HPP
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
+#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
-#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 
 namespace ikos_pp {

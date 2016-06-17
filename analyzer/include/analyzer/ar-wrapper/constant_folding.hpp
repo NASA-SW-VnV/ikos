@@ -43,8 +43,8 @@
 #ifndef ANALYZER_CONSTANT_FOLDING_HPP
 #define ANALYZER_CONSTANT_FOLDING_HPP
 
-#include <analyzer/ar-wrapper/wrapper.hpp>
 #include <analyzer/ar-wrapper/transformations.hpp>
+#include <analyzer/ar-wrapper/wrapper.hpp>
 
 namespace arbos {
 namespace transformations {
@@ -53,10 +53,11 @@ class ConstantFolding {
   typedef stmt_replace_operands< Operand_ref > stmt_replace_t;
   typedef stmt_replace_t::substitution_t subst_t;
 
-  typedef boost::unordered_map< Operand_ref,
-                                Operand_ref,
-                                Operand_Hasher::hash,
-                                Operand_Hasher::eq > subst_map_t;
+  typedef std::unordered_map< Operand_ref,
+                              Operand_ref,
+                              Operand_Hasher::hash,
+                              Operand_Hasher::eq >
+      subst_map_t;
 
   subst_map_t _map;
 

@@ -4,9 +4,9 @@
  *
  * Author: Maxime Arthaud
  *
- * The implementation is based on Jorge's interval_congruence_domain.
- *
  * Contact: ikos@lists.nasa.gov
+ *
+ * The implementation is based on Jorge's interval_congruence_domain.
  *
  * Notices:
  *
@@ -46,13 +46,13 @@
 #define IKOS_VAR_PACKING_DBM_CONGRUENCES_HPP
 
 #include <ikos/common/types.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
+#include <ikos/domains/congruences.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/domain_products.hpp>
-#include <ikos/domains/var_packing_dbm.hpp>
-#include <ikos/domains/congruences.hpp>
 #include <ikos/domains/intervals_congruences.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/var_packing_dbm.hpp>
 
 namespace ikos {
 
@@ -83,14 +83,16 @@ public:
   typedef var_packing_dbm_congruence< Number,
                                       VariableName,
                                       max_reduction_cycles,
-                                      typeSize > var_packing_dbm_congruence_t;
+                                      typeSize >
+      var_packing_dbm_congruence_t;
 
 private:
   typedef numerical_domain_product2< Number,
                                      VariableName,
                                      var_packing_dbm_t,
-                                     congruence_domain_t > domain_product_t;
-  typedef boost::shared_ptr< dbm< Number, VariableName > > dbm_ptr_t;
+                                     congruence_domain_t >
+      domain_product_t;
+  typedef std::shared_ptr< dbm< Number, VariableName > > dbm_ptr_t;
   typedef typename var_packing_dbm_t::var_packing_domain_t::equivalence_relation
       equivalence_relation_t;
 

@@ -246,7 +246,7 @@ inline void replaceStatement(Basic_Block_ref b,
 template < typename T >
 class stmt_replace_operands : public arbos_visitor_api {
 public:
-  typedef boost::shared_ptr< stmt_replace_operands > stmt_replace_ptr;
+  typedef std::shared_ptr< stmt_replace_operands > stmt_replace_ptr;
 
   typedef std::pair< Operand_ref, T > substitution_t;
 
@@ -613,7 +613,7 @@ public:
 template < typename T >
 class stmt_replace_internal_vars : public arbos_visitor_api {
 public:
-  typedef boost::shared_ptr< stmt_replace_internal_vars > stmt_replace_ptr;
+  typedef std::shared_ptr< stmt_replace_internal_vars > stmt_replace_ptr;
   typedef std::pair< Internal_Variable_ref, T > substitution_t;
 
 private:

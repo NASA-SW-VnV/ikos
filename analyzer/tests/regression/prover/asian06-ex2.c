@@ -1,7 +1,7 @@
 extern void __ikos_assert(int);
 extern int __ikos_unknown();
 
-void foo() {
+int main(int argc, char** argv) {
   int i, x;
 
   x = 10;
@@ -9,4 +9,5 @@ void foo() {
     x++;
   }
   __ikos_assert(x <= 21);
+  return 0;
 }

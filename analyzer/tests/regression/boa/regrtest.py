@@ -226,9 +226,9 @@ class Test:
                     result = 'error'
                 elif 'warning' in result:
                     result = 'warning'
-                elif result and all(status == 'ok' for status in result):
+                elif 'ok' in result and all(s in ('ok', 'unreachable') for s in result):
                     result = 'ok'
-                elif result and all(status == 'unreachable' for status in result):
+                elif result and all(s == 'unreachable' for s in result):
                     result = 'unreachable'
                 else:
                     result = 'unknown'
@@ -391,6 +391,9 @@ if __name__ == '__main__':
     t.add(Test('test-16.c', 'test-16.c', 'boa', 'safe'))
     t.add(Test('test-17.c', 'test-17.c', 'boa', 'safe', expected='unsafe'))
     t.add(Test('test-17-simpler.c', 'test-17-simpler.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-18.c', 'test-18.c', 'boa', 'safe'))
+    t.add(Test('test-18-unsafe.c', 'test-18-unsafe.c', 'boa', 'error',
+               line_checks=[(19, 'error')]))
     t.add(Test('test-19.c', 'test-19.c', 'boa', 'safe', expected='unsafe'))
     t.add(Test('test-21.c', 'test-21.c', 'boa', 'safe'))
     t.add(Test('test-22-safe.c', 'test-22-safe.c', 'boa', 'safe'))
@@ -415,6 +418,8 @@ if __name__ == '__main__':
     t.add(Test('test-42.c', 'test-42.c', 'boa', 'safe'))
     t.add(Test('test-43.c', 'test-43.c', 'boa', 'safe',
                line_checks=[(19, 'unreachable'), (21, 'unreachable')]))
+    t.add(Test('test-44.c', 'test-44.c', 'boa', 'safe'))
+    t.add(Test('test-44-unsafe.c', 'test-44-unsafe.c', 'boa', 'unsafe'))
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe', line_checks=[(20, 'ok', 'warning')]))
     t.run()

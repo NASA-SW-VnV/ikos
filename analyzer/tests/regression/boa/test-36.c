@@ -26,8 +26,9 @@ static const ts_getter_t TS_GETTERS[] = {
 const foo_bar_ts_t* start_get_ts(void);
 static void create_application_tasks(void);
 
-void init() {
+int main(int argc, char** argv) {
   create_application_tasks();
+  return 0;
 }
 
 static void create_application_tasks(void) {

@@ -47,8 +47,8 @@
 
 #include <boost/iterator/filter_iterator.hpp>
 
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 #include <analyzer/domains/value_domain.hpp>
+#include <analyzer/ikos-wrapper/domains_traits.hpp>
 
 namespace ikos {
 

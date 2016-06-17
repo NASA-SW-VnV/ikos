@@ -40,10 +40,10 @@
  *
  ******************************************************************************/
 
-#include <arbos/semantics/ar.hpp>
-#include <arbos/common/common.hpp>
-#include <iostream>
 #include <algorithm>
+#include <arbos/common/common.hpp>
+#include <arbos/semantics/ar.hpp>
+#include <iostream>
 #include <vector>
 
 using namespace arbos;
@@ -79,7 +79,7 @@ public:
   virtual void execute(AR_Node_Ref< AR_Bundle > bundle) {
     std::cout << "This pass verifies regression test api/factory" << std::endl
               << std::endl;
-    boost::shared_ptr< Verifier > v(new Verifier());
+    std::shared_ptr< Verifier > v(new Verifier());
     (*bundle).accept(v);
     v->print(std::cout);
   }

@@ -42,13 +42,13 @@
  *
  ******************************************************************************/
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <algorithm>
 #include <vector>
 
-#include <arbos/semantics/ar.hpp>
 #include <arbos/common/common.hpp>
+#include <arbos/semantics/ar.hpp>
 
 using namespace arbos;
 
@@ -116,7 +116,7 @@ public:
     std::cout << "This pass verifies regression test parsing/check-srcloc"
               << std::endl
               << std::endl;
-    boost::shared_ptr< Verifier > v(new Verifier());
+    std::shared_ptr< Verifier > v(new Verifier());
     (*bundle).accept(v);
     v->print(std::cout);
   }

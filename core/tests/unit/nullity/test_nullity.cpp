@@ -1,8 +1,8 @@
 #include <iostream>
 
+#include <ikos/algorithms/linear_constraints.hpp>
 #include <ikos/common/bignums.hpp>
 #include <ikos/domains/intervals.hpp>
-#include <ikos/algorithms/linear_constraints.hpp>
 
 #include <ikos/domains/nullity.hpp>
 

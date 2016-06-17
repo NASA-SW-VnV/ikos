@@ -41,7 +41,7 @@
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
 project(ikos)
-set(PACKAGE_VERSION "1.0.0")
+set(PACKAGE_VERSION "1.1.0")
 
 #
 # Build settings

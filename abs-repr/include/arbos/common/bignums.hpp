@@ -44,12 +44,11 @@
 #ifndef ARBOS_BIGNUMS_HPP
 #define ARBOS_BIGNUMS_HPP
 
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <gmpxx.h>
-
-#include <boost/functional/hash.hpp>
+#include <functional>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <arbos/common/types.hpp>
 
@@ -224,12 +223,28 @@ inline std::ostream& operator<<(std::ostream& o, z_number z) {
   return o;
 }
 
-inline std::size_t hash_value(z_number const& n) {
+inline std::size_t hash_value(const z_number& n) {
   std::ostringstream buf;
-  boost::hash< std::string > hasher;
   buf << n;
-  return hasher(buf.str());
+  return std::hash< std::string >()(buf.str());
 }
+
+} // end namespace arbos
+
+namespace std {
+
+template <>
+struct hash< arbos::z_number > {
+  std::size_t operator()(const arbos::z_number& n) const {
+    std::ostringstream buf;
+    buf << n;
+    return std::hash< std::string >()(buf.str());
+  }
+};
+
+} // end namespace std
+
+namespace arbos {
 
 class q_number {
 private:
@@ -382,12 +397,25 @@ inline std::ostream& operator<<(std::ostream& o, q_number q) {
   return o;
 }
 
-inline std::size_t hash_value(q_number const& n) {
+inline std::size_t hash_value(const q_number& n) {
   std::ostringstream buf;
-  boost::hash< std::string > hasher;
   buf << n;
-  return hasher(buf.str());
+  return std::hash< std::string >()(buf.str());
 }
-}
+
+} // end namespace arbos
+
+namespace std {
+
+template <>
+struct hash< arbos::q_number > {
+  std::size_t operator()(const arbos::q_number& n) const {
+    std::ostringstream buf;
+    buf << n;
+    return std::hash< std::string >()(buf.str());
+  }
+};
+
+} // end namespace std
 
 #endif // ARBOS_BIGNUMS_HPP

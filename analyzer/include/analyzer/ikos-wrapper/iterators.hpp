@@ -49,6 +49,8 @@
 
 #include <ikos/iterators/fwd_fixpoint_iterators.hpp>
 
+#include <analyzer/utils/demangle.hpp>
+
 namespace analyzer {
 
 // Wrapper for ikos forward fixpoint iterator
@@ -82,10 +84,10 @@ private:
 
   void process_pre(NodeName node_name, AbsDomain pre) {
     if (this->_is_context_stable) {
-#ifdef DISPLAY_INVARIANTS
+#ifdef DEBUG
       std::cout << "Invariant at the entry of "
-                << this->get_cfg().get_func_name() << "::" << node_name << " : "
-                << pre << std::endl;
+                << demangle(this->get_cfg().get_func_name())
+                << "::" << node_name << " : " << pre << std::endl;
 #endif
       check_pre(node_name, pre);
     }
@@ -93,10 +95,10 @@ private:
 
   void process_post(NodeName node_name, AbsDomain post) {
     if (this->_is_context_stable) {
-#ifdef DISPLAY_INVARIANTS
+#ifdef DEBUG
       std::cout << "Invariant at the exit of "
-                << this->get_cfg().get_func_name() << "::" << node_name << " : "
-                << post << std::endl;
+                << demangle(this->get_cfg().get_func_name())
+                << "::" << node_name << " : " << post << std::endl;
 #endif
       check_post(node_name, post);
     }
@@ -156,10 +158,10 @@ private:
 
   void process_pre(NodeName node_name, AbsDomain post) {
     if (this->_is_context_stable) {
-#ifdef DISPLAY_INVARIANTS
+#ifdef DEBUG
       std::cout << "Invariant at the exit of "
-                << this->get_cfg().get_func_name() << "::" << node_name << " : "
-                << post << std::endl;
+                << demangle(this->get_cfg().get_func_name())
+                << "::" << node_name << " : " << post << std::endl;
 #endif
       check_post(node_name, post);
     }
@@ -167,10 +169,10 @@ private:
 
   void process_post(NodeName node_name, AbsDomain pre) {
     if (this->_is_context_stable) {
-#ifdef DISPLAY_INVARIANTS
+#ifdef DEBUG
       std::cout << "Invariant at the entry of "
-                << this->get_cfg().get_func_name() << "::" << node_name << " : "
-                << pre << std::endl;
+                << demangle(this->get_cfg().get_func_name())
+                << "::" << node_name << " : " << pre << std::endl;
 #endif
       check_pre(node_name, pre);
     }

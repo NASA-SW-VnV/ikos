@@ -32,15 +32,16 @@ We really recommend to build the analyzer from the root directory of the distrib
 
 To build and run the analyzer, you will need the following dependencies:
 
-* GMP
+* CMake 2.8.12.2 or higher
+* GMP 6.1 or higher
 * Boost 1.55 or higher
 * Python 2.7 or 3.3 or higher
 * SQLite 3
 * LLVM 3.7 or higher
-* llvm-clang 3.7
-* A C++ compiler that supports C++14. We support clang and gcc.
+* llvm-clang 3.7 or higher
+* A C++ compiler that supports C++14 (gcc 5 or higher, clang 3.4 or higher)
 
-Most of them can be installed using your package manager. You can use Homebrew under MAC OS X.
+Most of them can be installed using your package manager.
 
 ### BUILD AND INSTALL THE ANALYZER
 
@@ -82,11 +83,11 @@ $ ikos -a boa --show-checks loop.c
 Then you shall see the following output and that IKOS reports two occurrences of buffer overflow at line 8 and 9.
 
 ```
-dlopen successful on /path/to/ikos-installation/lib/libpointer-shift-opt.dylib
+dlopen successful on /path/to/ikos-install-directory/lib/libpointer-shift-opt.dylib
 Loaded ARBOS pass: ps-opt - Optimize pointer shift statements
-dlopen successful on /path/to/ikos-installation/lib/libinline-init-gv.dylib
+dlopen successful on /path/to/ikos-install-directory/lib/libinline-init-gv.dylib
 Loaded ARBOS pass: inline-init-gv - Inline initialization of global variables in main
-dlopen successful on /path/to/ikos-installation/lib/libanalyzer.dylib
+dlopen successful on /path/to/ikos-install-directory/lib/libanalyzer.dylib
 Loaded ARBOS pass: analyzer - Analyzer pass.
 3 pass(es) registered.
 Executing pass - ps-opt Optimize pointer shift statements
@@ -104,12 +105,12 @@ Running value analysis ...
 *** Analyzing function: main
 
 Analysis timing report:
-Liveness analysis: 0.00
-Function pointer analysis: 0.00
-Pointer analysis: 0.01
-Value analysis: 0.01
+Liveness analysis: 0.02
+Function pointer analysis: 0.01
+Pointer analysis: 0.05
+Value analysis: 0.02
 
-Summary:
+Summary (per source code location):
 Total number of checks                : 6
 Total number of unreachable checks    : 0
 Total number of safe checks           : 4
@@ -117,31 +118,33 @@ Total number of definite unsafe checks: 2
 Total number of warnings              : 0
 
 The program is definitely UNSAFE
+
 Buffer overflow analysis checks:
-check     context   file              line result
-overflow  .         /path/to/loop.c   6    ok
-underflow .         /path/to/loop.c   6    ok
-overflow  .         /path/to/loop.c   8    error
-underflow .         /path/to/loop.c   8    ok
-overflow  .         /path/to/loop.c   9    error
-underflow .         /path/to/loop.c   9    ok
+| check     | context | file   | line | col | result |
++-----------+---------+--------+------+-----+--------+
+| overflow  | .       | loop.c | 6    | 14  | ok     |
+| underflow | .       | loop.c | 6    | 14  | ok     |
+| overflow  | .       | loop.c | 8    | 10  | error  |
+| underflow | .       | loop.c | 8    | 10  | ok     |
+| overflow  | .       | loop.c | 9    | 18  | error  |
+| underflow | .       | loop.c | 9    | 18  | ok     |
 ----------------------------------------------------------------------
 BRUNCH_STAT Progress Get Analysis Results
-BRUNCH_STAT arbos_plugins 0.04
-BRUNCH_STAT ikos-pp 0.01
-BRUNCH_STAT llvm-clang 0.06
+BRUNCH_STAT arbos_plugins 0.20
+BRUNCH_STAT ikos-pp 0.00
+BRUNCH_STAT llvm-clang 0.03
 BRUNCH_STAT llvm-to-ar 0.02
 ----------------------------------------------------------------------
 ```
 
 The column `check` describes the type of kind of check (buffer access in this case): `overflow` for accessing an element past the end of a memory block and `underflow` for an access with a negative offset.
-The column `context` shows the call stack of at the time the analysis performed the check. The symbol `.` denotes the `main` function. Each caller (element of the call stack) is denoted by `fname@callsite` separated by the symbol `:` where `fname` is the function name of the caller and `callsite` is the line number of the call site.
-The `file` and `line` columns give the location of the operation checked in the original source code.
+The column `context` shows the call stack of at the time the analysis performed the check. The symbol `.` denotes the `main` function. Each caller (element of the call stack) is denoted by `fname@callsite` separated by the symbol `/` where `fname` is the function name of the caller and `callsite` is the line number of the call site.
+The `file`, `line` and `col` columns give the location of the operation checked in the original source code.
 The column `result` describes the conclusion of the static analyzer on the check:
 
 * **ok** means that the buffer access is safe for all execution contexts;
 * **error** means that the buffer access always results into an error, regardless of the execution context;
-* **warning** may mean two things: 
+* **warning** may mean two things:
    1. the operation results into an error for some execution contexts but not other, or
    2. the static analyzer did not have enough information to conclude, because either the program does not provide enough information (check dependent on the value of an external input for example) or the static analysis algorithms are not powerful enough;
 * **unreachable** means that the code in which the buffer operation is located is never executed (dead code).
@@ -163,7 +166,7 @@ For large programs, we recommend the use of the option `--ikos-pp`:
 $ ikos -a boa --ikos-pp --show-checks prog.bc
 ```
 
-The option `ikos-pp` runs IkosPP, a preprocessor of LLVM bitecode that facilitates the task of static analysis. IkosPP performs a set of LLVM bitcode transformations that can improve both the precision of the subsequent analyses as well as performance.
+The option `ikos-pp` runs Ikos-PP, a preprocessor of LLVM bitecode that facilitates the task of static analysis. IkosPP performs a set of LLVM bitcode transformations that can improve both the precision of the subsequent analyses as well as performance.
 
 ### Compiling a whole C project with LLVM to generate a single .bc file
 
@@ -206,7 +209,7 @@ An *inter-procedural* analysis analyzes a function considering its call stack wh
 
 IKOS implements inter-procedural analysis by inlining function calls. All functions are inlined except:
 
-* recursive functions 
+* recursive functions
 * variable argument list calls
 
 IKOS uses an inter-procedural analysis by default. Provide `--intra` if you want to run an intra-procedural analysis.
@@ -217,12 +220,12 @@ IKOS relies on a *value analysis* that is parametric on the numerical domain use
 
 The current numerical domains are:
 
-* **intervals**: expresses relationships of the form x <= k where x is a variable a k is a (possible negative) constant. For instance, we can express that the variable x is between -10 and 23 with the two constraints x <= 23 and -x <= -10. 
+* **intervals**: expresses relationships of the form x <= k where x is a variable a k is a (possible negative) constant. For instance, we can express that the variable x is between -10 and 23 with the two constraints x <= 23 and -x <= -10.
 
 * **intervals** with **congruences**: expresses interval relationships as well as congruences relationships. A congruence relationship maps a variable to a set of values aZ + b (where a is positive integer and b is an integer). The expression aZ + b means all integers that are congruent to b modulo a. That is, { x | x \in Z, x = b (mod a) }.
 
     Recall that n = m (mod c) means that n is congruent to m modulo c. Informally, n
-    and m have the same remainder when divided by c. For instance, 
+    and m have the same remainder when divided by c. For instance,
 
     * the set of even numbers is {...,-4,-2,0,2,4,...} and is represented
        by 2Z + 0 (i.e., {x | x \in Z, x = 0 (mod 2)})
@@ -294,7 +297,7 @@ Important considerations:
 
 **include/analyzer/analysis/pointer.hpp**: computes for each pointer variable in the ARBOS CFG the set of memory locations to which it may point-to. This is used as a pre-step for improving the precision of the other analyses.
 
-**include/analyzer/analysis/sym_exec_api.hpp**: 
+**include/analyzer/analysis/sym_exec_api.hpp**:
    * API `sym_exec` to perform the abstract transfer function to each ARBOS AR instruction.
    * API `sym_exec_call` to analyze call sites. Each implementation of this API should target different inter-procedural strategies (e.g., context-insensitive, inlining, summary-based, etc).
    * default implementation `context_insensitive_sym_exec_call` for context-insensitive analysis.

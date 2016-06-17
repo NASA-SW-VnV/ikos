@@ -41,7 +41,6 @@
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
 project(ikos-analyzer)
-set(PACKAGE_VERSION "1.0.0")
 
 #
 # Build settings
@@ -103,7 +102,8 @@ if (CUSTOM_BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS "ON")
 endif()
 
-find_package(Boost 1.55.0 REQUIRED)
+find_package(Boost 1.55.0 REQUIRED
+             COMPONENTS filesystem system)
 include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(GMP REQUIRED)
@@ -136,16 +136,6 @@ add_definitions("-DBOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS")
 # Analysis options
 #
 
-option(DISPLAY_INVARIANTS "Write invariants to standard output.")
-if (DISPLAY_INVARIANTS)
-  add_definitions(-DDISPLAY_INVARIANTS)
-endif()
-
-option(DISPLAY_CHECKS "Write each check to standard output.")
-if (DISPLAY_CHECKS)
-  add_definitions(-DDISPLAY_CHECKS)
-endif()
-
 # Choose the numerical abstract domain for the analysis
 # Available choices: INTERVAL, CONGRUENCE, INTERVAL_CONGRUENCE, OCTAGON, DBM, VAR_PACKING_DBM
 set(ABSTRACT_DOMAIN "" CACHE STRING "Numerical abstract domain used by the analysis.")
@@ -161,28 +151,28 @@ include_directories(include)
 
 # arbos optimization passes
 add_library(ar-to-dot SHARED src/ar-passes/ar_to_dot.cpp)
-target_link_libraries(ar-to-dot ${ARBOS_LIB})
+target_link_libraries(ar-to-dot ${ARBOS_LIB} ${Boost_LIBRARIES})
 install(TARGETS ar-to-dot DESTINATION lib OPTIONAL)
 
 add_library(inline-init-gv SHARED src/ar-passes/inline_init_gv.cpp)
-target_link_libraries(inline-init-gv ${ARBOS_LIB})
+target_link_libraries(inline-init-gv ${ARBOS_LIB} ${Boost_LIBRARIES})
 install(TARGETS inline-init-gv DESTINATION lib OPTIONAL)
 
 add_library(pointer-shift-opt SHARED src/ar-passes/pointer_shift_opt.cpp)
-target_link_libraries(pointer-shift-opt ${ARBOS_LIB})
+target_link_libraries(pointer-shift-opt ${ARBOS_LIB} ${Boost_LIBRARIES})
 install(TARGETS pointer-shift-opt DESTINATION lib OPTIONAL)
 
 # analysis passes
 add_library(analyzer SHARED src/ar-passes/analyzer.cpp)
-target_link_libraries(analyzer ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB})
+target_link_libraries(analyzer ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
 install(TARGETS analyzer DESTINATION lib OPTIONAL)
 
 add_library(cpa SHARED EXCLUDE_FROM_ALL src/ar-passes/cpa.cpp)
-target_link_libraries(cpa ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB})
+target_link_libraries(cpa ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
 #install(TARGETS cpa DESTINATION lib OPTIONAL)
 
 add_library(reaching SHARED EXCLUDE_FROM_ALL src/ar-passes/reaching.cpp)
-target_link_libraries(reaching ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB})
+target_link_libraries(reaching ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
 #install(TARGETS reaching DESTINATION lib OPTIONAL)
 
 # python scripts
@@ -190,6 +180,8 @@ install(PROGRAMS scripts/ikos DESTINATION bin OPTIONAL)
 install(FILES scripts/stats.py DESTINATION bin OPTIONAL)
 install(FILES scripts/ikosview.py DESTINATION bin OPTIONAL)
 install(FILES scripts/out.py DESTINATION bin OPTIONAL)
+configure_file(scripts/version.py.in scripts/version.py @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/scripts/version.py" DESTINATION bin OPTIONAL)
 
 #
 # Regression tests

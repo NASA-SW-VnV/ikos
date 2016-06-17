@@ -40,8 +40,8 @@
  *
  ******************************************************************************/
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
 #include <arbos/semantics/ar.hpp>
@@ -108,7 +108,7 @@ public:
     std::cout << "This pass lists all the types used this in the AR"
               << std::endl
               << std::endl;
-    boost::shared_ptr< MyVisitor > v(new MyVisitor());
+    std::shared_ptr< MyVisitor > v(new MyVisitor());
     (*bundle).accept(v);
     v->print(std::cout);
   }

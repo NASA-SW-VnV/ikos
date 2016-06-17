@@ -6,11 +6,11 @@
  *
  * Contributors: Maxime Arthaud
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * The reduce operator based on "Static Analysis of Arithmetical
  * Congruences" by P. Granger published in International Journal of
  * Computer Mathematics, 1989.
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -52,12 +52,12 @@
 #include <iostream>
 
 #include <ikos/common/types.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
+#include <ikos/domains/congruences.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/domain_products.hpp>
-#include <ikos/domains/congruences.hpp>
 #include <ikos/domains/intervals.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
 
 namespace ikos {
 

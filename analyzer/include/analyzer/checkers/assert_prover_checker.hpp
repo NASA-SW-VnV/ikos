@@ -44,8 +44,8 @@
 #define ANALYZER_ASSERT_PROVER_CHECKER_HPP
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/checkers/checker_api.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
+#include <analyzer/checkers/checker_api.hpp>
 
 namespace analyzer {
 
@@ -58,7 +58,11 @@ private:
   typedef typename analysis_db::db_ptr db_ptr_t;
 
 public:
-  assert_prover_checker(context& ctx, db_ptr_t db) : checker_t(ctx, db) {}
+  assert_prover_checker(context& ctx,
+                        db_ptr_t db,
+                        display_settings display_invariants,
+                        display_settings display_checks)
+      : checker_t(ctx, db, display_invariants, display_checks) {}
 
   virtual const char* name() { return "prover"; }
   virtual const char* description() { return "Assertion prover checker"; }
@@ -66,75 +70,88 @@ public:
   virtual void check(Call_ref stmt,
                      AbsDomain inv,
                      const std::string& call_context) {
-    LiteralFactory& lfac = this->_context.lit_factory();
-
     if (ar::isDirectCall(stmt) &&
-        boost::starts_with(ar::getFunctionName(stmt), "__ikos_assert")) {
+        ar::getFunctionName(stmt) == "__ikos_assert") {
+      LiteralFactory& lfac = this->_context.lit_factory();
       location loc = ar::getSrcLoc(stmt);
+      OpRange arguments = ar::getArguments(stmt);
 
-#ifdef DISPLAY_INVARIANTS
-      std::cout << "Invariant at " << location_to_string(loc) << std::endl
-                << inv << std::endl;
-#endif
+      if (arguments.size() != 1)
+        return;
+
+      Literal cond = lfac[arguments[0]];
 
       if (inv.is_bottom()) {
+        if (this->display_check(UNREACHABLE)) {
+          std::cout << location_to_string(loc)
+                    << ": [unreachable] __ikos_assert(" << arguments[0] << ")"
+                    << std::endl;
+        }
+        if (this->display_invariant(UNREACHABLE)) {
+          std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                    << inv << std::endl;
+        }
+
         this->_db->write("prover",
                          call_context,
-                         loc.first,
-                         loc.second,
+                         loc.file,
+                         loc.line,
+                         loc.column,
+                         ar::getUID(stmt),
                          "unreachable");
-#ifdef DISPLAY_CHECKS
-        std::cout << "unreachable"
-                  << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
       } else {
-        OpRange args = ar::getArguments(stmt);
-        if (args.size() == 1) {
-          Literal AssrtCond = lfac[*(args.begin())];
-          z_interval flag = z_interval::bottom();
-          if (AssrtCond.is_var()) {
-            flag =
-                num_abstract_domain_impl::to_interval(inv, AssrtCond.get_var());
-          } else if (AssrtCond.is_num()) {
-            flag = z_interval(AssrtCond.get_num< ikos::z_number >());
-          } else {
-            throw "unreachable";
-          }
-          boost::optional< ikos::z_number > v = flag.singleton();
-          if (v) {
-            if (*v == 0) {
-              this->_db->write("prover",
-                               call_context,
-                               loc.first,
-                               loc.second,
-                               "error");
-#ifdef DISPLAY_CHECKS
-              std::cout << "unsafe"
-                        << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-            } else {
-              this->_db->write("prover",
-                               call_context,
-                               loc.first,
-                               loc.second,
-                               "ok");
-#ifdef DISPLAY_CHECKS
-              std::cout << "safe"
-                        << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-            }
-          } else {
-            this->_db->write("prover",
-                             call_context,
-                             loc.first,
-                             loc.second,
-                             "warning");
-#ifdef DISPLAY_CHECKS
-            std::cout << "warning"
-                      << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-          }
+        z_interval flag = z_interval::bottom();
+        if (cond.is_var()) {
+          flag = num_abstract_domain_impl::to_interval(inv, cond.get_var());
+        } else if (cond.is_num()) {
+          flag = z_interval(cond.get_num< ikos::z_number >());
+        } else {
+          assert(false && "unreachable");
         }
+        boost::optional< ikos::z_number > v = flag.singleton();
+        analysis_result result;
+
+        if (v) {
+          if (*v == 0) {
+            if (this->display_check(ERR)) {
+              std::cout << location_to_string(loc) << ": [error] __ikos_assert("
+                        << arguments[0] << "): ∀x ∈ " << arguments[0]
+                        << ", x == 0" << std::endl;
+            }
+
+            result = ERR;
+          } else {
+            if (this->display_check(OK)) {
+              std::cout << location_to_string(loc) << ": [ok] __ikos_assert("
+                        << arguments[0] << "): ∀x ∈ " << arguments[0]
+                        << ", x > 0" << std::endl;
+            }
+
+            result = OK;
+          }
+        } else {
+          if (this->display_check(WARNING)) {
+            std::cout << location_to_string(loc) << ": [warning] __ikos_assert("
+                      << arguments[0] << "): (∃x ∈ " << arguments[0]
+                      << ", x == 0) and (∃x ∈ " << arguments[0] << ", x > 0)"
+                      << std::endl;
+          }
+
+          result = WARNING;
+        }
+
+        if (this->display_invariant(result)) {
+          std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                    << inv << std::endl;
+        }
+
+        this->_db->write("prover",
+                         call_context,
+                         loc.file,
+                         loc.line,
+                         loc.column,
+                         ar::getUID(stmt),
+                         tostr(result));
       }
     }
   }

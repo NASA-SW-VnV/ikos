@@ -40,12 +40,10 @@
  *
  ******************************************************************************/
 
-#include <iostream>
-#include <sstream>
 #include <fstream>
+#include <iostream>
 #include <set>
-
-#include <boost/shared_ptr.hpp>
+#include <sstream>
 
 #include <analyzer/ar-wrapper/wrapper.hpp>
 
@@ -54,7 +52,7 @@ namespace passes {
 
 class ARToDotVisitor : public arbos_visitor_api {
 public:
-  typedef boost::shared_ptr< ARToDotVisitor > ARToDotVisitorPtr;
+  typedef std::shared_ptr< ARToDotVisitor > ARToDotVisitorPtr;
 
 private:
   std::string _cfg_dot;

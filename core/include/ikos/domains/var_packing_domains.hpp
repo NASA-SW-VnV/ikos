@@ -51,14 +51,15 @@
 #ifndef IKOS_VAR_PACKING_DOMAINS_HPP
 #define IKOS_VAR_PACKING_DOMAINS_HPP
 
-#include <boost/unordered_set.hpp>
+#include <unordered_map>
+#include <unordered_set>
 
-#include <ikos/common/types.hpp>
 #include <ikos/common/bignums.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
 
 namespace ikos {
 
@@ -96,8 +97,8 @@ public:
   friend class var_packing_dbm_congruence;
 
 private:
-  typedef boost::shared_ptr< Domain > domain_ptr_t;
-  typedef boost::unordered_map< VariableName, std::vector< VariableName > >
+  typedef std::shared_ptr< Domain > domain_ptr_t;
+  typedef std::unordered_map< VariableName, std::vector< VariableName > >
       classes_vars_t;
 
 private:
@@ -129,9 +130,8 @@ private:
 
   class equivalence_relation : public writeable {
   private:
-    typedef boost::unordered_map< VariableName, VariableName > parents_map_t;
-    typedef boost::unordered_map< VariableName, equivalence_class >
-        classes_map_t;
+    typedef std::unordered_map< VariableName, VariableName > parents_map_t;
+    typedef std::unordered_map< VariableName, equivalence_class > classes_map_t;
 
   public:
     typedef typename classes_map_t::iterator iterator;
@@ -734,7 +734,7 @@ public:
         const domain_ptr_t& o_domain = o._equiv_relation.find_domain(o_root);
 
         // the set of root variables of equivalence classes we have merged
-        boost::unordered_set< VariableName > this_roots;
+        std::unordered_set< VariableName > this_roots;
 
         // the domain for `this`, containing all needed variables
         domain_ptr_t this_domain;

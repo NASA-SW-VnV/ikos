@@ -41,12 +41,12 @@
 #ifndef IKOSPP_LOWER_SELECT_HPP
 #define IKOSPP_LOWER_SELECT_HPP
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
+#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
-#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 
 namespace ikos_pp {

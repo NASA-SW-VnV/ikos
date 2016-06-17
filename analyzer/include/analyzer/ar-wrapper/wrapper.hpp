@@ -46,7 +46,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/iterator_range.hpp>
-#include <boost/tuple/tuple.hpp>
 
 #include <arbos/semantics/ar.hpp>
 #include <arbos/semantics/fp.hpp>
@@ -278,7 +277,16 @@ private:
 } // end namespace arbos
 
 namespace arbos {
-typedef std::pair< std::string, unsigned long > location;
+
+struct location {
+  std::string file;
+  unsigned long line;
+  unsigned long column;
+
+  location() : file("?"), line(-1), column(-1) {}
+  location(const std::string& f, unsigned long l, unsigned long c)
+      : file(f), line(l), column(c) {}
+};
 
 namespace ar {
 /*
@@ -301,7 +309,7 @@ inline unsigned long getUID(const Node_ref& n) {
 
 //! for applying visitor
 template < class Any_ref >
-inline void accept(const Any_ref& a, boost::shared_ptr< Visitor > vis) {
+inline void accept(const Any_ref& a, std::shared_ptr< Visitor > vis) {
   DEREF(a).accept(vis);
 }
 
@@ -405,12 +413,17 @@ inline bool is_function_type(const Type_ref& type) {
 
 //! get source location of a statement
 inline location getSrcLoc(const Source_Location_ref& srcloc) {
-  location loc("unknown", -1);
+  location loc;
   if (!ar_internal::is_null_ref(srcloc)) {
-    loc.first = DEREF(srcloc).getFilename();
+    loc.file = DEREF(srcloc).getFilename();
+
     std::stringstream o;
     o << DEREF(srcloc).getLineNumber();
-    o >> loc.second;
+    o >> loc.line;
+
+    o.clear();
+    o << DEREF(srcloc).getColumnNumber();
+    o >> loc.column;
   }
   return loc;
 }
@@ -938,51 +951,19 @@ inline std::string getFunctionName(const Function_Addr_Constant_ref& callee) {
 }
 //! get name of the callee function
 inline std::string getFunctionName(const Call_ref& call) {
-  assert(!ar::isIndirectCall(call));
+  assert(ar::isDirectCall(call));
   Function_Addr_Constant_ref callee = ar_internal::getFunctionAddr(call);
   return getFunctionName(callee);
 }
 //! if callee function is external
-inline bool isExternal(const Call_ref& call) {
-  if (isIndirectCall(call))
-    return false;
-
-  Function_ref f = getFunction(call);
+inline bool isExternal(const Function_ref& f) {
   return ar_internal::is_null_ref< Function >(f) ||
          ar_internal::is_null_ref< Code >(ar::getBody(f));
 }
-
-std::size_t getNumOfArgs(Call_ref cs) {
-  OpRange args = ar::getArguments(cs);
-  return args.size();
-}
-
-boost::tuple< Operand_ref > getUnaryArgs(
-    Call_ref cs) { // pre: cs has one argument
-  OpRange args = ar::getArguments(cs);
-  return boost::make_tuple(*(args.begin()));
-}
-
-boost::tuple< Operand_ref, Operand_ref > getBinaryArgs(
-    Call_ref cs) { // pre: cs has two arguments
-  OpRange args = ar::getArguments(cs);
-  OpRange::iterator it = args.begin();
-  Operand_ref first = *it;
-  ++it;
-  Operand_ref second = *it;
-  return boost::make_tuple(first, second);
-}
-
-boost::tuple< Operand_ref, Operand_ref, Operand_ref > getTernaryArgs(
-    Call_ref cs) { // pre: cs has three arguments
-  OpRange args = ar::getArguments(cs);
-  OpRange::iterator it = args.begin();
-  Operand_ref first = *it;
-  ++it;
-  Operand_ref second = *it;
-  ++it;
-  Operand_ref third = *it;
-  return boost::make_tuple(first, second, third);
+inline bool isExternal(const Call_ref& call) {
+  assert(ar::isDirectCall(call));
+  Function_ref f = getFunction(call);
+  return isExternal(f);
 }
 
 inline Call_ref getFunctionCall(Invoke_ref invoke) {
@@ -1471,6 +1452,7 @@ void buildCallGraph(const Bundle_ref& bundle,
 } // end namespace arbos
 
 namespace arbos {
+
 // Customized hasher for Operand_ref
 struct Operand_Hasher {
   static uint64_t _getUID(Operand_ref o) {
@@ -1488,49 +1470,22 @@ struct Operand_Hasher {
 
   struct eq {
     bool operator()(Operand_ref a, Operand_ref b) const {
-      return (_getUID(a) == _getUID(b));
+      return _getUID(a) == _getUID(b);
     }
-
-    /*
-      bool operator() (Operand_ref a, Operand_ref b) const
-      {
-        std::ostringstream buf_a, buf_b;
-        buf_a << a;
-        buf_b << b;
-        return (buf_a.str() == buf_b.str());
-      }
-    */
   };
   struct hash {
     unsigned int operator()(Operand_ref o) const { return _getUID(o); }
-
-    /*
-      unsigned int operator() (Operand_ref o) const
-      {
-        std::ostringstream buf_o;
-        buf_o << o;
-        return boost::hash< std::string >()(buf_o.str()) ;
-      }
-    */
   };
 };
 
 // Customized hasher for Internal_Variable_ref
 struct Internal_Variable_Hasher {
   struct eq {
-    /*
-    bool operator() (Internal_Variable_ref a, Internal_Variable_ref b) const
-    { return (ar::getName (a) == ar::getName (b)); }
-    */
     bool operator()(Internal_Variable_ref a, Internal_Variable_ref b) const {
       return ar::getUID(a) == ar::getUID(b);
     }
   };
   struct hash {
-    /*
-      unsigned int operator() (Internal_Variable_ref a) const
-      { return boost::hash< std::string >()(ar::getName (a)) ; }
-    */
     unsigned int operator()(Internal_Variable_ref a) const {
       return ar::getUID(a);
     }
@@ -1540,43 +1495,75 @@ struct Internal_Variable_Hasher {
 // Customized hasher for Local_Variable_ref
 struct Local_Variable_Hasher {
   struct eq {
-    /*
-    bool operator() (Local_Variable_ref a, Local_Variable_ref b) const
-    { return (ar::getName (a) == ar::getName (b));}
-    */
     bool operator()(Local_Variable_ref a, Local_Variable_ref b) const {
       return ar::getUID(a) == ar::getUID(b);
     }
   };
   struct hash {
-    /*
-    unsigned int operator() (Local_Variable_ref a) const
-    { return boost::hash< std::string >()(ar::getName (a)) ; }
-    */
     unsigned int operator()(Local_Variable_ref a) const {
       return ar::getUID(a);
     }
   };
 };
 
-size_t hash_value(Internal_Variable_ref v) {
-  Internal_Variable_Hasher::hash h;
-  return h(v);
+std::size_t hash_value(Internal_Variable_ref v) {
+  return Internal_Variable_Hasher::hash()(v);
 }
-size_t hash_value(Operand_ref o) {
-  Operand_Hasher::hash h;
-  return h(o);
+std::size_t hash_value(Operand_ref o) {
+  return Operand_Hasher::hash()(o);
 }
-size_t hash_value(Local_Variable_ref v) {
-  Local_Variable_Hasher::hash h;
-  return h(v);
+std::size_t hash_value(Local_Variable_ref v) {
+  return Local_Variable_Hasher::hash()(v);
 }
-size_t hash_value(Basic_Block_ref b) {
+std::size_t hash_value(Basic_Block_ref b) {
   return ar::getUID(b);
 }
-size_t hash_value(Function_ref f) {
+std::size_t hash_value(Function_ref f) {
   return ar::getUID(f);
 }
+
+} // end namespace arbos
+
+namespace std {
+
+template <>
+struct hash< arbos::Internal_Variable_ref > {
+  std::size_t operator()(const arbos::Internal_Variable_ref& v) const {
+    return arbos::Internal_Variable_Hasher::hash()(v);
+  }
+};
+
+template <>
+struct hash< arbos::Operand_ref > {
+  std::size_t operator()(const arbos::Operand_ref& o) const {
+    return arbos::Operand_Hasher::hash()(o);
+  }
+};
+
+template <>
+struct hash< arbos::Local_Variable_ref > {
+  std::size_t operator()(const arbos::Local_Variable_ref& v) const {
+    return arbos::Local_Variable_Hasher::hash()(v);
+  }
+};
+
+template <>
+struct hash< arbos::Basic_Block_ref > {
+  std::size_t operator()(const arbos::Basic_Block_ref& b) const {
+    return arbos::ar::getUID(b);
+  }
+};
+
+template <>
+struct hash< arbos::Function_ref > {
+  std::size_t operator()(const arbos::Function_ref& f) const {
+    return arbos::ar::getUID(f);
+  }
+};
+
+} // end namespace std
+
+namespace arbos {
 
 template < typename T1, typename T2 >
 inline bool IsEqual(T1 x, T2 y) {

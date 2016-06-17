@@ -46,16 +46,16 @@
 #define IKOS_LINEAR_CONSTRAINTS_HPP
 
 #include <iostream>
+#include <memory>
 #include <utility>
 
-#include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/slist.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/optional.hpp>
 
-#include <ikos/common/types.hpp>
 #include <ikos/algorithms/patricia_trees.hpp>
+#include <ikos/common/types.hpp>
 
 namespace ikos {
 
@@ -69,7 +69,7 @@ public:
 
 private:
   typedef boost::container::flat_map< variable_t, Number > map_t;
-  typedef boost::shared_ptr< map_t > map_ptr;
+  typedef std::shared_ptr< map_t > map_ptr;
   typedef typename map_t::value_type pair_t;
 
 private:

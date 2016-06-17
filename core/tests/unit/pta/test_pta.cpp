@@ -1,8 +1,7 @@
-#include <ikos/domains/pta.hpp>
 #include <ikos/domains/intervals.hpp>
+#include <ikos/domains/pta.hpp>
 
 using namespace std;
-using namespace boost;
 using namespace ikos;
 
 void test1() {

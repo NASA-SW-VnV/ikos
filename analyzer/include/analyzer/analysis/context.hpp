@@ -43,9 +43,9 @@
 #ifndef ANALYZER_CONTEXT_HPP
 #define ANALYZER_CONTEXT_HPP
 
-#include <analyzer/ar-wrapper/wrapper.hpp>
-#include <analyzer/analysis/liveness.hpp>
 #include <analyzer/analysis/common.hpp>
+#include <analyzer/analysis/liveness.hpp>
+#include <analyzer/ar-wrapper/wrapper.hpp>
 #include <analyzer/utils/sqlite_api.hpp>
 
 namespace analyzer {
@@ -94,8 +94,9 @@ public:
   TrackedPrecision prec_level() const { return _cfgfac.getPrecLevel(); }
   db_t db() { return _db; }
 
-  boost::optional< Function_ref > operator[](varname_t fname) const {
-    return ar::getFunction(_bundle, fname.name());
+  boost::optional< Function_ref > operator[](
+      const std::string& fun_name) const {
+    return ar::getFunction(_bundle, fun_name);
   }
 
   arbos_cfg operator[](Function_ref f) const { return _cfgfac[f]; }

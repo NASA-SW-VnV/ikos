@@ -44,10 +44,10 @@
 #ifndef ANALYZER_FUNCTION_POINTER_HPP
 #define ANALYZER_FUNCTION_POINTER_HPP
 
-#include <analyzer/ikos-wrapper/iterators.hpp>
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ar-wrapper/cfg.hpp>
 #include <analyzer/analysis/pointer.hpp>
+#include <analyzer/ar-wrapper/cfg.hpp>
+#include <analyzer/ikos-wrapper/iterators.hpp>
 
 namespace analyzer {
 
@@ -92,7 +92,7 @@ private:
   typedef TopDomain< VariableName, Number > AbsNumDomain;
   typedef NumericalAnalysis< AbsNumDomain, VariableName, Number >
       numerical_analysis_t;
-  typedef boost::shared_ptr< numerical_analysis_t > numerical_analysis_ptr_t;
+  typedef std::shared_ptr< numerical_analysis_t > numerical_analysis_ptr_t;
   typedef PointerPass::PTA< AbsNumDomain, numerical_analysis_t > pta_t;
 
 private:
@@ -123,14 +123,14 @@ public:
     for (FuncRange::iterator it = functions.begin(); it != functions.end();
          ++it) {
       Function_ref fun = *it;
-      boost::shared_ptr< pta_t > visitor(new pta_t(bundle,
-                                                   fun,
-                                                   csts_system,
-                                                   num_analysis,
-                                                   _lfac,
-                                                   _vfac,
-                                                   pt_var_map,
-                                                   address_map));
+      std::shared_ptr< pta_t > visitor(new pta_t(bundle,
+                                                 fun,
+                                                 csts_system,
+                                                 num_analysis,
+                                                 _lfac,
+                                                 _vfac,
+                                                 pt_var_map,
+                                                 address_map));
       ar::accept(fun, visitor);
     }
 

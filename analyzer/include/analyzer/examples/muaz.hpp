@@ -5,10 +5,10 @@
  *
  * Author: Jorge A. Navas
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * The CFG can be also reversed which is useful for backward dataflow
  * analysis.
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -47,29 +47,28 @@
 #ifndef ANALYZER_MUAZ_HPP
 #define ANALYZER_MUAZ_HPP
 
-#include <string>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <map>
-#include <algorithm>
 
-#include <ikos/common/types.hpp>
-#include <ikos/common/bignums.hpp>
-#include <ikos/algorithms/linear_constraints.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 #include <boost/flyweight.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+
+#include <ikos/algorithms/linear_constraints.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 
 // namespace boost
 // {
 //   // To use flyweight as boost::unordered_map keys
 //   std::size_t hash_value(boost::flyweight<std::string> s)
 //   {
-//     boost::hash<std::string> hasher;
-//     const std::string & str = s.get();
-//     return hasher(str);
+//     return std::hash< std::string >()(s.get);
 //   }
 // }
 
@@ -423,34 +422,34 @@ public:
   typedef basic_block< VariableName, CheckPointName > basic_block_t;
   // typedef boost::flyweight< std::string > identifier_t;
   typedef std::string identifier_t;
-  typedef std::set< identifier_t > identifier_set_t;
-  typedef boost::shared_ptr< identifier_set_t > identifier_set_ptr;
+  typedef std::unordered_set< identifier_t > identifier_set_t;
+  typedef std::shared_ptr< identifier_set_t > identifier_set_ptr;
   typedef variable< z_number, VariableName > z_variable_t;
   typedef linear_expression< z_number, VariableName > z_linear_expression_t;
   typedef linear_constraint< z_number, VariableName > z_linear_constraint_t;
 
 private:
-  typedef boost::shared_ptr< basic_block_t > basic_block_ptr;
-  typedef boost::shared_ptr< statement_t > statement_ptr;
+  typedef std::shared_ptr< basic_block_t > basic_block_ptr;
+  typedef std::shared_ptr< statement_t > statement_ptr;
   typedef std::vector< statement_ptr > stmt_list_t;
-  typedef boost::shared_ptr< stmt_list_t > stmt_list_ptr;
+  typedef std::shared_ptr< stmt_list_t > stmt_list_ptr;
 
   // Here the type of statements
   typedef z_binary_operation< VariableName, CheckPointName >
       z_binary_operation_t;
-  typedef boost::shared_ptr< z_binary_operation_t > z_binary_operation_ptr;
+  typedef std::shared_ptr< z_binary_operation_t > z_binary_operation_ptr;
   typedef z_linear_assignment< VariableName, CheckPointName >
       z_linear_assignment_t;
-  typedef boost::shared_ptr< z_linear_assignment_t > z_linear_assignment_ptr;
+  typedef std::shared_ptr< z_linear_assignment_t > z_linear_assignment_ptr;
   typedef z_linear_assertion< VariableName, CheckPointName >
       z_linear_assertion_t;
-  typedef boost::shared_ptr< z_linear_assertion_t > z_linear_assertion_ptr;
+  typedef std::shared_ptr< z_linear_assertion_t > z_linear_assertion_ptr;
   typedef checkpoint< VariableName, CheckPointName > checkpoint_t;
-  typedef boost::shared_ptr< checkpoint_t > checkpoint_ptr;
+  typedef std::shared_ptr< checkpoint_t > checkpoint_ptr;
   typedef z_array_write< VariableName, CheckPointName > z_array_write_t;
-  typedef boost::shared_ptr< z_array_write_t > z_array_write_ptr;
+  typedef std::shared_ptr< z_array_write_t > z_array_write_ptr;
   typedef z_array_read< VariableName, CheckPointName > z_array_read_t;
-  typedef boost::shared_ptr< z_array_read_t > z_array_read_ptr;
+  typedef std::shared_ptr< z_array_read_t > z_array_read_ptr;
 
 private:
   identifier_t _name;
@@ -556,53 +555,53 @@ public:
   }
 
   void add(z_variable_t lhs, z_variable_t op1, z_variable_t op2) {
-    this->add(boost::static_pointer_cast< statement_t, z_binary_operation_t >(
+    this->add(std::static_pointer_cast< statement_t, z_binary_operation_t >(
         z_binary_operation_ptr(
             new z_binary_operation_t(lhs, OP_ADDITION, op1, op2))));
   }
 
   void sub(z_variable_t lhs, z_variable_t op1, z_variable_t op2) {
-    this->add(boost::static_pointer_cast< statement_t, z_binary_operation_t >(
+    this->add(std::static_pointer_cast< statement_t, z_binary_operation_t >(
         z_binary_operation_ptr(
             new z_binary_operation_t(lhs, OP_SUBTRACTION, op1, op2))));
   }
 
   void mul(z_variable_t lhs, z_variable_t op1, z_variable_t op2) {
-    this->add(boost::static_pointer_cast< statement_t, z_binary_operation_t >(
+    this->add(std::static_pointer_cast< statement_t, z_binary_operation_t >(
         z_binary_operation_ptr(
             new z_binary_operation_t(lhs, OP_MULTIPLICATION, op1, op2))));
   }
 
   void div(z_variable_t lhs, z_variable_t op1, z_variable_t op2) {
-    this->add(boost::static_pointer_cast< statement_t, z_binary_operation_t >(
+    this->add(std::static_pointer_cast< statement_t, z_binary_operation_t >(
         z_binary_operation_ptr(
             new z_binary_operation_t(lhs, OP_DIVISION, op1, op2))));
   }
 
   void assign(z_variable_t lhs, z_linear_expression_t rhs) {
-    this->add(boost::static_pointer_cast< statement_t, z_linear_assignment_t >(
+    this->add(std::static_pointer_cast< statement_t, z_linear_assignment_t >(
         z_linear_assignment_ptr(new z_linear_assignment_t(lhs, rhs))));
   }
 
   void write(z_variable_t array,
              z_linear_expression_t index,
              z_linear_expression_t value) {
-    this->add(boost::static_pointer_cast< statement_t, z_array_write_t >(
+    this->add(std::static_pointer_cast< statement_t, z_array_write_t >(
         z_array_write_ptr(new z_array_write_t(array, index, value))));
   }
 
   void read(z_variable_t lhs, z_variable_t array, z_linear_expression_t index) {
-    this->add(boost::static_pointer_cast< statement_t, z_array_read_t >(
+    this->add(std::static_pointer_cast< statement_t, z_array_read_t >(
         z_array_read_ptr(new z_array_read_t(lhs, array, index))));
   }
 
   void assertion(z_linear_constraint_t cst) {
-    this->add(boost::static_pointer_cast< statement_t, z_linear_assertion_t >(
+    this->add(std::static_pointer_cast< statement_t, z_linear_assertion_t >(
         z_linear_assertion_ptr(new z_linear_assertion_t(cst))));
   }
 
   void check(std::string name) {
-    this->add(boost::static_pointer_cast< statement_t, checkpoint_t >(
+    this->add(std::static_pointer_cast< statement_t, checkpoint_t >(
         checkpoint_ptr(new checkpoint_t(name))));
   }
 
@@ -618,13 +617,14 @@ public:
 
 private:
   typedef muaz_cfg< VariableName, CheckPointName > muaz_cfg_t;
-  typedef boost::shared_ptr< basic_block_t > basic_block_ptr;
-  // boost::unordered_map does not take flyweight's directly as keys
-  // typedef boost::unordered_map< basic_block_id_t, basic_block_ptr >
+  typedef std::shared_ptr< basic_block_t > basic_block_ptr;
+  // std::unordered_map does not take flyweight's directly as keys
+  // typedef std::unordered_map< basic_block_id_t, basic_block_ptr >
   // basic_block_map_t;
-  typedef std::map< basic_block_id_t, basic_block_ptr > basic_block_map_t;
+  typedef std::unordered_map< basic_block_id_t, basic_block_ptr >
+      basic_block_map_t;
   typedef std::pair< basic_block_id_t, basic_block_ptr > binding_t;
-  typedef boost::shared_ptr< basic_block_map_t > basic_block_map_ptr;
+  typedef std::shared_ptr< basic_block_map_t > basic_block_map_ptr;
 
 private:
   basic_block_id_t _entry;
@@ -640,9 +640,9 @@ public:
 
   private:
     typedef std::vector< basic_block_id_t > id_list_t;
-    typedef boost::shared_ptr< id_list_t > id_list_ptr;
-    typedef std::set< basic_block_id_t > id_set_t;
-    typedef boost::shared_ptr< id_set_t > id_set_ptr;
+    typedef std::shared_ptr< id_list_t > id_list_ptr;
+    typedef std::unordered_set< basic_block_id_t > id_set_t;
+    typedef std::shared_ptr< id_set_t > id_set_ptr;
 
   private:
     basic_block_map_ptr _blocks;

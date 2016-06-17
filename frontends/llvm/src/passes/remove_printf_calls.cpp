@@ -42,12 +42,12 @@
 
 #include <vector>
 
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/ADT/Statistic.h"
 #include "llvm/ADT/SmallSet.h"
-#include "llvm/IR/Value.h"
-#include "llvm/IR/User.h"
+#include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/User.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "passes/remove_printf_calls.hpp"
 

@@ -6,10 +6,10 @@
  *
  * Contributors: Jorge A. Navas
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * Based on Antoine Mine's paper: The Octagon Abstract Domain, in
  * Higher-Order and Symbolic Computation, 19(1): 31-100 (2006)
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -64,13 +64,13 @@
 #include <boost/container/flat_map.hpp>
 #include <boost/optional.hpp>
 
-#include <ikos/common/types.hpp>
-#include <ikos/common/bignums.hpp>
 #include <ikos/algorithms/linear_constraints.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
 
 // #define VERBOSE
 

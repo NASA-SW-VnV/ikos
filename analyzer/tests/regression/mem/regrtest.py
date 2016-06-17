@@ -226,9 +226,9 @@ class Test:
                     result = 'error'
                 elif 'warning' in result:
                     result = 'warning'
-                elif result and all(status == 'ok' for status in result):
+                elif 'ok' in result and all(s in ('ok', 'unreachable') for s in result):
                     result = 'ok'
-                elif result and all(status == 'unreachable' for status in result):
+                elif result and all(s == 'unreachable' for s in result):
                     result = 'unreachable'
                 else:
                     result = 'unknown'

@@ -41,7 +41,6 @@
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
 project(abstract-representation-llvm-frontend)
-set(PACKAGE_VERSION "1.0.0")
 
 #
 # Build settings
@@ -123,8 +122,8 @@ include_directories(${ARBOS_INCLUDE_DIR})
 find_package(LLVM REQUIRED)
 message(STATUS "Found LLVM ${LLVM_VERSION}")
 
-if (NOT LLVM_VERSION EQUAL 3.7)
-  message(FATAL_ERROR "llvm 3.7 required.")
+if (LLVM_VERSION VERSION_LESS "3.7")
+  message(FATAL_ERROR "llvm 3.7 or higher required.")
 endif()
 
 set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")
@@ -191,7 +190,6 @@ llvm_map_components_to_libnames(IKOS_PP_LLVM_LIBS
   core
   instcombine
   instrumentation
-  ipa
   ipo
   irreader
   mc
@@ -203,5 +201,11 @@ llvm_map_components_to_libnames(IKOS_PP_LLVM_LIBS
   vectorize
 )
 target_link_libraries(ikos-pp ${IKOS_PP_LLVM_LIBS})
+
+if (LLVM_VERSION VERSION_LESS "3.8")
+  # IPA is only available on llvm 3.7 and below
+  llvm_map_components_to_libnames(IKOS_PP_IPA ipa)
+  target_link_libraries(ikos-pp ${IKOS_PP_IPA})
+endif()
 
 install(TARGETS ikos-pp RUNTIME DESTINATION bin OPTIONAL)

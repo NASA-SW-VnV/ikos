@@ -43,8 +43,10 @@
 #ifndef ANALYZER_CALL_GRAPH_TOPOLOGY_HPP
 #define ANALYZER_CALL_GRAPH_TOPOLOGY_HPP
 
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <memory>
+#include <unordered_map>
+#include <unordered_set>
+
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
 
@@ -62,14 +64,14 @@ namespace analyzer {
  */
 class StrongComponentsGraph {
 public:
-  typedef boost::unordered_set< Function_ref > vertices_t;
-  typedef boost::unordered_map< Function_ref, vertices_t > edges_map_t;
+  typedef std::unordered_set< Function_ref > vertices_t;
+  typedef std::unordered_map< Function_ref, vertices_t > edges_map_t;
 
 private:
-  typedef boost::unordered_map< Function_ref, std::size_t > component_map_t;
-  typedef boost::unordered_map< Function_ref, boost::default_color_type >
+  typedef std::unordered_map< Function_ref, std::size_t > component_map_t;
+  typedef std::unordered_map< Function_ref, boost::default_color_type >
       color_map_t;
-  typedef boost::unordered_map< Function_ref, Function_ref > root_map_t;
+  typedef std::unordered_map< Function_ref, Function_ref > root_map_t;
 
 private:
   Bundle_ref _bundle;
@@ -142,18 +144,18 @@ public:
       vertices_t& root_out_edges = _out_edges[root];
 
       std::pair< succ_iterator_t, succ_iterator_t > succs =
-          boost::out_edges(fun, _bundle);
+          arbos::out_edges(fun, _bundle);
       for (succ_iterator_t s_it = succs.first; s_it != succs.second; ++s_it) {
-        Function_ref out = _root_map[boost::target(*s_it, _bundle)];
+        Function_ref out = _root_map[target(*s_it, _bundle)];
         if (out != root) {
           root_out_edges.insert(out);
         }
       }
 
       std::pair< pred_iterator_t, pred_iterator_t > preds =
-          boost::in_edges(fun, _bundle);
+          arbos::in_edges(fun, _bundle);
       for (pred_iterator_t p_it = preds.first; p_it != preds.second; ++p_it) {
-        Function_ref in = _root_map[boost::source(*p_it, _bundle)];
+        Function_ref in = _root_map[source(*p_it, _bundle)];
         if (in != root) {
           root_in_edges.insert(in);
         }
@@ -180,9 +182,9 @@ public:
 
 /*
  * http://www.boost.org/doc/libs/1_55_0/libs/graph/doc/faq.html
- * BGL uses calls by value. To improve performance, we use boost::shared_ptr
+ * BGL uses calls by value. To improve performance, we use std::shared_ptr
  */
-typedef boost::shared_ptr< StrongComponentsGraph > StrongComponentsGraph_ref;
+typedef std::shared_ptr< StrongComponentsGraph > StrongComponentsGraph_ref;
 
 } // end namespace analyzer
 
@@ -219,91 +221,88 @@ struct graph_traits< analyzer::StrongComponentsGraph_ref > {
 
 }; // end class graph_traits
 
-graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor source(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::edge_descriptor e,
-    analyzer::StrongComponentsGraph_ref g) {
+} // end namespace boost
+
+namespace analyzer {
+
+boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor source(
+    boost::graph_traits< StrongComponentsGraph_ref >::edge_descriptor e,
+    StrongComponentsGraph_ref g) {
   return e.first;
 }
 
-graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor target(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::edge_descriptor e,
-    analyzer::StrongComponentsGraph_ref g) {
+boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor target(
+    boost::graph_traits< StrongComponentsGraph_ref >::edge_descriptor e,
+    StrongComponentsGraph_ref g) {
   return e.second;
 }
 
-std::pair<
-    graph_traits< analyzer::StrongComponentsGraph_ref >::in_edge_iterator,
-    graph_traits< analyzer::StrongComponentsGraph_ref >::in_edge_iterator >
-in_edges(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor v,
-    analyzer::StrongComponentsGraph_ref g) {
+std::pair< boost::graph_traits< StrongComponentsGraph_ref >::in_edge_iterator,
+           boost::graph_traits< StrongComponentsGraph_ref >::in_edge_iterator >
+in_edges(boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor v,
+         StrongComponentsGraph_ref g) {
   return std::
-      make_pair(make_transform_iterator(g->in_edges(v).begin(),
-                                        arbos::graph::MkInEdge<
-                                            analyzer::
-                                                StrongComponentsGraph_ref >(v)),
-                make_transform_iterator(g->in_edges(v).end(),
-                                        arbos::graph::MkInEdge<
-                                            analyzer::
-                                                StrongComponentsGraph_ref >(
-                                            v)));
+      make_pair(boost::make_transform_iterator(g->in_edges(v).begin(),
+                                               arbos::graph::MkInEdge<
+                                                   StrongComponentsGraph_ref >(
+                                                   v)),
+                boost::make_transform_iterator(g->in_edges(v).end(),
+                                               arbos::graph::MkInEdge<
+                                                   StrongComponentsGraph_ref >(
+                                                   v)));
 }
 
 std::size_t in_degree(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor v,
-    analyzer::StrongComponentsGraph_ref g) {
+    boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor v,
+    StrongComponentsGraph_ref g) {
   return g->in_edges(v).size();
 }
 
-std::pair<
-    graph_traits< analyzer::StrongComponentsGraph_ref >::out_edge_iterator,
-    graph_traits< analyzer::StrongComponentsGraph_ref >::out_edge_iterator >
-out_edges(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor v,
-    analyzer::StrongComponentsGraph_ref g) {
+std::pair< boost::graph_traits< StrongComponentsGraph_ref >::out_edge_iterator,
+           boost::graph_traits< StrongComponentsGraph_ref >::out_edge_iterator >
+out_edges(boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor v,
+          StrongComponentsGraph_ref g) {
   return std::
-      make_pair(make_transform_iterator(g->out_edges(v).begin(),
-                                        arbos::graph::MkOutEdge<
-                                            analyzer::
-                                                StrongComponentsGraph_ref >(v)),
-                make_transform_iterator(g->out_edges(v).end(),
-                                        arbos::graph::MkOutEdge<
-                                            analyzer::
-                                                StrongComponentsGraph_ref >(
-                                            v)));
+      make_pair(boost::make_transform_iterator(g->out_edges(v).begin(),
+                                               arbos::graph::MkOutEdge<
+                                                   StrongComponentsGraph_ref >(
+                                                   v)),
+                boost::make_transform_iterator(g->out_edges(v).end(),
+                                               arbos::graph::MkOutEdge<
+                                                   StrongComponentsGraph_ref >(
+                                                   v)));
 }
 
 std::size_t out_degree(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor v,
-    analyzer::StrongComponentsGraph_ref g) {
+    boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor v,
+    StrongComponentsGraph_ref g) {
   return g->out_edges(v).size();
 }
 
 std::size_t degree(
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_descriptor v,
-    analyzer::StrongComponentsGraph_ref g) {
+    boost::graph_traits< StrongComponentsGraph_ref >::vertex_descriptor v,
+    StrongComponentsGraph_ref g) {
   return out_degree(v, g) + in_degree(v, g);
 }
 
-std::pair<
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_iterator,
-    graph_traits< analyzer::StrongComponentsGraph_ref >::vertex_iterator >
-vertices(analyzer::StrongComponentsGraph_ref g) {
+std::pair< boost::graph_traits< StrongComponentsGraph_ref >::vertex_iterator,
+           boost::graph_traits< StrongComponentsGraph_ref >::vertex_iterator >
+vertices(StrongComponentsGraph_ref g) {
   return std::make_pair(g->vertices().begin(), g->vertices().end());
 }
 
-std::size_t num_vertices(analyzer::StrongComponentsGraph_ref g) {
+std::size_t num_vertices(StrongComponentsGraph_ref g) {
   return g->vertices().size();
 }
 
-} // end namespace boost
+} // end namespace analyzer
 
 namespace analyzer {
 
 // Compute the topological sort of a StrongComponentsGraph.
 std::vector< Function_ref > topological_sort(StrongComponentsGraph_ref g) {
   // initialize
-  typedef boost::unordered_map< Function_ref, boost::default_color_type >
+  typedef std::unordered_map< Function_ref, boost::default_color_type >
       color_map_t;
   typedef boost::associative_property_map< color_map_t > property_color_map_t;
 

@@ -55,21 +55,20 @@
 #define IKOS_PTA_HPP
 
 #include <iostream>
-#include <set>
 #include <sstream>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/unordered_map.hpp>
-
-#include <ikos/common/types.hpp>
 #include <ikos/common/bignums.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/intervals.hpp>
 
 namespace ikos {
 
-typedef boost::unordered_map< index64_t, index64_t > uid_map;
-typedef std::set< index64_t > uid_set;
+typedef std::unordered_map< index64_t, index64_t > uid_map;
+typedef std::unordered_set< index64_t > uid_set;
 
 uid_map internal_to_external;
 uid_set function_ids;
@@ -156,8 +155,8 @@ public:
 
 }; // class pointer_ref
 
-boost::shared_ptr< pointer_ref > operator+(pointer_var v, z_interval o) {
-  return boost::shared_ptr< pointer_ref >(new pointer_ref(v, o));
+std::shared_ptr< pointer_ref > operator+(pointer_var v, z_interval o) {
+  return std::shared_ptr< pointer_ref >(new pointer_ref(v, o));
 }
 
 class function_ref : public pta_ref {
@@ -179,8 +178,8 @@ public:
 
 }; // class function_ref
 
-boost::shared_ptr< function_ref > mk_function_ref(index64_t uid) {
-  return boost::shared_ptr< function_ref >(new function_ref(uid));
+std::shared_ptr< function_ref > mk_function_ref(index64_t uid) {
+  return std::shared_ptr< function_ref >(new function_ref(uid));
 }
 
 class object_ref : public pta_ref {
@@ -206,9 +205,9 @@ public:
 
 }; // class object_ref
 
-boost::shared_ptr< object_ref > mk_object_ref(index64_t address,
-                                              z_interval offset) {
-  return boost::shared_ptr< object_ref >(new object_ref(address, offset));
+std::shared_ptr< object_ref > mk_object_ref(index64_t address,
+                                            z_interval offset) {
+  return std::shared_ptr< object_ref >(new object_ref(address, offset));
 }
 
 class param_ref : public pta_ref {
@@ -234,9 +233,9 @@ public:
 
 }; // class param_ref
 
-boost::shared_ptr< param_ref > mk_param_ref(pointer_var fptr,
-                                            unsigned int param) {
-  return boost::shared_ptr< param_ref >(new param_ref(fptr, param));
+std::shared_ptr< param_ref > mk_param_ref(pointer_var fptr,
+                                          unsigned int param) {
+  return std::shared_ptr< param_ref >(new param_ref(fptr, param));
 }
 
 class return_ref : public pta_ref {
@@ -258,8 +257,8 @@ public:
 
 }; // class return_ref
 
-boost::shared_ptr< return_ref > mk_return_ref(pointer_var fptr) {
-  return boost::shared_ptr< return_ref >(new return_ref(fptr));
+std::shared_ptr< return_ref > mk_return_ref(pointer_var fptr) {
+  return std::shared_ptr< return_ref >(new return_ref(fptr));
 }
 
 typedef enum { CST_ASSIGN, CST_STORE, CST_LOAD } pta_constraint_kind;
@@ -282,10 +281,10 @@ std::ostream& operator<<(std::ostream& o, const pta_constraint& c) {
 class pta_assign : public pta_constraint {
 public:
   pointer_var _lhs;
-  boost::shared_ptr< pta_ref > _rhs;
+  std::shared_ptr< pta_ref > _rhs;
 
 public:
-  pta_assign(pointer_var lhs, boost::shared_ptr< pta_ref > rhs)
+  pta_assign(pointer_var lhs, std::shared_ptr< pta_ref > rhs)
       : _lhs(lhs), _rhs(rhs) {}
 
   void print(std::ostream& o) const {
@@ -297,38 +296,38 @@ public:
 
 }; // class pta_assign
 
-boost::shared_ptr< pta_constraint > operator==(
-    pointer_var lhs, boost::shared_ptr< pointer_ref > rhs) {
-  return boost::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
+std::shared_ptr< pta_constraint > operator==(
+    pointer_var lhs, std::shared_ptr< pointer_ref > rhs) {
+  return std::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
 }
 
-boost::shared_ptr< pta_constraint > operator==(
-    pointer_var lhs, boost::shared_ptr< object_ref > rhs) {
-  return boost::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
+std::shared_ptr< pta_constraint > operator==(
+    pointer_var lhs, std::shared_ptr< object_ref > rhs) {
+  return std::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
 }
 
-boost::shared_ptr< pta_constraint > operator==(
-    pointer_var lhs, boost::shared_ptr< function_ref > rhs) {
-  return boost::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
+std::shared_ptr< pta_constraint > operator==(
+    pointer_var lhs, std::shared_ptr< function_ref > rhs) {
+  return std::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
 }
 
-boost::shared_ptr< pta_constraint > operator==(
-    pointer_var lhs, boost::shared_ptr< param_ref > rhs) {
-  return boost::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
+std::shared_ptr< pta_constraint > operator==(pointer_var lhs,
+                                             std::shared_ptr< param_ref > rhs) {
+  return std::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
 }
 
-boost::shared_ptr< pta_constraint > operator==(
-    pointer_var lhs, boost::shared_ptr< return_ref > rhs) {
-  return boost::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
+std::shared_ptr< pta_constraint > operator==(
+    pointer_var lhs, std::shared_ptr< return_ref > rhs) {
+  return std::shared_ptr< pta_assign >(new pta_assign(lhs, rhs));
 }
 
 class pta_store : public pta_constraint {
 public:
-  boost::shared_ptr< pta_ref > _lhs;
+  std::shared_ptr< pta_ref > _lhs;
   pointer_var _rhs;
 
 public:
-  pta_store(boost::shared_ptr< pta_ref > lhs, pointer_var rhs)
+  pta_store(std::shared_ptr< pta_ref > lhs, pointer_var rhs)
       : _lhs(lhs), _rhs(rhs) {}
 
   void print(std::ostream& o) const {
@@ -340,18 +339,18 @@ public:
 
 }; // class pta_store
 
-boost::shared_ptr< pta_constraint > operator<<(boost::shared_ptr< pta_ref > lhs,
-                                               pointer_var rhs) {
-  return boost::shared_ptr< pta_store >(new pta_store(lhs, rhs));
+std::shared_ptr< pta_constraint > operator<<(std::shared_ptr< pta_ref > lhs,
+                                             pointer_var rhs) {
+  return std::shared_ptr< pta_store >(new pta_store(lhs, rhs));
 }
 
 class pta_load : public pta_constraint {
 public:
   pointer_var _lhs;
-  boost::shared_ptr< pta_ref > _rhs;
+  std::shared_ptr< pta_ref > _rhs;
 
 public:
-  pta_load(pointer_var lhs, boost::shared_ptr< pta_ref > rhs)
+  pta_load(pointer_var lhs, std::shared_ptr< pta_ref > rhs)
       : _lhs(lhs), _rhs(rhs) {}
 
   void print(std::ostream& o) const {
@@ -363,12 +362,12 @@ public:
 
 }; // class pta_load
 
-boost::shared_ptr< pta_constraint > operator*=(
-    pointer_var lhs, boost::shared_ptr< pta_ref > rhs) {
-  return boost::shared_ptr< pta_load >(new pta_load(lhs, rhs));
+std::shared_ptr< pta_constraint > operator*=(pointer_var lhs,
+                                             std::shared_ptr< pta_ref > rhs) {
+  return std::shared_ptr< pta_load >(new pta_load(lhs, rhs));
 }
 
-typedef std::set< index64_t > address_set;
+typedef std::unordered_set< index64_t > address_set;
 typedef std::pair< address_set, z_interval > pta_info;
 
 class pta_system {
@@ -429,11 +428,11 @@ class pta_system {
   };
 
 private:
-  typedef boost::unordered_map< std::string, z_interval > offset_map;
-  typedef boost::unordered_map< std::string, address_set > address_map;
+  typedef std::unordered_map< std::string, z_interval > offset_map;
+  typedef std::unordered_map< std::string, address_set > address_map;
 
 private:
-  std::vector< boost::shared_ptr< pta_constraint > > _csts;
+  std::vector< std::shared_ptr< pta_constraint > > _csts;
   offset_map _offset_map;
   address_map _address_map;
   bool change_seen;
@@ -490,32 +489,32 @@ private:
     }
   }
 
-  pta_info process_ref(boost::shared_ptr< pta_ref > ref) {
+  pta_info process_ref(std::shared_ptr< pta_ref > ref) {
     switch (ref->kind()) {
       case POINTER_REF: {
-        boost::shared_ptr< pointer_ref > pt_ref =
-            boost::static_pointer_cast< pointer_ref >(ref);
+        std::shared_ptr< pointer_ref > pt_ref =
+            std::static_pointer_cast< pointer_ref >(ref);
         address_set& addrs = get_address_set(pt_ref->str());
         z_interval offset = get_offset(pt_ref->str());
         return std::make_pair(addrs, offset + pt_ref->_offset);
       }
       case OBJECT_REF: {
-        boost::shared_ptr< object_ref > obj_ref =
-            boost::static_pointer_cast< object_ref >(ref);
+        std::shared_ptr< object_ref > obj_ref =
+            std::static_pointer_cast< object_ref >(ref);
         address_set addrs;
         addrs.insert(obj_ref->_address);
         return std::make_pair(addrs, obj_ref->_offset);
       }
       case FUNCTION_REF: {
-        boost::shared_ptr< function_ref > fun_ref =
-            boost::static_pointer_cast< function_ref >(ref);
+        std::shared_ptr< function_ref > fun_ref =
+            std::static_pointer_cast< function_ref >(ref);
         address_set addrs;
         addrs.insert(fun_ref->_uid);
         return std::make_pair(addrs, z_interval::top());
       }
       case PARAM_REF: {
-        boost::shared_ptr< param_ref > param =
-            boost::static_pointer_cast< param_ref >(ref);
+        std::shared_ptr< param_ref > param =
+            std::static_pointer_cast< param_ref >(ref);
         address_set& fptrs = get_address_set(param->_fptr.str());
         address_set addrs;
         z_interval offset = z_interval::bottom();
@@ -528,8 +527,8 @@ private:
         return std::make_pair(addrs, offset);
       }
       case RETURN_REF: {
-        boost::shared_ptr< return_ref > ret =
-            boost::static_pointer_cast< return_ref >(ref);
+        std::shared_ptr< return_ref > ret =
+            std::static_pointer_cast< return_ref >(ref);
         address_set& fptrs = get_address_set(ret->_fptr.str());
         address_set addrs;
         z_interval offset = z_interval::bottom();
@@ -545,28 +544,28 @@ private:
     }
   }
 
-  void process_constraint(boost::shared_ptr< pta_constraint > cst,
+  void process_constraint(std::shared_ptr< pta_constraint > cst,
                           const binary_op& op) {
     switch (cst->kind()) {
       case CST_ASSIGN: {
-        boost::shared_ptr< pta_assign > assign =
-            boost::static_pointer_cast< pta_assign >(cst);
+        std::shared_ptr< pta_assign > assign =
+            std::static_pointer_cast< pta_assign >(cst);
         pta_info rhs_info = process_ref(assign->_rhs);
         add_address_set(assign->_lhs.str(), rhs_info.first);
         add_offset(assign->_lhs.str(), rhs_info.second, op);
         break;
       }
       case CST_STORE: {
-        boost::shared_ptr< pta_store > store =
-            boost::static_pointer_cast< pta_store >(cst);
+        std::shared_ptr< pta_store > store =
+            std::static_pointer_cast< pta_store >(cst);
         address_set& rhs_addrs = get_address_set(store->_rhs.str());
         z_interval rhs_offset = get_offset(store->_rhs.str());
-        boost::shared_ptr< pta_ref > ref = store->_lhs;
+        std::shared_ptr< pta_ref > ref = store->_lhs;
 
         switch (ref->kind()) {
           case POINTER_REF: {
-            boost::shared_ptr< pointer_ref > pt_ref =
-                boost::static_pointer_cast< pointer_ref >(ref);
+            std::shared_ptr< pointer_ref > pt_ref =
+                std::static_pointer_cast< pointer_ref >(ref);
             address_set& addrs = get_address_set(pt_ref->str());
             for (address_set::iterator it = addrs.begin(); it != addrs.end();
                  ++it) {
@@ -586,8 +585,8 @@ private:
             break;
           }
           case PARAM_REF: {
-            boost::shared_ptr< param_ref > param =
-                boost::static_pointer_cast< param_ref >(ref);
+            std::shared_ptr< param_ref > param =
+                std::static_pointer_cast< param_ref >(ref);
             address_set& fptrs = get_address_set(param->_fptr.str());
             for (address_set::iterator it = fptrs.begin(); it != fptrs.end();
                  ++it) {
@@ -597,8 +596,8 @@ private:
             break;
           }
           case RETURN_REF: {
-            boost::shared_ptr< return_ref > ret =
-                boost::static_pointer_cast< return_ref >(ref);
+            std::shared_ptr< return_ref > ret =
+                std::static_pointer_cast< return_ref >(ref);
             address_set& fptrs = get_address_set(ret->_fptr.str());
             for (address_set::iterator it = fptrs.begin(); it != fptrs.end();
                  ++it) {
@@ -612,14 +611,14 @@ private:
         break;
       }
       case CST_LOAD: {
-        boost::shared_ptr< pta_load > load =
-            boost::static_pointer_cast< pta_load >(cst);
-        boost::shared_ptr< pta_ref > ref = load->_rhs;
+        std::shared_ptr< pta_load > load =
+            std::static_pointer_cast< pta_load >(cst);
+        std::shared_ptr< pta_ref > ref = load->_rhs;
 
         switch (ref->kind()) {
           case POINTER_REF: {
-            boost::shared_ptr< pointer_ref > pt_ref =
-                boost::static_pointer_cast< pointer_ref >(ref);
+            std::shared_ptr< pointer_ref > pt_ref =
+                std::static_pointer_cast< pointer_ref >(ref);
             address_set& addrs = get_address_set(pt_ref->str());
             for (address_set::iterator it = addrs.begin(); it != addrs.end();
                  ++it) {
@@ -639,8 +638,8 @@ private:
             break;
           }
           case PARAM_REF: {
-            boost::shared_ptr< param_ref > param =
-                boost::static_pointer_cast< param_ref >(ref);
+            std::shared_ptr< param_ref > param =
+                std::static_pointer_cast< param_ref >(ref);
             address_set& fptrs = get_address_set(param->_fptr.str());
             for (address_set::iterator it = fptrs.begin(); it != fptrs.end();
                  ++it) {
@@ -651,8 +650,8 @@ private:
             break;
           }
           case RETURN_REF: {
-            boost::shared_ptr< return_ref > ret =
-                boost::static_pointer_cast< return_ref >(ref);
+            std::shared_ptr< return_ref > ret =
+                std::static_pointer_cast< return_ref >(ref);
             address_set& fptrs = get_address_set(ret->_fptr.str());
             for (address_set::iterator it = fptrs.begin(); it != fptrs.end();
                  ++it) {
@@ -670,7 +669,7 @@ private:
   }
 
   void step(const binary_op& op) {
-    for (std::vector< boost::shared_ptr< pta_constraint > >::iterator
+    for (std::vector< std::shared_ptr< pta_constraint > >::iterator
              it = this->_csts.begin(),
              et = this->_csts.end();
          it != et;
@@ -683,7 +682,7 @@ public:
   pta_system() {}
 
   void print(std::ostream& o) const {
-    for (std::vector< boost::shared_ptr< pta_constraint > >::const_iterator
+    for (std::vector< std::shared_ptr< pta_constraint > >::const_iterator
              it = this->_csts.begin(),
              et = this->_csts.end();
          it != et;
@@ -692,7 +691,7 @@ public:
     }
   }
 
-  void operator+=(boost::shared_ptr< pta_constraint > cst) {
+  void operator+=(std::shared_ptr< pta_constraint > cst) {
     this->_csts.push_back(cst);
   }
 
@@ -726,7 +725,8 @@ std::ostream& operator<<(std::ostream& o, const pta_system& s) {
 
 std::ostream& operator<<(std::ostream& o, const pta_info& info) {
   o << "({";
-  for (address_set::iterator it = info.first.begin(); it != info.first.end();) {
+  for (address_set::const_iterator it = info.first.begin();
+       it != info.first.end();) {
     o << *it;
     ++it;
     if (it != info.first.end()) {

@@ -45,11 +45,12 @@
 
 #include <ikos/domains/pta.hpp>
 
-#include <analyzer/analysis/context.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 #include <analyzer/analysis/call_graph_topology.hpp>
+#include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/pointer.hpp>
 #include <analyzer/checkers/checker_api.hpp>
+#include <analyzer/ikos-wrapper/domains_traits.hpp>
+#include <analyzer/utils/demangle.hpp>
 
 //#define DEBUG
 
@@ -75,7 +76,7 @@ class TransferFunctionVisitor : public arbos_visitor_api {
 private:
   typedef num_sym_exec< AbsDomain, VariableName, Number > sym_exec_t;
   typedef SymExecCall< AbsDomain > sym_exec_call_t;
-  typedef boost::shared_ptr< sym_exec_call_t > sym_exec_call_ptr_t;
+  typedef std::shared_ptr< sym_exec_call_t > sym_exec_call_ptr_t;
 
 private:
   sym_exec_t _sym_exec;
@@ -115,7 +116,7 @@ public:
   void visit(Abstract_Memory_ref s) { _sym_exec.exec(s); }
 
   void visit(Call_ref stmt) {
-    if (ar::isExternal(stmt)) {
+    if (ar::isDirectCall(stmt) && ar::isExternal(stmt)) {
       _sym_exec.exec(stmt);
     } else {
       _sym_exec.set_inv(_sym_exec_call->exec_call(stmt, _sym_exec.inv()));
@@ -187,13 +188,13 @@ public:
   private:
     typedef fwd_fixpoint_iterator< Basic_Block_ref, arbos_cfg, AbsNumDomain >
         fwd_fixpoint_iterator_t;
-    typedef boost::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
+    typedef std::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
     typedef TransferFunctionVisitor< AbsNumDomain, VariableName, Number >
         transfer_function_visitor_t;
     typedef num_sym_exec< AbsNumDomain, VariableName, Number > sym_exec_t;
     typedef SymExecCall< AbsNumDomain > sym_exec_call_t;
     typedef typename AbsNumDomain::variable_set_t variable_set_t;
-    typedef boost::unordered_map< Basic_Block_ref, AbsNumDomain > inv_table_t;
+    typedef std::unordered_map< Basic_Block_ref, AbsNumDomain > inv_table_t;
 
   private:
     /*
@@ -256,7 +257,8 @@ public:
           Function_ref callee = *it;
 
           if (summaries.find(callee) == summaries.end()) {
-            std::cout << "** analyzing function " << callee
+            std::cout << "** analyzing function "
+                      << demangle(ar::getName(callee))
                       << " within the same cycle" << std::endl;
             arbos_cfg cfg = cfg_fac[callee];
             numerical_analysis_ptr_t callee_summary(
@@ -283,7 +285,8 @@ public:
 
             if (callee_summary->is_done()) {
 #ifdef DEBUG
-              std::cout << "--- using " << callee << " summary" << std::endl;
+              std::cout << "--- using " << demangle(ar::getName(callee))
+                        << " summary" << std::endl;
 #endif
               result =
                   result |
@@ -398,9 +401,9 @@ public:
       std::string fun_name = this->get_cfg().get_func_name();
       arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
-      boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+      std::shared_ptr< sym_exec_call_t > sym_exec_call(
           new NumericalSummaryExecCall(*this));
-      boost::shared_ptr< transfer_function_visitor_t > visitor(
+      std::shared_ptr< transfer_function_visitor_t > visitor(
           new transfer_function_visitor_t(pre,
                                           sym_exec_call,
                                           _summary_pass.var_factory(),
@@ -412,9 +415,9 @@ public:
 
     template < typename Statement >
     AbsNumDomain analyze_stmt(Statement stmt, AbsNumDomain pre) {
-      boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+      std::shared_ptr< sym_exec_call_t > sym_exec_call(
           new NumericalSummaryExecCall(*this));
-      boost::shared_ptr< transfer_function_visitor_t > visitor(
+      std::shared_ptr< transfer_function_visitor_t > visitor(
           new transfer_function_visitor_t(pre,
                                           sym_exec_call,
                                           _summary_pass.var_factory(),
@@ -450,8 +453,8 @@ public:
   }; // end class NumericalAnalysis
 
 private:
-  typedef boost::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
-  typedef boost::unordered_map< Function_ref, numerical_analysis_ptr_t >
+  typedef std::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
+  typedef std::unordered_map< Function_ref, numerical_analysis_ptr_t >
       summaries_t;
   typedef PointerInfo::ptr_set_t ptr_set_t;
 
@@ -493,7 +496,8 @@ public:
          it != topo_order.end();
          ++it) {
       Function_ref root_fun = *it;
-      std::cout << "** analyzing function " << root_fun << std::endl;
+      std::cout << "** analyzing function " << demangle(ar::getName(root_fun))
+                << std::endl;
       arbos_cfg cfg = _cfg_fac[root_fun];
       numerical_analysis_ptr_t summary(
           new NumericalAnalysis(*this, bundle, cfg));
@@ -554,11 +558,11 @@ private:
   private:
     typedef fwd_fixpoint_iterator< Basic_Block_ref, arbos_cfg, AbsNumDomain >
         fwd_fixpoint_iterator_t;
-    typedef boost::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
+    typedef std::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
     typedef TransferFunctionVisitor< AbsNumDomain, VariableName, Number >
         transfer_function_visitor_t;
     typedef SymExecCall< AbsNumDomain > sym_exec_call_t;
-    typedef boost::unordered_map< Basic_Block_ref, AbsNumDomain > inv_table_t;
+    typedef std::unordered_map< Basic_Block_ref, AbsNumDomain > inv_table_t;
 
   private:
     class PropagateExecCall : public sym_exec_call_t {
@@ -756,8 +760,9 @@ private:
       }
 
 #ifdef DEBUG
-      std::cout << "call context  for " << this->get_cfg().get_func_name()
-                << ": " << _call_context << std::endl;
+      std::cout << "call context  for "
+                << demangle(this->get_cfg().get_func_name()) << ": "
+                << _call_context << std::endl;
 #endif
     }
 
@@ -765,9 +770,9 @@ private:
       std::string fun_name = this->get_cfg().get_func_name();
       arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
-      boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+      std::shared_ptr< sym_exec_call_t > sym_exec_call(
           new PropagateExecCall(*this));
-      boost::shared_ptr< transfer_function_visitor_t > visitor(
+      std::shared_ptr< transfer_function_visitor_t > visitor(
           new transfer_function_visitor_t(pre,
                                           sym_exec_call,
                                           _pointer_pass.var_factory(),
@@ -779,9 +784,9 @@ private:
 
     template < typename Statement >
     AbsNumDomain analyze_stmt(Statement stmt, AbsNumDomain pre) {
-      boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+      std::shared_ptr< sym_exec_call_t > sym_exec_call(
           new PropagateExecCall(*this));
-      boost::shared_ptr< transfer_function_visitor_t > visitor(
+      std::shared_ptr< transfer_function_visitor_t > visitor(
           new transfer_function_visitor_t(pre,
                                           sym_exec_call,
                                           _pointer_pass.var_factory(),
@@ -823,8 +828,8 @@ private:
   }; // end class NumericalAnalysis
 
 private:
-  typedef boost::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
-  typedef boost::unordered_map< Function_ref, numerical_analysis_ptr_t >
+  typedef std::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
+  typedef std::unordered_map< Function_ref, numerical_analysis_ptr_t >
       invariants_t;
   typedef PointerPass::PTA< AbsNumDomain, NumericalAnalysis > pta_t;
   typedef typename pta_t::pt_var_map_t pt_var_map_t;
@@ -895,7 +900,8 @@ public:
            it != functions.end();
            ++it) {
         Function_ref fun = *it;
-        std::cout << "*** analyzing function " << fun << std::endl;
+        std::cout << "*** analyzing function " << demangle(ar::getName(fun))
+                  << std::endl;
         numerical_analysis_ptr_t num_analysis = _invariants[fun];
 
         if (functions.size() > 1) {
@@ -917,15 +923,15 @@ public:
          it != all_functions.end();
          ++it) {
       Function_ref fun = *it;
-      boost::shared_ptr< pta_t > visitor(new pta_t(bundle,
-                                                   fun,
-                                                   csts_system,
-                                                   _invariants[fun],
-                                                   _lfac,
-                                                   _vfac,
-                                                   pt_var_map,
-                                                   address_map,
-                                                   _fun_ptr_info));
+      std::shared_ptr< pta_t > visitor(new pta_t(bundle,
+                                                 fun,
+                                                 csts_system,
+                                                 _invariants[fun],
+                                                 _lfac,
+                                                 _vfac,
+                                                 pt_var_map,
+                                                 address_map,
+                                                 _fun_ptr_info));
       ar::accept(fun, visitor);
     }
 
@@ -995,13 +1001,13 @@ public:
   private:
     typedef fwd_fixpoint_iterator< Basic_Block_ref, arbos_cfg, AbsValueDomain >
         fwd_fixpoint_iterator_t;
-    typedef boost::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
+    typedef std::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
     typedef TransferFunctionVisitor< AbsValueDomain, VariableName, Number >
         transfer_function_visitor_t;
     typedef num_sym_exec< AbsValueDomain, VariableName, Number > sym_exec_t;
     typedef SymExecCall< AbsValueDomain > sym_exec_call_t;
     typedef typename AbsValueDomain::variable_set_t variable_set_t;
-    typedef boost::unordered_map< Basic_Block_ref, AbsValueDomain > inv_table_t;
+    typedef std::unordered_map< Basic_Block_ref, AbsValueDomain > inv_table_t;
 
   private:
     /*
@@ -1062,8 +1068,9 @@ public:
           Function_ref callee = *it;
 
           if (summaries.find(callee) == summaries.end()) {
-            std::cout << "** analyzing function " << callee
-                      << " in the same cycle" << std::endl;
+            std::cout << "** analyzing function "
+                      << demangle(ar::getName(callee)) << " in the same cycle"
+                      << std::endl;
             arbos_cfg cfg = cfg_fac[callee];
             numerical_analysis_ptr_t callee_summary(
                 new NumericalAnalysis(_summary_pass,
@@ -1089,7 +1096,8 @@ public:
 
             if (callee_summary->is_done()) {
 #ifdef DEBUG
-              std::cout << "--- using " << callee << " summary" << std::endl;
+              std::cout << "--- using " << demangle(ar::getName(callee))
+                        << " summary" << std::endl;
 #endif
               result =
                   result |
@@ -1221,9 +1229,9 @@ public:
       std::string fun_name = this->get_cfg().get_func_name();
       arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
-      boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+      std::shared_ptr< sym_exec_call_t > sym_exec_call(
           new ValueSummaryExecCall(*this));
-      boost::shared_ptr< transfer_function_visitor_t > visitor(
+      std::shared_ptr< transfer_function_visitor_t > visitor(
           new transfer_function_visitor_t(pre,
                                           sym_exec_call,
                                           _summary_pass.var_factory(),
@@ -1236,9 +1244,9 @@ public:
 
     template < typename Statement >
     AbsValueDomain analyze_stmt(Statement stmt, AbsValueDomain pre) {
-      boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+      std::shared_ptr< sym_exec_call_t > sym_exec_call(
           new ValueSummaryExecCall(*this));
-      boost::shared_ptr< transfer_function_visitor_t > visitor(
+      std::shared_ptr< transfer_function_visitor_t > visitor(
           new transfer_function_visitor_t(pre,
                                           sym_exec_call,
                                           _summary_pass.var_factory(),
@@ -1275,8 +1283,8 @@ public:
   }; // end class NumericalAnalysis
 
 private:
-  typedef boost::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
-  typedef boost::unordered_map< Function_ref, numerical_analysis_ptr_t >
+  typedef std::shared_ptr< NumericalAnalysis > numerical_analysis_ptr_t;
+  typedef std::unordered_map< Function_ref, numerical_analysis_ptr_t >
       summaries_t;
   typedef PointerInfo::ptr_set_t ptr_set_t;
 
@@ -1318,7 +1326,8 @@ public:
          it != topo_order.end();
          ++it) {
       Function_ref root_fun = *it;
-      std::cout << "** analyzing function " << root_fun << std::endl;
+      std::cout << "** analyzing function " << demangle(ar::getName(root_fun))
+                << std::endl;
       arbos_cfg cfg = _cfg_fac[root_fun];
       numerical_analysis_ptr_t summary(
           new NumericalAnalysis(*this, bundle, cfg));
@@ -1370,7 +1379,8 @@ private:
                             AbsValueDomain,
                             SumAbsValueDomain,
                             VariableName,
-                            Number > check_summary_pass_t;
+                            Number >
+      check_summary_pass_t;
   typedef sym_exec_call< FunctionAnalyzer, AbsValueDomain > sym_exec_call_t;
   typedef typename sym_exec_call_t::sym_exec_call_ptr_t sym_exec_call_ptr_t;
   typedef typename sym_exec_call_t::function_names_t function_names_t;
@@ -1438,7 +1448,7 @@ private:
       // add calling contexts
       location loc = ar::getSrcLoc(stmt);
       std::string path = current_path + ":" + ar::getName(_function) + "@" +
-                         std::to_string(loc.second);
+                         std::to_string(loc.line);
       for (typename std::vector< Function_ref >::iterator it = callees.begin();
            it != callees.end();
            ++it) {
@@ -1512,7 +1522,8 @@ private:
       }
 
       // convert the AbsValueDomain to a SumAbsValueDomain
-      SumAbsValueDomain inv = caller_inv.template convert< SumAbsValueDomain >();
+      SumAbsValueDomain inv =
+          caller_inv.template convert< SumAbsValueDomain >();
 
       CfgFactory& cfg_fac = _check_pass.cfg_factory();
       VariableFactory& vfac = _check_pass.var_factory();
@@ -1579,8 +1590,8 @@ private:
   }; // end class PropagateExecCall
 
 private:
-  typedef boost::unordered_map< std::string, AbsValueDomain > call_contexts_t;
-  typedef boost::unordered_map< Function_ref, call_contexts_t >
+  typedef std::unordered_map< std::string, AbsValueDomain > call_contexts_t;
+  typedef std::unordered_map< Function_ref, call_contexts_t >
       map_call_contexts_t;
 
 private:
@@ -1675,11 +1686,12 @@ public:
           _call_contexts.erase(fun);
         }
 
-        boost::shared_ptr< sym_exec_call_t > sym_exec_call(
+        std::shared_ptr< sym_exec_call_t > sym_exec_call(
             new PropagateExecCall(_cfg_fac.getPrecLevel(), fun, *this));
 
         if (_call_contexts.find(fun) == _call_contexts.end()) {
-          std::cout << "*** analyzing function " << fun << std::endl;
+          std::cout << "*** analyzing function " << demangle(ar::getName(fun))
+                    << std::endl;
           FunctionAnalyzer analysis(cfg, ctx, sym_exec_call, ".", _checkers);
           analysis.run(default_call_context(fun));
         } else {
@@ -1688,8 +1700,8 @@ public:
                    _call_contexts[fun].begin();
                call_it != _call_contexts[fun].end();
                ++call_it) {
-            std::cout << "*** analyzing function " << fun << " (called from "
-                      << call_it->first << ")" << std::endl;
+            std::cout << "*** analyzing function " << demangle(ar::getName(fun))
+                      << " (called from " << call_it->first << ")" << std::endl;
             FunctionAnalyzer analysis(cfg,
                                       ctx,
                                       sym_exec_call,

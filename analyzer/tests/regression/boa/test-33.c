@@ -28,10 +28,11 @@ static inline foo_bar_t get_resource(void) {
   return resource;
 }
 
-void sampler_set_sampling_interval(const __uint32_t sampling_interval_seconds) {
+int main(int argc, char** argv) {
   const foo_bar_err_t test_err = test_seize_resource(get_resource());
   if (ABS_RR_ERR_NO_ERROR == test_err) {
-    g.sampling_interval_seconds = sampling_interval_seconds;
+    g.sampling_interval_seconds = argc;
     test_relinquish_resource(get_resource());
   }
+  return 0;
 }

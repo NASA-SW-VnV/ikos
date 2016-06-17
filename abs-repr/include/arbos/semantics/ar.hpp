@@ -47,17 +47,20 @@
 #define ARBOS_AR_HPP
 
 #include <stdint.h>
-#include <vector>
-#include <string>
+#include <map>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/indirect_iterator.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/optional.hpp>
 #include <boost/program_options.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include <arbos/common/common.hpp>
 #include <arbos/io/s_expressions.hpp>
@@ -184,7 +187,7 @@ enum AR_CLASS_TYPE_CODE {
 /**
  * AR_Node is the superclass of all AR nodes.
  */
-class AR_Node : public boost::enable_shared_from_this< AR_Node > {
+class AR_Node : public std::enable_shared_from_this< AR_Node > {
 private:
   index64_t _uid;
 
@@ -199,12 +202,12 @@ public:
   inline index64_t getUID() { return _uid; }
 
   //! Allows a Visitor to access this AR_Node
-  virtual void accept(boost::shared_ptr< Visitor > visitor) = 0;
+  virtual void accept(std::shared_ptr< Visitor > visitor) = 0;
 
   //! Returns the AR_CLASS_TYPE_CODE of this AR class type
   virtual AR_CLASS_TYPE_CODE getClassType() { return UNDEFINED_CLASS_TYPE; }
 
-  boost::shared_ptr< AR_Node > _this() { return shared_from_this(); }
+  std::shared_ptr< AR_Node > _this() { return shared_from_this(); }
 };
 
 class ARModelEventListener {
@@ -216,7 +219,7 @@ public:
 
 class ReferenceCounter {
 private:
-  std::map< index64_t, int > _ref_count;
+  std::unordered_map< index64_t, int > _ref_count;
   static ReferenceCounter* _instance;
 
 public:
@@ -329,6 +332,7 @@ private:
   index64_t _fid;
   std::string _filename;
   z_number _line;
+  z_number _column;
 
 private:
   AR_Source_Location(s_expression);
@@ -337,13 +341,14 @@ public:
   virtual ~AR_Source_Location();
   inline std::string getFilename() { return _filename; }
   inline z_number getLineNumber() { return _line; }
+  inline z_number getColumnNumber() { return _column; }
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_SOURCE_LOCATION_CLASS_TYPE;
   }
-  static boost::shared_ptr< AR_Source_Location > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Source_Location >(
+  static std::shared_ptr< AR_Source_Location > create(s_expression e) {
+    return std::static_pointer_cast< AR_Source_Location >(
         (new AR_Source_Location(e))->shared_from_this());
   }
 };
@@ -369,7 +374,7 @@ public:
   std::string getSignednessText(Signedness signedness);
   virtual ~AR_Type() {}
   virtual void print(std::ostream& out) = 0;
-  virtual void accept(boost::shared_ptr< Visitor > visitor) {}
+  virtual void accept(std::shared_ptr< Visitor > visitor) {}
 
   //! Returns the real size of the type in bits
   inline z_number getRealSize() { return _real_size; }
@@ -399,14 +404,14 @@ public:
   inline bool isVarargs() { return _isVARARGS; }
   virtual ~AR_Function_Type();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_FUNCTION_TYPE_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Function_Type
-  static boost::shared_ptr< AR_Function_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Function_Type >(
+  static std::shared_ptr< AR_Function_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_Function_Type >(
         (new AR_Function_Type(e))->shared_from_this());
   }
 };
@@ -426,14 +431,14 @@ public:
   inline Signedness getSignedness() { return _signedness; }
   virtual ~AR_Integer_Type() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_INTEGER_TYPE_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Integer_Type
-  static boost::shared_ptr< AR_Integer_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Integer_Type >(
+  static std::shared_ptr< AR_Integer_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_Integer_Type >(
         (new AR_Integer_Type(e))->shared_from_this());
   }
 };
@@ -464,12 +469,12 @@ public:
   inline Signedness getSignedness() { return _signedness; }
   virtual ~AR_FP_Type() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_FLOAT_TYPE_CLASS_TYPE; }
 
   //! Returns a shared_ptr to AR_FP_Type
-  static boost::shared_ptr< AR_FP_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_FP_Type >(
+  static std::shared_ptr< AR_FP_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_FP_Type >(
         (new AR_FP_Type(e))->shared_from_this());
   }
 };
@@ -484,12 +489,12 @@ private:
 public:
   virtual ~AR_Void_Type(){};
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_VOID_TYPE_CLASS_TYPE; }
 
   //! Returns a shared_ptr to AR_Void_Type
-  static boost::shared_ptr< AR_Void_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Void_Type >(
+  static std::shared_ptr< AR_Void_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_Void_Type >(
         (new AR_Void_Type(e))->shared_from_this());
   }
 };
@@ -510,14 +515,14 @@ public:
   }
   virtual ~AR_Pointer_Type();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_POINTER_TYPE_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Pointer_Type
-  static boost::shared_ptr< AR_Pointer_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Pointer_Type >(
+  static std::shared_ptr< AR_Pointer_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_Pointer_Type >(
         (new AR_Pointer_Type(e))->shared_from_this());
   }
 };
@@ -567,14 +572,14 @@ public:
 
   virtual ~AR_Structure_Type();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_STRUCT_TYPE_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Structure_Type
-  static boost::shared_ptr< AR_Structure_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Structure_Type >(
+  static std::shared_ptr< AR_Structure_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_Structure_Type >(
         (new AR_Structure_Type(e))->shared_from_this());
   }
   void print_layout(std::vector< index64_t >& visited, std::ostream& out);
@@ -598,12 +603,12 @@ public:
   inline z_number getCapacity() { return _capacity; }
   virtual ~AR_Array_Type();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_ARRAY_TYPE_CLASS_TYPE; }
 
   //! Returns a shared_ptr to AR_Array_Type
-  static boost::shared_ptr< AR_Array_Type > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Array_Type >(
+  static std::shared_ptr< AR_Array_Type > create(s_expression e) {
+    return std::static_pointer_cast< AR_Array_Type >(
         (new AR_Array_Type(e))->shared_from_this());
   }
 };
@@ -618,14 +623,14 @@ private:
 public:
   virtual ~AR_Opaque_Type() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_OPAQUE_TYPE_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Opaque_Type
-  static boost::shared_ptr< AR_Opaque_Type > create(int size) {
-    return boost::static_pointer_cast< AR_Opaque_Type >(
+  static std::shared_ptr< AR_Opaque_Type > create(int size) {
+    return std::static_pointer_cast< AR_Opaque_Type >(
         (new AR_Opaque_Type(size))->shared_from_this());
   }
 };
@@ -644,7 +649,7 @@ protected:
 public:
   virtual ~AR_Constant(){};
   virtual void print(std::ostream& out) = 0;
-  virtual void accept(boost::shared_ptr< Visitor > visitor) = 0;
+  virtual void accept(std::shared_ptr< Visitor > visitor) = 0;
   virtual AR_Node_Ref< AR_Type > getType() = 0;
 };
 
@@ -663,20 +668,20 @@ private:
 public:
   virtual ~AR_Undefined_Constant() {}
   virtual void print(std::ostream&);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_UNDEFINED_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Undefined_Constant
-  static boost::shared_ptr< AR_Undefined_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Undefined_Constant >(
+  static std::shared_ptr< AR_Undefined_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_Undefined_Constant >(
         (new AR_Undefined_Constant(e))->shared_from_this());
   }
 
   //! Returns a shared_ptr to AR_Undefined_Constant
-  static boost::shared_ptr< AR_Undefined_Constant > create() {
-    return boost::static_pointer_cast< AR_Undefined_Constant >(
+  static std::shared_ptr< AR_Undefined_Constant > create() {
+    return std::static_pointer_cast< AR_Undefined_Constant >(
         (new AR_Undefined_Constant())->shared_from_this());
   }
 
@@ -703,19 +708,19 @@ public:
     return node_cast< AR_Type >(_type);
   }
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_INTEGER_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Integer_Constant
-  static boost::shared_ptr< AR_Integer_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Integer_Constant >(
+  static std::shared_ptr< AR_Integer_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_Integer_Constant >(
         (new AR_Integer_Constant(e))->shared_from_this());
   }
-  static boost::shared_ptr< AR_Integer_Constant > create(
+  static std::shared_ptr< AR_Integer_Constant > create(
       z_number v, AR_Node_Ref< AR_Integer_Type > ty) {
-    return boost::static_pointer_cast< AR_Integer_Constant >(
+    return std::static_pointer_cast< AR_Integer_Constant >(
         (new AR_Integer_Constant(v, ty))->shared_from_this());
   }
 };
@@ -735,14 +740,14 @@ public:
   inline fp_number getValue() { return _value; }
   virtual ~AR_FP_Constant();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_FLOAT_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_FP_Constant
-  static boost::shared_ptr< AR_FP_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_FP_Constant >(
+  static std::shared_ptr< AR_FP_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_FP_Constant >(
         (new AR_FP_Constant(e))->shared_from_this());
   }
 
@@ -764,14 +769,14 @@ private:
 public:
   virtual ~AR_Null_Constant();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_NULL_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Null_Constant
-  static boost::shared_ptr< AR_Null_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Null_Constant >(
+  static std::shared_ptr< AR_Null_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_Null_Constant >(
         (new AR_Null_Constant(e))->shared_from_this());
   }
 
@@ -782,34 +787,34 @@ class AR_Operand;
 class AR_Range_Constant : public AR_Constant {
 private:
   AR_Node_Ref< AR_Type > _type;
-  boost::unordered_map< z_number, AR_Node_Ref< AR_Operand > > _values;
+  std::unordered_map< z_number, AR_Node_Ref< AR_Operand > > _values;
 
 private:
   AR_Range_Constant(s_expression);
 
 public:
   //! Returns the aggregate values
-  inline const boost::unordered_map< z_number, AR_Node_Ref< AR_Operand > >&
+  inline const std::unordered_map< z_number, AR_Node_Ref< AR_Operand > >&
   getValues() const {
     return _values;
   }
 
   //! Returns the aggregate values
-  inline boost::unordered_map< z_number, AR_Node_Ref< AR_Operand > >&
+  inline std::unordered_map< z_number, AR_Node_Ref< AR_Operand > >&
   getValues() {
     return _values;
   }
 
   virtual ~AR_Range_Constant();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor) {}
+  virtual void accept(std::shared_ptr< Visitor > visitor) {}
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_RANGE_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Range_Constant
-  static boost::shared_ptr< AR_Range_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Range_Constant >(
+  static std::shared_ptr< AR_Range_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_Range_Constant >(
         (new AR_Range_Constant(e))->shared_from_this());
   }
   virtual AR_Node_Ref< AR_Type > getType() { return _type; }
@@ -833,14 +838,14 @@ public:
   inline std::string getFunctionName() { return _function_name; }
   virtual ~AR_Function_Addr_Constant();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_FUNCTION_ADDR_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Function_Addr_Constant
-  static boost::shared_ptr< AR_Function_Addr_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Function_Addr_Constant >(
+  static std::shared_ptr< AR_Function_Addr_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_Function_Addr_Constant >(
         (new AR_Function_Addr_Constant(e))->shared_from_this());
   }
 
@@ -865,14 +870,14 @@ public:
   }
   virtual ~AR_Var_Addr_Constant();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_VAR_ADDR_CONSTANT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Var_Addr_Constant
-  static boost::shared_ptr< AR_Var_Addr_Constant > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Var_Addr_Constant >(
+  static std::shared_ptr< AR_Var_Addr_Constant > create(s_expression e) {
+    return std::static_pointer_cast< AR_Var_Addr_Constant >(
         (new AR_Var_Addr_Constant(e))->shared_from_this());
   }
 
@@ -902,7 +907,7 @@ protected:
 public:
   virtual ~AR_Variable();
   virtual void print(std::ostream& out) = 0;
-  virtual void accept(boost::shared_ptr< Visitor > visitor) = 0;
+  virtual void accept(std::shared_ptr< Visitor > visitor) = 0;
 
   //! Returns the AR_Type of this AR_Variable
   inline AR_Node_Ref< AR_Type > getType() { return _type; }
@@ -939,19 +944,19 @@ public:
 
   virtual ~AR_Local_Variable();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_LOCAL_VAR_CLASS_TYPE; }
 
   //! Returns a shared_ptr to AR_Local_Variable
-  static boost::shared_ptr< AR_Local_Variable > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Local_Variable >(
+  static std::shared_ptr< AR_Local_Variable > create(s_expression e) {
+    return std::static_pointer_cast< AR_Local_Variable >(
         (new AR_Local_Variable(e))->shared_from_this());
   }
 
   //! Returns a shared_ptr to AR_Local_Variable
-  static boost::shared_ptr< AR_Local_Variable > create(
+  static std::shared_ptr< AR_Local_Variable > create(
       const std::string& name, AR_Node_Ref< AR_Type > type) {
-    return boost::static_pointer_cast< AR_Local_Variable >(
+    return std::static_pointer_cast< AR_Local_Variable >(
         (new AR_Local_Variable(name, type))->shared_from_this());
   }
 };
@@ -979,12 +984,12 @@ public:
 
   virtual ~AR_Global_Variable();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_GLOBAL_VAR_CLASS_TYPE; }
 
   //! Returns a shared_ptr to AR_Global_Variable
-  static boost::shared_ptr< AR_Global_Variable > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Global_Variable >(
+  static std::shared_ptr< AR_Global_Variable > create(s_expression e) {
+    return std::static_pointer_cast< AR_Global_Variable >(
         (new AR_Global_Variable(e))->shared_from_this());
   }
 };
@@ -1012,19 +1017,19 @@ public:
 
   virtual ~AR_Internal_Variable();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_INTERNAL_VAR_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Internal_Variable
-  static boost::shared_ptr< AR_Internal_Variable > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Internal_Variable >(
+  static std::shared_ptr< AR_Internal_Variable > create(s_expression e) {
+    return std::static_pointer_cast< AR_Internal_Variable >(
         (new AR_Internal_Variable(e))->shared_from_this());
   }
-  static boost::shared_ptr< AR_Internal_Variable > create(
+  static std::shared_ptr< AR_Internal_Variable > create(
       const std::string& name, AR_Node_Ref< AR_Type > type) {
-    return boost::static_pointer_cast< AR_Internal_Variable >(
+    return std::static_pointer_cast< AR_Internal_Variable >(
         (new AR_Internal_Variable(name, type))->shared_from_this());
   }
 };
@@ -1044,7 +1049,7 @@ protected:
 public:
   virtual ~AR_Operand() {}
   virtual void print(std::ostream& out) = 0;
-  virtual void accept(boost::shared_ptr< Visitor > visitor) = 0;
+  virtual void accept(std::shared_ptr< Visitor > visitor) = 0;
   virtual AR_Node_Ref< AR_Type > getType() = 0;
 };
 
@@ -1068,19 +1073,19 @@ public:
 
   virtual ~AR_Var_Operand();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_VAR_OPERAND_CLASS_TYPE;
   }
 
   //! Return the shared_ptr to AR_Var_Operand
-  static boost::shared_ptr< AR_Var_Operand > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Var_Operand >(
+  static std::shared_ptr< AR_Var_Operand > create(s_expression e) {
+    return std::static_pointer_cast< AR_Var_Operand >(
         (new AR_Var_Operand(e))->shared_from_this());
   }
-  static boost::shared_ptr< AR_Var_Operand > create(
+  static std::shared_ptr< AR_Var_Operand > create(
       AR_Node_Ref< AR_Internal_Variable > v) {
-    return boost::static_pointer_cast< AR_Var_Operand >(
+    return std::static_pointer_cast< AR_Var_Operand >(
         (new AR_Var_Operand(v))->shared_from_this());
   }
 
@@ -1107,19 +1112,19 @@ public:
 
   virtual ~AR_Cst_Operand();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_CST_OPERAND_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Cst_Operand
-  static boost::shared_ptr< AR_Cst_Operand > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Cst_Operand >(
+  static std::shared_ptr< AR_Cst_Operand > create(s_expression e) {
+    return std::static_pointer_cast< AR_Cst_Operand >(
         (new AR_Cst_Operand(e))->shared_from_this());
   }
-  static boost::shared_ptr< AR_Cst_Operand > create(
+  static std::shared_ptr< AR_Cst_Operand > create(
       AR_Node_Ref< AR_Constant > c) {
-    return boost::static_pointer_cast< AR_Cst_Operand >(
+    return std::static_pointer_cast< AR_Cst_Operand >(
         (new AR_Cst_Operand(c))->shared_from_this());
   }
   virtual AR_Node_Ref< AR_Type > getType() { return (*_constant).getType(); }
@@ -1157,7 +1162,7 @@ public:
   virtual void print(std::ostream& out) = 0;
 
   //! Allows a Visitor to access this AR_Statement
-  virtual void accept(boost::shared_ptr< Visitor > visitor) = 0;
+  virtual void accept(std::shared_ptr< Visitor > visitor) = 0;
 
   //! Returns the AR_Basic_Block that contains this AR_Statement.
   AR_Node_Ref< AR_Basic_Block > getContainingBasicBlock();
@@ -1197,7 +1202,7 @@ public:
   virtual ~AR_Arith_Op();
 
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the arithmetic operation in string
   std::string getArithOpText();
@@ -1219,10 +1224,10 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Arith_Op
-  static boost::shared_ptr< AR_Arith_Op > create(index64_t parent_bblock,
-                                                 s_expression e,
-                                                 ArithOp opType) {
-    return boost::static_pointer_cast< AR_Arith_Op >(
+  static std::shared_ptr< AR_Arith_Op > create(index64_t parent_bblock,
+                                               s_expression e,
+                                               ArithOp opType) {
+    return std::static_pointer_cast< AR_Arith_Op >(
         (new AR_Arith_Op(parent_bblock, e, opType))->shared_from_this());
   }
 
@@ -1254,7 +1259,7 @@ private:
 public:
   virtual ~AR_Integer_Comparison() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns whether this comparison operation continues if true
   inline bool isContinueIfTrue() { return _continue_if_true; }
@@ -1278,9 +1283,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Integer_Comparison
-  static boost::shared_ptr< AR_Integer_Comparison > create(
+  static std::shared_ptr< AR_Integer_Comparison > create(
       index64_t parent_bblock, s_expression e) {
-    return boost::static_pointer_cast< AR_Integer_Comparison >(
+    return std::static_pointer_cast< AR_Integer_Comparison >(
         (new AR_Integer_Comparison(parent_bblock, e))->shared_from_this());
   }
 
@@ -1310,7 +1315,7 @@ private:
 public:
   virtual ~AR_FP_Op();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   std::string getFPOpText();
   inline FPOp getFPOp() { return _op; }
 
@@ -1327,10 +1332,10 @@ public:
   }
 
   //! Returns the shared_ptr to AR_FP_Op
-  static boost::shared_ptr< AR_FP_Op > create(index64_t parent_bblock,
-                                              s_expression e,
-                                              FPOp opType) {
-    return boost::static_pointer_cast< AR_FP_Op >(
+  static std::shared_ptr< AR_FP_Op > create(index64_t parent_bblock,
+                                            s_expression e,
+                                            FPOp opType) {
+    return std::static_pointer_cast< AR_FP_Op >(
         (new AR_FP_Op(parent_bblock, e, opType))->shared_from_this());
   }
 
@@ -1374,7 +1379,7 @@ private:
 public:
   virtual ~AR_FP_Comparison() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the condition
   inline bool isContinueIfTrue() { return _continue_if_true; }
@@ -1400,9 +1405,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_FP_Comparison
-  static boost::shared_ptr< AR_FP_Comparison > create(index64_t parent_bblock,
-                                                      s_expression e) {
-    return boost::static_pointer_cast< AR_FP_Comparison >(
+  static std::shared_ptr< AR_FP_Comparison > create(index64_t parent_bblock,
+                                                    s_expression e) {
+    return std::static_pointer_cast< AR_FP_Comparison >(
         (new AR_FP_Comparison(parent_bblock, e))->shared_from_this());
   }
 
@@ -1429,7 +1434,7 @@ private:
 public:
   virtual ~AR_Assignment();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the type of the lhs
   inline AR_Node_Ref< AR_Type > getType() { return (*_left_op).getType(); }
@@ -1446,9 +1451,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Assignment
-  static boost::shared_ptr< AR_Assignment > create(index64_t parent_bblock,
-                                                   s_expression e) {
-    return boost::static_pointer_cast< AR_Assignment >(
+  static std::shared_ptr< AR_Assignment > create(index64_t parent_bblock,
+                                                 s_expression e) {
+    return std::static_pointer_cast< AR_Assignment >(
         (new AR_Assignment(parent_bblock, e))->shared_from_this());
   }
 
@@ -1505,16 +1510,16 @@ public:
 
   virtual ~AR_Conv_Op();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_CONV_OP_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Conv_Op
-  static boost::shared_ptr< AR_Conv_Op > create(index64_t parent_bblock,
-                                                s_expression e,
-                                                ConvOp opType) {
-    return boost::static_pointer_cast< AR_Conv_Op >(
+  static std::shared_ptr< AR_Conv_Op > create(index64_t parent_bblock,
+                                              s_expression e,
+                                              ConvOp opType) {
+    return std::static_pointer_cast< AR_Conv_Op >(
         (new AR_Conv_Op(parent_bblock, e, opType))->shared_from_this());
   }
 
@@ -1545,7 +1550,7 @@ private:
 public:
   virtual ~AR_Bitwise_Op();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the name of the operation
   std::string getBitwiseOpText();
@@ -1566,10 +1571,10 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Bitwise_Op
-  static boost::shared_ptr< AR_Bitwise_Op > create(index64_t parent_bblock,
-                                                   s_expression e,
-                                                   BitwiseOp opType) {
-    return boost::static_pointer_cast< AR_Bitwise_Op >(
+  static std::shared_ptr< AR_Bitwise_Op > create(index64_t parent_bblock,
+                                                 s_expression e,
+                                                 BitwiseOp opType) {
+    return std::static_pointer_cast< AR_Bitwise_Op >(
         (new AR_Bitwise_Op(parent_bblock, e, opType))->shared_from_this());
   }
 
@@ -1598,7 +1603,7 @@ private:
 public:
   virtual ~AR_Store();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the pointer
   inline AR_Node_Ref< AR_Operand > getPointer() { return _ptr; }
@@ -1611,9 +1616,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Store
-  static boost::shared_ptr< AR_Store > create(index64_t parent_bblock,
-                                              s_expression e) {
-    return boost::static_pointer_cast< AR_Store >(
+  static std::shared_ptr< AR_Store > create(index64_t parent_bblock,
+                                            s_expression e) {
+    return std::static_pointer_cast< AR_Store >(
         (new AR_Store(parent_bblock, e))->shared_from_this());
   }
 
@@ -1639,7 +1644,7 @@ private:
 public:
   virtual ~AR_Load();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the lhs
   inline AR_Node_Ref< AR_Internal_Variable > getResult() { return _result; }
@@ -1652,9 +1657,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Load
-  static boost::shared_ptr< AR_Load > create(index64_t parent_bblock,
-                                             s_expression e) {
-    return boost::static_pointer_cast< AR_Load >(
+  static std::shared_ptr< AR_Load > create(index64_t parent_bblock,
+                                           s_expression e) {
+    return std::static_pointer_cast< AR_Load >(
         (new AR_Load(parent_bblock, e))->shared_from_this());
   }
 
@@ -1680,7 +1685,7 @@ private:
 
 public:
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_LOAD_ELEMENT_CLASS_TYPE;
   }
@@ -1696,9 +1701,9 @@ public:
   inline AR_Node_Ref< AR_Operand > getOffset() { return _offset; }
 
   //! Returns the shared_ptr to AR_Load_Element
-  static boost::shared_ptr< AR_Load_Element > create(index64_t parent_bblock,
-                                                     s_expression e) {
-    return boost::static_pointer_cast< AR_Load_Element >(
+  static std::shared_ptr< AR_Load_Element > create(index64_t parent_bblock,
+                                                   s_expression e) {
+    return std::static_pointer_cast< AR_Load_Element >(
         (new AR_Load_Element(parent_bblock, e))->shared_from_this());
   }
 };
@@ -1720,7 +1725,7 @@ private:
 
 public:
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual ~AR_Store_Element() {}
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_STORE_ELEMENT_CLASS_TYPE;
@@ -1731,9 +1736,9 @@ public:
   inline AR_Node_Ref< AR_Operand > getOffset() { return _offset; }
 
   //! Returns the shared_ptr to AR_Store_Element
-  static boost::shared_ptr< AR_Store_Element > create(index64_t parent_bblock,
-                                                      s_expression e) {
-    return boost::static_pointer_cast< AR_Store_Element >(
+  static std::shared_ptr< AR_Store_Element > create(index64_t parent_bblock,
+                                                    s_expression e) {
+    return std::static_pointer_cast< AR_Store_Element >(
         (new AR_Store_Element(parent_bblock, e))->shared_from_this());
   }
 };
@@ -1748,15 +1753,15 @@ private:
 public:
   virtual ~AR_NOP();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_NOP_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Unreachable
-  static boost::shared_ptr< AR_NOP > create(index64_t parent_bblock,
-                                            s_expression e) {
-    return boost::static_pointer_cast< AR_NOP >(
+  static std::shared_ptr< AR_NOP > create(index64_t parent_bblock,
+                                          s_expression e) {
+    return std::static_pointer_cast< AR_NOP >(
         (new AR_NOP(parent_bblock))->shared_from_this());
   }
 };
@@ -1772,15 +1777,15 @@ private:
 public:
   virtual ~AR_Unwind();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_UNWIND_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Unwind
-  static boost::shared_ptr< AR_Unwind > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_Unwind >(
+  static std::shared_ptr< AR_Unwind > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_Unwind >(
         (new AR_Unwind(parent_bblock, e))->shared_from_this());
   }
 };
@@ -1796,15 +1801,15 @@ private:
 public:
   virtual ~AR_Unreachable();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_UNREACHABLE_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns a shared_ptr to AR_Unreachable
-  static boost::shared_ptr< AR_Unreachable > create(index64_t parent_bblock,
-                                                    s_expression e) {
-    return boost::static_pointer_cast< AR_Unreachable >(
+  static std::shared_ptr< AR_Unreachable > create(index64_t parent_bblock,
+                                                  s_expression e) {
+    return std::static_pointer_cast< AR_Unreachable >(
         (new AR_Unreachable(parent_bblock, e))->shared_from_this());
   }
 };
@@ -1823,7 +1828,7 @@ private:
 public:
   virtual ~AR_Return_Value();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the value to be returned
   inline AR_Node_Ref< AR_Operand > getValue() { return _value; }
@@ -1834,9 +1839,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Return_Value
-  static boost::shared_ptr< AR_Return_Value > create(index64_t parent_bblock,
-                                                     s_expression e) {
-    return boost::static_pointer_cast< AR_Return_Value >(
+  static std::shared_ptr< AR_Return_Value > create(index64_t parent_bblock,
+                                                   s_expression e) {
+    return std::static_pointer_cast< AR_Return_Value >(
         (new AR_Return_Value(parent_bblock, e))->shared_from_this());
   }
 
@@ -1860,7 +1865,7 @@ private:
 public:
   virtual ~AR_MemCpy();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the destination pointer
   inline AR_Node_Ref< AR_Operand > getTarget() { return _tgt_pointer; }
@@ -1875,9 +1880,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_MemCpy
-  static boost::shared_ptr< AR_MemCpy > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_MemCpy >(
+  static std::shared_ptr< AR_MemCpy > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_MemCpy >(
         (new AR_MemCpy(parent_bblock, e))->shared_from_this());
   }
 
@@ -1907,7 +1912,7 @@ private:
 public:
   virtual ~AR_MemMove();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the destination pointer
   inline AR_Node_Ref< AR_Operand > getTarget() { return _tgt_pointer; }
@@ -1922,9 +1927,9 @@ public:
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_MEMMOVE_STATEMENT_CLASS_TYPE;
   }
-  static boost::shared_ptr< AR_MemMove > create(index64_t parent_bblock,
-                                                s_expression e) {
-    return boost::static_pointer_cast< AR_MemMove >(
+  static std::shared_ptr< AR_MemMove > create(index64_t parent_bblock,
+                                              s_expression e) {
+    return std::static_pointer_cast< AR_MemMove >(
         (new AR_MemMove(parent_bblock, e))->shared_from_this());
   }
 
@@ -1954,7 +1959,7 @@ private:
 public:
   virtual ~AR_MemSet();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the length of the content to be initialized
   inline AR_Node_Ref< AR_Operand > getLength() { return _len; }
@@ -1969,9 +1974,9 @@ public:
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_MEMSET_STATEMENT_CLASS_TYPE;
   }
-  static boost::shared_ptr< AR_MemSet > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_MemSet >(
+  static std::shared_ptr< AR_MemSet > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_MemSet >(
         (new AR_MemSet(parent_bblock, e))->shared_from_this());
   }
 
@@ -1998,15 +2003,15 @@ public:
 
   virtual ~AR_VA_Start() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_VA_START_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_VA_Start
-  static boost::shared_ptr< AR_VA_Start > create(index64_t parent_bblock,
-                                                 s_expression e) {
-    return boost::static_pointer_cast< AR_VA_Start >(
+  static std::shared_ptr< AR_VA_Start > create(index64_t parent_bblock,
+                                               s_expression e) {
+    return std::static_pointer_cast< AR_VA_Start >(
         (new AR_VA_Start(parent_bblock, e))->shared_from_this());
   }
 };
@@ -2024,15 +2029,15 @@ public:
 
   virtual ~AR_VA_End() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_VA_END_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_VA_End
-  static boost::shared_ptr< AR_VA_End > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_VA_End >(
+  static std::shared_ptr< AR_VA_End > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_VA_End >(
         (new AR_VA_End(parent_bblock, e))->shared_from_this());
   }
 };
@@ -2056,15 +2061,15 @@ public:
 
   virtual ~AR_VA_Copy() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_VA_COPY_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_VA_Copy
-  static boost::shared_ptr< AR_VA_Copy > create(index64_t parent_bblock,
-                                                s_expression e) {
-    return boost::static_pointer_cast< AR_VA_Copy >(
+  static std::shared_ptr< AR_VA_Copy > create(index64_t parent_bblock,
+                                              s_expression e) {
+    return std::static_pointer_cast< AR_VA_Copy >(
         (new AR_VA_Copy(parent_bblock, e))->shared_from_this());
   }
 };
@@ -2081,15 +2086,15 @@ private:
 public:
   virtual ~AR_VA_Arg() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_VA_ARG_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_VA_Arg
-  static boost::shared_ptr< AR_VA_Arg > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_VA_Arg >(
+  static std::shared_ptr< AR_VA_Arg > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_VA_Arg >(
         (new AR_VA_Arg(parent_bblock, e))->shared_from_this());
   }
 };
@@ -2109,7 +2114,7 @@ private:
 public:
   virtual ~AR_Pointer_Shift();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
 
   //! Returns the pointer
   inline AR_Node_Ref< AR_Operand > getPointer() { return _ptr; }
@@ -2124,9 +2129,9 @@ public:
   }
 
   //! Returns the shared_ptr to AR_Pointer_Shift
-  static boost::shared_ptr< AR_Pointer_Shift > create(index64_t parent_bblock,
-                                                      s_expression e) {
-    return boost::static_pointer_cast< AR_Pointer_Shift >(
+  static std::shared_ptr< AR_Pointer_Shift > create(index64_t parent_bblock,
+                                                    s_expression e) {
+    return std::static_pointer_cast< AR_Pointer_Shift >(
         (new AR_Pointer_Shift(parent_bblock, e))->shared_from_this());
   }
 
@@ -2182,15 +2187,15 @@ public:
   //! Returns the name of the called function
   virtual ~AR_Call();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_CALL_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Call
-  static boost::shared_ptr< AR_Call > create(index64_t parent_bblock,
-                                             s_expression e) {
-    return boost::static_pointer_cast< AR_Call >(
+  static std::shared_ptr< AR_Call > create(index64_t parent_bblock,
+                                           s_expression e) {
+    return std::static_pointer_cast< AR_Call >(
         (new AR_Call(parent_bblock, e))->shared_from_this());
   }
 
@@ -2239,15 +2244,15 @@ public:
 
   virtual ~AR_Invoke();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_INVOKE_STATEMENT_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Invoke
-  static boost::shared_ptr< AR_Invoke > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_Invoke >(
+  static std::shared_ptr< AR_Invoke > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_Invoke >(
         (new AR_Invoke(parent_bblock, e))->shared_from_this());
   }
 
@@ -2271,15 +2276,15 @@ public:
 
   virtual ~AR_Abstract_Memory() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_ABSTRACT_MEM_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Abstract_Memory
-  static boost::shared_ptr< AR_Abstract_Memory > create(index64_t parent_bblock,
-                                                        s_expression e) {
-    return boost::static_pointer_cast< AR_Abstract_Memory >(
+  static std::shared_ptr< AR_Abstract_Memory > create(index64_t parent_bblock,
+                                                      s_expression e) {
+    return std::static_pointer_cast< AR_Abstract_Memory >(
         (new AR_Abstract_Memory(parent_bblock, e))->shared_from_this());
   }
 
@@ -2302,15 +2307,15 @@ public:
 
   virtual ~AR_Abstract_Variable() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_ABSTRACT_VAR_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Abstract_Variable
-  static boost::shared_ptr< AR_Abstract_Variable > create(
-      index64_t parent_bblock, s_expression e) {
-    return boost::static_pointer_cast< AR_Abstract_Variable >(
+  static std::shared_ptr< AR_Abstract_Variable > create(index64_t parent_bblock,
+                                                        s_expression e) {
+    return std::static_pointer_cast< AR_Abstract_Variable >(
         (new AR_Abstract_Variable(parent_bblock, e))->shared_from_this());
   }
 
@@ -2332,15 +2337,15 @@ public:
 
   virtual ~AR_Landing_Pad() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_LANDING_PAD_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Landing_Pad
-  static boost::shared_ptr< AR_Landing_Pad > create(index64_t parent_bblock,
-                                                    s_expression e) {
-    return boost::static_pointer_cast< AR_Landing_Pad >(
+  static std::shared_ptr< AR_Landing_Pad > create(index64_t parent_bblock,
+                                                  s_expression e) {
+    return std::static_pointer_cast< AR_Landing_Pad >(
         (new AR_Landing_Pad(parent_bblock, e))->shared_from_this());
   }
 
@@ -2362,13 +2367,13 @@ public:
 
   virtual ~AR_Resume() {}
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_RESUME_CLASS_TYPE; }
 
   //! Returns the shared_ptr to AR_Resume
-  static boost::shared_ptr< AR_Resume > create(index64_t parent_bblock,
-                                               s_expression e) {
-    return boost::static_pointer_cast< AR_Resume >(
+  static std::shared_ptr< AR_Resume > create(index64_t parent_bblock,
+                                             s_expression e) {
+    return std::static_pointer_cast< AR_Resume >(
         (new AR_Resume(parent_bblock, e))->shared_from_this());
   }
 
@@ -2394,8 +2399,8 @@ private:
   std::vector< index64_t > _next_blocks;
   std::vector< index64_t > _prev_blocks;
   std::string _name_id;
-  boost::unordered_set< std::string > _next_blocks_name_refs;
-  boost::unordered_set< std::string > _prev_blocks_name_refs;
+  std::unordered_set< std::string > _next_blocks_name_refs;
+  std::unordered_set< std::string > _prev_blocks_name_refs;
   index64_t _containing_code;
 
 private:
@@ -2467,7 +2472,7 @@ public:
   bool isNextBlock(AR_Node_Ref< AR_Basic_Block >);
 
   inline bool isNextBlock(const std::string& block_name) {
-    boost::unordered_set< std::string >::iterator it =
+    std::unordered_set< std::string >::iterator it =
         _next_blocks_name_refs.find(block_name);
     return it != _next_blocks_name_refs.end();
   }
@@ -2497,33 +2502,33 @@ public:
     _prev_blocks_name_refs.insert(prev_bblock_ref);
   }
   inline bool isPreviousBlock(const std::string& block_name) {
-    boost::unordered_set< std::string >::iterator it =
+    std::unordered_set< std::string >::iterator it =
         _prev_blocks_name_refs.find(block_name);
     return it != _prev_blocks_name_refs.end();
   }
   inline const std::string& getBasicBlockId() { return _name_id; }
-  inline void setNextBlockIds(boost::unordered_set< std::string > bblock_ids) {
+  inline void setNextBlockIds(std::unordered_set< std::string > bblock_ids) {
     _next_blocks_name_refs = bblock_ids;
   }
-  inline boost::unordered_set< std::string >& getNextBlockIds() {
+  inline std::unordered_set< std::string >& getNextBlockIds() {
     return _next_blocks_name_refs;
   }
-  inline boost::unordered_set< std::string >& getPreviousBlockIds() {
+  inline std::unordered_set< std::string >& getPreviousBlockIds() {
     return _prev_blocks_name_refs;
   }
 
   // virtual methods for AR_Node
   virtual ~AR_Basic_Block();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() {
     return AR_BASIC_BLOCK_CLASS_TYPE;
   }
 
   //! Returns the shared_ptr to AR_Basic_Block
-  static boost::shared_ptr< AR_Basic_Block > create(index64_t parent_code,
-                                                    s_expression e) {
-    return boost::static_pointer_cast< AR_Basic_Block >(
+  static std::shared_ptr< AR_Basic_Block > create(index64_t parent_code,
+                                                  s_expression e) {
+    return std::static_pointer_cast< AR_Basic_Block >(
         (new AR_Basic_Block(parent_code, e))->shared_from_this());
   }
 };
@@ -2539,9 +2544,9 @@ private:
   index64_t _exit_block;
   std::vector< AR_Node_Ref< AR_Basic_Block > > _blocks;
   std::vector< AR_Node_Ref< AR_Internal_Variable > > _internal_variables;
-  boost::unordered_map< std::string, AR_Node_Ref< AR_Basic_Block > >
+  std::unordered_map< std::string, AR_Node_Ref< AR_Basic_Block > >
       _name_id_to_bblock_cache;
-  std::map< std::string, index64_t > _name_to_uid;
+  std::unordered_map< std::string, index64_t > _name_to_uid;
   bool _bblocks_connected;
   index64_t _parent_function;
 
@@ -2594,21 +2599,21 @@ public:
   void addInternalVariable(AR_Node_Ref< AR_Internal_Variable > ivar);
   virtual ~AR_Code();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   AR_Node_Ref< AR_Basic_Block > getBasicBlockByNameId(
       const std::string& name_id);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_CODE_CLASS_TYPE; }
 
   //! Returns the shared_ptr to AR_Code
-  static boost::shared_ptr< AR_Code > create(index64_t parent_function,
-                                             s_expression e) {
-    return boost::static_pointer_cast< AR_Code >(
+  static std::shared_ptr< AR_Code > create(index64_t parent_function,
+                                           s_expression e) {
+    return std::static_pointer_cast< AR_Code >(
         (new AR_Code(parent_function, e))->shared_from_this());
   }
 };
 
 class AR_Function;
-typedef node_iterator< AR_Function, boost::unordered_set< index64_t > >::type
+typedef node_iterator< AR_Function, std::unordered_set< index64_t > >::type
     function_iterator;
 
 /**
@@ -2638,8 +2643,8 @@ private:
   std::vector< AR_Node_Ref< AR_Local_Variable > > _local_variables;
   AR_Node_Ref< AR_Type > _return_type;
 
-  boost::unordered_set< index64_t > _callers;
-  boost::unordered_set< index64_t > _callees;
+  std::unordered_set< index64_t > _callers;
+  std::unordered_set< index64_t > _callees;
 
 private:
   const static std::string BASICBLOCK_TAG;
@@ -2716,12 +2721,12 @@ public:
   AR_Node_Ref< AR_Local_Variable > getLocalVariable(const std::string& name);
 
   void addLocalVariable(AR_Node_Ref< AR_Local_Variable > var);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_FUNCTION_CLASS_TYPE; }
 
   //! Returns the shared_ptr to AR_Function
-  static boost::shared_ptr< AR_Function > create(s_expression e) {
-    return boost::static_pointer_cast< AR_Function >(
+  static std::shared_ptr< AR_Function > create(s_expression e) {
+    return std::static_pointer_cast< AR_Function >(
         (new AR_Function(e))->shared_from_this());
   }
 };
@@ -2743,8 +2748,8 @@ private:
   AR_Bundle() : AR_Node() {}
 
 public:
-  static boost::shared_ptr< AR_Bundle > create() {
-    return boost::static_pointer_cast< AR_Bundle >(
+  static std::shared_ptr< AR_Bundle > create() {
+    return std::static_pointer_cast< AR_Bundle >(
         (new AR_Bundle())->shared_from_this());
   }
 
@@ -2773,7 +2778,7 @@ public:
   void add_function(AR_Node_Ref< AR_Function > f) { _functions.push_back(f); }
   virtual ~AR_Bundle();
   virtual void print(std::ostream& out);
-  virtual void accept(boost::shared_ptr< Visitor > visitor);
+  virtual void accept(std::shared_ptr< Visitor > visitor);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_BUNDLE_CLASS_TYPE; }
 
   // API to set and get metainfo
@@ -2812,7 +2817,7 @@ private:
   // AR_Structure_Type containing an AR_Pointer_Type that points to
   // the same AR_Structure_Type. A uid is marked and checked in
   // AR_Structure_Type::accept() to prevent traversing a cycle.
-  boost::unordered_set< index64_t > _visited;
+  std::unordered_set< index64_t > _visited;
 
 public:
   void markVisited(index64_t uid) { _visited.insert(uid); }
@@ -2958,19 +2963,20 @@ private:
   static ARModel* _instance;
   // References from the input
   std::vector< index64_t > _ordered_refs;
-  std::map< index64_t, boost::optional< s_expression > > _input_ref_to_sexpr;
-  std::map< index64_t, index64_t > _input_ref_to_ar_map;
-  boost::unordered_map< index64_t, std::string >
+  std::unordered_map< index64_t, boost::optional< s_expression > >
+      _input_ref_to_sexpr;
+  std::unordered_map< index64_t, index64_t > _input_ref_to_ar_map;
+  std::unordered_map< index64_t, std::string >
       _file_map; // maps AIR ref to the actual file path
 
   // ARModel event listeners
-  boost::unordered_map< ARModelEventListener::Event, std::vector< index64_t > >
+  std::unordered_map< ARModelEventListener::Event, std::vector< index64_t > >
       _listeners;
 
-  std::map< index64_t, boost::shared_ptr< AR_Node > > _uid_to_ARNode;
+  std::unordered_map< index64_t, std::shared_ptr< AR_Node > > _uid_to_ARNode;
   std::list< AR_Node_Ref< AR_Node > > _ar_prototypes;
   AR_Node_Ref< AR_Bundle > _bundle;
-  std::map< std::string, index64_t > _name_id_to_func;
+  std::unordered_map< std::string, index64_t > _name_id_to_func;
   AR_Node_Ref< AR_Code > _current_building_scope;
   AR_Node_Ref< AR_Function > _current_building_function;
   bool _complete;
@@ -2996,7 +3002,7 @@ public:
   }
 
   inline std::string get_filepath(index64_t id) { return _file_map[id]; }
-  inline boost::unordered_map< index64_t, std::string >& getFiles() {
+  inline std::unordered_map< index64_t, std::string >& getFiles() {
     return _file_map;
   }
   inline s_expression getSEXPRfromInputRef(index64_t id) {
@@ -3014,7 +3020,7 @@ public:
   // End methods handling the input
 
   void print(std::ostream& out);
-  inline boost::shared_ptr< AR_Node > getARNode(index64_t uid) {
+  inline std::shared_ptr< AR_Node > getARNode(index64_t uid) {
     return _uid_to_ARNode[uid];
   }
 
@@ -3027,7 +3033,7 @@ public:
     return 0;
   }
 
-  inline void registerARNode(index64_t uid, boost::shared_ptr< AR_Node > node) {
+  inline void registerARNode(index64_t uid, std::shared_ptr< AR_Node > node) {
     assert(node);
     _uid_to_ARNode.insert(std::make_pair(uid, node));
   }
@@ -3060,7 +3066,7 @@ public:
     return _current_building_function;
   }
 
-  void accept(boost::shared_ptr< Visitor > visitor);
+  void accept(std::shared_ptr< Visitor > visitor);
   inline void addARPrototype(AR_Node_Ref< AR_Node > node_ref) {
     _ar_prototypes.push_back(node_ref);
   }
@@ -3080,8 +3086,7 @@ private:
 };
 
 template < typename T >
-AR_Node_Ref< T >::AR_Node_Ref(index64_t uid)
-    : _uid(uid) {
+AR_Node_Ref< T >::AR_Node_Ref(index64_t uid) : _uid(uid) {
   ReferenceCounter::Get()->increment_ct(uid);
 }
 
@@ -3109,16 +3114,16 @@ void AR_Node_Ref< T >::setUID(index64_t new_uid) {
 
 template < typename T >
 T& AR_Node_Ref< T >::operator*() const {
-  boost::shared_ptr< T > ptr =
-      boost::static_pointer_cast< T >(ARModel::Instance()->getARNode(_uid));
+  std::shared_ptr< T > ptr =
+      std::static_pointer_cast< T >(ARModel::Instance()->getARNode(_uid));
   assert(ptr);
   return *(ptr.get());
 }
 
 template < typename T >
 T* AR_Node_Ref< T >::operator->() const {
-  boost::shared_ptr< T > ptr =
-      boost::static_pointer_cast< T >(ARModel::Instance()->getARNode(_uid));
+  std::shared_ptr< T > ptr =
+      std::static_pointer_cast< T >(ARModel::Instance()->getARNode(_uid));
   assert(ptr);
   return ptr.get();
 }
@@ -3130,7 +3135,7 @@ AR_Node_Ref< T >::~AR_Node_Ref() {
       ReferenceCounter::Get()->decrement_ct(_uid);
     }
     if (ReferenceCounter::Get()->get_ct(_uid) == 0) {
-      std::map< index64_t, boost::shared_ptr< AR_Node > >::iterator p =
+      std::unordered_map< index64_t, std::shared_ptr< AR_Node > >::iterator p =
           ARModel::Instance()->_uid_to_ARNode.find(_uid);
       if (p != ARModel::Instance()->_uid_to_ARNode.end()) {
 #ifdef DEBUG

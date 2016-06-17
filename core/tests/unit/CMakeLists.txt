@@ -112,7 +112,6 @@ include_directories(${IKOS_INCLUDE_DIR})
 
 add_cxx_flag("-std=c++1y" "CXX14")
 add_cxx_flag("-Wall" "WALL")
-add_cxx_flag("-Wno-unused-local-typedefs" "WNO_UNUSED_LOCAL_TYPEDEFS")
 
 #
 # Targets

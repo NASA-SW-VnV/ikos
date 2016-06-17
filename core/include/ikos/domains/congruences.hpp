@@ -7,6 +7,8 @@
  *
  * Contributors: Jorge A. Navas
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * Bitwise extensions based on Stefan Bygde's paper: Static WCET
  * analysis based on abstract interpretation and counting of elements,
  * Vasteras : School of Innovation, Design and Engineering, Malardalen
@@ -20,8 +22,6 @@
  *   unlimited precision
  * - If typeSize > -1 the domain assumes that all variables will
  *   have the same bit width typeSize.
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -61,12 +61,13 @@
 #define IKOS_CONGRUENCES_HPP
 
 #include <iostream>
+#include <vector>
 
 #include <ikos/common/types.hpp>
-#include <ikos/domains/separate_domains.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/separate_domains.hpp>
 
 namespace ikos {
 

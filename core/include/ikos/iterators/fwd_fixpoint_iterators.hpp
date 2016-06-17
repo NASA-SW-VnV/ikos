@@ -48,14 +48,12 @@
 #define IKOS_FWD_FIXPOINT_ITERATORS_HPP
 
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <utility>
 
-#include <boost/shared_ptr.hpp>
-
 #include <ikos/common/types.hpp>
-#include <ikos/iterators/wto.hpp>
 #include <ikos/iterators/fixpoint_iterators_api.hpp>
+#include <ikos/iterators/wto.hpp>
 
 namespace ikos {
 
@@ -76,13 +74,17 @@ class interleaved_fwd_fixpoint_iterator
       wto_iterator< NodeName, CFG, AbstractValue >;
 
 private:
-  typedef std::map< NodeName, AbstractValue > invariant_table_t;
-  typedef boost::shared_ptr< invariant_table_t > invariant_table_ptr;
+  typedef std::unordered_map< NodeName, AbstractValue > invariant_table_t;
+  typedef std::shared_ptr< invariant_table_t > invariant_table_ptr;
   typedef wto< NodeName, CFG > wto_t;
-  typedef interleaved_fwd_fixpoint_iterator_impl::
-      wto_iterator< NodeName, CFG, AbstractValue > wto_iterator_t;
-  typedef interleaved_fwd_fixpoint_iterator_impl::
-      wto_processor< NodeName, CFG, AbstractValue > wto_processor_t;
+  typedef interleaved_fwd_fixpoint_iterator_impl::wto_iterator< NodeName,
+                                                                CFG,
+                                                                AbstractValue >
+      wto_iterator_t;
+  typedef interleaved_fwd_fixpoint_iterator_impl::wto_processor< NodeName,
+                                                                 CFG,
+                                                                 AbstractValue >
+      wto_processor_t;
 
 private:
   CFG _cfg;

@@ -43,16 +43,19 @@
 #ifndef ANALYZER_CFG_HPP
 #define ANALYZER_CFG_HPP
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <unordered_map>
+
+#include <boost/filesystem.hpp>
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/optional.hpp>
 
 #include <ikos/common/types.hpp>
 #include <ikos/domains/discrete_domains.hpp>
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ar-wrapper/wrapper.hpp>
 #include <analyzer/ar-wrapper/literal.hpp>
+#include <analyzer/ar-wrapper/wrapper.hpp>
 
 namespace analyzer {
 
@@ -61,12 +64,40 @@ using namespace arbos;
 // The values must be such that REG <= PTR <= MEM
 enum TrackedPrecision { REG = 0, PTR = 1, MEM = 2 };
 
+boost::filesystem::path relative_to(boost::filesystem::path from,
+                                    boost::filesystem::path to) {
+  boost::filesystem::path::const_iterator from_it = from.begin();
+  boost::filesystem::path::const_iterator to_it = to.begin();
+
+  // loop through both
+  while (from_it != from.end() && to_it != to.end() && *to_it == *from_it) {
+    ++to_it;
+    ++from_it;
+  }
+
+  boost::filesystem::path final_path;
+  while (from_it != from.end()) {
+    final_path /= "..";
+    ++from_it;
+  }
+
+  while (to_it != to.end()) {
+    final_path /= *to_it;
+    ++to_it;
+  }
+
+  return final_path;
+}
+
 inline std::string location_to_string(const location& loc) {
-  return "FILE: " + loc.first + " LINE:" + std::to_string(loc.second);
+  boost::filesystem::path relpath =
+      relative_to(boost::filesystem::current_path(), loc.file);
+  return relpath.string() + ":" + std::to_string(loc.line) + ":" +
+         std::to_string(loc.column);
 }
 
 inline bool IsMain(arbos::Function_ref func) {
-  return (ar::getName(func) == "main");
+  return ar::getName(func) == "main";
 }
 
 // convert from arbos to ikos
@@ -88,8 +119,8 @@ inline boost::optional< ikos::operation_t > translate_op(arbos::ArithOp op) {
 //! Collect all the used and defined variables for each statement
 class live_info : public arbos_visitor_api {
 public:
-  typedef boost::shared_ptr< live_info > live_info_ptr;
-  typedef boost::unordered_map< uint64_t, varname_set_t > varset_map_t;
+  typedef std::shared_ptr< live_info > live_info_ptr;
+  typedef std::unordered_map< uint64_t, varname_set_t > varset_map_t;
 
 private:
   varset_map_t _uses;
@@ -362,7 +393,7 @@ public:
   const_iterator begin() const { return _stmts.begin(); }
   const_iterator end() const { return _stmts.end(); }
 
-  void accept(boost::shared_ptr< arbos_visitor_api > vis) {
+  void accept(std::shared_ptr< arbos_visitor_api > vis) {
     vis->visit_start(_block);
 
     for (iterator I = begin(), E = end(); I != E; ++I) {
@@ -417,7 +448,7 @@ public:
   typedef arbos_node< Basic_Block_ref > arbos_node_t;
 
 private:
-  typedef boost::unordered_map< Basic_Block_ref, arbos_node_t > nodes_map_t;
+  typedef std::unordered_map< Basic_Block_ref, arbos_node_t > nodes_map_t;
 
   struct MkSecond
       : public std::unary_function< nodes_map_t::value_type, arbos_node_t > {
@@ -436,7 +467,7 @@ public:
   typedef boost::transform_iterator< MkSecond, nodes_map_t::iterator > iterator;
 
 private:
-  boost::shared_ptr< nodes_map_t > _nodes_map;
+  std::shared_ptr< nodes_map_t > _nodes_map;
   Function_ref _func;
   Basic_Block_ref _entry;
   boost::optional< Basic_Block_ref > _exit;
@@ -620,7 +651,7 @@ public:
     return std::make_pair(begin(), end());
   }
 
-  void accept(boost::shared_ptr< arbos_visitor_api > vis) {
+  void accept(std::shared_ptr< arbos_visitor_api > vis) {
     vis->visit_start(_func);
 
     for (iterator I = begin(), E = end(); I != E; ++I) {
@@ -690,8 +721,8 @@ public:
 
 //! A factory for CFGs
 class CfgFactory : public boost::noncopyable {
-  typedef boost::shared_ptr< arbos_cfg > arbos_cfg_ptr;
-  typedef boost::unordered_map< Function_ref, arbos_cfg_ptr > cfg_map_t;
+  typedef std::shared_ptr< arbos_cfg > arbos_cfg_ptr;
+  typedef std::unordered_map< Function_ref, arbos_cfg_ptr > cfg_map_t;
 
   cfg_map_t _map;
   VariableFactory& _vfac;

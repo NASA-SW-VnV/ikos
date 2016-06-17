@@ -1,3 +1,35 @@
+IKOS VERSION 1.1.0 RELEASE NOTES
+================================
+
+
+RELEASE DATE
+------------
+
+June 2016
+
+
+LIST OF CHANGES
+---------------
+
+### Analyzer Changes
+
+* Add the ability to demangle C++ function names
+* Handle `calloc()` correctly. In IKOS 1.0.0, the function call was just ignored.
+* Add the runtime options --display-invariants and --display-checks
+* Add a column called `column` to the result tables in the output database, containing the column number in the source code.
+* Add a column called `stmt_uid` to the result tables in the output database, containing the UID of the checked statement.
+* Performance improvement (the analysis is 70% faster in average)
+* Bug fixes
+
+### LLVM Frontend Changes
+
+The LLVM frontend now supports both LLVM 3.7 and 3.8.
+
+### ARBOS Changes
+
+ARBOS now gives the column number in addition to the line number in AR_Source_Location.
+
+
 IKOS VERSION 1.0.0 RELEASE NOTES
 ================================
 
@@ -7,8 +39,8 @@ RELEASE DATE
 
 May 2016
 
-NEW FEATURES
-------------
+LIST OF CHANGES
+---------------
 
 ### LLVM Frontend Changes
 
@@ -37,31 +69,37 @@ This release removes **AIR** entirely. All transformation are done in **LLVMAR**
 
 
 KNOWN ISSUES
-------------
+============
 
-### Source Code Fortification
+Source Code Fortification
+-------------------------
 
 Source code fortification aims at making your source code more robust. It replaces regular memset(), memcpy() and memmove() calls to __memset_chk(), __memcpy_chk() and __memmove_chk(). According to Linux Standard Base Core Specification 4.1, the interfaces __memset_chk(), __memcpy_chk() and __memmove_chk() shall function in the same way as the interface memset(), memcpy() and memmove(), respectively, except that __memset_chk(), __memcpy_chk() and __memmove_chk() shall check for buffer overflow before computing a result. If an overflow is anticipated, the function shall abort and the program calling it shall exit.
 
 The Buffer Overflow Analysis (BOA) in IKOS handles __memset_chk(), __memcpy_chk() and __memmove_chk() as unknown library functions, and won't report any warning. Consider using -D_FORTIFY_SOURCE=0 when you compile your source code to LLVM bitcode manually.
 
-### Handling Global Variables
+Handling Global Variables
+-------------------------
 
 Prior to performing any analysis, the initialization code of the global variables in the AR program model are inlined in function **main** if available. This transformation of the AR program model is implemented as an AR pass located at **analyzer/src/ar-passes/inline-init-gv.cpp**.
 
-### LLVM Frontend Limitation
+LLVM Frontend Limitation
+------------------------
 
 The current implementation of LLVM frontend does not support LLVM vector type (http://llvm.org/docs/LangRef.html#vector-type).
 
-### Exception Handling
+Exception Handling
+------------------
 
 IKOS 1.0.0 is able to analyze C++ code containing exceptions, but exception propagation through functions is not handled. If the code you are analyzing can raise an exception and does not catch it within the same function, IKOS might be unsound, meaning that it can miss runtime errors. If your code only uses exceptions to report a runtime error and stop the program, then IKOS should be sound.
 
-### Octagon Abstract Domain
+Octagon Abstract Domain
+-----------------------
 
 The octagon abstract domain has some implementation issues. Do not use it.
 
-### Functions Returning a Temporary Array/Structure
+Functions Returning a Temporary Array/Structure
+-----------------------------------------------
 
 IKOS is unsound if you have a function that returns a temporary array or structure. For instance:
 
@@ -74,7 +112,8 @@ int* f() {
 
 By the way, this should be forbidden and your compiler should warn you.
 
-### Variable Length Array
+Variable Length Array
+---------------------
 
 IKOS is unsound if you have a variable length array in your code. A variable length array, or [VLA](https://gcc.gnu.org/onlinedocs/gcc/Variable-Length.html), is a stack allocated array with a dynamic size. For instance:
 

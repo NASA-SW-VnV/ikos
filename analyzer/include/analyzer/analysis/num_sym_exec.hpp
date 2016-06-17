@@ -7,6 +7,8 @@
  *
  * Contributors: Maxime Arthaud
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * It can reason about registers (REG), pointers (PTR) and memory
  * contents (MEM). In the case of registers and memory contents only
  * those storing integers are modelled. Thus, floating-point
@@ -33,8 +35,6 @@
  * 3) If the level of precision is MEM then same level than PTR plus
  * memory contents storing integers are modelled as well. That is, we
  * can keep track of which values are stored in a triple <A,O,S>.
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -73,17 +73,19 @@
 #ifndef ANALYZER_NUM_SYM_EXEC_HPP
 #define ANALYZER_NUM_SYM_EXEC_HPP
 
+#include <unordered_set>
+
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/noncopyable.hpp>
 
-#include <analyzer/ar-wrapper/cfg.hpp>
-#include <analyzer/ar-wrapper/literal.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/sym_exec_api.hpp>
-#include <analyzer/domains/value_domain.hpp>
+#include <analyzer/ar-wrapper/cfg.hpp>
+#include <analyzer/ar-wrapper/literal.hpp>
 #include <analyzer/domains/summary_domain.hpp>
+#include <analyzer/domains/value_domain.hpp>
+#include <analyzer/ikos-wrapper/domains_traits.hpp>
 
 namespace analyzer {
 
@@ -757,9 +759,10 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
   PointerInfo _pointer;
   std::vector< VariableName > _dead_vars;
 
-  typedef boost::unordered_set< Operand_ref,
-                                Operand_Hasher::hash,
-                                Operand_Hasher::eq > operand_set_t;
+  typedef std::unordered_set< Operand_ref,
+                              Operand_Hasher::hash,
+                              Operand_Hasher::eq >
+      operand_set_t;
 
   operand_set_t _mem_objects; //! keep track of memory objects
 
@@ -1519,44 +1522,43 @@ public:
     }
   }
 
-  //! Analysis of library calls (calls for which code is not
-  //! available). TODO: add support for more library calls.
   void exec(Call_ref cs) {
-    assert(ar::isExternal(cs) &&
+    assert(ar::isDirectCall(cs) && ar::isExternal(cs) &&
            "This method should only execute external calls");
 
-    boost::optional< Internal_Variable_ref > lhs = ar::getReturnValue(cs);
+    exec_external_call(ar::getReturnValue(cs),
+                       ar::getFunctionName(cs),
+                       ar::getArguments(cs));
+  }
 
-    ///
-    // Here library functions that we want to consider specially.
-    ///
-    if ((ar::getFunctionName(cs) == "malloc" ||
-         ar::getFunctionName(cs) == "_Znwm" ||
-         ar::getFunctionName(cs) == "_Znam" ||
-         ar::getFunctionName(cs) == "__cxa_allocate_exception") &&
-        ar::getNumOfArgs(cs) == 1) {
+  //! Analysis of library calls (calls for which code is not
+  //! available). TODO: add support for more library calls.
+  void exec_external_call(boost::optional< Internal_Variable_ref > lhs,
+                          std::string fun_name,
+                          OpRange arguments) {
+    /*
+     * Here library functions that we want to consider specially.
+     */
+    if ((fun_name == "malloc" || fun_name == "_Znwm" || fun_name == "_Znam" ||
+         fun_name == "__cxa_allocate_exception") &&
+        arguments.size() == 1) {
       // call to malloc, new, new[] or __cxa_allocate_exception
-      Operand_ref arg;
-      boost::tie(arg) = ar::getUnaryArgs(cs);
-      analyze_malloc(lhs, arg);
-    } else if ((ar::getFunctionName(cs) == "free" ||
-                ar::getFunctionName(cs) == "_ZdlPv" ||
-                ar::getFunctionName(cs) == "_ZdaPv" ||
-                ar::getFunctionName(cs) == "__cxa_free_exception") &&
-               ar::getNumOfArgs(cs) == 1) {
+      analyze_malloc(lhs, arguments[0]);
+    } else if (fun_name == "calloc" && arguments.size() == 2) {
+      analyze_calloc(lhs, arguments[0], arguments[1]);
+    } else if ((fun_name == "free" || fun_name == "_ZdlPv" ||
+                fun_name == "_ZdaPv" || fun_name == "__cxa_free_exception") &&
+               arguments.size() == 1) {
       // call to free, delete, delete[] or __cxa_free_exception
-      Operand_ref arg;
-      boost::tie(arg) = ar::getUnaryArgs(cs);
-      analyze_free(arg);
-    } else if (ar::getFunctionName(cs) == "read" && ar::getNumOfArgs(cs) == 3) {
-      Operand_ref arg1, arg2, arg3;
-      boost::tie(arg1, arg2, arg3) = ar::getTernaryArgs(cs);
-      analyze_read(lhs, arg1, arg2, arg3);
-    } else { // default case: forget all actual parameters of pointer type
+      analyze_free(arguments[0]);
+    } else if (fun_name == "read" && arguments.size() == 3) {
+      analyze_read(lhs, arguments[0], arguments[1], arguments[2]);
+    } else {
+      // default case: forget all actual parameters of pointer type
       // (very conservative!)
       if (_prec_level >= PTR) {
-        OpRange apars = ar::getArguments(cs);
-        for (OpRange::iterator it = apars.begin(), et = apars.end(); it != et;
+        for (OpRange::iterator it = arguments.begin(), et = arguments.end();
+             it != et;
              ++it) {
           if (ar::isPointer(*it)) {
             Literal p = _lfac[*it];
@@ -1572,6 +1574,7 @@ public:
         Literal ret = _lfac[*lhs];
         assert(ret.is_var());
         _inv -= ret.get_var();
+
         // ASSUMPTION:
         // The claim about the correctness of the program under analysis
         // can be made only if all calls to unavailable code are assumed
@@ -1718,31 +1721,85 @@ private:
     if (!lhs)
       return;
 
-    if (ar::isPointer(*lhs)) {
-      if (ar::isInteger(ar::getPointeeType(ar::getType(*lhs)))) {
-        Literal Size = _lfac[size];
+    if (ar::isPointer(*lhs) &&
+        ar::isInteger(ar::getPointeeType(ar::getType(*lhs)))) {
+      Literal Size = _lfac[size];
 
-        Operand_ref o;
-        arbos::convert(*lhs, o);
+      Operand_ref ptr;
+      arbos::convert(*lhs, ptr);
 
-        // Create a new memory object
-        if (Size.is_var()) {
-          make_mem_object(_inv,
-                          o,
-                          _lfac,
-                          /* malloc can return NULL if no more dynamic
-                           * memory is available */
-                          MAYNULL,
-                          Size.get_var());
-        } else if (Size.is_num()) {
-          make_mem_object(_inv,
-                          o,
-                          _lfac,
-                          /* malloc can return NULL if no more dynamic
-                           * memory is available */
-                          MAYNULL,
-                          Size.get_num< ikos::z_number >());
-        }
+      // Create a new memory object
+      if (Size.is_var()) {
+        make_mem_object(_inv,
+                        ptr,
+                        _lfac,
+                        /* malloc can return NULL if no more dynamic
+                         * memory is available */
+                        MAYNULL,
+                        Size.get_var());
+      } else if (Size.is_num()) {
+        make_mem_object(_inv,
+                        ptr,
+                        _lfac,
+                        /* malloc can return NULL if no more dynamic
+                         * memory is available */
+                        MAYNULL,
+                        Size.get_num< ikos::z_number >());
+      }
+    }
+  }
+
+  /*
+    #include <stdlib.h>
+    void* calloc(size_t count, size_t size)
+
+    The calloc() function contiguously allocates enough space for count objects
+    that are size bytes of memory each and returns a pointer to the allocated
+    memory. The allocated memory is filled with bytes of value zero.
+   */
+  void analyze_calloc(boost::optional< Internal_Variable_ref > lhs,
+                      Operand_ref count,
+                      Operand_ref size) {
+    if (_prec_level < PTR)
+      return;
+
+    if (!lhs)
+      return;
+
+    if (ar::isPointer(*lhs) &&
+        ar::isInteger(ar::getPointeeType(ar::getType(*lhs)))) {
+      Literal Count = _lfac[count];
+      Literal Size = _lfac[size];
+
+      Operand_ref ptr;
+      arbos::convert(*lhs, ptr);
+
+      // Create a new memory object
+      if (!_make_mem_object(_inv, ptr, _lfac, MAYNULL))
+        return;
+
+      Literal Ptr = _lfac[ptr];
+
+      // TODO: Check for integer overflow
+      if (Count.is_var() && Size.is_var()) {
+        _inv.apply(ikos::OP_MULTIPLICATION,
+                   get_shadow_size(Ptr.get_var()),
+                   Count.get_var(),
+                   Size.get_var());
+      } else if (Count.is_var() && Size.is_num()) {
+        _inv.apply(ikos::OP_MULTIPLICATION,
+                   get_shadow_size(Ptr.get_var()),
+                   Count.get_var(),
+                   Size.get_num< ikos::z_number >());
+      } else if (Count.is_num() && Size.is_var()) {
+        _inv.apply(ikos::OP_MULTIPLICATION,
+                   get_shadow_size(Ptr.get_var()),
+                   Size.get_var(),
+                   Count.get_num< ikos::z_number >());
+      } else if (Count.is_num() && Size.is_num()) {
+        _inv.assign(get_shadow_size(Ptr.get_var()),
+                    Count.get_num< ikos::z_number >() *
+                        Size.get_num< ikos::z_number >());
       }
     }
   }
@@ -1756,7 +1813,9 @@ private:
    */
   void analyze_free(Operand_ref op) {
     Literal ptr = _lfac[op];
-    assert(ptr.is_var());
+
+    if (!ptr.is_var())
+      return;
 
     if (_prec_level < PTR)
       return;

@@ -1,4 +1,4 @@
-IKOS v.1.0.0
+IKOS v.1.1.0
 ============
 
 LICENSE
@@ -37,16 +37,16 @@ The next section illustrates how to install LLVM. If you already have LLVM on yo
 
 To build and run the analyzer, you will need the following dependencies:
 
-* CMake 2.8.12 or higher
+* CMake 2.8.12.2 or higher
 * GMP 6.1 or higher
 * Boost 1.55 or higher
 * Python 2.7 or 3.3 or higher
 * SQLite 3
 * LLVM 3.7 or higher
-* llvm-clang 3.7
+* llvm-clang 3.7 or higher
 * A C++ compiler that supports C++14 (gcc 5 or higher, clang 3.4 or higher)
 
-Most of them can be installed using your package manager. You can use Homebrew under MAC OS X.
+Most of them can be installed using your package manager.
 
 ### INSTALL DEPENDENCIES ON MAC OS X
 
@@ -83,7 +83,7 @@ Then, run the following commands:
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install cmake libgmp-dev libboost-dev libboost-program-options-dev libsqlite3-dev libz-dev libedit-dev llvm-3.7 clang-3.7
+$ sudo apt-get install cmake libgmp-dev libboost-dev libboost-program-options-dev libboost-filesystem-dev libsqlite3-dev libz-dev libedit-dev llvm-3.7 clang-3.7
 ```
 
 Now, add the LLVM directory to your PATH (consider adding this in your *.bashrc*):
@@ -234,12 +234,12 @@ Running value analysis ...
 *** Analyzing function: main
 
 Analysis timing report:
-Liveness analysis: 0.00
-Function pointer analysis: 0.00
-Pointer analysis: 0.01
-Value analysis: 0.01
+Liveness analysis: 0.02
+Function pointer analysis: 0.01
+Pointer analysis: 0.05
+Value analysis: 0.02
 
-Summary:
+Summary (per source code location):
 Total number of checks                : 6
 Total number of unreachable checks    : 0
 Total number of safe checks           : 4
@@ -247,19 +247,21 @@ Total number of definite unsafe checks: 2
 Total number of warnings              : 0
 
 The program is definitely UNSAFE
+
 Buffer overflow analysis checks:
-check     context   file              line result
-overflow  .         /path/to/loop.c   6    ok
-underflow .         /path/to/loop.c   6    ok
-overflow  .         /path/to/loop.c   8    error
-underflow .         /path/to/loop.c   8    ok
-overflow  .         /path/to/loop.c   9    error
-underflow .         /path/to/loop.c   9    ok
+| check     | context | file   | line | col | result |
++-----------+---------+--------+------+-----+--------+
+| overflow  | .       | loop.c | 6    | 14  | ok     |
+| underflow | .       | loop.c | 6    | 14  | ok     |
+| overflow  | .       | loop.c | 8    | 10  | error  |
+| underflow | .       | loop.c | 8    | 10  | ok     |
+| overflow  | .       | loop.c | 9    | 18  | error  |
+| underflow | .       | loop.c | 9    | 18  | ok     |
 ----------------------------------------------------------------------
 BRUNCH_STAT Progress Get Analysis Results
-BRUNCH_STAT arbos_plugins 0.04
-BRUNCH_STAT ikos-pp 0.01
-BRUNCH_STAT llvm-clang 0.06
+BRUNCH_STAT arbos_plugins 0.20
+BRUNCH_STAT ikos-pp 0.00
+BRUNCH_STAT llvm-clang 0.03
 BRUNCH_STAT llvm-to-ar 0.02
 ----------------------------------------------------------------------
 ```
@@ -280,7 +282,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -a {boa,prover,dbz,nullity,uva}, --analysis {boa,prover,dbz,nullity,uva}
+  -a {boa,uva,dbz,prover,nullity}, --analysis {boa,uva,dbz,prover,nullity}
                         Type of analysis (boa, dbz, uva, prover, nullity)
   -e ENTRY_POINTS, --entry-points ENTRY_POINTS
                         The entry point(s) of the program (default: main)
@@ -289,7 +291,7 @@ optional arguments:
   --inline-all          Front-end inline all functions
   --intra               Run an intraprocedural analysis instead of an
                         interprocedural analysis
-  --no-liveness         Do not run the lieness analysis
+  --no-liveness         Do not run the liveness analysis
   --no-pointer          Do not run the pointer analysis
   -p {reg,ptr,mem}, --precision-level {reg,ptr,mem}
                         The precision level (reg, ptr, mem). Default to mem
@@ -301,15 +303,20 @@ optional arguments:
                         Initialize only pointer global variables
   --summaries           Use function summarization
   --pointer-summaries   Use function summarization for the pointer analysis
-  --verify-bitecode     Verify LLVM bitecode is well formed
+  --verify-bitcode      Verify LLVM bitcode is well formed
   --save-temps          Do not delete temporary files
   --temp-dir DIR        Temporary directory
+  --display-invariants {all,fail,off}
+                        Display invariants. Default to off
+  --display-checks {all,fail,off}
+                        Display checks. Default to off
   --output-db FILE, --db FILE
                         The output database file
   -d, --dot-cfg         Print CFG of all functions to 'dot' file
   -i, --ikosview        Show analysis results using ikosview GUI
   --cpu CPU             CPU time limit (seconds)
   --mem MEM             MEM limit (MB)
+  --version             show ikos version
 ```
 
 TROUBLESHOOTING

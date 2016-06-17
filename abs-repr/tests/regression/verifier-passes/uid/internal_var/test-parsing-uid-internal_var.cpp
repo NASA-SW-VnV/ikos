@@ -42,13 +42,13 @@
  *
  ******************************************************************************/
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <algorithm>
 #include <vector>
 
-#include <arbos/semantics/ar.hpp>
 #include <arbos/common/common.hpp>
+#include <arbos/semantics/ar.hpp>
 
 using namespace arbos;
 
@@ -66,7 +66,7 @@ public:
 class Verifier : public Visitor {
 private:
   std::vector< AR_Node_Ref< AR_Internal_Variable > > _internal_vars;
-  std::map< index64_t, int > _usages_ct;
+  std::unordered_map< index64_t, int > _usages_ct;
 
   inline void add_ref(index64_t uid) {
     if (_usages_ct.find(uid) == _usages_ct.end()) {
@@ -94,7 +94,7 @@ public:
   virtual void nodeStart(AR_Var_Operand&);
 
   void print(std::ostream& out) {
-    std::map< index64_t, int >::iterator p = _usages_ct.begin();
+    std::unordered_map< index64_t, int >::iterator p = _usages_ct.begin();
     for (; p != _usages_ct.end(); p++) {
       assert(_usages_ct[p->first] >= 0);
     }
@@ -114,7 +114,7 @@ public:
     std::cout << "This pass verifies regression test parsing/uid-internal_var"
               << std::endl
               << std::endl;
-    boost::shared_ptr< Verifier > v(new Verifier());
+    std::shared_ptr< Verifier > v(new Verifier());
     (*bundle).accept(v);
     v->print(std::cout);
   }

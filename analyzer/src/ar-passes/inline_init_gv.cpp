@@ -44,9 +44,9 @@
 #include <iterator>
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ar-wrapper/wrapper.hpp>
-#include <analyzer/ar-wrapper/transformations.hpp>
 #include <analyzer/ar-wrapper/cfg.hpp>
+#include <analyzer/ar-wrapper/transformations.hpp>
+#include <analyzer/ar-wrapper/wrapper.hpp>
 
 namespace arbos {
 

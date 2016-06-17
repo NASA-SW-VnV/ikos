@@ -40,12 +40,12 @@
  *
  ******************************************************************************/
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 #include <vector>
 
-#include <arbos/semantics/ar.hpp>
 #include <arbos/common/common.hpp>
+#include <arbos/semantics/ar.hpp>
 
 using namespace arbos;
 
@@ -88,7 +88,7 @@ public:
     std::cout << "This pass verifies regression test parsing/gv-int"
               << std::endl
               << std::endl;
-    boost::shared_ptr< Verifier > v(new Verifier());
+    std::shared_ptr< Verifier > v(new Verifier());
     (*bundle).accept(v);
     v->print(std::cout);
   }
@@ -97,21 +97,35 @@ public:
 // Visitor method implementation
 
 void Verifier::nodeStart(AR_Assignment& assign) {
+  AR_Node_Ref< AR_Internal_Variable > var = assign.getLeftOperand();
   AR_Node_Ref< AR_Source_Location > srcloc = assign.getSourceLocation();
   AR_Node_Ref< AR_Basic_Block > bb = assign.getContainingBasicBlock();
-  if ((*bb).getNameId() == "*in_for.inc_to_for.cond_phi")
+  if ((*bb).getNameId() == "*in_for.inc_to_for.cond_phi") {
     assert((*srcloc).getLineNumber() == 5);
-  else if ((*bb).getNameId() == "*in_entry_to_for.cond_phi")
+    assert((*srcloc).getColumnNumber() == 3);
+  } else if ((*bb).getNameId() == "*in_entry_to_for.cond_phi") {
     assert((*srcloc).getLineNumber() == 5);
-  else if ((*bb).getNameId() == "*out_for.cond_to_for.end_icmp_false")
+    assert((*srcloc).getColumnNumber() == 3);
+  } else if ((*bb).getNameId() == "*out_for.cond_to_for.end_icmp_false") {
     assert((*srcloc).getLineNumber() == 5);
-  else if ((*bb).getNameId() == "*out_for.cond_to_for.body_icmp_true")
+    assert((*srcloc).getColumnNumber() == 3);
+  } else if ((*bb).getNameId() == "*out_for.cond_to_for.body_icmp_true") {
     assert((*srcloc).getLineNumber() == 5);
-  else if ((*bb).getNameId() == "for.body")
+    assert((*srcloc).getColumnNumber() == 3);
+  } else if ((*bb).getNameId() == "for.body") {
     assert((*srcloc).getLineNumber() == 6);
-  else if ((*bb).getNameId() == "for.end")
+    if ((*var).getName() == "main.arrayidx")
+      assert((*srcloc).getColumnNumber() == 12);
+    else if ((*var).getName() == "main.arrayidx2")
+      assert((*srcloc).getColumnNumber() == 5);
+    else
+      throw verifier_error(
+          "[Unit test failed]: cannot determine srcloc of assignment "
+          "statement");
+  } else if ((*bb).getNameId() == "for.end") {
     assert((*srcloc).getLineNumber() == 8);
-  else
+    assert((*srcloc).getColumnNumber() == 3);
+  } else
     throw verifier_error(
         "[Unit test failed]: cannot determine srcloc of assignment statement");
 }

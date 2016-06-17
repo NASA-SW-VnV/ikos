@@ -49,10 +49,10 @@
 #ifndef ANALYZER_POINTER_HPP
 #define ANALYZER_POINTER_HPP
 
-#include <analyzer/ikos-wrapper/iterators.hpp>
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ar-wrapper/cfg.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
+#include <analyzer/ar-wrapper/cfg.hpp>
+#include <analyzer/ikos-wrapper/iterators.hpp>
 
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/pta.hpp>
@@ -113,7 +113,7 @@ class PointerPass {
       void visit(Resume_ref s) { _post.exec(s); }
       void visit(Abstract_Memory_ref s) { _post.exec(s); }
       void visit(Call_ref s) {
-        if (ar::isExternal(s)) {
+        if (ar::isDirectCall(s) && ar::isExternal(s)) {
           _post.exec(s);
         } else {
           if (_post.inv().is_bottom())
@@ -137,7 +137,7 @@ class PointerPass {
 
     typedef fwd_fixpoint_iterator< Basic_Block_ref, arbos_cfg, AbsNumDomain >
         fwd_fixpoint_iterator_t;
-    typedef boost::unordered_map< Basic_Block_ref, AbsNumDomain > inv_table_t;
+    typedef std::unordered_map< Basic_Block_ref, AbsNumDomain > inv_table_t;
 
     VariableFactory& _vfac;
     LiteralFactory& _lfac;
@@ -159,7 +159,7 @@ class PointerPass {
       std::string f = this->get_cfg().get_func_name();
       arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
-      boost::shared_ptr< Post > vis(
+      std::shared_ptr< Post > vis(
           new Post(pre, _vfac, _lfac, _live.deadSet(f, bb)));
       node.accept(vis);
       return vis->post();
@@ -175,7 +175,7 @@ class PointerPass {
     //! To propagate invariants at the statement level
     template < typename Statement >
     AbsNumDomain analyze_stmt(Statement stmt, AbsNumDomain pre) {
-      boost::shared_ptr< Post > vis(new Post(pre, _vfac, _lfac));
+      std::shared_ptr< Post > vis(new Post(pre, _vfac, _lfac));
       vis->visit(stmt);
       return vis->post();
     }
@@ -201,12 +201,12 @@ public:
     // a pointer can be null or not.
 
   public:
-    typedef boost::unordered_map< VariableName, pointer_var > pt_var_map_t;
-    typedef boost::unordered_map< ikos::index64_t, VariableName > address_map_t;
+    typedef std::unordered_map< VariableName, pointer_var > pt_var_map_t;
+    typedef std::unordered_map< ikos::index64_t, VariableName > address_map_t;
     typedef ikos::discrete_domain< VariableName > ptr_set_t;
 
   private:
-    typedef boost::shared_ptr< NumInvGen > num_inv_gen_t;
+    typedef std::shared_ptr< NumInvGen > num_inv_gen_t;
 
     Bundle_ref _bundle;
     Function_ref _func;
@@ -242,14 +242,13 @@ public:
       _address_map.insert(address_map_t::value_type(v.index(), v));
 
       if (IsFunction) {
-        boost::shared_ptr< function_ref > ref =
-            ikos::mk_function_ref(v.index());
+        std::shared_ptr< function_ref > ref = ikos::mk_function_ref(v.index());
 #ifdef DEBUG
         std::cout << "\t" << *(new_pointer_var(v) == ref) << std::endl;
 #endif
         _cs += new_pointer_var(v) == ref;
       } else {
-        boost::shared_ptr< object_ref > ref =
+        std::shared_ptr< object_ref > ref =
             ikos::mk_object_ref(v.index(), zero());
 #ifdef DEBUG
         std::cout << "\t" << *(new_pointer_var(v) == ref) << std::endl;
@@ -260,7 +259,7 @@ public:
 
     //! Create a new parameter
     pointer_var new_param_ref(VariableName fname, unsigned param) {
-      boost::shared_ptr< param_ref > par_ref =
+      std::shared_ptr< param_ref > par_ref =
           ikos::mk_param_ref(new_pointer_var(fname), param);
       std::ostringstream buf;
       par_ref->print(buf);
@@ -270,7 +269,7 @@ public:
 
     //! Create a new return
     pointer_var new_return_ref(VariableName fname) {
-      boost::shared_ptr< return_ref > ret_ref =
+      std::shared_ptr< return_ref > ret_ref =
           ikos::mk_return_ref(new_pointer_var(fname));
       std::ostringstream buf;
       ret_ref->print(buf);
@@ -640,6 +639,7 @@ public:
 
     void visit(Return_Value_ref s) {
       boost::optional< Operand_ref > lhs = ar::getReturnValue(s);
+
       if (lhs && (ar::isPointer(*lhs) || ar::isFunctionPointer(*lhs))) {
         Literal Ret = _lfac[*lhs];
 
@@ -668,110 +668,117 @@ public:
       _block_inv = _inv_gen->analyze_stmt(s, _block_inv);
     }
 
-    void visit(Call_ref cs) {
+    void visit(Call_ref call_stmt) {
 #ifdef DEBUG
-      std::cout << "PTA call: " << cs << std::endl;
+      std::cout << "PTA call: " << call_stmt << std::endl;
 #endif
-      if (ar::isExternal(cs)) {
-        if ((ar::getFunctionName(cs) == "malloc" ||
-             ar::getFunctionName(cs) == "_Znwm" ||
-             ar::getFunctionName(cs) == "_Znam") &&
-            ar::getNumOfArgs(cs) == 1) {
-          // call to malloc, new or new[]
-          boost::optional< Internal_Variable_ref > lhs = ar::getReturnValue(cs);
-          Operand_ref arg;
-          boost::tie(arg) = ar::getUnaryArgs(cs);
-          new_object_ref(_lfac[*lhs].get_var());
-        }
-        // propagate invariant to the next statement
-        _block_inv = _inv_gen->analyze_stmt(cs, _block_inv);
-        return;
-      }
 
-      std::vector< Function_ref > callees;
+      boost::optional< Internal_Variable_ref > lhs =
+          ar::getReturnValue(call_stmt);
+      OpRange actual_params = ar::getArguments(call_stmt);
 
-      if (ar::isDirectCall(cs)) {
-        callees.push_back(ar::getFunction(cs));
-      } else if (ar::isIndirectCall(cs)) {
-        VariableName ptr = _vfac[ar::getName(ar::getIndirectCallVar(cs))];
+      /*
+       * Collect potential callees
+       */
+
+      std::vector< std::string > callees;
+
+      if (ar::isIndirectCall(call_stmt)) {
+        VariableName ptr =
+            _vfac[ar::getName(ar::getIndirectCallVar(call_stmt))];
         ptr_set_t ptr_set = _fun_ptr_info[ptr].first;
 
         if (ptr_set.is_top()) {
           // propagate invariant to the next statement
-          _block_inv = _inv_gen->analyze_stmt(cs, _block_inv);
+          _block_inv = _inv_gen->analyze_stmt(call_stmt, _block_inv);
           return;
         }
 
         for (ptr_set_t::iterator it = ptr_set.begin(); it != ptr_set.end();
              ++it) {
-          boost::optional< Function_ref > fun =
-              ar::getFunction(_bundle, (*it).name());
-
-          if (!fun) { // external call
-            // propagate invariant to the next statement
-            _block_inv = _inv_gen->analyze_stmt(cs, _block_inv);
-            return;
-          }
-
-          callees.push_back(*fun);
+          callees.push_back(it->name());
         }
-      } else {
-        assert(false && "unreachable");
+      } else { // direct call
+        callees.push_back(ar::getFunctionName(call_stmt));
       }
 
-      OpRange aparams = ar::getArguments(cs);
-      boost::optional< Internal_Variable_ref > lhs = ar::getReturnValue(cs);
-      for (typename std::vector< Function_ref >::iterator it = callees.begin();
+      /*
+       * Add pointer constraints for each possible callee
+       */
+
+      for (std::vector< std::string >::iterator it = callees.begin();
            it != callees.end();
            ++it) {
-        Function_ref callee = *it;
-        if (ar::isVarargs(callee))
-          continue;
+        const std::string& fun_name = *it;
+        boost::optional< Function_ref > callee = ar::getFunction(_bundle, *it);
 
-        IvRange fparams = ar::getFormalParams(callee);
-        if (aparams.size() != fparams.size())
-          continue;
-
-        VariableName fname = _vfac[ar::getName(callee)];
-        new_object_ref(fname, true /*it's a function*/);
-        IvRange::iterator FIt = fparams.begin();
-        OpRange::iterator AIt = aparams.begin();
-        unsigned int i = 0;
-        for (; AIt != aparams.end(); ++AIt, ++FIt, i++) {
-          if ((ar::isPointer(*AIt) || ar::isFunctionPointer(*AIt)) &&
-              ar::isPointer(*FIt)) {
-            if (!_lfac[*AIt].is_var()) {
-              // the actual parameter can be null
-              continue;
-            }
-
-            pointer_var ap = new_pointer_var(_lfac[*AIt].get_var());
-            pointer_var fp = new_param_ref(fname, i);
-            if (ar::isGlobalVar(*AIt) || ar::isAllocaVar(*AIt)) {
-              new_object_ref(_lfac[*AIt].get_var());
-            } else if (ar::isFunctionPointer(*AIt)) {
-              new_object_ref(_lfac[*AIt].get_var(), true /*function*/);
-            }
-
-#ifdef DEBUG
-            std::cout << "\t" << *(fp == (ap + zero())) << "\n";
-#endif
-            _cs += fp == (ap + zero());
+        if (!callee || ar::isExternal(*callee)) {
+          // ASSUMPTION: if the function code is not available, treat it as an
+          // external call
+          if (((fun_name == "malloc" || fun_name == "_Znwm" ||
+                fun_name == "_Znam" ||
+                fun_name == "__cxa_allocate_exception") &&
+               actual_params.size() == 1) ||
+              (fun_name == "calloc" && actual_params.size() == 2)) {
+            // call to malloc, new, new[], __cxa_allocate_exception or calloc
+            new_object_ref(_lfac[*lhs].get_var());
           }
-        }
+        } else {
+          if (ar::isVarargs(*callee))
+            continue;
 
-        if (lhs && ar::isPointer(*lhs)) {
-          pointer_var p = new_pointer_var(_lfac[*lhs].get_var());
+          IvRange formal_params = ar::getFormalParams(*callee);
+
+          if (actual_params.size() != formal_params.size()) {
+            // ASSUMPTION: all function calls have been checked by the compiler
+            // and are well-formed. In that case, it means this function cannot
+            // be called and that it is just an imprecision of the pointer
+            // analysis.
+            continue;
+          }
+
+          VariableName fname = _vfac[fun_name];
+          new_object_ref(fname, true /*function*/);
+
+          IvRange::iterator FIt = formal_params.begin();
+          OpRange::iterator AIt = actual_params.begin();
+          unsigned int i = 0;
+          for (; AIt != actual_params.end(); ++AIt, ++FIt, i++) {
+            if ((ar::isPointer(*AIt) || ar::isFunctionPointer(*AIt)) &&
+                ar::isPointer(*FIt)) {
+              if (!_lfac[*AIt].is_var()) {
+                // the actual parameter can be null
+                continue;
+              }
+
+              pointer_var ap = new_pointer_var(_lfac[*AIt].get_var());
+              pointer_var fp = new_param_ref(fname, i);
+              if (ar::isGlobalVar(*AIt) || ar::isAllocaVar(*AIt)) {
+                new_object_ref(_lfac[*AIt].get_var());
+              } else if (ar::isFunctionPointer(*AIt)) {
+                new_object_ref(_lfac[*AIt].get_var(), true /*function*/);
+              }
+
 #ifdef DEBUG
-          std::cout << "\t" << *(p == (new_return_ref(fname) + zero()))
-                    << std::endl;
+              std::cout << "\t" << *(fp == (ap + zero())) << std::endl;
 #endif
-          _cs += (p == (new_return_ref(fname) + zero()));
+              _cs += fp == (ap + zero());
+            }
+          }
+
+          if (lhs && ar::isPointer(*lhs)) {
+            pointer_var p = new_pointer_var(_lfac[*lhs].get_var());
+#ifdef DEBUG
+            std::cout << "\t" << *(p == (new_return_ref(fname) + zero()))
+                      << std::endl;
+#endif
+            _cs += (p == (new_return_ref(fname) + zero()));
+          }
         }
       }
 
       // propagate invariant to the next statement
-      _block_inv = _inv_gen->analyze_stmt(cs, _block_inv);
+      _block_inv = _inv_gen->analyze_stmt(call_stmt, _block_inv);
     }
 
     void visit(Invoke_ref s) { visit(ar::getFunctionCall(s)); }
@@ -787,14 +794,14 @@ private:
 
   typedef NumInvGen< num_domain_t > num_inv_gen_t;
   typedef PTA< num_domain_t, num_inv_gen_t > pta_t;
-  typedef boost::unordered_map< Function_ref,
-                                boost::shared_ptr< num_inv_gen_t > >
+  typedef std::unordered_map< Function_ref, std::shared_ptr< num_inv_gen_t > >
       inv_gen_map_t;
 
   //! for external queries
-  typedef boost::unordered_map<
+  typedef std::unordered_map<
       VariableName,
-      std::pair< discrete_domain< VariableName >, z_interval > > ptr_map_t;
+      std::pair< discrete_domain< VariableName >, z_interval > >
+      ptr_map_t;
 
   CfgFactory& _cfg_fac;
   VariableFactory& _vfac;
@@ -865,7 +872,7 @@ public:
 
     for (FuncRange::iterator I = funcs.begin(), E = funcs.end(); I != E; ++I) {
       arbos_cfg cfg = _cfg_fac[*I];
-      boost::shared_ptr< num_inv_gen_t > inv_gen(
+      std::shared_ptr< num_inv_gen_t > inv_gen(
           new num_inv_gen_t(cfg, _vfac, _lfac, _live));
       inv_gen->run(num_domain_t::top());
       inv_table.insert(inv_gen_map_t::value_type(cfg.get_func(), inv_gen));
@@ -881,16 +888,16 @@ public:
     for (FuncRange::iterator I = funcs.begin(), E = funcs.end(); I != E; ++I) {
       Function_ref func = *I;
       arbos_cfg cfg = _cfg_fac[func];
-      boost::shared_ptr< num_inv_gen_t > inv_gen = inv_table[func];
-      boost::shared_ptr< pta_t > vis(new pta_t(bundle,
-                                               *I,
-                                               cs,
-                                               inv_gen,
-                                               _lfac,
-                                               _vfac,
-                                               pt_var_map,
-                                               address_map,
-                                               _fun_ptr_info));
+      std::shared_ptr< num_inv_gen_t > inv_gen = inv_table[func];
+      std::shared_ptr< pta_t > vis(new pta_t(bundle,
+                                             *I,
+                                             cs,
+                                             inv_gen,
+                                             _lfac,
+                                             _vfac,
+                                             pt_var_map,
+                                             address_map,
+                                             _fun_ptr_info));
       ar::accept(func, vis);
     }
 

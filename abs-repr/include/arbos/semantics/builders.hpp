@@ -13,7 +13,6 @@
  *
  * Authors: Nija Shi
  *
- *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -53,8 +52,8 @@
 #ifndef ARBOS_BUILDERS_HPP
 #define ARBOS_BUILDERS_HPP
 
-#include <boost/unordered_map.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <unordered_map>
 
 #include <arbos/common/common.hpp>
 #include <arbos/semantics/ar.hpp>
@@ -84,11 +83,10 @@ public:
  */
 class ARBuilderRegistry {
 private:
-  boost::unordered_map< std::string, boost::shared_ptr< ARBuilder > >
-      _builder_map;
+  std::unordered_map< std::string, std::shared_ptr< ARBuilder > > _builder_map;
 
 public:
-  void registerBuilder(boost::shared_ptr< ARBuilder > b) {
+  void registerBuilder(std::shared_ptr< ARBuilder > b) {
     _builder_map[b->ext()] = b;
   }
 

@@ -7,12 +7,12 @@
  * Contributors: Alexandre C. D. Wimmers
  *               Maxime Arthaud
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * The resolution of a system of linear constraints over the domain of intervals
  * is based on W. Harvey & P. J. Stuckey's paper: Improving linear constraint
  * propagation by changing constraint representation, in Constraints,
  * 8(2):173–207, 2003.
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -52,20 +52,20 @@
 #define IKOS_INTERVALS_HPP
 
 #include <iostream>
-#include <map>
-#include <set>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <boost/optional.hpp>
 
-#include <ikos/common/types.hpp>
-#include <ikos/common/bignums.hpp>
 #include <ikos/algorithms/linear_constraints.hpp>
-#include <ikos/domains/separate_domains.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/separate_domains.hpp>
 
 namespace ikos {
 
@@ -726,7 +726,7 @@ inline interval< z_number > interval< z_number >::And(
 
     if (left_op && right_op) {
       return interval_t((*left_op) & (*right_op));
-    } else if (this->lb() >= 0 || x.lb() >= 0) {
+    } else if (this->lb() >= 0 && x.lb() >= 0) {
       return interval_t(0, bound_t::min(this->ub(), x.ub()));
     } else {
       return this->top();
@@ -900,8 +900,8 @@ public:
 
 private:
   typedef std::vector< linear_constraint_t > cst_table_t;
-  typedef std::set< unsigned int > uint_set_t;
-  typedef std::map< variable_t, uint_set_t > trigger_table_t;
+  typedef std::unordered_set< unsigned int > uint_set_t;
+  typedef std::unordered_map< VariableName, uint_set_t > trigger_table_t;
   typedef typename linear_constraint_t::variable_set_t variable_set_t;
 
 private:
@@ -1001,7 +1001,7 @@ private:
       for (typename variable_set_t::iterator it = vars_to_process.begin();
            it != vars_to_process.end();
            ++it) {
-        uint_set_t& csts = this->_trigger_table[*it];
+        uint_set_t& csts = this->_trigger_table[it->name()];
         for (typename uint_set_t::iterator cst_it = csts.begin();
              cst_it != csts.end();
              ++cst_it) {
@@ -1063,7 +1063,7 @@ public:
         for (typename variable_set_t::iterator it = vars.begin();
              it != vars.end();
              ++it) {
-          this->_trigger_table[*it].insert(i);
+          this->_trigger_table[it->name()].insert(i);
         }
       }
     }

@@ -42,27 +42,29 @@
  ******************************************************************************/
 
 #include <iostream>
+#include <memory>
 #include <vector>
 
-#include <analyzer/config.hpp>
-#include <analyzer/utils/stats.hpp>
 #include <analyzer/ar-wrapper/wrapper.hpp>
+#include <analyzer/config.hpp>
+#include <analyzer/utils/demangle.hpp>
+#include <analyzer/utils/stats.hpp>
 
-#include <analyzer/checkers/checker_api.hpp>
-#include <analyzer/checkers/buffer_overflow_checker.hpp>
-#include <analyzer/checkers/division_by_zero_checker.hpp>
 #include <analyzer/checkers/assert_prover_checker.hpp>
+#include <analyzer/checkers/buffer_overflow_checker.hpp>
+#include <analyzer/checkers/checker_api.hpp>
+#include <analyzer/checkers/division_by_zero_checker.hpp>
 #include <analyzer/checkers/null_dereference_checker.hpp>
 #include <analyzer/checkers/uninitialized_variable_checker.hpp>
 
-#include <analyzer/analysis/liveness.hpp>
-#include <analyzer/analysis/function_pointer.hpp>
 #include <analyzer/analysis/call_graph_topology.hpp>
+#include <analyzer/analysis/function_pointer.hpp>
+#include <analyzer/analysis/inliner.hpp>
+#include <analyzer/analysis/liveness.hpp>
+#include <analyzer/analysis/num_sym_exec.hpp>
 #include <analyzer/analysis/pointer.hpp>
 #include <analyzer/analysis/summary.hpp>
 #include <analyzer/domains/value_domain.hpp>
-#include <analyzer/analysis/inliner.hpp>
-#include <analyzer/analysis/num_sym_exec.hpp>
 
 namespace analyzer {
 
@@ -87,6 +89,12 @@ static Option< std::string > PRECISION_LEVEL(
     "precision-level,p",
     "The precision level (reg, ptr, mem). Default to mem",
     "mem");
+static Option< std::string > DISPLAY_INVARIANTS("display-invariants",
+                                                "Display invariants",
+                                                "off");
+static Option< std::string > DISPLAY_CHECKS("display-checks",
+                                            "Display checks",
+                                            "off");
 static Option< std::string > OUTPUT_DB("output-db",
                                        "The output database file",
                                        "output.db");
@@ -181,7 +189,7 @@ private:
     void visit(MemMove_ref s) { _sym_exec.exec(s); }
     void visit(MemSet_ref s) { _sym_exec.exec(s); }
     void visit(Call_ref call_stmt) {
-      if (ar::isExternal(call_stmt)) {
+      if (ar::isDirectCall(call_stmt) && ar::isExternal(call_stmt)) {
         _sym_exec.exec(call_stmt);
       } else {
         _sym_exec.set_inv(_call_semantic->call(_context,
@@ -207,7 +215,7 @@ private:
   }; // end class transfer_fun_visitor
 
 private:
-  typedef boost::shared_ptr< transfer_fun_visitor > transfer_fun_visitor_ptr_t;
+  typedef std::shared_ptr< transfer_fun_visitor > transfer_fun_visitor_ptr_t;
 
 private:
   // Check properties and propagate invariants through a basic block
@@ -282,7 +290,7 @@ private:
   }; // end class checker_visitor
 
 private:
-  typedef boost::shared_ptr< checker_visitor > checker_visitor_ptr_t;
+  typedef std::shared_ptr< checker_visitor > checker_visitor_ptr_t;
 
 private:
   //! global context
@@ -334,7 +342,7 @@ public:
   AbsDomain analyze(Basic_Block_ref bb, AbsDomain pre) {
     arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
-    transfer_fun_visitor_ptr_t vis = boost::make_shared<
+    transfer_fun_visitor_ptr_t vis = std::make_shared<
         transfer_fun_visitor >(_context,
                                pre,
                                this->_is_context_stable,
@@ -352,7 +360,7 @@ public:
   void check_pre(Basic_Block_ref bb, AbsDomain pre) {
     arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
-    transfer_fun_visitor_ptr_t transfer_fun_vis = boost::make_shared<
+    transfer_fun_visitor_ptr_t transfer_fun_vis = std::make_shared<
         transfer_fun_visitor >(_context,
                                pre,
                                this->_is_context_stable,
@@ -365,9 +373,9 @@ public:
                                                            bb));
 
     checker_visitor_ptr_t checker_vis =
-        boost::make_shared< checker_visitor >(transfer_fun_vis,
-                                              _call_context,
-                                              _checkers);
+        std::make_shared< checker_visitor >(transfer_fun_vis,
+                                            _call_context,
+                                            _checkers);
 
     node.accept(checker_vis);
   }
@@ -444,6 +452,17 @@ public:
     const bool use_pointer = !NO_POINTER;
     const bool use_summaries = USE_SUMMARIES;
     const bool use_pointer_summaries = USE_POINTER_SUMMARIES;
+    const display_settings display_invariants =
+        ((DISPLAY_INVARIANTS.getValue() == "all")
+             ? display_settings::ALL
+             : (DISPLAY_INVARIANTS.getValue() == "fail")
+                   ? display_settings::FAIL
+                   : display_settings::OFF);
+    const display_settings display_checks =
+        ((DISPLAY_CHECKS.getValue() == "all")
+             ? display_settings::ALL
+             : (DISPLAY_CHECKS.getValue() == "fail") ? display_settings::FAIL
+                                                     : display_settings::OFF);
     const TrackedPrecision precision_level =
         ((PRECISION_LEVEL.getValue() == "reg")
              ? REG
@@ -591,7 +610,9 @@ public:
             generate_checkers< abs_value_domain_t >(analyses,
                                                     ctx,
                                                     db,
-                                                    interprocedural);
+                                                    interprocedural,
+                                                    display_invariants,
+                                                    display_checks);
 
         ValueSummaryPass< sum_abs_value_domain_t, varname_t, number_t >
             value_summary_pass(cfg_factory,
@@ -639,7 +660,9 @@ public:
             generate_checkers< abs_value_domain_t >(analyses,
                                                     ctx,
                                                     db,
-                                                    interprocedural);
+                                                    interprocedural,
+                                                    display_invariants,
+                                                    display_checks);
 
         for (auto it = entry_points.begin(); it != entry_points.end(); ++it) {
           Function_ref function = *it;
@@ -656,8 +679,8 @@ public:
           }
 
           function_analyzer_t analyzer(cfg, ctx, call_semantic, ".", checkers);
-          std::cout << "*** Analyzing function: " << ar::getName(function)
-                    << std::endl;
+          std::cout << "*** Analyzing function: "
+                    << demangle(ar::getName(function)) << std::endl;
           analyzer.run(abs_value_domain_t::top());
         }
 
@@ -677,7 +700,7 @@ public:
                                            ".",
                                            checkers);
               std::cout << "*** Analyzing intra-procedurally vararg function: "
-                        << ar::getName(function) << std::endl;
+                        << demangle(ar::getName(function)) << std::endl;
               analyzer.run(abs_value_domain_t::top());
             }
           }
@@ -710,7 +733,9 @@ public:
   generate_checkers(const std::vector< std::string >& analyses,
                     context& ctx,
                     sqlite::db_connection db,
-                    const bool interprocedural) {
+                    const bool interprocedural,
+                    const display_settings display_invariants,
+                    const display_settings display_checks) {
     typedef checker< AbsDomain > checker_t;
     typedef std::unique_ptr< checker_t > checker_ptr_t;
 
@@ -727,24 +752,38 @@ public:
 
       if (*it == "boa") {
         checker_ptr_t checker = std::make_unique<
-            buffer_overflow_checker< AbsDomain > >(ctx, analysis_db);
+            buffer_overflow_checker< AbsDomain > >(ctx,
+                                                   analysis_db,
+                                                   display_invariants,
+                                                   display_checks);
         checkers.push_back(std::move(checker));
       } else if (*it == "dbz") {
         checker_ptr_t checker = std::make_unique<
-            division_by_zero_checker< AbsDomain > >(ctx, analysis_db);
+            division_by_zero_checker< AbsDomain > >(ctx,
+                                                    analysis_db,
+                                                    display_invariants,
+                                                    display_checks);
         checkers.push_back(std::move(checker));
       } else if (*it == "prover") {
-        checker_ptr_t checker =
-            std::make_unique< assert_prover_checker< AbsDomain > >(ctx,
-                                                                   analysis_db);
+        checker_ptr_t checker = std::make_unique<
+            assert_prover_checker< AbsDomain > >(ctx,
+                                                 analysis_db,
+                                                 display_invariants,
+                                                 display_checks);
         checkers.push_back(std::move(checker));
       } else if (*it == "nullity") {
         checker_ptr_t checker = std::make_unique<
-            null_dereference_checker< AbsDomain > >(ctx, analysis_db);
+            null_dereference_checker< AbsDomain > >(ctx,
+                                                    analysis_db,
+                                                    display_invariants,
+                                                    display_checks);
         checkers.push_back(std::move(checker));
       } else if (*it == "uva") {
         checker_ptr_t checker = std::make_unique<
-            uninitialized_variable_checker< AbsDomain > >(ctx, analysis_db);
+            uninitialized_variable_checker< AbsDomain > >(ctx,
+                                                          analysis_db,
+                                                          display_invariants,
+                                                          display_checks);
         checkers.push_back(std::move(checker));
       } else {
         std::cerr << "error: unknown analysis \"" << *it << "\"" << std::endl;

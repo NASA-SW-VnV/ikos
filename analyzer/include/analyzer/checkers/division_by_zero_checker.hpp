@@ -44,8 +44,8 @@
 #define ANALYZER_DIVISION_BY_ZERO_CHECKER_HPP
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/checkers/checker_api.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
+#include <analyzer/checkers/checker_api.hpp>
 
 namespace analyzer {
 
@@ -58,7 +58,11 @@ private:
   typedef typename analysis_db::db_ptr db_ptr_t;
 
 public:
-  division_by_zero_checker(context& ctx, db_ptr_t db) : checker_t(ctx, db) {}
+  division_by_zero_checker(context& ctx,
+                           db_ptr_t db,
+                           display_settings display_invariants,
+                           display_settings display_checks)
+      : checker_t(ctx, db, display_invariants, display_checks) {}
 
   virtual const char* name() { return "dbz"; }
   virtual const char* description() { return "Division by zero checker"; }
@@ -73,10 +77,21 @@ public:
       location loc = ar::getSrcLoc(stmt);
 
       if (inv.is_bottom()) {
+        if (this->display_check(UNREACHABLE)) {
+          std::cout << location_to_string(loc) << ": [unreachable] " << stmt
+                    << std::endl;
+        }
+        if (this->display_invariant(UNREACHABLE)) {
+          std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                    << inv << std::endl;
+        }
+
         this->_db->write("dbz",
                          call_context,
-                         loc.first,
-                         loc.second,
+                         loc.file,
+                         loc.line,
+                         loc.column,
+                         ar::getUID(stmt),
                          "unreachable");
       } else {
         Literal lit = lfac[ar::getRightOp(stmt)];
@@ -90,20 +105,46 @@ public:
         }
 
         boost::optional< ikos::z_number > d = divisor.singleton();
+        analysis_result result;
+
         if (d && (*d == 0)) {
           // the second operand is definitely 0
-          this->_db->write("dbz", call_context, loc.first, loc.second, "error");
+          if (this->display_check(ERR)) {
+            std::cout << location_to_string(loc) << ": [error] " << stmt
+                      << ": ∀d ∈ divisor, d == 0" << std::endl;
+          }
+
+          result = ERR;
         } else if (divisor[0]) {
           // the second operand may be 0
-          this->_db->write("dbz",
-                           call_context,
-                           loc.first,
-                           loc.second,
-                           "warning");
+          if (this->display_check(WARNING)) {
+            std::cout << location_to_string(loc) << ": [warning] " << stmt
+                      << ": ∃d ∈ divisor, d == 0" << std::endl;
+          }
+
+          result = WARNING;
         } else {
           // the second operand cannot be definitely 0
-          this->_db->write("dbz", call_context, loc.first, loc.second, "ok");
+          if (this->display_check(OK)) {
+            std::cout << location_to_string(loc) << ": [ok] " << stmt
+                      << ": ∀d ∈ divisor, d != 0" << std::endl;
+          }
+
+          result = OK;
         }
+
+        if (this->display_invariant(result)) {
+          std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                    << inv << std::endl;
+        }
+
+        this->_db->write("dbz",
+                         call_context,
+                         loc.file,
+                         loc.line,
+                         loc.column,
+                         ar::getUID(stmt),
+                         tostr(result));
       }
     }
   }

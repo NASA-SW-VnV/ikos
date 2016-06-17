@@ -44,13 +44,10 @@
 #define ARBOS_TYPES_HPP
 
 #include <stdint.h>
-#include <string>
 #include <iostream>
-
-#include <boost/container/slist.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/iterator/iterator_facade.hpp>
-#include <boost/unordered_map.hpp>
+#include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace arbos {
 
@@ -72,7 +69,7 @@ public:
 
   virtual ~arbos_error() {}
 
-}; // class ikos_error
+}; // class arbos_error
 
 inline std::ostream& operator<<(std::ostream& o, arbos_error& e) {
   e.write(o);
@@ -133,12 +130,12 @@ public:
     friend class string_factory;
 
   private:
-    boost::shared_ptr< std::string > _s;
+    std::shared_ptr< std::string > _s;
     index64_t _id;
 
   private:
     indexed_string();
-    indexed_string(boost::shared_ptr< std::string > s, index64_t id)
+    indexed_string(std::shared_ptr< std::string > s, index64_t id)
         : _s(s), _id(id) {}
 
   public:
@@ -162,7 +159,7 @@ public:
   }; // class indexed_string
 
 private:
-  typedef boost::unordered_map< std::string, indexed_string > map_t;
+  typedef std::unordered_map< std::string, indexed_string > map_t;
 
 private:
   index64_t _next_id;
@@ -176,7 +173,7 @@ public:
   indexed_string operator[](std::string s) {
     map_t::iterator it = this->_map.find(s);
     if (it == this->_map.end()) {
-      indexed_string is(boost::shared_ptr< std::string >(new std::string(s)),
+      indexed_string is(std::shared_ptr< std::string >(new std::string(s)),
                         this->_next_id++);
       this->_map.insert(std::pair< std::string, indexed_string >(s, is));
       return is;
@@ -195,6 +192,6 @@ typedef enum {
   OP_DIVISION
 } operation_t;
 
-} // namespace ikos
+} // namespace arbos
 
 #endif // ARBOS_TYPES_HPP

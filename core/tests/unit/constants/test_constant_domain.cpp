@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include <ikos/common/types.hpp>
-#include <ikos/common/bignums.hpp>
-#include <ikos/domains/constants.hpp>
 #include <ikos/algorithms/linear_constraints.hpp>
+#include <ikos/common/bignums.hpp>
 #include <ikos/common/types.hpp>
+#include <ikos/common/types.hpp>
+#include <ikos/domains/constants.hpp>
 
 using namespace std;
 using namespace ikos;

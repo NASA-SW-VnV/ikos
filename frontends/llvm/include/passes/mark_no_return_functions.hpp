@@ -41,8 +41,8 @@
 #ifndef IKOSPP_MARK_NO_NETURN_FUNCTIONS_HPP
 #define IKOSPP_MARK_NO_NETURN_FUNCTIONS_HPP
 
-#include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
+#include "llvm/Pass.h"
 
 namespace ikos_pp {
 using namespace llvm;

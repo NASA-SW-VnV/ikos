@@ -46,8 +46,8 @@
 #include <string>
 
 #include <analyzer/analysis/context.hpp>
-#include <analyzer/utils/analysis_db.hpp>
 #include <analyzer/ar-wrapper/wrapper.hpp>
+#include <analyzer/utils/analysis_db.hpp>
 
 namespace analyzer {
 
@@ -65,8 +65,33 @@ protected:
   //! output analysis results to an external database
   db_ptr_t _db;
 
+  //! Display invariants (ALL, FAIL, OFF)
+  display_settings _display_invariants;
+
+  //! Display checks (ALL, FAIL, OFF)
+  display_settings _display_checks;
+
 protected:
-  checker(context& ctx, db_ptr_t db) : _context(ctx), _db(db) {}
+  checker(context& ctx,
+          db_ptr_t db,
+          display_settings display_invariants,
+          display_settings display_checks)
+      : _context(ctx),
+        _db(db),
+        _display_invariants(display_invariants),
+        _display_checks(display_checks) {}
+
+  bool display_invariant(analysis_result res) {
+    return _display_invariants == display_settings::ALL ||
+           (_display_invariants == display_settings::FAIL &&
+            (res == ERR || res == WARNING || res == UNREACHABLE));
+  }
+
+  bool display_check(analysis_result res) {
+    return _display_checks == display_settings::ALL ||
+           (_display_checks == display_settings::FAIL &&
+            (res == ERR || res == WARNING || res == UNREACHABLE));
+  }
 
 public:
   virtual ~checker() {}

@@ -44,12 +44,11 @@
 #ifndef IKOS_BIGNUMS_HPP
 #define IKOS_BIGNUMS_HPP
 
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <gmpxx.h>
-
-#include <boost/functional/hash.hpp>
+#include <functional>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include <ikos/common/types.hpp>
 
@@ -238,10 +237,26 @@ inline std::ostream& operator<<(std::ostream& o, z_number z) {
 
 inline std::size_t hash_value(const z_number& n) {
   std::ostringstream buf;
-  boost::hash< std::string > hasher;
   buf << n;
-  return hasher(buf.str());
+  return std::hash< std::string >()(buf.str());
 }
+
+} // end namespace ikos
+
+namespace std {
+
+template <>
+struct hash< ikos::z_number > {
+  std::size_t operator()(const ikos::z_number& n) const {
+    std::ostringstream buf;
+    buf << n;
+    return std::hash< std::string >()(buf.str());
+  }
+};
+
+} // end namespace std
+
+namespace ikos {
 
 class q_number {
 private:
@@ -396,10 +411,23 @@ inline std::ostream& operator<<(std::ostream& o, q_number q) {
 
 inline std::size_t hash_value(const q_number& n) {
   std::ostringstream buf;
-  boost::hash< std::string > hasher;
   buf << n;
-  return hasher(buf.str());
+  return std::hash< std::string >()(buf.str());
 }
-}
+
+} // end namespace ikos
+
+namespace std {
+
+template <>
+struct hash< ikos::q_number > {
+  std::size_t operator()(const ikos::q_number& n) const {
+    std::ostringstream buf;
+    buf << n;
+    return std::hash< std::string >()(buf.str());
+  }
+};
+
+} // end namespace std
 
 #endif // IKOS_BIGNUMS_HPP

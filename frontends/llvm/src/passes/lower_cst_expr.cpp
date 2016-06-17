@@ -180,7 +180,8 @@ Instruction* LowerCstExprPass::lowerCstExpr(ConstantExpr* CstExp,
       Instruction::OtherOps OtherOp =
           (Instruction::OtherOps)(CstExp->getOpcode());
       NewInst = CmpInst::Create(OtherOp,
-                                CstExp->getPredicate(),
+                                static_cast< CmpInst::Predicate >(
+                                    CstExp->getPredicate()),
                                 CstExp->getOperand(0),
                                 CstExp->getOperand(1),
                                 CstExp->getName(),

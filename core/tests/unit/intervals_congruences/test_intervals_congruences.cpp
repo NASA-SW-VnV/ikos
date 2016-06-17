@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include <ikos/common/types.hpp>
-#include <ikos/common/bignums.hpp>
 #include <ikos/algorithms/linear_constraints.hpp>
+#include <ikos/common/bignums.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/intervals_congruences.hpp>
 
 using namespace std;

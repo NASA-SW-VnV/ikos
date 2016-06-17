@@ -43,15 +43,13 @@
  *
  ******************************************************************************/
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <map>
 #include <typeinfo>
+#include <unordered_map>
+#include <unordered_set>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 
 #include <arbos/semantics/ar.hpp>
@@ -69,7 +67,7 @@ ReferenceCounter* ReferenceCounter::_instance = nullptr;
 ////
 AR_Node::AR_Node() {
   _uid = UIDGenerator::nextUID();
-  boost::shared_ptr< AR_Node > ptr(this);
+  std::shared_ptr< AR_Node > ptr(this);
   assert(ptr);
   ARModel::Instance()->registerARNode(_uid, ptr);
 }
@@ -523,7 +521,7 @@ AR_Range_Constant::AR_Range_Constant(s_expression e) : AR_Constant() {
 
 void AR_Range_Constant::print(std::ostream& out) {
   out << "range {";
-  boost::unordered_map< z_number, AR_Node_Ref< AR_Operand > >::iterator p =
+  std::unordered_map< z_number, AR_Node_Ref< AR_Operand > >::iterator p =
       _values.begin();
   for (; p != _values.end(); p++) {
     out << "(" << p->first << ", ";
@@ -2410,7 +2408,7 @@ public:
 std::vector< index64_t > AR_Function::buildCallees(
     const FunPointersInfo& fun_ptr_info) const {
   std::vector< index64_t > callees;
-  boost::shared_ptr< CallStatementVisitor > visitor(
+  std::shared_ptr< CallStatementVisitor > visitor(
       new CallStatementVisitor(callees, fun_ptr_info));
   _function_body->accept(visitor);
   return callees;
@@ -2472,9 +2470,9 @@ void AR_Bundle::print(std::ostream& out) {
   out << std::endl;
 
   // Print file paths
-  boost::unordered_map< index64_t, std::string > files =
+  std::unordered_map< index64_t, std::string > files =
       ARModel::Instance()->getFiles();
-  boost::unordered_map< index64_t, std::string >::iterator f = files.begin();
+  std::unordered_map< index64_t, std::string >::iterator f = files.begin();
   for (; f != files.end(); f++) {
     out << "def file!" << f->first << " " << f->second << std::endl;
   }
@@ -2524,13 +2522,18 @@ void AR_Bundle::print(std::ostream& out) {
 // AR_Source_Location
 ////
 AR_Source_Location::AR_Source_Location(s_expression e)
-    : AR_Node(), _filename(), _line(-1) {
+    : AR_Node(), _filename(), _line(-1), _column(-1) {
   /**
-   * Example s-expr: ($srcloc ($line (#1)) ($file (!6)))
+   * Example s-expr: ($srcloc ($line (#4)) ($col (#3)) ($file (!9)))
    */
-  s_expression_ref l, f;
-  if ((s_pattern("srcloc", s_pattern("line", l), s_pattern("file", f))) ^ e) {
+  s_expression_ref l, c, f;
+  if ((s_pattern("srcloc",
+                 s_pattern("line", l),
+                 s_pattern("col", c),
+                 s_pattern("file", f))) ^
+      e) {
     _line = (static_cast< z_number_atom& >(**l)).data();
+    _column = (static_cast< z_number_atom& >(**c)).data();
     _fid = (static_cast< index64_atom& >(**f)).data();
     _filename = ARModel::Instance()->get_filepath(_fid);
   } else if (e.n_args() == 0) {
@@ -2543,7 +2546,7 @@ AR_Source_Location::AR_Source_Location(s_expression e)
 AR_Source_Location::~AR_Source_Location() {}
 
 void AR_Source_Location::print(std::ostream& out) {
-  out << "@file!" << _fid << ":" << _line;
+  out << "@file!" << _fid << ":" << _line << ":" << _column;
 }
 
 ////
@@ -2586,8 +2589,8 @@ void ARModel::generate(std::istream& is) {
   std::vector< index64_t >::iterator i =
       _listeners[ARModelEventListener::NODESCREATED].begin();
   for (; i != _listeners[ARModelEventListener::NODESCREATED].end(); i++) {
-    boost::shared_ptr< ARModelEventListener > cb_ptr =
-        boost::dynamic_pointer_cast< ARModelEventListener >(
+    std::shared_ptr< ARModelEventListener > cb_ptr =
+        std::dynamic_pointer_cast< ARModelEventListener >(
             ARModel::Instance()->getARNode(*i));
     cb_ptr->nodesCreated();
   }

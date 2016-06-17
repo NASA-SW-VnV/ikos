@@ -40,11 +40,13 @@
  *
  ******************************************************************************/
 
-#include "llvm/LinkAllPasses.h"
-#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Bitcode/BitcodeWriterPass.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/IRReader/IRReader.h"
+#include "llvm/LinkAllPasses.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ManagedStatic.h"
@@ -54,17 +56,15 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
-#include "llvm/Bitcode/BitcodeWriterPass.h"
-#include "llvm/IR/Verifier.h"
 
-#include "passes/lower_gv_initializers.hpp"
-#include "passes/mark_internal_inline.hpp"
-#include "passes/name_values.hpp"
 #include "passes/lower_cst_expr.hpp"
+#include "passes/lower_gv_initializers.hpp"
 #include "passes/lower_select.hpp"
-#include "passes/remove_unreachable_blocks.hpp"
+#include "passes/mark_internal_inline.hpp"
 #include "passes/mark_no_return_functions.hpp"
+#include "passes/name_values.hpp"
 #include "passes/remove_printf_calls.hpp"
+#include "passes/remove_unreachable_blocks.hpp"
 
 static llvm::cl::opt< std::string > InputFilename(
     llvm::cl::Positional,
@@ -182,55 +182,63 @@ int main(int argc, char** argv) {
 
   llvm::legacy::PassManager pass_manager;
   llvm::PassRegistry& Registry = *llvm::PassRegistry::getPassRegistry();
+
   llvm::initializeAnalysis(Registry);
 
+#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR == 7)
   /// call graph and other IPA passes
   llvm::initializeIPA(Registry);
+#endif
 
   if (PPLevel == simple) {
-    // -- SSA
+    // SSA
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
   } else {
-    // -- turn all functions internal so that we can apply some global
-    // -- optimizations inline them if requested
+    // turn all functions internal so that we can apply some global
+    // optimizations inline them if requested
     const char* excluded_list[] = {"main"};
     pass_manager.add(llvm::createInternalizePass(
         excluded_list)); // internalize all excluding main
     pass_manager.add(
         llvm::createGlobalDCEPass()); // kill unused internal global
     pass_manager.add(new ikos_pp::RemoveUnreachableBlocks());
-    // -- global optimizations
+
+    // global optimizations
     pass_manager.add(llvm::createGlobalOptimizerPass());
 
-    // -- SSA
+    // SSA
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
-    // -- cleanup after SSA
+
+    // cleanup after SSA
     // pass_manager.add (llvm::createInstructionCombiningPass ()); // bad for
     // static analysis
     pass_manager.add(llvm::createCFGSimplificationPass());
 
-    // -- break aggregates
+    // break aggregates
     pass_manager.add(
         llvm::createScalarReplAggregatesPass(SROA_Threshold, true));
-    // -- global value numbering and redundant load elimination
+
+    // global value numbering and redundant load elimination
     pass_manager.add(llvm::createGVNPass());
 
-    // -- cleanup after break aggregates
+    // cleanup after break aggregates
     pass_manager.add(
         llvm::createInstructionCombiningPass()); // bad for static analysis
+
     pass_manager.add(llvm::createGlobalDCEPass());
 
     pass_manager.add(llvm::createCFGSimplificationPass());
 
-    // -- (conditional) constant propagation always help analyzers
+    // (conditional) constant propagation always help analyzers
     pass_manager.add(llvm::createJumpThreadingPass());
     pass_manager.add(llvm::createSCCPPass());
     pass_manager.add(llvm::createDeadCodeEliminationPass());
     // pass_manager.add (llvm::createGlobalDCEPass ());
     // pass_manager.add (llvm::createGlobalOptimizerPass());
 
-    // -- lower invoke's
+    // lower invoke's
     pass_manager.add(llvm::createLowerInvokePass());
+
     // cleanup after lowering invoke's
     pass_manager.add(llvm::createCFGSimplificationPass());
 
@@ -248,56 +256,66 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createLoopSimplifyPass());
     pass_manager.add(
         llvm::createCFGSimplificationPass()); // cleanup unnecessary blocks
+
     // loop-closed SSA
     pass_manager.add(llvm::createLCSSAPass());
+
     // trivial invariants outside loops
+#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR == 7)
     pass_manager.add(llvm::createBasicAliasAnalysisPass());
+#else
+    pass_manager.add(llvm::createBasicAAWrapperPass());
+#endif
     pass_manager.add(llvm::createLICMPass()); // LICM needs alias analysis
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
+
     // dead loop elimination
     pass_manager.add(llvm::createLoopDeletionPass());
     pass_manager.add(
         llvm::createCFGSimplificationPass()); // cleanup unnecessary blocks
 
-    // -- lower initializers of global variables
+    // lower initializers of global variables
     pass_manager.add(new ikos_pp::LowerGvInitializers());
   }
 
   ////
-  // -- Here passes needed for correctness and/or avoid crashing the
-  // -- static analyzer
+  // Here passes needed for correctness and/or avoid crashing the static analyzer
   ////
 
-  // -- ensure one single exit point per function
+  // ensure one single exit point per function
   pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
-#if 1
-  // -- MarkNoReturnFunctions only insert unreachable instructions if
-  // -- the function does not have an exit block.
+
+  // MarkNoReturnFunctions only insert unreachable instructions if
+  // the function does not have an exit block.
   pass_manager.add(new ikos_pp::MarkNoReturnFunctions());
-  // -- We then perform DCE
+
+  // We then perform DCE
   pass_manager.add(llvm::createGlobalDCEPass());
   pass_manager.add(llvm::createDeadCodeEliminationPass());
-  // -- remove unreachable blocks also dead cycles
-  pass_manager.add(new ikos_pp::RemoveUnreachableBlocks());
-#endif
 
-  // -- remove switch constructions
+  // remove unreachable blocks also dead cycles
+  pass_manager.add(new ikos_pp::RemoveUnreachableBlocks());
+
+  // remove switch constructions
   pass_manager.add(llvm::createLowerSwitchPass());
 
-  // -- lower constant expressions to instructions
+  // lower down atomic instructions
+  pass_manager.add(llvm::createLowerAtomicPass());
+
+  // lower constant expressions to instructions
   pass_manager.add(new ikos_pp::LowerCstExprPass());
   pass_manager.add(llvm::createDeadCodeEliminationPass());
 
   if (PPLevel == full) {
-    // -- after lowering constant expressions we remove all
-    // -- side-effect-free printf-like functions. This can trigger the
-    // -- removal of global strings that only feed them.
+    // after lowering constant expressions we remove all
+    // side-effect-free printf-like functions. This can trigger the
+    // removal of global strings that only feed them.
     pass_manager.add(new ikos_pp::RemovePrintfCalls());
     pass_manager.add(llvm::createDeadCodeEliminationPass());
     pass_manager.add(llvm::createGlobalDCEPass());
   }
 
-  // -- must be the last ones:
+  // must be the last ones:
   pass_manager.add(new ikos_pp::LowerSelect());
   pass_manager.add(new ikos_pp::NameValues());
 

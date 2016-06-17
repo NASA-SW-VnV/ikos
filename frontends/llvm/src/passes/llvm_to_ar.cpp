@@ -43,37 +43,37 @@
  ******************************************************************************/
 
 #include <fstream>
-#include <sstream>
 #include <map>
+#include <memory>
+#include <sstream>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/optional.hpp>
 
-#include "llvm/IR/Module.h"
-#include "llvm/Pass.h"
-#include "llvm/IR/Function.h"
+#include "llvm/ADT/APFloat.h"
 #include "llvm/IR/Constant.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/IR/DebugInfo.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GetElementPtrTypeIterator.h"
 #include "llvm/IR/GlobalAlias.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/InstIterator.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/IntrinsicInst.h"
-#include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Metadata.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/IR/GetElementPtrTypeIterator.h"
-#include "llvm/ADT/APFloat.h"
-#include "llvm/IR/DebugInfo.h"
-#include "llvm/IR/DataLayout.h"
-#include "llvm/IR/DerivedTypes.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 
-#include <arbos/common/types.hpp>
 #include <arbos/common/bignums.hpp>
+#include <arbos/common/types.hpp>
 #include <arbos/io/s_expressions.hpp>
 #include <arbos/semantics/fp.hpp>
 
@@ -112,12 +112,12 @@ class GlobalReferences {
 private:
   Module& _module;
   LLVMContext* _llvm_context;
-  std::map< std::string, uint64_t > _files;
-  std::map< const Type*, boost::shared_ptr< ARType > > _data_types;
-  std::map< GlobalVariable*, boost::shared_ptr< ARGlobalVar > >
+  std::unordered_map< std::string, uint64_t > _files;
+  std::unordered_map< const Type*, std::shared_ptr< ARType > > _data_types;
+  std::unordered_map< GlobalVariable*, std::shared_ptr< ARGlobalVar > >
       _global_vars; // var name to initializer
   uint64_t _idnum;
-  std::map< Value*, uint64_t > _valmap;
+  std::unordered_map< Value*, uint64_t > _valmap;
   s_expression_ref _current_debug_info;
 
 private:
@@ -134,7 +134,6 @@ public:
   uint64_t get_type_refid(const Type*);
   uint64_t get_file_id(const std::string);
   std::string get_new_variable();
-  s_expression get_address(ARCode&, Value*);
   s_expression get_value(ARCode&, Value*);
   s_expression translate_type(const Type*);
   s_expression generate_int_constant(z_number, const Type*);
@@ -152,12 +151,12 @@ public:
   void set_debug_info(Instruction*);
   void reset_debug_info();
   s_expression get_debug_sexpr();
-  s_expression translate_srcloc(const int, const std::string);
+  s_expression translate_srcloc(const int, const int, const std::string);
   void printAR(std::ostream&);
   void clear();
 };
 
-boost::shared_ptr< GlobalReferences > refs;
+std::shared_ptr< GlobalReferences > refs;
 
 s_expression create_name_sexpr(std::string name) {
   s_expression_ostream n("name");
@@ -245,11 +244,12 @@ template < class Name >
 class vertex_writer {
 private:
   Name _name;
-  std::map< std::string, std::vector< std::string > >& _bblocks;
+  std::unordered_map< std::string, std::vector< std::string > >& _bblocks;
 
 public:
-  vertex_writer(Name name,
-                std::map< std::string, std::vector< std::string > >& bblocks)
+  vertex_writer(
+      Name name,
+      std::unordered_map< std::string, std::vector< std::string > >& bblocks)
       : _name(name), _bblocks(bblocks) {}
 
   template < typename VertexOrEdge >
@@ -266,7 +266,8 @@ public:
 
 template < typename Name >
 inline vertex_writer< Name > make_vertex_writer(
-    Name n, std::map< std::string, std::vector< std::string > >& bblocks) {
+    Name n,
+    std::unordered_map< std::string, std::vector< std::string > >& bblocks) {
   return vertex_writer< Name >(n, bblocks);
 }
 
@@ -274,12 +275,13 @@ class ARCode {
 private:
   std::string _entry_block;
   std::string _exit_block;
-  std::map< std::string, std::vector< boost::optional< s_expression > > >
+  std::unordered_map< std::string,
+                      std::vector< boost::optional< s_expression > > >
       _bblocks; // bblock name ID to a vertex; a vertex consists of a list of
   // stmts
   std::string
       _current_ar_bblock; // the current bblock in the ar cfg to write to
-  std::map< std::string, std::vector< std::string > >
+  std::unordered_map< std::string, std::vector< std::string > >
       _transitions; // bblock -> other bblocks
 
   bool is_part_of_cycle(std::string bblock) {
@@ -292,7 +294,7 @@ private:
    *        This map maintains a counter for each split per basic block and
    * opcode.
    */
-  std::map< std::string, int > _splitct_map;
+  std::unordered_map< std::string, int > _splitct_map;
 
   //! Associated to splitct_map, this method returns the next counter.
   inline std::string get_next_split_ct(std::string bblock,
@@ -302,7 +304,7 @@ private:
       _splitct_map[key] = 1;
       return "";
     } else {
-      std::string cur_splitct = boost::to_string(_splitct_map[key]) + "_";
+      std::string cur_splitct = std::to_string(_splitct_map[key]) + "_";
       _splitct_map[key]++;
       return cur_splitct;
     }
@@ -320,8 +322,6 @@ public:
   std::string get_current_block();
   void add_statement(s_expression_ref c);
   void add_transition(std::string src, std::string dest);
-  void add_transitions(std::string src,
-                       std::vector< std::string > destinations);
   void remove_transition(std::string src, std::string dest);
   void mark_as_referenced_bblock(std::string bblock_name);
   std::string get_new_destination(std::string orig_src, std::string orig_dest);
@@ -401,9 +401,9 @@ class ARPass : public ModulePass {
 private:
   bool _is_little_endian;
   unsigned _ptr_size;
-  std::map< std::string, boost::optional< s_expression > >
+  std::unordered_map< std::string, boost::optional< s_expression > >
       _meta_info; // key-value pairs
-  std::vector< boost::shared_ptr< ARFunction > > _functions;
+  std::vector< std::shared_ptr< ARFunction > > _functions;
 
 public:
   static char ID;
@@ -441,7 +441,7 @@ bool ARPass::runOnModule(Module& m) {
   try {
     _is_little_endian = m.getDataLayout().isLittleEndian();
     _ptr_size = m.getDataLayout().getPointerSize();
-    refs = boost::shared_ptr< GlobalReferences >(new GlobalReferences(m));
+    refs = std::shared_ptr< GlobalReferences >(new GlobalReferences(m));
 
     // 1. Collect meta info
     populate_metainfo();
@@ -456,8 +456,8 @@ bool ARPass::runOnModule(Module& m) {
 
       UnifyFunctionExitNodes& ufen = getAnalysis< UnifyFunctionExitNodes >(*f);
 
-      _functions.push_back(boost::shared_ptr< ARFunction >(
-          new ARFunction(f,
+      _functions.push_back(std::shared_ptr< ARFunction >(
+          new ARFunction(&*f,
                          ufen.getReturnBlock(),
                          ufen.getUnreachableBlock(),
                          ufen.getUnwindBlock())));
@@ -498,16 +498,15 @@ void ARPass::printAR() {
 }
 
 void ARPass::printDOT() {
-  std::vector< boost::shared_ptr< ARFunction > >::iterator f =
-      _functions.begin();
+  std::vector< std::shared_ptr< ARFunction > >::iterator f = _functions.begin();
   for (; f != _functions.end(); f++) {
     (*f)->printDOT();
   }
 }
 
 void ARPass::print_meta_info(std::ostream& outf) {
-  std::map< std::string, boost::optional< s_expression > >::iterator p =
-      _meta_info.begin();
+  std::unordered_map< std::string, boost::optional< s_expression > >::iterator
+      p = _meta_info.begin();
   for (; p != _meta_info.end(); p++) {
     s_expression_ostream s("metainfo");
     s << p->second.get();
@@ -517,8 +516,7 @@ void ARPass::print_meta_info(std::ostream& outf) {
 }
 
 void ARPass::print_functions(std::ostream& outf) {
-  std::vector< boost::shared_ptr< ARFunction > >::iterator p =
-      _functions.begin();
+  std::vector< std::shared_ptr< ARFunction > >::iterator p = _functions.begin();
   for (; p != _functions.end(); p++) {
     (*p)->printAR(outf);
   }
@@ -532,12 +530,13 @@ void GlobalReferences::identify_global_variables(Module& m) {
   for (Module::global_iterator global = m.global_begin();
        global != m.global_end();
        global++) {
-    _global_vars[global] = boost::shared_ptr< ARGlobalVar >(
+    _global_vars[&*global] = std::shared_ptr< ARGlobalVar >(
         new ARGlobalVar(UIDGenerator::nextUID()));
   }
 
-  for (std::map< GlobalVariable*, boost::shared_ptr< ARGlobalVar > >::iterator
-           p = _global_vars.begin();
+  for (std::unordered_map< GlobalVariable*,
+                           std::shared_ptr< ARGlobalVar > >::iterator p =
+           _global_vars.begin();
        p != _global_vars.end();
        p++) {
     GlobalVariable* gv = p->first;
@@ -614,16 +613,6 @@ std::string GlobalReferences::get_new_variable() {
   return ss.str();
 }
 
-s_expression GlobalReferences::get_address(ARCode& cfg, Value* v) {
-  if (Argument* arg = dyn_cast< Argument >(v)) {
-    return translate_constant_local_addr(cfg, arg);
-  } else if (AllocaInst* alloca = dyn_cast< AllocaInst >(v)) {
-    return translate_constant_local_addr(cfg, alloca);
-  } else {
-    return get_value(cfg, v);
-  }
-}
-
 s_expression GlobalReferences::get_value(ARCode& cfg, Value* v) {
   // Constant
   if (Constant* cst = dyn_cast< Constant >(v)) {
@@ -643,7 +632,7 @@ s_expression GlobalReferences::get_value(ARCode& cfg, Value* v) {
   }
 
   // Anonymous value
-  std::map< Value*, uint64_t >::iterator p = _valmap.find(v);
+  std::unordered_map< Value*, uint64_t >::iterator p = _valmap.find(v);
   uint64_t id;
 
   if (p == _valmap.end()) {
@@ -662,7 +651,7 @@ s_expression GlobalReferences::get_value(ARCode& cfg, Value* v) {
 uint64_t GlobalReferences::get_type_refid(const Type* t) {
   if (_data_types.find(t) == _data_types.end()) {
     _data_types[t] =
-        boost::shared_ptr< ARType >(new ARType(UIDGenerator::nextUID()));
+        std::shared_ptr< ARType >(new ARType(UIDGenerator::nextUID()));
     _data_types[t]->set_description(translate_type(t));
   }
 
@@ -692,12 +681,13 @@ MDNode* find_debug_global_declare(GlobalVariable* gv) {
 
 void GlobalReferences::set_debug_info(Instruction* inst) {
   std::string location;
-  int line;
+  int line, column;
 
   DILocation* di_loc = inst->getDebugLoc().get();
 
   if (di_loc && di_loc->isResolved()) {
     line = di_loc->getLine();
+    column = di_loc->getColumn();
     StringRef File = di_loc->getFile()->getFilename();
     StringRef Dir = di_loc->getDirectory();
     location += Dir;
@@ -705,11 +695,11 @@ void GlobalReferences::set_debug_info(Instruction* inst) {
       location += "/";
     location += File;
     s_expression_ostream debug("debug");
-    debug << translate_srcloc(line, location);
+    debug << translate_srcloc(line, column, location);
     _current_debug_info = debug.expr();
   } else {
     s_expression_ostream debug("debug");
-    debug << translate_srcloc(-1, "?");
+    debug << translate_srcloc(-1, -1, "?");
     _current_debug_info = debug.expr();
   }
 }
@@ -751,7 +741,7 @@ void GlobalReferences::set_debug_info(GlobalVariable* gv) {
     }
     location += File;
     s_expression_ostream debug("debug");
-    debug << translate_srcloc(line, location);
+    debug << translate_srcloc(line, 1, location);
     _current_debug_info = debug.expr();
     return;
   } else {
@@ -768,7 +758,7 @@ void GlobalReferences::set_debug_info(GlobalVariable* gv) {
 
   // Cannot determine location for gv
   s_expression_ostream debug("debug");
-  debug << translate_srcloc(-1, "?");
+  debug << translate_srcloc(-1, -1, "?");
   _current_debug_info = debug.expr();
 }
 
@@ -786,6 +776,7 @@ s_expression GlobalReferences::get_debug_sexpr() {
 }
 
 s_expression GlobalReferences::translate_srcloc(const int line,
+                                                const int column,
                                                 const std::string location) {
   s_expression_ostream s("srcloc");
   uint64_t file_ref = get_file_id(location);
@@ -793,6 +784,10 @@ s_expression GlobalReferences::translate_srcloc(const int line,
   s_expression_ostream s_line("line");
   s_line << z_number_atom(line);
   s << s_line.expr();
+
+  s_expression_ostream s_col("col");
+  s_col << z_number_atom(column);
+  s << s_col.expr();
 
   s_expression_ostream s_file("file");
   s_file << index64_atom(file_ref);
@@ -1286,7 +1281,8 @@ s_expression GlobalReferences::translate_constant(ARCode& cfg, Constant* cst) {
       case Instruction::FCmp:
       case Instruction::ICmp: {
         CmpInst* cmp = CmpInst::Create((Instruction::OtherOps)e->getOpcode(),
-                                       e->getPredicate(),
+                                       static_cast< CmpInst::Predicate >(
+                                           e->getPredicate()),
                                        e->getOperand(0),
                                        e->getOperand(1));
         cfg.split_blocks(cmp, cmp);
@@ -1363,7 +1359,7 @@ s_expression GlobalReferences::translate_constant(ARCode& cfg, Constant* cst) {
   } else if (ConstantInt* x = dyn_cast< ConstantInt >(cst)) {
     s_expression_ostream k("constantint");
     s_expression_ostream value_s("val");
-    value_s << z_number_atom(x->getValue().getZExtValue());
+    value_s << z_number_atom(x->getValue().toString(10, true));
     k << value_s.expr();
     k << create_ty_ref_sexpr(get_type_refid(cst->getType()));
     out << k.expr();
@@ -1546,7 +1542,7 @@ s_expression GlobalReferences::translate_type(const Type* t) {
 }
 
 void GlobalReferences::print_files(std::ostream& outf) {
-  std::map< std::string, uint64_t >::iterator p = _files.begin();
+  std::unordered_map< std::string, uint64_t >::iterator p = _files.begin();
   for (; p != _files.end(); p++) {
     s_expression_ostream d("def");
     s_expression_ostream s(index64_atom(p->second));
@@ -1560,10 +1556,11 @@ void GlobalReferences::print_files(std::ostream& outf) {
 }
 
 void GlobalReferences::print_global_vars(std::ostream& outf) {
-  std::map< GlobalVariable*, boost::shared_ptr< ARGlobalVar > >::iterator p =
+  std::unordered_map< GlobalVariable*,
+                      std::shared_ptr< ARGlobalVar > >::iterator p =
       _global_vars.begin();
   for (; p != _global_vars.end(); p++) {
-    boost::shared_ptr< ARGlobalVar > gv = p->second;
+    std::shared_ptr< ARGlobalVar > gv = p->second;
     s_expression_ostream d("def");
     s_expression_ostream s(index64_atom(gv->get_id()));
     s << gv->get_definition();
@@ -1582,7 +1579,7 @@ void GlobalReferences::print_global_vars(std::ostream& outf) {
 }
 
 void GlobalReferences::print_data_types(std::ostream& outf) {
-  std::map< const Type*, boost::shared_ptr< ARType > >::iterator p =
+  std::unordered_map< const Type*, std::shared_ptr< ARType > >::iterator p =
       _data_types.begin();
   for (; p != _data_types.end(); p++) {
     s_expression_ostream d("def");
@@ -1862,13 +1859,6 @@ void ARCode::add_transition(std::string src, std::string dest) {
   }
 }
 
-void ARCode::add_transitions(std::string src,
-                             std::vector< std::string > destinations) {
-  _transitions[src].insert(_transitions[src].end(),
-                           destinations.begin(),
-                           destinations.end());
-}
-
 void ARCode::remove_transition(std::string src, std::string dest) {
   std::vector< std::string >::iterator p =
       find(_transitions[src].begin(), _transitions[src].end(), dest);
@@ -1880,8 +1870,8 @@ void ARCode::remove_transition(std::string src, std::string dest) {
 std::string ARCode::get_new_destination(std::string orig_src,
                                         std::string orig_dest) {
   std::string new_dest = "*in_" + orig_src + "_to_" + orig_dest;
-  std::map< std::string, std::vector< s_expression_ref > >::iterator p =
-      _bblocks.begin();
+  std::unordered_map< std::string, std::vector< s_expression_ref > >::iterator
+      p = _bblocks.begin();
   for (; p != _bblocks.end(); p++) {
     if (p->first.find(new_dest) == 0) {
       return p->first;
@@ -1894,8 +1884,8 @@ std::string ARCode::get_new_source(std::string orig_src,
                                    std::string orig_dest) {
   // Case 1. Check for new source coming out of a conditional br.
   std::string new_src = "*out_" + orig_src + "_to_" + orig_dest;
-  std::map< std::string, std::vector< s_expression_ref > >::iterator p =
-      _bblocks.begin();
+  std::unordered_map< std::string, std::vector< s_expression_ref > >::iterator
+      p = _bblocks.begin();
   for (; p != _bblocks.end(); p++) {
     if (p->first.find(new_src) == 0) {
       return p->first;
@@ -1918,7 +1908,7 @@ std::string ARCode::get_new_source(std::string orig_src,
 
 std::vector< std::string > ARCode::get_sources_from_dest(std::string dest) {
   std::vector< std::string > sources;
-  std::map< std::string, std::vector< std::string > >::iterator p =
+  std::unordered_map< std::string, std::vector< std::string > >::iterator p =
       _transitions.begin();
   for (; p != _transitions.end(); p++) {
     std::string src = p->first;
@@ -2012,9 +2002,9 @@ s_expression ARCode::expr() {
     code << s_expression_ostream("exit").expr();
   }
 
-  std::map< std::string,
-            std::vector< boost::optional< s_expression > > >::iterator bb =
-      _bblocks.begin();
+  std::unordered_map< std::string,
+                      std::vector< boost::optional< s_expression > > >::iterator
+      bb = _bblocks.begin();
   s_expression_ostream s_bbs("basicblocks");
   for (; bb != _bblocks.end(); bb++) {
     s_expression_ostream s_bb("basicblock");
@@ -2034,7 +2024,7 @@ s_expression ARCode::expr() {
   }
   code << s_bbs.expr();
 
-  std::map< std::string, std::vector< std::string > >::iterator t =
+  std::unordered_map< std::string, std::vector< std::string > >::iterator t =
       _transitions.begin();
   s_expression_ostream s_trans("trans");
   for (; t != _transitions.end(); t++) {
@@ -2060,11 +2050,15 @@ void ARCode::printDOT(std::ostream& out) {
       boost::property< boost::edge_weight_t, int > >
       Graph; // Assign vertex id to each bblock
 
-  std::map< std::string, int > bblock_to_descriptor;
+  std::unordered_map< std::string, int > bblock_to_descriptor;
+  bblock_to_descriptor.reserve(_bblocks.size());
+
   std::vector< const char* > vertex_labels;
-  std::map< std::string,
-            std::vector< boost::optional< s_expression > > >::iterator bb =
-      _bblocks.begin();
+  vertex_labels.reserve(_bblocks.size());
+
+  std::unordered_map< std::string,
+                      std::vector< boost::optional< s_expression > > >::iterator
+      bb = _bblocks.begin();
 
   int index = 0;
   for (; bb != _bblocks.end(); bb++) {
@@ -2075,7 +2069,7 @@ void ARCode::printDOT(std::ostream& out) {
 
   typedef std::pair< int, int > Edge;
   std::vector< Edge > edges;
-  std::map< std::string, std::vector< std::string > >::iterator src =
+  std::unordered_map< std::string, std::vector< std::string > >::iterator src =
       _transitions.begin();
   for (; src != _transitions.end(); src++) {
     std::vector< std::string >::iterator tgt = src->second.begin();
@@ -2091,11 +2085,13 @@ void ARCode::printDOT(std::ostream& out) {
 
   Graph g(&edges[0], &edges[0] + nedges, &weights[0], _bblocks.size());
 
-  std::map< std::string, std::vector< std::string > >
+  std::unordered_map< std::string, std::vector< std::string > >
       text_bblocks; // bblock name ID to a vertex;
-  std::map< std::string,
-            std::vector< boost::optional< s_expression > > >::iterator p =
-      _bblocks.begin();
+  text_bblocks.reserve(_bblocks.size());
+
+  std::unordered_map< std::string,
+                      std::vector< boost::optional< s_expression > > >::iterator
+      p = _bblocks.begin();
   for (; p != _bblocks.end(); p++) {
     std::vector< std::string > instructions;
     std::vector< boost::optional< s_expression > >::iterator i =

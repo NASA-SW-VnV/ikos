@@ -50,11 +50,11 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <memory>
 #include <utility>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/optional.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/optional.hpp>
 
 #include <ikos/common/types.hpp>
 
@@ -142,7 +142,7 @@ template < typename Key, typename Value >
 class tree {
 public:
   typedef tree< Key, Value > tree_t;
-  typedef boost::shared_ptr< tree_t > tree_ptr;
+  typedef std::shared_ptr< tree_t > tree_ptr;
   typedef tree_ptr ptr;
   typedef unary_op< Value > unary_op_t;
   typedef binary_op< Value > binary_op_t;

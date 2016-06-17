@@ -44,10 +44,9 @@
 #ifndef ARBOS_FP_HPP
 #define ARBOS_FP_HPP
 
-#include <string>
+#include <functional>
 #include <iostream>
-
-#include <boost/functional/hash.hpp>
+#include <string>
 
 namespace arbos {
 
@@ -68,10 +67,7 @@ public:
 
   void write(std::ostream& o) { o << this->_fp; }
 
-  std::size_t hash_value() {
-    boost::hash< std::string > hasher;
-    return hasher(this->_fp);
-  }
+  std::size_t hash_value() { return std::hash< std::string >()(this->_fp); }
 
   bool operator==(fp_number other) const { return this->_fp == other._fp; }
 }; // class floating_point
@@ -81,11 +77,23 @@ inline std::ostream& operator<<(std::ostream& o, fp_number& fp) {
   return o;
 }
 
-inline std::size_t hash_value(fp_number const& fp) {
+inline std::size_t hash_value(const fp_number& fp) {
   fp_number& f = const_cast< fp_number& >(fp);
   return f.hash_value();
 }
 
-} // namespace ikos
+} // end namespace arbos
+
+namespace std {
+
+template <>
+struct hash< arbos::fp_number > {
+  std::size_t operator()(const arbos::fp_number& fp) const {
+    arbos::fp_number& f = const_cast< arbos::fp_number& >(fp);
+    return f.hash_value();
+  }
+};
+
+} // end namespace std
 
 #endif // ARBOS_FP_HPP

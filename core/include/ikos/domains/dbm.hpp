@@ -4,10 +4,10 @@
  *
  * Author: Maxime Arthaud
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * Based on Antoine Mine's paper: A New Numerical Abstract Domain Based on
  * Difference-Bound Matrices, in PADO, 155-172, 2001.
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -46,12 +46,12 @@
 #ifndef IKOS_DBM_HPP
 #define IKOS_DBM_HPP
 
-#include <ikos/common/types.hpp>
 #include <ikos/common/bignums.hpp>
-#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/common/types.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
 
 namespace ikos {
 

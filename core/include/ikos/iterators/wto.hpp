@@ -49,14 +49,13 @@
 
 #include <deque>
 #include <iostream>
-#include <map>
 #include <sstream>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/iterator/iterator_facade.hpp>
 #include <boost/container/slist.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 
 #include <ikos/common/types.hpp>
 #include <ikos/domains/intervals.hpp>
@@ -86,7 +85,7 @@ public:
 
 private:
   typedef std::vector< NodeName > node_list_t;
-  typedef boost::shared_ptr< node_list_t > node_list_ptr;
+  typedef std::shared_ptr< node_list_t > node_list_ptr;
 
 private:
   node_list_ptr _nodes;
@@ -177,10 +176,7 @@ public:
     return res;
   }
 
-  bool
-  operator<=(wto_nesting_t other) {
-    return this->compare(other) <= 0;
-  }
+  bool operator<=(wto_nesting_t other) { return this->compare(other) <= 0; }
 
   bool operator==(wto_nesting_t other) { return this->compare(other) == 0; }
 
@@ -243,9 +239,9 @@ public:
   typedef wto_component< NodeName, CFG > wto_component_t;
 
 private:
-  typedef boost::shared_ptr< wto_component_t > wto_component_ptr;
+  typedef std::shared_ptr< wto_component_t > wto_component_ptr;
   typedef boost::container::slist< wto_component_ptr > wto_component_list_t;
-  typedef boost::shared_ptr< wto_component_list_t > wto_component_list_ptr;
+  typedef std::shared_ptr< wto_component_list_t > wto_component_list_ptr;
 
 private:
   NodeName _head;
@@ -337,18 +333,18 @@ public:
   typedef wto< NodeName, CFG > wto_t;
 
 private:
-  typedef boost::shared_ptr< wto_component_t > wto_component_ptr;
-  typedef boost::shared_ptr< wto_vertex_t > wto_vertex_ptr;
-  typedef boost::shared_ptr< wto_cycle_t > wto_cycle_ptr;
+  typedef std::shared_ptr< wto_component_t > wto_component_ptr;
+  typedef std::shared_ptr< wto_vertex_t > wto_vertex_ptr;
+  typedef std::shared_ptr< wto_cycle_t > wto_cycle_ptr;
   typedef boost::container::slist< wto_component_ptr > wto_component_list_t;
-  typedef boost::shared_ptr< wto_component_list_t > wto_component_list_ptr;
+  typedef std::shared_ptr< wto_component_list_t > wto_component_list_ptr;
   typedef bound< z_number > dfn_t;
-  typedef std::map< NodeName, dfn_t > dfn_table_t;
-  typedef boost::shared_ptr< dfn_table_t > dfn_table_ptr;
+  typedef std::unordered_map< NodeName, dfn_t > dfn_table_t;
+  typedef std::shared_ptr< dfn_table_t > dfn_table_ptr;
   typedef std::deque< NodeName > stack_t;
-  typedef boost::shared_ptr< stack_t > stack_ptr;
-  typedef std::map< NodeName, wto_nesting_t > nesting_table_t;
-  typedef boost::shared_ptr< nesting_table_t > nesting_table_ptr;
+  typedef std::shared_ptr< stack_t > stack_ptr;
+  typedef std::unordered_map< NodeName, wto_nesting_t > nesting_table_t;
+  typedef std::shared_ptr< nesting_table_t > nesting_table_ptr;
 
 private:
   wto_component_list_ptr _wto_components;
@@ -468,11 +464,11 @@ private:
           element = this->pop();
         }
         partition->push_front(
-            boost::static_pointer_cast< wto_component_t, wto_cycle_t >(
+            std::static_pointer_cast< wto_component_t, wto_cycle_t >(
                 this->component(cfg, vertex)));
       } else {
         partition->push_front(
-            boost::static_pointer_cast< wto_component_t, wto_vertex_t >(
+            std::static_pointer_cast< wto_component_t, wto_vertex_t >(
                 wto_vertex_ptr(new wto_vertex_t(vertex))));
       }
     }

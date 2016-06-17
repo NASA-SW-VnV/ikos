@@ -46,8 +46,8 @@
 #include <vector>
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/checkers/checker_api.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
+#include <analyzer/checkers/checker_api.hpp>
 
 namespace analyzer {
 
@@ -60,8 +60,11 @@ private:
   typedef typename analysis_db::db_ptr db_ptr_t;
 
 public:
-  uninitialized_variable_checker(context& ctx, db_ptr_t db)
-      : checker_t(ctx, db) {}
+  uninitialized_variable_checker(context& ctx,
+                                 db_ptr_t db,
+                                 display_settings display_invariants,
+                                 display_settings display_checks)
+      : checker_t(ctx, db, display_invariants, display_checks) {}
 
   virtual const char* name() { return "uva"; }
   virtual const char* description() { return "Uninitialized variable checker"; }
@@ -111,7 +114,12 @@ public:
       assert(l.is_var());
       used.push_back(l.get_var());
     }
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
   }
 
   virtual void check(Call_ref s,
@@ -127,7 +135,12 @@ public:
         used.push_back(l.get_var());
       }
     }
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
   }
 
   virtual void check(Invoke_ref s,
@@ -147,7 +160,12 @@ public:
       assert(l.is_var());
       used.push_back(l.get_var());
     }
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
   }
 
   virtual void check(MemMove_ref s,
@@ -161,7 +179,12 @@ public:
       assert(l.is_var());
       used.push_back(l.get_var());
     }
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
   }
 
   virtual void check(MemSet_ref s,
@@ -179,7 +202,12 @@ public:
       assert(l.is_var());
       used.push_back(l.get_var());
     }
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
   }
 
   virtual void check(Return_Value_ref s,
@@ -194,7 +222,12 @@ public:
         assert(l.is_var());
         used.push_back(l.get_var());
       }
-      check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+      check(inv,
+            call_context,
+            ar::getSrcLoc(s),
+            ar::getUID(s),
+            used.begin(),
+            used.end());
     }
   }
 
@@ -207,68 +240,6 @@ private:
   //! return true if v is an integer scalar
   static bool is_checkable(const Internal_Variable_ref& v) {
     return !ar::isPointer(v) && ar::isInteger(v);
-  }
-
-  template < typename Iterator >
-  void check(AbsDomain inv,
-             const std::string& call_context,
-             location loc,
-             Iterator begin,
-             Iterator end) {
-    // {begin ... end-1} is a range of varname_t elements
-
-    /// Check whether each variable is definitely initialized.
-    if (std::distance(begin, end) > 0) {
-      if (inv.is_bottom()) {
-        this->_db->write("uva",
-                         call_context,
-                         loc.first,
-                         loc.second,
-                         "unreachable");
-      } else {
-        bool safe = true;
-        bool unsafe = false;
-
-        for (Iterator it = begin; it != end; ++it) {
-          varname_t v = *it;
-          safe &= value_domain_impl::is_initialized(inv, v);
-          unsafe |= value_domain_impl::is_uninitialized(inv, v);
-
-#ifdef DISPLAY_CHECKS
-          if (!value_domain_impl::is_initialized(inv, v) &&
-              !value_domain_impl::is_uninitialized(inv, v)) {
-            std::cout << v << " may be uninitialized." << std::endl;
-          }
-          if (unsafe) {
-            std::cout << v << " is uninitialized" << std::endl;
-          }
-#endif
-        }
-        if (safe) {
-          this->_db->write("uva", call_context, loc.first, loc.second, "ok");
-#ifdef DISPLAY_CHECKS
-          std::cout << "safe"
-                    << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-        } else if (unsafe) {
-          this->_db->write("uva", call_context, loc.first, loc.second, "error");
-#ifdef DISPLAY_CHECKS
-          std::cout << "unsafe"
-                    << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-        } else {
-          this->_db->write("uva",
-                           call_context,
-                           loc.first,
-                           loc.second,
-                           "warning");
-#ifdef DISPLAY_CHECKS
-          std::cout << "warning"
-                    << "|" << loc.first << "|" << loc.second << std::endl;
-#endif
-        }
-      }
-    }
   }
 
   template < typename Binary_Statement_ref >
@@ -287,7 +258,12 @@ private:
       used.push_back(l.get_var());
     }
 
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
   }
 
   template < typename Unary_Statement_ref >
@@ -301,7 +277,98 @@ private:
       used.push_back(l.get_var());
     }
 
-    check(inv, call_context, ar::getSrcLoc(s), used.begin(), used.end());
+    check(inv,
+          call_context,
+          ar::getSrcLoc(s),
+          ar::getUID(s),
+          used.begin(),
+          used.end());
+  }
+
+  template < typename Iterator >
+  void check(AbsDomain inv,
+             const std::string& call_context,
+             location loc,
+             unsigned long stmt_uid,
+             Iterator begin,
+             Iterator end) {
+    /// Check whether each variable is definitely initialized.
+    // {begin ... end-1} is a range of varname_t elements
+
+    if (std::distance(begin, end) == 0)
+      return;
+
+    if (inv.is_bottom()) {
+      if (this->display_check(UNREACHABLE)) {
+        std::cout << location_to_string(loc) << ": [unreachable] check(";
+        for (Iterator it = begin; it != end;) {
+          std::cout << *it++;
+          if (it != end)
+            std::cout << ", ";
+        }
+        std::cout << ")" << std::endl;
+      }
+      if (this->display_invariant(UNREACHABLE)) {
+        std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                  << inv << std::endl;
+      }
+
+      this->_db->write("uva",
+                       call_context,
+                       loc.file,
+                       loc.line,
+                       loc.column,
+                       stmt_uid,
+                       "unreachable");
+    } else {
+      bool safe = true;
+      bool unsafe = false;
+
+      for (Iterator it = begin; it != end; ++it) {
+        varname_t v = *it;
+        safe &= value_domain_impl::is_initialized(inv, v);
+        unsafe |= value_domain_impl::is_uninitialized(inv, v);
+
+        if (value_domain_impl::is_initialized(inv, v) &&
+            this->display_check(OK)) {
+          std::cout << location_to_string(loc) << ": [ok] check(" << v
+                    << "): " << v << " is initialized" << std::endl;
+        }
+        if (value_domain_impl::is_uninitialized(inv, v) &&
+            this->display_check(ERR)) {
+          std::cout << location_to_string(loc) << ": [error] check(" << v
+                    << "): " << v << " is uninitialized" << std::endl;
+        }
+        if (!value_domain_impl::is_initialized(inv, v) &&
+            !value_domain_impl::is_uninitialized(inv, v) &&
+            this->display_check(WARNING)) {
+          std::cout << location_to_string(loc) << ": [warning] check(" << v
+                    << "): " << v << " may be uninitialized" << std::endl;
+        }
+      }
+
+      analysis_result result;
+      if (safe) {
+        result = OK;
+      } else if (unsafe) {
+        result = ERR;
+      } else {
+        result = WARNING;
+      }
+
+      if (this->display_invariant(result)) {
+        std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                  << inv << std::endl;
+      }
+
+      this->_db->write("uva",
+                       call_context,
+                       loc.file,
+                       loc.line,
+                       loc.column,
+                       stmt_uid,
+                       tostr(result));
+    }
   }
 }; // end class uninitialized_variable_checker
 

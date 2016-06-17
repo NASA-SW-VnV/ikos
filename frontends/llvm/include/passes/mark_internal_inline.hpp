@@ -43,8 +43,8 @@
 #ifndef IKOSPP_MARK_INTERNAL_INLINE_HPP
 #define IKOSPP_MARK_INTERNAL_INLINE_HPP
 
-#include "llvm/Pass.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 
 using namespace llvm;
 

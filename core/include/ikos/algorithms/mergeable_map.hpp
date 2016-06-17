@@ -45,8 +45,8 @@
 
 #include <boost/optional.hpp>
 
-#include <ikos/common/types.hpp>
 #include <ikos/algorithms/patricia_trees.hpp>
+#include <ikos/common/types.hpp>
 
 namespace ikos {
 

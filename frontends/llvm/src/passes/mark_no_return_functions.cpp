@@ -43,16 +43,16 @@
 
 #define DEBUG_TYPE "mark-fn-with-no-exit-point-unreachable"
 
-#include "llvm/Pass.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/InstIterator.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 
-#include "utils/local.hpp"
 #include "passes/mark_no_return_functions.hpp"
+#include "utils/local.hpp"
 
 STATISTIC(NumNoReturn, "Number of functions without exit point");
 
@@ -73,7 +73,7 @@ bool MarkNoReturnFunctions::runOnModule(llvm::Module& M) {
       continue;
 
     bool mayHaveSideEffects = false;
-    for (inst_iterator It = inst_begin(F), Et = inst_end(F); It != Et; ++It)
+    for (inst_iterator It = inst_begin(&*F), Et = inst_end(&*F); It != Et; ++It)
       mayHaveSideEffects |= It->mayHaveSideEffects();
 
     if (mayHaveSideEffects)

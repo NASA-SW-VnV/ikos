@@ -4,7 +4,6 @@
  *
  * Authors: Nija Shi
  *
- *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -44,8 +43,8 @@
 #ifndef ARBOS_COMMON_HPP
 #define ARBOS_COMMON_HPP
 
-#include <string>
 #include <iostream>
+#include <string>
 
 #include <arbos/common/types.hpp>
 

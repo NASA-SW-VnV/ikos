@@ -10,11 +10,11 @@
  *
  * Author: Jorge A. Navas
  *
+ * Contact: ikos@lists.nasa.gov
+ *
  * This domain is based on the paper "A Partial-Order Approach to
  * Array Content Analysis" by Gange, Navas, Schachte, Sondergaard, and
  * Stuckey (http://arxiv.org/pdf/1408.1754v1.pdf)
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -53,15 +53,13 @@
 #ifndef ANALYZER_ARRAY_GRAPH_HPP
 #define ANALYZER_ARRAY_GRAPH_HPP
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
 
-#include <ikos/algorithms/patricia_trees.hpp>
 #include <ikos/algorithms/mergeable_map.hpp>
+#include <ikos/algorithms/patricia_trees.hpp>
 
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/ikos-wrapper/domains_traits.hpp>
@@ -105,8 +103,9 @@ class array_graph : public ikos::writeable {
       return x.index();
     }
     void write(std::ostream& o) const { name().write(o); }
-  };                // end class VertexNameKey
-  struct KeyHasher {// key hasher for VertexNameKey
+  }; // end struct VertexNameKey
+
+  struct KeyHasher { // key hasher for VertexNameKey
     size_t operator()(const VertexNameKey& a) const { return a.index(); }
   };
 
@@ -115,8 +114,8 @@ class array_graph : public ikos::writeable {
 
 private:
   typedef uint64_t key_t;
-  typedef boost::shared_ptr< VertexName > VertexNamePtr;
-  typedef boost::shared_ptr< Weight > WeightPtr;
+  typedef std::shared_ptr< VertexName > VertexNamePtr;
+  typedef std::shared_ptr< Weight > WeightPtr;
   struct graph_vertex_t {
     VertexNamePtr name;
   };
@@ -126,15 +125,16 @@ private:
 
 public:
   typedef array_graph< VertexName, Weight, ScalarNumDomain > array_graph_t;
-  typedef boost::tuple< VertexName, VertexName, Weight > edge_t;
+  typedef std::tuple< VertexName, VertexName, Weight > edge_t;
 
 private:
   typedef boost::adjacency_list< boost::listS,
                                  boost::listS,
                                  boost::bidirectionalS,
                                  graph_vertex_t,
-                                 graph_edge_t > graph_t;
-  typedef boost::shared_ptr< graph_t > graph_ptr;
+                                 graph_edge_t >
+      graph_t;
+  typedef std::shared_ptr< graph_t > graph_ptr;
 
 private:
   typedef typename boost::graph_traits< graph_t >::edge_iterator edge_iterator;
@@ -154,12 +154,12 @@ private:
   typedef typename ScalarNumDomain::variable_t variable_t;
 
 private:
-  typedef boost::unordered_map< key_t, vertex_descriptor_t > vertex_map_t;
-  typedef boost::shared_ptr< vertex_map_t > vertex_map_ptr;
+  typedef std::unordered_map< key_t, vertex_descriptor_t > vertex_map_t;
+  typedef std::shared_ptr< vertex_map_t > vertex_map_ptr;
 
 private:
   typedef std::set< VertexNameKey > vertex_names_set_t;
-  typedef boost::shared_ptr< vertex_names_set_t > vertex_names_set_ptr;
+  typedef std::shared_ptr< vertex_names_set_t > vertex_names_set_ptr;
 
 private:
   bool _is_bottom;
@@ -221,15 +221,16 @@ private:
       insert_vertex_map(vertices[i], u);
     }
     for (unsigned int i = 0; i < edges.size(); i++) {
-      vertex_descriptor_t u = lookup_vertex_map(edges[i].get< 0 >());
-      vertex_descriptor_t v = lookup_vertex_map(edges[i].get< 1 >());
+      vertex_descriptor_t u = lookup_vertex_map(std::get< 0 >(edges[i]));
+      vertex_descriptor_t v = lookup_vertex_map(std::get< 1 >(edges[i]));
       edge_descriptor_t e;
       bool b;
       boost::tie(e, b) = add_edge(u, v, *this->_graph);
       if (!b) {
         throw ikos_error("edge is already in the graph");
       }
-      (*this->_graph)[e].weight = WeightPtr(new Weight(edges[i].get< 2 >()));
+      (*this->_graph)[e].weight =
+          WeightPtr(new Weight(std::get< 2 >(edges[i])));
     }
     this->canonical();
   }
@@ -725,7 +726,7 @@ public:
 private:
   typedef typename array_graph_t::VertexNameKey VariableNameKey;
   typedef mergeable_map< VariableNameKey, VariableName > succ_index_map_t;
-  typedef boost::shared_ptr< succ_index_map_t > succ_index_map_ptr;
+  typedef std::shared_ptr< succ_index_map_t > succ_index_map_ptr;
 
 private:
   bool _is_bottom;

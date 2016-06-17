@@ -40,8 +40,8 @@
  *
  ******************************************************************************/
 
-#include "utils/local.hpp"
 #include "passes/remove_unreachable_blocks.hpp"
+#include "utils/local.hpp"
 
 namespace ikos_pp {
 

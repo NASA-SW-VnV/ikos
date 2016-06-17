@@ -4,12 +4,14 @@
  *
  * Author: Jorge A. Navas
  *
+ * Contributors: Maxime Arthaud
+ *
+ * Contact: ikos@lists.nasa.gov
+ *
  * It inlines direct calls as well as indirect calls if they can be
  * resolved at compile time. It returns top when the callee is:
  * - recursive call
  * - variable argument list call
- *
- * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
@@ -48,10 +50,11 @@
 #ifndef ANALYZER_INLINER_HPP
 #define ANALYZER_INLINER_HPP
 
-#include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/analysis/sym_exec_api.hpp>
+#include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
+#include <analyzer/analysis/sym_exec_api.hpp>
+#include <analyzer/utils/demangle.hpp>
 
 namespace analyzer {
 
@@ -111,13 +114,17 @@ class inline_sym_exec_call
     : public sym_exec_call< FunctionAnalyzer, AbsDomain >,
       private sym_exec_call_params_matcher< AbsDomain > {
 private:
+  typedef num_sym_exec< AbsDomain,
+                        varname_t /*VariableName*/,
+                        number_t /*Number*/ >
+      sym_exec_t;
   typedef sym_exec_call< FunctionAnalyzer, AbsDomain > sym_exec_call_t;
   typedef typename sym_exec_call_t::sym_exec_call_ptr_t sym_exec_call_ptr_t;
   typedef typename sym_exec_call_t::function_names_t function_names_t;
 
   typedef inline_sym_exec_call< FunctionAnalyzer, AbsDomain >
       inline_sym_exec_call_t;
-  typedef typename boost::shared_ptr< inline_sym_exec_call_t >
+  typedef typename std::shared_ptr< inline_sym_exec_call_t >
       inline_sym_exec_call_ptr_t;
 
   typedef std::pair< AbsDomain, boost::optional< Operand_ref > > exit_inv_t;
@@ -139,181 +146,215 @@ public:
                          FunctionAnalyzer& caller,
                          std::string call_context,
                          function_names_t analyzed_functions) {
-    if (caller_inv.is_bottom() || ar::isExternal(call_stmt)) {
-      if (ar::isExternal(call_stmt)) {
-        // If it is a direct and external call then it is safely
-        // analyzed before this code can be executed. Thus, this part
-        // should be dead code. For consistency, we return the
-        // (unmodified) state at the caller (caller_inv) because we
-        // assume that the external call cannot modify the global
-        // state and the lhs of the call is a new definition (ensured
-        // by the frontend) so it is already top.
-        std::cout << "Warning: " << call_stmt
-                  << " is not analyzed because there is no available code."
-                  << std::endl;
-      }
+    if (caller_inv.is_bottom()) {
       return caller_inv;
     }
 
-    if (ar::isDirectCall(call_stmt) &&
-        is_recursive(ar::getFunctionName(call_stmt), analyzed_functions)) {
-      std::string callee_s = ar::getFunctionName(call_stmt);
-      std::cout << "Warning: skipping safely recursive call '" << callee_s
-                << "'" << std::endl;
-      // TODO: we can be more precise by making top only lhs of call_stmt,
-      // actual parameters of pointer type and any global variable
-      // that might be touched by the recursive function.
-      return AbsDomain::top();
-    }
-
-    location loc = ar::getSrcLoc(call_stmt);
     std::string caller_s = caller.function_name();
-    call_context =
-        call_context + ":" + caller_s + "@" + std::to_string(loc.second);
+    location loc = ar::getSrcLoc(call_stmt);
+    boost::optional< Internal_Variable_ref > lhs =
+        ar::getReturnValue(call_stmt);
+    OpRange actual_params = ar::getArguments(call_stmt);
+
+    call_context += ":" + caller_s + "@" + std::to_string(loc.line);
 
     /*
-     * Build CFG of the callee(s)
+     * Collect potential callees
      */
 
-    std::vector< Function_ref > resolved_callees;
-    if (ar::isIndirectCall(
-            call_stmt)) { // indirect call through a function pointer
+    std::vector< std::string > callees;
+
+    if (ar::isIndirectCall(call_stmt)) {
+      // indirect call through a function pointer
       Literal fvar = ctx.lit_factory()[ar::getIndirectCallVar(call_stmt)];
       assert(fvar.is_var());
 
-      // Reduction between value and pointer analysis: refine the set
+      // reduction between value and pointer analysis: refine the set
       // of potential callees
       std::pair< PointerInfo::ptr_set_t, ikos::z_interval > ptr_info =
           ctx.pointer_info()[fvar.get_var()];
+
       value_domain_impl::refine_addrs(caller_inv,
                                       fvar.get_var(),
                                       ptr_info.first);
+
       if (!value_domain_impl::is_unknown_addr(caller_inv, fvar.get_var())) {
         std::vector< varname_t > ptr_set =
             value_domain_impl::get_addrs_set(caller_inv, fvar.get_var());
         for (std::vector< varname_t >::iterator it = ptr_set.begin();
              it != ptr_set.end();
              ++it) {
-          boost::optional< Function_ref > fun = ctx[*it];
-          if (fun) {
-            resolved_callees.push_back(*fun);
-          } else {
-            std::cout
-                << "Warning: " << *it
-                << " is not analyzed because there is no available code.\n";
-          }
+          callees.push_back(it->name());
         }
       } else {
-        std::cout << "Warning: indirect call cannot be resolved " << call_stmt
-                  << ".\n";
-        std::cout << "This might be unsound since all callee checks will be "
-                     "missed.\n";
-        // TODO: we should analyze all possible function in the
-        // program that matches the signature of the call site and
-        // analyze them in an intra-procedural manner.
-        return AbsDomain::top();
+        // No points-to information
+        std::cout
+            << location_to_string(loc)
+            << ": warning: indirect call cannot be resolved " << std::endl
+            << "The analysis might be unsound if the function has side effects."
+            << std::endl;
+
+        // ASSUMPTION: the callee has no side effects.
+        // Just set lhs and all actual parameters of pointer type to TOP.
+        sym_exec_t sym_exec(caller_inv,
+                            ctx.var_factory(),
+                            ctx.lit_factory(),
+                            ctx.prec_level(),
+                            ctx.pointer_info());
+        sym_exec.exec_external_call(lhs, "<unknown>", actual_params);
+        return sym_exec.inv();
       }
     } else { // direct call
-      resolved_callees.push_back(ar::getFunction(call_stmt));
+      callees.push_back(ar::getFunctionName(call_stmt));
     }
 
-    if (resolved_callees.empty()) {
-      // there is no code available for any of the potential callees
-      return AbsDomain::top();
-    }
+    assert(!callees.empty());
+
+    /*
+     * Compute the post invariant
+     */
 
     AbsDomain post = AbsDomain::bottom();
-    for (std::vector< Function_ref >::iterator it = resolved_callees.begin();
-         it != resolved_callees.end();
+    bool resolved = false;
+
+    for (std::vector< std::string >::iterator it = callees.begin();
+         it != callees.end();
          ++it) {
-      Function_ref callee = *it;
-      const std::string& callee_s = ar::getName(callee);
+      const std::string& callee_s = *it;
+      boost::optional< Function_ref > callee = ctx[callee_s];
 
-      if (ar::isVarargs(callee)) {
-        std::cout
-            << "Warning: skipping safely function with variable number of args"
-            << call_stmt << ".\n";
-        // TODO: we can be more precise by making top only lhs of call_stmt,
-        // actual parameters of pointer type and any global variable
-        // that might be touched by the recursive function.
-        return AbsDomain::top();
-      }
+      if (!callee || ar::isExternal(*callee)) {
+        // ASSUMPTION: if the function code is not available, treat it as
+        // function call that has no side effects.
+        sym_exec_t sym_exec(caller_inv,
+                            ctx.var_factory(),
+                            ctx.lit_factory(),
+                            ctx.prec_level(),
+                            ctx.pointer_info());
+        sym_exec.exec_external_call(lhs, callee_s, actual_params);
+        post = post | sym_exec.inv();
+        resolved = true;
+      } else {
+        if (ar::isVarargs(*callee)) {
+          std::cout << location_to_string(loc)
+                    << ": warning: skipping safely function "
+                    << demangle(callee_s)
+                    << " with variable number of arguments." << std::endl;
 
-      arbos_cfg callee_cfg = ctx[callee];
+          // TODO: we can be more precise by making top only lhs of call_stmt,
+          // actual parameters of pointer type and any global variable
+          // that might be touched by the recursive function.
+          return AbsDomain::top();
+        }
 
-      // Match actual with formal parameters
-      OpRange actual_params = ar::getArguments(call_stmt);
-      IvRange formal_params = ar::getFormalParams(callee);
+        IvRange formal_params = ar::getFormalParams(*callee);
 
-      if (actual_params.size() != formal_params.size()) {
-        // ASSUMPTION: all function calls have been checked by the compiler and
-        // are well-formed. In that case, it means this function cannot be
-        // called and that it is just an imprecision of the pointer analysis.
-        continue;
-      }
+        if (actual_params.size() != formal_params.size()) {
+          // ASSUMPTION: all function calls have been checked by the compiler
+          // and are well-formed. In that case, it means this function cannot be
+          // called and that it is just an imprecision of the pointer analysis.
+          continue;
+        }
 
-      AbsDomain callee_entry_inv = AbsDomain::top();
-      callee_entry_inv = this->propagate_down(formal_params,
-                                              callee_entry_inv,
-                                              actual_params,
-                                              caller_inv,
-                                              ctx);
+        if (is_recursive(callee_s, analyzed_functions)) {
+          std::cout << location_to_string(loc)
+                    << ": warning: skipping safely recursive call "
+                    << demangle(callee_s) << std::endl;
 
-      /*
-       * Analyze recursively the callee
-       */
-      analyzed_functions.insert(callee_s);
+          // TODO: we can be more precise by making top only lhs of call_stmt,
+          // actual parameters of pointer type and any global variable
+          // that might be touched by the recursive function.
+          return AbsDomain::top();
+        }
 
-      sym_exec_call_ptr_t callee_it(
-          new inline_sym_exec_call_t(this->_prec_level));
+        resolved = true;
+        arbos_cfg callee_cfg = ctx[*callee];
 
-      FunctionAnalyzer callee_analyzer(callee_cfg,
-                                       ctx,
-                                       callee_it,
-                                       is_context_stable &&
-                                           convergence_achieved,
-                                       caller,
-                                       call_context,
-                                       analyzed_functions);
+        // match actual with formal parameters
+        AbsDomain callee_entry_inv = AbsDomain::top();
+        callee_entry_inv = this->propagate_down(formal_params,
+                                                callee_entry_inv,
+                                                actual_params,
+                                                caller_inv,
+                                                ctx);
 
-      if (!convergence_achieved) {
-        std::cout << "*** Analyzing function: " << callee_s << std::endl;
-      }
+        /*
+         * Analyze recursively the callee
+         */
 
-      callee_analyzer.run(callee_entry_inv);
+        analyzed_functions.insert(callee_s);
 
-      inline_sym_exec_call_ptr_t inliner =
-          boost::static_pointer_cast< inline_sym_exec_call_t >(callee_it);
-      AbsDomain callee_exit_inv = inliner->_exit_inv.first;
-      boost::optional< Operand_ref > retVal = inliner->_exit_inv.second;
+        sym_exec_call_ptr_t callee_it(
+            new inline_sym_exec_call_t(this->_prec_level));
 
-      if (callee_exit_inv.is_bottom())
-        continue;
+        FunctionAnalyzer callee_analyzer(callee_cfg,
+                                         ctx,
+                                         callee_it,
+                                         is_context_stable &&
+                                             convergence_achieved,
+                                         caller,
+                                         call_context,
+                                         analyzed_functions);
 
-      //// Call-by-ref of pointers and propagation of return value
-      OpRange out_actuals;
-      IvRange out_formals;
-      if (this->_prec_level >= MEM) {
-        IvRange::iterator fIt = formal_params.begin();
-        for (OpRange::iterator it = actual_params.begin(),
-                               et = actual_params.end();
-             it != et;
-             ++it, ++fIt) {
-          if (ar::isPointer(*it) && ar::isRegVar(*it)) {
-            out_actuals.push_back(*it);
-            out_formals.push_back(*fIt);
+        if (!convergence_achieved) {
+          std::cout << "*** Analyzing function: " << demangle(callee_s)
+                    << std::endl;
+        }
+
+        callee_analyzer.run(callee_entry_inv);
+
+        inline_sym_exec_call_ptr_t inliner =
+            std::static_pointer_cast< inline_sym_exec_call_t >(callee_it);
+        AbsDomain callee_exit_inv = inliner->_exit_inv.first;
+        boost::optional< Operand_ref > ret_val = inliner->_exit_inv.second;
+
+        if (callee_exit_inv.is_bottom())
+          continue;
+
+        // call-by-ref of pointers and propagation of return value
+        OpRange out_actuals;
+        IvRange out_formals;
+        if (this->_prec_level >= MEM) {
+          IvRange::iterator fIt = formal_params.begin();
+          for (OpRange::iterator it = actual_params.begin(),
+                                 et = actual_params.end();
+               it != et;
+               ++it, ++fIt) {
+            if (ar::isPointer(*it) && ar::isRegVar(*it)) {
+              out_actuals.push_back(*it);
+              out_formals.push_back(*fIt);
+            }
           }
         }
-      }
 
-      post = post |
-             this->propagate_up(out_actuals,
-                                ar::getReturnValue(call_stmt),
-                                caller_inv,
-                                out_formals,
-                                retVal,
-                                callee_exit_inv,
-                                ctx);
+        post = post |
+               this->propagate_up(out_actuals,
+                                  lhs,
+                                  caller_inv,
+                                  out_formals,
+                                  ret_val,
+                                  callee_exit_inv,
+                                  ctx);
+      }
+    }
+
+    if (!resolved) {
+      // the points-to analysis was not precise enough.
+      std::cout
+          << location_to_string(loc)
+          << ": warning: indirect call cannot be resolved " << std::endl
+          << "The analysis might be unsound if the function has side effects."
+          << std::endl;
+
+      // ASSUMPTION: the callee has no side effects.
+      // Just set lhs and all actual parameters of pointer type to TOP.
+      sym_exec_t sym_exec(caller_inv,
+                          ctx.var_factory(),
+                          ctx.lit_factory(),
+                          ctx.prec_level(),
+                          ctx.pointer_info());
+      sym_exec.exec_external_call(lhs, "<unknown>", actual_params);
+      return sym_exec.inv();
     }
 
     return post;

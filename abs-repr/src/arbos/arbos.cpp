@@ -45,8 +45,8 @@
 
 #include <dlfcn.h>
 #include <iostream>
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
   const std::string PASS_PREFIX = "-";
 
   std::vector< std::unique_ptr< DynamicLibrary > > dyn_libraries;
-  std::map< std::string, std::unique_ptr< Pass > > ext_passes;
+  std::unordered_map< std::string, std::unique_ptr< Pass > > ext_passes;
   std::vector< std::string > pass_seq;
   std::vector< std::string > pass_opts;
 
@@ -266,14 +266,16 @@ int main(int argc, char** argv) {
       std::cout << "ARBOS Passes:" << std::endl;
 
       std::size_t padding = 0;
-      for (std::map< std::string, std::unique_ptr< Pass > >::const_iterator it =
+      for (std::unordered_map< std::string,
+                               std::unique_ptr< Pass > >::const_iterator it =
                ext_passes.begin();
            it != ext_passes.end();
            ++it) {
         padding = std::max(padding, it->first.size() + 4);
       }
 
-      for (std::map< std::string, std::unique_ptr< Pass > >::const_iterator it =
+      for (std::unordered_map< std::string,
+                               std::unique_ptr< Pass > >::const_iterator it =
                ext_passes.begin();
            it != ext_passes.end();
            ++it) {
@@ -304,7 +306,7 @@ int main(int argc, char** argv) {
    * Load built-in AR builder strategies
    */
   ARBuilderRegistry ar_builder;
-  ar_builder.registerBuilder(boost::shared_ptr< ARBuilder >(new ImportAR()));
+  ar_builder.registerBuilder(std::shared_ptr< ARBuilder >(new ImportAR()));
 
   ARModel* arModel = ar_builder.build(AR_EXT);
 
