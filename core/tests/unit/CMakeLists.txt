@@ -117,6 +117,7 @@ add_cxx_flag("-Wall" "WALL")
 # Targets
 #
 
+add_subdirectory(apron)
 add_subdirectory(congruences)
 add_subdirectory(constants)
 add_subdirectory(dbm)
@@ -127,6 +128,7 @@ add_subdirectory(nullity)
 add_subdirectory(octagons)
 add_subdirectory(pta)
 add_subdirectory(uninitialized)
-add_subdirectory(var_packing_domains)
+add_subdirectory(union_domains)
 add_subdirectory(var_packing_dbm)
 add_subdirectory(var_packing_dbm_congruences)
+add_subdirectory(var_packing_domains)

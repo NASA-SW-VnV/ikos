@@ -1,0 +1,124 @@
+#!/bin/bash
+# Author: Maxime Arthaud <maxime.arthaud@nasa.gov>
+
+progname=$(basename "$0")
+root=$(dirname "$0")
+
+# Colors
+c0="\033[0m"
+cbold="\033[1m"
+cred="\033[31m"
+cgreen="\033[32m"
+cyellow="\033[33m"
+cblue="\033[34m"
+cwhite="\033[37m"
+
+function error() {
+    echo -e "${cbold}${cred}==> ${cwhite}$1${c0}" >&2
+}
+
+function warning() {
+    echo -e "${cbold}${cyellow}==> ${cwhite}$1${c0}" >&2
+}
+
+function success() {
+    echo -e "${cbold}${cgreen}==> ${cwhite}$1${c0}"
+}
+
+function msg() {
+    echo -e "${cbold}${cblue}==> ${cwhite}$1${c0}"
+}
+
+function usage() {
+    echo "usage: $progname [-h] [--all] [OS ...]"
+    echo ""
+    echo "Try to build ikos and launch the tests on different operating systems"
+    echo ""
+    echo "positinal arguments:"
+    echo "  OS  A list of operating systems"
+    echo ""
+    echo "optional arguments:"
+    echo "  -h, --help  show this help message and exit"
+    echo "  -a, --all   run the tests over all available operating systems"
+}
+
+# Parse arguments
+cmd=""
+declare -a args
+
+while [[ $1 ]]; do
+    case "$1" in
+        -h|--help)   cmd="help";;
+        -a|--all)    cmd="all";;
+        *)           args+=("$1");;
+    esac
+    shift
+done
+
+if [[ $cmd = "help" ]]; then
+    usage
+    exit 0
+fi
+
+if [[ $cmd = "all" ]]; then
+    # List of dockerfiles to try
+    # Note that it does not include Red Hat Enterprise Linux because we need a license
+    args+=("debian-jessie" \
+           "ubuntu-12.04" "ubuntu-14.04" "ubuntu-16.04" \
+           "archlinux-latest" \
+           "centos-6" "centos-7" \
+           "fedora-23" "fedora-24")
+fi
+
+if (( ${#args[@]} == 0 )); then
+    echo "$progname: error: too few arguments" >&2
+    exit 2
+fi
+
+# Check that docker is available
+docker info >/dev/null || { exit 1; }
+
+cd "$root"
+root=$(pwd)
+
+# Check that we can find all the Dockerfiles
+for os in "${args[@]}"; do
+    if [[ ! -f "$os/Dockerfile" ]]; then
+        echo "$progname: error: could not find the Dockerfile for $os"
+        exit 3
+    fi
+done
+
+# go into ikos trunk root directory
+cd ../..
+
+declare -a results
+declare -a logfiles
+
+for os in "${args[@]}"; do
+    msg "Running tests on ${cgreen}${os}${cwhite}"
+    logfile="logs/${os}-$(date +'%Y-%m-%d-%H:%M:%S')"
+    logfiles+=("$logfile")
+    rm -f "$root/$logfile"
+    docker build --force-rm --no-cache -t ikos-tmp-test -f "$root/$os/Dockerfile" . 2>&1 | tee "$root/$logfile"
+    ret=${PIPESTATUS[0]}
+    results+=("$ret")
+    if (( $ret == 0 )); then
+        success "${cgreen}Passed${cwhite} successfully"
+        docker rmi ikos-tmp-test >/dev/null
+    else
+        error "${cred}Failed${cwhite}. see $logfile"
+    fi
+done
+
+if (( ${#args[@]} > 1 )); then
+    msg "Summary:"
+
+    for ((i = 0; i < ${#args[@]}; i++)); do
+        if (( ${results[$i]} == 0 )); then
+            success "${args[$i]}: ${cgreen}Passed${cwhite}"
+        else
+            error "${args[$i]}: ${cred}Failed${cwhite}. see ${logfiles[$i]}"
+        fi
+    done
+fi

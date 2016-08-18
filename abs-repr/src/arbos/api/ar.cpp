@@ -2058,13 +2058,31 @@ AR_Basic_Block::AR_Basic_Block(index64_t parent_code,
 
 void AR_Basic_Block::addNextBasicBlock(AR_Node_Ref< AR_Basic_Block > bblock) {
   _next_blocks.push_back(bblock.getUID());
-  addNextBlockId((*bblock).getNameId());
+  _next_blocks_name_refs.insert((*bblock).getNameId());
+}
+
+void AR_Basic_Block::removeNextBasicBlock(
+    AR_Node_Ref< AR_Basic_Block > bblock) {
+  std::vector< index64_t >::const_iterator it =
+      std::find(_next_blocks.begin(), _next_blocks.end(), bblock.getUID());
+  assert(it != _next_blocks.end());
+  _next_blocks.erase(it);
+  _next_blocks_name_refs.erase((*bblock).getNameId());
 }
 
 void AR_Basic_Block::addPreviousBasicBlock(
     AR_Node_Ref< AR_Basic_Block > bblock) {
   _prev_blocks.push_back(bblock.getUID());
-  addPrevBlockId((*bblock).getNameId());
+  _prev_blocks_name_refs.insert((*bblock).getNameId());
+}
+
+void AR_Basic_Block::removePreviousBasicBlock(
+    AR_Node_Ref< AR_Basic_Block > bblock) {
+  std::vector< index64_t >::const_iterator it =
+      std::find(_prev_blocks.begin(), _prev_blocks.end(), bblock.getUID());
+  assert(it != _prev_blocks.end());
+  _prev_blocks.erase(it);
+  _prev_blocks_name_refs.erase((*bblock).getNameId());
 }
 
 AR_Basic_Block::~AR_Basic_Block() {}

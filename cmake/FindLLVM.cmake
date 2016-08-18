@@ -3,7 +3,7 @@ if (NOT LLVM_FOUND)
 
   if (LLVM_CONFIG_EXECUTABLE)
     message(STATUS "LLVM llvm-config found at: ${LLVM_CONFIG_EXECUTABLE}")
-  else (LLVM_CONFIG_EXECUTABLE)
+  else()
     message(WARNING "Could NOT find llvm-config. Set LLVM_CONFIG_EXECUTABLE.")
   endif()
 

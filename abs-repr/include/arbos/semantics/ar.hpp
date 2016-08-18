@@ -215,6 +215,14 @@ public:
   enum Event { NODESCREATED };
   virtual void nodesCreated() {}
   virtual ~ARModelEventListener() {}
+
+  // This is only necessary for gcc <= 4.9.3
+  // see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60970
+  struct EventHash {
+    std::size_t operator()(const Event& e) const {
+      return static_cast< std::size_t >(e);
+    }
+  };
 };
 
 class ReferenceCounter {
@@ -2494,26 +2502,19 @@ public:
    * by their reference names provided by AIR. Used by ARModel.
    */
   void addNextBasicBlock(AR_Node_Ref< AR_Basic_Block >);
+  void removeNextBasicBlock(AR_Node_Ref< AR_Basic_Block >);
   void addPreviousBasicBlock(AR_Node_Ref< AR_Basic_Block >);
-  inline void addNextBlockId(const std::string& succ_bblock_ref) {
-    _next_blocks_name_refs.insert(succ_bblock_ref);
-  }
-  inline void addPrevBlockId(const std::string& prev_bblock_ref) {
-    _prev_blocks_name_refs.insert(prev_bblock_ref);
-  }
+  void removePreviousBasicBlock(AR_Node_Ref< AR_Basic_Block >);
   inline bool isPreviousBlock(const std::string& block_name) {
     std::unordered_set< std::string >::iterator it =
         _prev_blocks_name_refs.find(block_name);
     return it != _prev_blocks_name_refs.end();
   }
   inline const std::string& getBasicBlockId() { return _name_id; }
-  inline void setNextBlockIds(std::unordered_set< std::string > bblock_ids) {
-    _next_blocks_name_refs = bblock_ids;
-  }
-  inline std::unordered_set< std::string >& getNextBlockIds() {
+  inline const std::unordered_set< std::string >& getNextBlockIds() {
     return _next_blocks_name_refs;
   }
-  inline std::unordered_set< std::string >& getPreviousBlockIds() {
+  inline const std::unordered_set< std::string >& getPreviousBlockIds() {
     return _prev_blocks_name_refs;
   }
 
@@ -2530,6 +2531,12 @@ public:
                                                   s_expression e) {
     return std::static_pointer_cast< AR_Basic_Block >(
         (new AR_Basic_Block(parent_code, e))->shared_from_this());
+  }
+
+  static std::shared_ptr< AR_Basic_Block > create(index64_t parent_code,
+                                                  const std::string& name_id) {
+    return std::static_pointer_cast< AR_Basic_Block >(
+        (new AR_Basic_Block(parent_code, name_id))->shared_from_this());
   }
 };
 
@@ -2567,12 +2574,25 @@ public:
     _blocks.push_back(bblock);
   }
 
+  inline void removeBasicBlock(AR_Node_Ref< AR_Basic_Block > bblock) {
+    assert(std::find(_blocks.begin(), _blocks.end(), bblock) != _blocks.end());
+    _blocks.erase(std::find(_blocks.begin(), _blocks.end(), bblock));
+  }
+
   inline AR_Node_Ref< AR_Basic_Block > getEntryBlock() {
     return AR_Node_Ref< AR_Basic_Block >(_entry_block);
   }
 
+  inline void setEntryBlock(AR_Node_Ref< AR_Basic_Block > block) {
+    _entry_block = block.getUID();
+  }
+
   inline AR_Node_Ref< AR_Basic_Block > getExitBlock() {
     return AR_Node_Ref< AR_Basic_Block >(_exit_block);
+  }
+
+  inline void setExitBlock(AR_Node_Ref< AR_Basic_Block > block) {
+    _exit_block = block.getUID();
   }
 
   AR_Node_Ref< AR_Internal_Variable > getInternalVariable(
@@ -2970,8 +2990,9 @@ private:
       _file_map; // maps AIR ref to the actual file path
 
   // ARModel event listeners
-  std::unordered_map< ARModelEventListener::Event, std::vector< index64_t > >
-      _listeners;
+  std::unordered_map< ARModelEventListener::Event,
+                      std::vector< index64_t >,
+                      ARModelEventListener::EventHash > _listeners;
 
   std::unordered_map< index64_t, std::shared_ptr< AR_Node > > _uid_to_ARNode;
   std::list< AR_Node_Ref< AR_Node > > _ar_prototypes;
@@ -3086,7 +3107,8 @@ private:
 };
 
 template < typename T >
-AR_Node_Ref< T >::AR_Node_Ref(index64_t uid) : _uid(uid) {
+AR_Node_Ref< T >::AR_Node_Ref(index64_t uid)
+    : _uid(uid) {
   ReferenceCounter::Get()->increment_ct(uid);
 }
 

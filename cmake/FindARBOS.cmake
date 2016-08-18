@@ -65,17 +65,17 @@ if (NOT ARBOS_FOUND)
 
   find_path(ARBOS_INCLUDE_DIR
     NAMES arbos/semantics/ar.hpp
-    PATHS ${ARBOS_INCLUDE_SEARCH_DIRS}
+    HINTS ${ARBOS_INCLUDE_SEARCH_DIRS}
   )
 
   find_library(ARBOS_LIB
     NAMES arbos-api
-    PATHS ${ARBOS_LIB_SEARCH_DIRS}
+    HINTS ${ARBOS_LIB_SEARCH_DIRS}
   )
 
   find_program(ARBOS_BIN
     NAMES arbos
-    PATHS ${ARBOS_BIN_SEARCH_DIRS}
+    HINTS ${ARBOS_BIN_SEARCH_DIRS}
   )
 
   mark_as_advanced(ARBOS_INCLUDE_DIR ARBOS_LIB ARBOS_BIN)

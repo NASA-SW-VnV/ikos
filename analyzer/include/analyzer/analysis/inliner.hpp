@@ -156,7 +156,8 @@ public:
         ar::getReturnValue(call_stmt);
     OpRange actual_params = ar::getArguments(call_stmt);
 
-    call_context += ":" + caller_s + "@" + std::to_string(loc.line);
+    call_context += "/" + caller_s + "@" + std::to_string(loc.line) + "@" +
+                    std::to_string(loc.column);
 
     /*
      * Collect potential callees
@@ -190,7 +191,7 @@ public:
         // No points-to information
         std::cout
             << location_to_string(loc)
-            << ": warning: indirect call cannot be resolved " << std::endl
+            << ": warning: indirect call cannot be resolved" << std::endl
             << "The analysis might be unsound if the function has side effects."
             << std::endl;
 
@@ -342,7 +343,7 @@ public:
       // the points-to analysis was not precise enough.
       std::cout
           << location_to_string(loc)
-          << ": warning: indirect call cannot be resolved " << std::endl
+          << ": warning: indirect call cannot be resolved" << std::endl
           << "The analysis might be unsound if the function has side effects."
           << std::endl;
 

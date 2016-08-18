@@ -43,16 +43,30 @@
 #ifndef ANALYZER_DEMANGLE_HPP
 #define ANALYZER_DEMANGLE_HPP
 
+#include <boost/version.hpp>
+
+#if BOOST_VERSION <= 105500
+#include <boost/units/detail/utility.hpp>
+#else
 #include <boost/core/demangle.hpp>
+#endif
 
 namespace analyzer {
 
 std::string demangle(const std::string& name) {
+#if BOOST_VERSION <= 105500
+  return boost::units::detail::demangle(name.c_str());
+#else
   return boost::core::demangle(name.c_str());
+#endif
 }
 
 std::string demangle(const char* name) {
+#if BOOST_VERSION <= 105500
+  return boost::units::detail::demangle(name);
+#else
   return boost::core::demangle(name);
+#endif
 }
 
 } // end namespace analyzer

@@ -14,15 +14,14 @@ CONTENTS OF THIS FILE
 INTRODUCTION
 ------------
 
-The LLVM frontend takes an LLVM bitcode of a program, optimizes it to facilitate static analysis, and then translates it into the AR program model. The AR program model is represented in S-expressions in an _AR file_. You can find the AR specification in **../abs-repr/docs/AR_SPEC.md**.
-
+The LLVM frontend takes an LLVM bitcode of a program, optimizes it to facilitate static analysis, and then translates it into the AR program model. The AR program model is represented in S-expressions in an _AR file_. You can find the AR specification in `../abs-repr/docs/AR_SPEC.md`.
 
 BUILD AND INSTALL
 -----------------
 
 The LLVM frontend can be independently built. The source project uses cmake to generate build files needed by your build tool.
 
-To build the LLVM frontend, run the following commands under the **frontends/llvm**:
+To build the LLVM frontend, run the following commands under `frontends/llvm`:
 
 ```
 $ mkdir build
@@ -33,29 +32,26 @@ $ make install
 ```
 
 Note: We recommend to use Ninja to speed up the build process: https://ninja-build.org/
-To build arbos using Ninja, just add the option -G Ninja when you run cmake, for instance:
+To build arbos using Ninja, just add the option `-G Ninja` when you run cmake, for instance:
 
 ```
-$ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=<install-directory> ..
+$ cmake -G Ninja -DCMAKE_INSTALL_PREFIX=/path/to/install ..
 ```
 
-Then, just use "ninja" everywhere instead of "make".
+Then, just use `ninja` everywhere instead of `make`.
 
-Note: You can list all targets using "make help"
-
-Under **/path/to/install**, you should have the following directory structure:
+Under `/path/to/install`, you should have the following directory structure:
 
 ```
 ├── bin
-│   └── ikos-pp
+│   └── ikos-pp
 └── lib
     └── llvm-to-ar.dylib (or llvm-to-ar.so on Linux)
 ```
 
-**bin/ikos-pp** is an executable embedded with LLVM. It takes an LLVM bitcode and transforms it into another LLVM bitcode that is optimized to be more efficient for static analysis.
+`bin/ikos-pp` is an executable embedded with LLVM. It takes an LLVM bitcode and transforms it into another LLVM bitcode that is optimized to be more efficient for static analysis.
 
-**lib/llvm-to-ar.dylib** is an LLVM pass to be used in the LLVM **opt** command. This LLVM pass translates the LLVM bitcode provided in the command line and prints out the AR program model in S-expresions in the console.
-
+`lib/llvm-to-ar.dylib` is an LLVM pass to be used in the LLVM **opt** command. This LLVM pass translates the LLVM bitcode provided in the command line and prints out the AR program model in S-expresions in the console.
 
 Running the LLVM Frontend Tools
 -------------------------------
@@ -135,16 +131,16 @@ The following illustrates the directory structure in this folder:
 ├── CMakeLists.txt
 ├── README.md
 ├── include
-│   ├── passes
-│   └── utils
+│   ├── passes
+│   └── utils
 └── src
     ├── ikos-pp
     ├── passes
     └── utils
 ```
 
-**include/passes** and **src/passes** contain implementation of our LLVM passes for optimization and translation.
+`include/passes` and `src/passes` contain implementation of our LLVM passes for optimization and translation.
 
-**include/utils** and **src/utils** contain implementation of utility functions that support optimization.
+`include/utils` and `src/utils` contain implementation of utility functions that support optimization.
 
-**src/ikos-pp** contains implemention of **ikos-pp**.
+`src/ikos-pp` contains implemention of `ikos-pp`.

@@ -437,6 +437,7 @@ def do_arbos_plugins(in_name, opt):
 
     if opt.arbos_optimize:
         passes.append((os.path.join(root, 'lib'), 'pointer-shift-opt', 'ps-opt'))
+        passes.append((os.path.join(root, 'lib'), 'branching-opt', 'branching-opt'))
         passes.append((os.path.join(root, 'lib'), 'inline-init-gv', 'inline-init-gv'))
 
     passes.append((os.path.join(root, 'lib'), 'analyzer', 'analyzer'))

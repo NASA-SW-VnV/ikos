@@ -647,36 +647,31 @@ inline interval< z_number > interval< z_number >::operator/(
 template <>
 inline interval< z_number > interval< z_number >::SRem(
     interval< z_number > x) const {
-  // note that the sign of the divisor does not matter
   if (this->is_bottom() || x.is_bottom()) {
     return this->bottom();
-  } else if (this->singleton() && x.singleton()) {
-    z_number dividend = *this->singleton();
-    z_number divisor = *x.singleton();
-
-    if (divisor == 0) {
-      return this->bottom();
-    }
-
-    return interval_t(dividend % divisor);
-  } else if (x.ub().is_finite() && x.lb().is_finite()) {
-    z_number max_divisor = max(abs(*x.lb().number()), abs(*x.ub().number()));
-
-    if (max_divisor == 0) {
-      return this->bottom();
-    }
-
-    if (this->lb() < 0) {
-      if (this->ub() > 0) {
-        return interval_t(-(max_divisor - 1), max_divisor - 1);
-      } else {
-        return interval_t(-(max_divisor - 1), 0);
-      }
-    } else {
-      return interval_t(0, max_divisor - 1);
-    }
   } else {
-    return this->top();
+    boost::optional< z_number > n = this->singleton();
+    boost::optional< z_number > d = x.singleton();
+    if (d && *d == 0) {
+      // [_, _] / 0 = _|_
+      return this->bottom();
+    } else if (n && d) {
+      return interval_t(*n % *d);
+    } else {
+      // Note that the sign of the divisor does not matter
+      z_bound n_ub = z_bound::max(this->_lb.abs(), this->_ub.abs());
+      z_bound d_ub = z_bound::max(x._lb.abs(), x._ub.abs());
+      z_bound ub = z_bound::min(n_ub, d_ub - 1);
+      if (this->_lb < 0) {
+        if (this->_ub > 0) {
+          return interval_t(-ub, ub);
+        } else {
+          return interval_t(-ub, 0);
+        }
+      } else {
+        return interval_t(0, ub);
+      }
+    }
   }
 }
 
@@ -685,33 +680,23 @@ inline interval< z_number > interval< z_number >::URem(
     interval< z_number > x) const {
   if (this->is_bottom() || x.is_bottom()) {
     return this->bottom();
-  } else if (this->singleton() && x.singleton()) {
-    z_number dividend = *this->singleton();
-    z_number divisor = *x.singleton();
-
-    if (divisor < 0) {
-      return this->top();
-    } else if (divisor == 0) {
-      return this->bottom();
-    } else if (dividend < 0) {
-      // dividend is treated as an unsigned integer.
-      // we would need the size to be more precise
-      return interval_t(0, divisor - 1);
-    } else {
-      return interval_t(dividend % divisor);
-    }
-  } else if (x.ub().is_finite() && x.lb().is_finite()) {
-    z_number max_divisor = *x.ub().number();
-
-    if (x.lb() < 0 || x.ub() < 0) {
-      return this->top();
-    } else if (max_divisor == 0) {
-      return this->bottom();
-    }
-
-    return interval_t(0, max_divisor - 1);
   } else {
-    return this->top();
+    boost::optional< z_number > n = this->singleton();
+    boost::optional< z_number > d = x.singleton();
+    if (d && *d == 0) {
+      // [_, _] / 0 = _|_
+      return this->bottom();
+    } else if (this->_lb < 0 && x._lb < 0) {
+      return this->top();
+    } else if (this->_lb < 0) {
+      return interval_t(0, x._ub - 1);
+    } else if (x._lb < 0) {
+      return interval_t(0, this->_ub);
+    } else if (n && d) {
+      return interval_t(*n % *d);
+    } else {
+      return interval_t(0, z_bound::min(this->_ub, x._ub - 1));
+    }
   }
 }
 
@@ -721,15 +706,26 @@ inline interval< z_number > interval< z_number >::And(
   if (this->is_bottom() || x.is_bottom()) {
     return this->bottom();
   } else {
-    boost::optional< z_number > left_op = this->singleton();
-    boost::optional< z_number > right_op = x.singleton();
-
-    if (left_op && right_op) {
-      return interval_t((*left_op) & (*right_op));
-    } else if (this->lb() >= 0 && x.lb() >= 0) {
-      return interval_t(0, bound_t::min(this->ub(), x.ub()));
+    boost::optional< z_number > l = this->singleton();
+    boost::optional< z_number > r = x.singleton();
+    if (l && r) {
+      return interval_t(*l & *r);
+    } else if ((l && *l == 0) || (r && *r == 0)) {
+      return interval_t(z_number(0));
+    } else if (l && *l == -1) {
+      return x;
+    } else if (r && *r == -1) {
+      return *this;
     } else {
-      return this->top();
+      if (this->_lb >= 0 && x._lb >= 0) {
+        return interval_t(0, z_bound::min(this->_ub, x._ub));
+      } else if (this->_lb >= 0) {
+        return interval_t(0, this->_ub);
+      } else if (x._lb >= 0) {
+        return interval_t(0, x._ub);
+      } else {
+        return this->top();
+      }
     }
   }
 }
@@ -740,17 +736,21 @@ inline interval< z_number > interval< z_number >::Or(
   if (this->is_bottom() || x.is_bottom()) {
     return this->bottom();
   } else {
-    boost::optional< z_number > left_op = this->singleton();
-    boost::optional< z_number > right_op = x.singleton();
-
-    if (left_op && right_op) {
-      return interval_t((*left_op) | (*right_op));
-    } else if (this->lb() >= 0 && x.lb() >= 0) {
-      boost::optional< z_number > left_ub = this->ub().number();
-      boost::optional< z_number > right_ub = x.ub().number();
-
-      if (left_ub && right_ub) {
-        return interval_t(0, std::max(*left_ub, *right_ub).fill_ones());
+    boost::optional< z_number > l = this->singleton();
+    boost::optional< z_number > r = x.singleton();
+    if (l && r) {
+      return interval_t(*l | *r);
+    } else if ((l && *l == -1) || (r && *r == -1)) {
+      return interval_t(z_number(-1));
+    } else if (l && *l == 0) {
+      return x;
+    } else if (r && *r == 0) {
+      return *this;
+    } else if (this->_lb >= 0 && x._lb >= 0) {
+      boost::optional< z_number > l_ub = this->_ub.number();
+      boost::optional< z_number > r_ub = x._ub.number();
+      if (l_ub && r_ub) {
+        return interval_t(0, std::max(*l_ub, *r_ub).fill_ones());
       } else {
         return interval_t(0, bound_t::plus_infinity());
       }
@@ -766,13 +766,24 @@ inline interval< z_number > interval< z_number >::Xor(
   if (this->is_bottom() || x.is_bottom()) {
     return this->bottom();
   } else {
-    boost::optional< z_number > left_op = this->singleton();
-    boost::optional< z_number > right_op = x.singleton();
-
-    if (left_op && right_op) {
-      return interval_t((*left_op) ^ (*right_op));
+    boost::optional< z_number > l = this->singleton();
+    boost::optional< z_number > r = x.singleton();
+    if (l && r) {
+      return interval_t(*l ^ *r);
+    } else if (l && *l == 0) {
+      return x;
+    } else if (r && *r == 0) {
+      return *this;
+    } else if (this->_lb >= 0 && x._lb >= 0) {
+      boost::optional< z_number > l_ub = this->_ub.number();
+      boost::optional< z_number > r_ub = x._ub.number();
+      if (l_ub && r_ub) {
+        return interval_t(0, std::max(*l_ub, *r_ub).fill_ones());
+      } else {
+        return interval_t(0, bound_t::plus_infinity());
+      }
     } else {
-      return this->Or(x);
+      return this->top();
     }
   }
 }
@@ -784,7 +795,6 @@ inline interval< z_number > interval< z_number >::Shl(
     return this->bottom();
   } else {
     boost::optional< z_number > shift = x.singleton();
-
     if (shift) {
       z_number factor = 1;
       for (int i = 0; (*shift) > i; i++) {
@@ -804,10 +814,9 @@ inline interval< z_number > interval< z_number >::LShr(
     return this->bottom();
   } else {
     boost::optional< z_number > shift = x.singleton();
-
-    if (this->lb() >= 0 && this->ub().is_finite() && shift) {
-      z_number lb = *this->lb().number();
-      z_number ub = *this->ub().number();
+    if (this->_lb >= 0 && this->_ub.is_finite() && shift) {
+      z_number lb = *(this->_lb.number());
+      z_number ub = *(this->_ub.number());
       return interval< z_number >(lb >> *shift, ub >> *shift);
     } else {
       return this->top();

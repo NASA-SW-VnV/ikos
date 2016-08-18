@@ -15,7 +15,7 @@ CONTENTS OF THIS FILE
 INTRODUCTION
 ------------
 
-The IKOS analyzer (previously called IkosCC) is an abstract interpretation-based static analyzer that aims at proving absence of certain kind of runtime errors in C programs:
+The IKOS analyzer (previously called IkosCC) is an abstract interpretation-based static analyzer that aims at proving absence of certain kind of runtime errors in C and C++ programs:
 
 * **boa**: buffer overflow (out-of-bound array indexing)
 * **dbz**: integer division by zero
@@ -26,26 +26,27 @@ The IKOS analyzer (previously called IkosCC) is an abstract interpretation-based
 BUILD AND INSTALL
 -----------------
 
-We really recommend to build the analyzer from the root directory of the distribution, but it is still possible to build all components (arbos, the llvm frontend and the analyzer) independently. To do so, first follow the instructions in **abs-repr/README.md**, **frontends/llvm/README.md** and **core/README.md**.
+We really recommend to build the analyzer from the root directory of the distribution, but it is still possible to build all components (arbos, the llvm frontend and the analyzer) independently. To do so, first follow the instructions in `abs-repr/README.md`, `frontends/llvm/README.md` and `core/README.md`.
 
 ### DEPENDENCIES
 
 To build and run the analyzer, you will need the following dependencies:
 
-* CMake 2.8.12.2 or higher
-* GMP 6.1 or higher
-* Boost 1.55 or higher
-* Python 2.7 or 3.3 or higher
-* SQLite 3
-* LLVM 3.7 or higher
-* llvm-clang 3.7 or higher
-* A C++ compiler that supports C++14 (gcc 5 or higher, clang 3.4 or higher)
+* CMake >= 2.8.12.2
+* GMP >= 4.3.1
+* Boost >= 1.55
+* Python 2 >= 2.7.3 or Python 3 >= 3.3
+* SQLite >= 3.6.20
+* LLVM and Clang >= 3.7
+* A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
 
 Most of them can be installed using your package manager.
 
+Please check the root `README.md` to find more instructions.
+
 ### BUILD AND INSTALL THE ANALYZER
 
-Once you have installed all other components, run the following commands in the **analyzer** directory:
+Once you have installed all other components, run the following commands in the `analyzer` directory:
 
 ```
 $ mkdir build
@@ -61,7 +62,7 @@ $ make install
 
 ### RUNNING CTEST
 
-To run the tests, first build and install ikos. Then, run the following commands under the *build* directory:
+To run the tests, first build and install ikos. Then, run the following commands under the `build` directory:
 
 ```
 $ export IKOS_INSTALL=/path/to/ikos-installation
@@ -71,7 +72,7 @@ $ make test
 HOW TO RUN IKOS
 ===============
 
-First, take a look at the **README.md** in the root directory of the distribution.
+First, take a look at the `README.md` in the root directory of the distribution.
 
 Using the following commands, you can run IKOS to detect buffer overflow defects directly against a C program called *loop.c*:
 
@@ -85,12 +86,15 @@ Then you shall see the following output and that IKOS reports two occurrences of
 ```
 dlopen successful on /path/to/ikos-install-directory/lib/libpointer-shift-opt.dylib
 Loaded ARBOS pass: ps-opt - Optimize pointer shift statements
+dlopen successful on /path/to/ikos-install-directory/lib/libbranching-opt.dylib
+Loaded ARBOS pass: branching-opt - Optimize the Control Flow Graph
 dlopen successful on /path/to/ikos-install-directory/lib/libinline-init-gv.dylib
 Loaded ARBOS pass: inline-init-gv - Inline initialization of global variables in main
 dlopen successful on /path/to/ikos-install-directory/lib/libanalyzer.dylib
 Loaded ARBOS pass: analyzer - Analyzer pass.
-3 pass(es) registered.
+4 pass(es) registered.
 Executing pass - ps-opt Optimize pointer shift statements
+Executing pass - branching-opt Optimize the Control Flow Graph
 Executing pass - inline-init-gv Inline initialization of global variables in main
 Executing pass - analyzer Analyzer pass.
 Running liveness variable analysis ...
@@ -138,7 +142,7 @@ BRUNCH_STAT llvm-to-ar 0.02
 ```
 
 The column `check` describes the type of kind of check (buffer access in this case): `overflow` for accessing an element past the end of a memory block and `underflow` for an access with a negative offset.
-The column `context` shows the call stack of at the time the analysis performed the check. The symbol `.` denotes the `main` function. Each caller (element of the call stack) is denoted by `fname@callsite` separated by the symbol `/` where `fname` is the function name of the caller and `callsite` is the line number of the call site.
+The column `context` shows the call stack of at the time the analysis performed the check. The symbol `.` denotes the `main` function. Each caller (element of the call stack) is denoted by `fun_name@callsite_line@callsite_col` separated by the symbol `/` where `fun_name` is the function name of the caller, `callsite_line` is the line number of the call site and `callsite_col` is the column number of the call site.
 The `file`, `line` and `col` columns give the location of the operation checked in the original source code.
 The column `result` describes the conclusion of the static analyzer on the check:
 
@@ -205,7 +209,7 @@ This section describes the most relevant options when using the ikos analyzer.
 
 #### Inter-procedural vs Intra-procedural
 
-An *inter-procedural* analysis analyzes a function considering its call stack while an *intra-procedural* analysis ignores it. The former produces more precise results than the latter but it is often much more expensive. Another way of saying the same is that an inter-procedural analysis will consider only *valid* paths. A path is valid if it respects the fact that when a procedure finishes it returns to the site of the most recent call.
+An **inter-procedural** analysis analyzes a function considering its call stack while an **intra-procedural** analysis ignores it. The former produces more precise results than the latter but it is often much more expensive. Another way of saying the same is that an inter-procedural analysis will consider only **valid** paths. A path is valid if it respects the fact that when a procedure finishes it returns to the site of the most recent call.
 
 IKOS implements inter-procedural analysis by inlining function calls. All functions are inlined except:
 
@@ -216,7 +220,7 @@ IKOS uses an inter-procedural analysis by default. Provide `--intra` if you want
 
 #### Numerical abstract domains
 
-IKOS relies on a *value analysis* that is parametric on the numerical domain used ultimately to model each program variable. Currently, the ikos analyzer only models integer variables. Floating point variables are safely ignored.
+IKOS relies on a **value analysis** that is parametric on the numerical domain used ultimately to model each program variable. Currently, the ikos analyzer only models integer variables. Floating point variables are safely ignored.
 
 The current numerical domains are:
 
@@ -241,7 +245,7 @@ The current numerical domains are:
 
 Abstract domains such as `intervals` and `congruences` are called **non-relational** while `dbm` and `octagons` are called (weakly) **relational** domains.
 
-The abstract domain is a compile-time option for IKOS. You shall provide the option `-DABSTRACT_DOMAIN=` while running cmake. Availables choices are: INTERVAL, CONGRUENCE, INTERVAL_CONGRUENCE, OCTAGON, DBM, VAR_PACKING_DBM. For instance:
+The abstract domain is a compile-time option for IKOS. You shall provide the option `-DABSTRACT_DOMAIN=` while running cmake. Available choices are: `INTERVAL`, `CONGRUENCE`, `INTERVAL_CONGRUENCE`, `OCTAGON`, `DBM`, `VAR_PACKING_DBM`. For instance:
 
 ```
 $ cmake -DCMAKE_INSTALL_PREFIX=/path/to/ikos-installation-directory -DABSTRACT_DOMAIN=DBM ...
@@ -263,7 +267,7 @@ By default, ikos uses the precision `mem`. Provide `-p {reg,ptr,mem}` if you wan
 DOCUMENTATION
 -------------
 
-To generate API documentation using Doxygen, run the following command in the *build* directory:
+To generate API documentation using Doxygen, run the following command in the `build` directory:
 
 ```
 make docs
@@ -281,42 +285,42 @@ Important considerations:
 
 #### docs/
 
-**docs/doxygen** contains Doxygen files.
+`docs/doxygen` contains Doxygen files.
 
 #### include/
 
-**include/analyzer/config.hpp**: types declaration for numerical abstract domains
+`include/analyzer/config.hpp`: types declaration for numerical abstract domains
 
 ##### include/analyzer/analysis
 
-**include/analyzer/analysis/common.hpp**: common types and declarations for all the analyses. Among them, it is specially important a variable name factory.
+`include/analyzer/analysis/common.hpp`: common types and declarations for all the analyses. Among them, it is specially important a variable name factory.
 
-**include/analyzer/analysis/context.hpp**: class to propagate the global state of the analyses.
+`include/analyzer/analysis/context.hpp`: class to propagate the global state of the analyses.
 
-**include/analyzer/analysis/liveness.hpp**: computes the set of live variables for an ARBOS CFG. This can be used optionally by the analysis to remove dead variables from the fixpoint computation.
+`include/analyzer/analysis/liveness.hpp`: computes the set of live variables for an ARBOS CFG. This can be used optionally by the analysis to remove dead variables from the fixpoint computation.
 
-**include/analyzer/analysis/pointer.hpp**: computes for each pointer variable in the ARBOS CFG the set of memory locations to which it may point-to. This is used as a pre-step for improving the precision of the other analyses.
+`include/analyzer/analysis/pointer.hpp`: computes for each pointer variable in the ARBOS CFG the set of memory locations to which it may point-to. This is used as a pre-step for improving the precision of the other analyses.
 
-**include/analyzer/analysis/sym_exec_api.hpp**:
+`include/analyzer/analysis/sym_exec_api.hpp`:
    * API `sym_exec` to perform the abstract transfer function to each ARBOS AR instruction.
    * API `sym_exec_call` to analyze call sites. Each implementation of this API should target different inter-procedural strategies (e.g., context-insensitive, inlining, summary-based, etc).
    * default implementation `context_insensitive_sym_exec_call` for context-insensitive analysis.
 
-**include/analyzer/analysis/num_sym_exec.hpp**: this file defines class `num_sym_exec` (inherits from `sym_exec`) and it is a very important class since most analyses rely on it to perform the abstract transfer function.  This class executes each ARBOS instruction using the API of a value analysis. The class is parametric in the value analysis. An implementation of a value analysis is in the directory `include/analyzer/domains/value_domain.hpp`. The value analysis can be a simple numerical abstract domain so only integer scalars can be modelled or it can be a more sophisticated domain keeping track of pointer offsets and memory contents. The level of precision is chosen by the user.
+`include/analyzer/analysis/num_sym_exec.hpp`: this file defines class `num_sym_exec` (inherits from `sym_exec`) and it is a very important class since most analyses rely on it to perform the abstract transfer function.  This class executes each ARBOS instruction using the API of a value analysis. The class is parametric in the value analysis. An implementation of a value analysis is in the directory `include/analyzer/domains/value_domain.hpp`. The value analysis can be a simple numerical abstract domain so only integer scalars can be modelled or it can be a more sophisticated domain keeping track of pointer offsets and memory contents. The level of precision is chosen by the user.
 
-**include/analyzer/analysis/inliner.hpp**: derives from `sym_exec_call` and implements the inlining strategy.
+`include/analyzer/analysis/inliner.hpp`: derives from `sym_exec_call` and implements the inlining strategy.
 
 ##### include/analyzer/ar-wrapper
 
 This folder contains API's to access and transform `arbos` AR.
 
-**include/analyzer/ar-wrapper/cfg.hpp**: build a CFG from an ARBOS function. The CFG provides an API which is compatible with the IKOS fixpoint algorithms but each basic block still contains AR statements. The ARBOS CFG is also augmented with useful information for dataflow analyses such as the set of used and defined variables.
+`include/analyzer/ar-wrapper/cfg.hpp`: build a CFG from an ARBOS function. The CFG provides an API which is compatible with the IKOS fixpoint algorithms but each basic block still contains AR statements. The ARBOS CFG is also augmented with useful information for dataflow analyses such as the set of used and defined variables.
 
-**include/analyzer/ar-wrapper/literal.hpp**: class that converts an Arbos operand to an ARBOS-independent format.
+`include/analyzer/ar-wrapper/literal.hpp`: class that converts an Arbos operand to an ARBOS-independent format.
 
-**include/analyzer/ar-wrapper/wrapper.hpp**: implements an adaptor (namespace `ar`) for accessing to ARBOS AR. The purpose is to establish a layer of separation between ARBOS AR and all the analyses (`include/analyzer/analysis`).
+`include/analyzer/ar-wrapper/wrapper.hpp`: implements an adaptor (namespace `ar`) for accessing to ARBOS AR. The purpose is to establish a layer of separation between ARBOS AR and all the analyses (`include/analyzer/analysis`).
 
-**include/analyzer/ar-wrapper/transformations.hpp**: implements an adaptor (namespace `transformations`) for modifying ARBOS AR with similar motivation than
+`include/analyzer/ar-wrapper/transformations.hpp`: implements an adaptor (namespace `transformations`) for modifying ARBOS AR with similar motivation than
 above.
 
 ##### include/analyzer/checkers
@@ -325,18 +329,18 @@ This folder contains classes that check for properties on the code (out-of-bound
 
 ##### include/analyzer/ikos-wrapper
 
-**include/analyzer/ikos-wrapper/iterators**: wrapper to the IKOS fixpoints. It provides:
+`include/analyzer/ikos-wrapper/iterators`: wrapper to the IKOS fixpoints. It provides:
    * forward abstract intepreter
    * backward abstract interpreter
   The backward abstract interpreter is limited to dataflow analyses, otherwise although sound it will be too imprecise.
 
-**include/analyzer/ikos-wrapper/domains_traits.hpp**: extend IKOS abstract domains with some extra functionality.
+`include/analyzer/ikos-wrapper/domains_traits.hpp`: extend IKOS abstract domains with some extra functionality.
 
 ##### include/analyzer/domains
 
 This folder contains analysis-specific abstract domains not available in ikos core library.
 
-**include/analyzer/domains/value_domain.hpp**: this is a core abstract domain used for most of the analyses. This implements a value analysis 'a la' Mine.
+`include/analyzer/domains/value_domain.hpp`: this is a core abstract domain used for most of the analyses. This implements a value analysis 'a la' Mine.
    * class `pointer_domain` extends an arbitrary numerical abstract domain to reason about pointer offsets.
    * class `memory_domain` extends `pointer_domain` to reason about memory contents. For more precision, it uses also the nullity and uninitialized abstract domains.
 
@@ -346,20 +350,20 @@ Common utilities for the analyses.
 
 ##### include/analyzer/examples
 
-**include/analyzer/examples/muaz.hpp**: a micro language for semantic modelling of arrays and integer numbers.
+`include/analyzer/examples/muaz.hpp`: a micro language for semantic modelling of arrays and integer numbers.
 
 #### scripts
 
-**scripts/ikos**: ikos analyzer python script
+`scripts/ikos`: ikos analyzer python script
 
 #### src
 
 #### src/ar-passes
 
-**src/ar-passes/analyzer.cpp**: Analyzer ARBOS pass. This is the entry point for all analyses.
+`src/ar-passes/analyzer.cpp`: Analyzer ARBOS pass. This is the entry point for all analyses.
 
-**src/ar-passes/ar_to_dot.cpp**: ARBOS pass that translates AR code into dot format
+`src/ar-passes/ar_to_dot.cpp`: ARBOS pass that translates AR code into dot format
 
-**src/ar-passes/inline_init_gv.cpp**: Inline initialization of global variables to the main function.
+`src/ar-passes/inline_init_gv.cpp`: Inline initialization of global variables to the main function.
 
-**src/ar-passes/pointer_shift_opt.cpp**: Remove redundant arithmetic statements produced by the translation of LLVM getElementPtr instructions to ARBOS pointer shifts.
+`src/ar-passes/pointer_shift_opt.cpp`: Remove redundant arithmetic statements produced by the translation of LLVM getElementPtr instructions to ARBOS pointer shifts.

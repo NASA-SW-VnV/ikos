@@ -137,10 +137,18 @@ add_definitions("-DBOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS")
 #
 
 # Choose the numerical abstract domain for the analysis
-# Available choices: INTERVAL, CONGRUENCE, INTERVAL_CONGRUENCE, OCTAGON, DBM, VAR_PACKING_DBM
+# Available choices: INTERVAL, CONGRUENCE, INTERVAL_CONGRUENCE, OCTAGON, DBM,
+# VAR_PACKING_DBM, APRON_INTERVAL, APRON_OCTAGON, APRON_POLKA_POLYHEDRA,
+# APRON_POLKA_LINEAR_EQUALITIES, APRON_PPL_POLYHEDRA, APRON_PPL_LINEAR_CONGRUENCES,
+# APRON_PKGRID_POLYHEDRA_LIN_CONGRUENCES
 set(ABSTRACT_DOMAIN "" CACHE STRING "Numerical abstract domain used by the analysis.")
 if (ABSTRACT_DOMAIN)
   add_definitions("-D${ABSTRACT_DOMAIN}_DOMAIN")
+
+  if (ABSTRACT_DOMAIN MATCHES "^APRON_")
+    find_package(APRON REQUIRED)
+    include_directories(${APRON_INCLUDE_DIR})
+  endif()
 endif()
 
 #
@@ -162,9 +170,16 @@ add_library(pointer-shift-opt SHARED src/ar-passes/pointer_shift_opt.cpp)
 target_link_libraries(pointer-shift-opt ${ARBOS_LIB} ${Boost_LIBRARIES})
 install(TARGETS pointer-shift-opt DESTINATION lib OPTIONAL)
 
+add_library(branching-opt SHARED src/ar-passes/branching_opt.cpp)
+target_link_libraries(branching-opt ${ARBOS_LIB} ${Boost_LIBRARIES})
+install(TARGETS branching-opt DESTINATION lib OPTIONAL)
+
 # analysis passes
 add_library(analyzer SHARED src/ar-passes/analyzer.cpp)
 target_link_libraries(analyzer ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
+if (APRON_FOUND)
+  target_link_libraries(analyzer ${APRON_LIBRARIES})
+endif()
 install(TARGETS analyzer DESTINATION lib OPTIONAL)
 
 add_library(cpa SHARED EXCLUDE_FROM_ALL src/ar-passes/cpa.cpp)

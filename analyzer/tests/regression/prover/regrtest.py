@@ -363,7 +363,7 @@ if __name__ == '__main__':
     t.add(Test('19.c', '19.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('20.c', '20.c', 'prover', 'safe', expected='unsafe',
                line_checks=[(27, 'ok', 'warning'), (29, 'ok'), (30, 'warning')]))
-    t.add(Test('21.c', '21.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('21.c', '21.c', 'prover', 'safe'))
     t.add(Test('22.c', '22.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('23.c', '23.c', 'prover', 'safe'))
     t.add(Test('24.c', '24.c', 'prover', 'safe', expected='unsafe'))
@@ -390,7 +390,7 @@ if __name__ == '__main__':
     t.add(Test('44.c', '44.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('45.c', '45.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('46.c', '46.c', 'prover', 'safe', expected='unsafe'))
-    t.add(Test('47.c', '47.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('47.c', '47.c', 'prover', 'safe'))
     t.add(Test('asian06-ex2.c', 'asian06-ex2.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('astree-1.c', 'astree-1.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('astree-2a.c', 'astree-2a.c', 'prover', 'safe', expected='unsafe'))

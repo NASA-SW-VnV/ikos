@@ -383,7 +383,7 @@ if __name__ == '__main__':
                             (29, 'ok', 'warning'),
                             (30, 'ok')]))
     t.add(Test('test-20.c', 'test-20.c', 'prover', 'safe'))
-    t.add(Test('test-21.c', 'test-21.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-21.c', 'test-21.c', 'boa', 'safe'))
     t.add(Test('test-22.c', 'test-22.c', 'prover', 'safe'))
     t.add(Test('test-23.c', 'test-23.c', 'prover', 'safe'))
     t.add(Test('test-24a.c', 'test-24a.c', 'prover', 'safe', expected='unsafe'))

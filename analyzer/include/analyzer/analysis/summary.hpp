@@ -229,8 +229,11 @@ public:
           ptr_set_t ptr_set = pointer_info[ptr].first;
 
           if (ptr_set.is_top()) {
-            std::cout << "Warning: unable to solve indirect call on variable "
-                      << ptr << std::endl;
+            // No points-to information
+            location loc = ar::getSrcLoc(stmt);
+            std::cout << location_to_string(loc)
+                      << ": warning: indirect call cannot be resolved"
+                      << std::endl;
             return exec_call_forget(stmt, inv);
           }
 
@@ -259,7 +262,7 @@ public:
           if (summaries.find(callee) == summaries.end()) {
             std::cout << "** analyzing function "
                       << demangle(ar::getName(callee))
-                      << " within the same cycle" << std::endl;
+                      << " (within a cycle of recursion)" << std::endl;
             arbos_cfg cfg = cfg_fac[callee];
             numerical_analysis_ptr_t callee_summary(
                 new NumericalAnalysis(_summary_pass,
@@ -589,8 +592,11 @@ private:
           ptr_set_t ptr_set = fun_ptr_info[ptr].first;
 
           if (ptr_set.is_top()) {
-            std::cout << "Warning: unable to solve indirect call on variable "
-                      << ptr << std::endl;
+            // No points-to information
+            location loc = ar::getSrcLoc(stmt);
+            std::cout << location_to_string(loc)
+                      << ": warning: indirect call cannot be resolved"
+                      << std::endl;
             return exec_call_forget(stmt, inv);
           }
 
@@ -1038,10 +1044,14 @@ public:
           ptr_set_t ptr_set = pointer_info[ptr].first;
 
           if (ptr_set.is_top()) {
-            std::cout
-                << "Warning: unable to solve indirect call on variable " << ptr
-                << " during the Value Analysis. The analysis might be unsound."
-                << std::endl;
+            // No points-to information
+            location loc = ar::getSrcLoc(stmt);
+            std::cout << location_to_string(loc)
+                      << ": warning: indirect call cannot be resolved"
+                      << std::endl
+                      << "The analysis might be unsound if the function has "
+                         "side effects."
+                      << std::endl;
             return exec_call_forget(stmt, inv);
           }
 
@@ -1069,8 +1079,8 @@ public:
 
           if (summaries.find(callee) == summaries.end()) {
             std::cout << "** analyzing function "
-                      << demangle(ar::getName(callee)) << " in the same cycle"
-                      << std::endl;
+                      << demangle(ar::getName(callee))
+                      << " (within a cycle of recursion)" << std::endl;
             arbos_cfg cfg = cfg_fac[callee];
             numerical_analysis_ptr_t callee_summary(
                 new NumericalAnalysis(_summary_pass,
@@ -1103,9 +1113,11 @@ public:
                   result |
                   exec_call_with_summary(stmt, inv, callee, callee_summary);
             } else {
-              std::cout
-                  << "Warning: found cycle. The analysis might be unsound."
-                  << std::endl;
+              location loc = ar::getSrcLoc(stmt);
+              std::cout << location_to_string(loc)
+                        << ": warning: found cycle of recursion. The analysis "
+                           "might be unsound."
+                        << std::endl;
 #ifdef DEBUG
               std::cout << "--- analyzing a cycle, forgetting the result"
                         << std::endl;
@@ -1425,8 +1437,14 @@ private:
         ptr_set_t ptr_set = pointer_info[ptr].first;
 
         if (ptr_set.is_top()) {
-          std::cout << "Warning: unable to solve indirect call on variable "
-                    << ptr << std::endl;
+          // No points-to information
+          location loc = ar::getSrcLoc(stmt);
+          std::cout << location_to_string(loc)
+                    << ": warning: indirect call cannot be resolved"
+                    << std::endl
+                    << "The analysis might be unsound if the function has side "
+                       "effects."
+                    << std::endl;
           return call_forget(stmt, inv);
         }
 
@@ -1447,8 +1465,9 @@ private:
 
       // add calling contexts
       location loc = ar::getSrcLoc(stmt);
-      std::string path = current_path + ":" + ar::getName(_function) + "@" +
-                         std::to_string(loc.line);
+      std::string path = current_path + "/" + ar::getName(_function) + "@" +
+                         std::to_string(loc.line) + "@" +
+                         std::to_string(loc.column);
       for (typename std::vector< Function_ref >::iterator it = callees.begin();
            it != callees.end();
            ++it) {
@@ -1638,6 +1657,9 @@ public:
   void add_call_context(Function_ref fun,
                         const std::string& path,
                         AbsValueDomain inv) {
+    if (inv.is_bottom())
+      return;
+
     if (_call_contexts.find(fun) == _call_contexts.end()) {
       _call_contexts.insert(
           typename map_call_contexts_t::value_type(fun, call_contexts_t()));
@@ -1659,6 +1681,7 @@ public:
   }
 
   void execute(Bundle_ref bundle,
+               const std::vector< Function_ref >& entry_points,
                sqlite::db_connection db,
                StrongComponentsGraph_ref strong_comp_graph,
                const std::vector< Function_ref >& topo_order) {
@@ -1681,18 +1704,26 @@ public:
         Function_ref fun = *it;
         arbos_cfg cfg = _cfg_fac[fun];
 
-        if (functions.size() > 1) {
-          // to be sound on a cycle, we just assume the input domain is TOP
-          _call_contexts.erase(fun);
-        }
-
         std::shared_ptr< sym_exec_call_t > sym_exec_call(
             new PropagateExecCall(_cfg_fac.getPrecLevel(), fun, *this));
 
-        if (_call_contexts.find(fun) == _call_contexts.end()) {
-          std::cout << "*** analyzing function " << demangle(ar::getName(fun))
-                    << std::endl;
+        if (std::find(entry_points.begin(), entry_points.end(), fun) !=
+            entry_points.end()) {
+          std::cout << "*** analyzing entry point "
+                    << demangle(ar::getName(fun)) << std::endl;
           FunctionAnalyzer analysis(cfg, ctx, sym_exec_call, ".", _checkers);
+          analysis.run(default_call_context(fun));
+        }
+
+        if (_call_contexts.find(fun) == _call_contexts.end()) {
+          continue; // function never called
+        }
+
+        if (functions.size() > 1) {
+          // to be sound on a cycle, we just assume the input domain is TOP
+          std::cout << "*** analyzing function " << demangle(ar::getName(fun))
+                    << " (within a cycle of recursion)" << std::endl;
+          FunctionAnalyzer analysis(cfg, ctx, sym_exec_call, "*", _checkers);
           analysis.run(default_call_context(fun));
         } else {
           // for each call context

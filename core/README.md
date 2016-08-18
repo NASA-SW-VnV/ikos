@@ -24,33 +24,33 @@ The following illustrates the content of this directory:
 ├── CMakeLists.txt
 ├── README.md
 ├── docs
-│   └── doxygen
-│       └── Doxyfile.in
+│   └── doxygen
+│       └── Doxyfile.in
 ├── include
-│   └── ikos
-│       ├── algorithms
-│       ├── common
-│       ├── domains
-│       ├── examples
-│       ├── iterators
-│       └── semantics
+│   └── ikos
+│       ├── algorithms
+│       ├── common
+│       ├── domains
+│       ├── examples
+│       ├── iterators
+│       └── semantics
 └── tests
     └── unit
 ```
 
 #### include/
 
-**include/ikos/algorithms** contains implementation of supporting algorithms, e.g., Patricia Trees, union-find, linear solvers, etc.
+`include/ikos/algorithms` contains implementation of supporting algorithms, e.g., Patricia Trees, union-find, linear solvers, etc.
 
-**include/ikos/domains** contains implementation of abstract domains, e.g., the interval, congruence, difference-bound matrices, octagon domains, etc.
+`include/ikos/domains` contains implementation of abstract domains, e.g., the interval, congruence, difference-bound matrices, octagon domains, etc.
 
-**include/ikos/iterators** contains implementation of fixpoint iterators.
+`include/ikos/iterators` contains implementation of fixpoint iterators.
 
-**include/ikos/semantics** contains implementation of the control-flow graph API.
+`include/ikos/semantics` contains implementation of the control-flow graph API.
 
-**include/ikos/common** contains common utilities.
+`include/ikos/common` contains common utilities.
 
-**include/ikos/examples** contains the muZQ example that demonstrates how to use the IKOS core library. muZQ is a micro language for semantic modeling over integer and rational numbers.
+`include/ikos/examples` contains the muZQ example that demonstrates how to use the IKOS core library. muZQ is a micro language for semantic modeling over integer and rational numbers.
 
 #### docs/
 

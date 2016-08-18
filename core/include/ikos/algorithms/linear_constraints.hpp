@@ -50,7 +50,6 @@
 #include <utility>
 
 #include <boost/container/flat_map.hpp>
-#include <boost/container/slist.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/optional.hpp>
 

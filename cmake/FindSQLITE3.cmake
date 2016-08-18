@@ -1,17 +1,17 @@
 if (NOT SQLITE3_FOUND)
-  set(SQLITE3_SEARCH_PATH "" CACHE PATH "Search path for sqlite3.")
+  set(SQLITE3_ROOT "" CACHE PATH "Path to sqlite3 install directory.")
 
   find_path(SQLITE3_INCLUDE_DIR
     NAMES sqlite3.h
-    PATHS "${SQLITE3_SEARCH_PATH}/include"
+    HINTS "${SQLITE3_ROOT}/include"
   )
 
   find_library(SQLITE3_LIB
     NAMES sqlite3
-    PATHS "${SQLITE3_SEARCH_PATH}/lib"
+    HINTS "${SQLITE3_ROOT}/lib"
   )
 
-  mark_as_advanced(SQLITE3_SEARCH_PATH SQLITE3_INCLUDE_DIR SQLITE3_LIB)
+  mark_as_advanced(SQLITE3_ROOT SQLITE3_INCLUDE_DIR SQLITE3_LIB)
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(SQLITE3

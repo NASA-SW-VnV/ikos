@@ -66,9 +66,6 @@ class z_number {
 private:
   mpz_class _n;
 
-private:
-  z_number(mpz_class n) : _n(n) {}
-
 public:
   static z_number from_ulong(unsigned long n) {
     mpz_class b(n);
@@ -89,6 +86,10 @@ public:
   }
 
   z_number(int n) : _n(n) {}
+
+  z_number(mpz_class n) : _n(n) {}
+
+  explicit operator mpz_class() const { return _n; }
 
   z_number operator+(z_number x) const {
     mpz_class r = this->_n + x._n;
@@ -262,9 +263,6 @@ class q_number {
 private:
   mpq_class _n;
 
-private:
-  q_number(mpq_class n) : _n(n) {}
-
 public:
   q_number() : _n(0) {}
 
@@ -281,9 +279,13 @@ public:
 
   q_number(int n) : _n(n) { this->_n.canonicalize(); }
 
+  q_number(mpq_class n) : _n(n) {}
+
   q_number(z_number n) : _n(n._n) { this->_n.canonicalize(); }
 
   q_number(z_number n, z_number d) : _n(n._n, d._n) { this->_n.canonicalize(); }
+
+  explicit operator mpq_class() const { return _n; }
 
   q_number operator+(q_number x) const {
     mpq_class r = this->_n + x._n;

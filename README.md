@@ -1,4 +1,4 @@
-IKOS v.1.1.0
+IKOS v.1.1.1
 ============
 
 LICENSE
@@ -23,114 +23,36 @@ CONTENTS OF THIS FILE
 INTRODUCTION
 ------------
 
-IKOS is a static analyzer based on the theory of Abstract Interpretation. You can find the release notes for this version in RELEASE_NOTES.md.
-
+IKOS is a static analyzer based on the theory of Abstract Interpretation. You can find the release notes for this version in `RELEASE_NOTES.md`.
 
 BUILD AND INSTALL
 -----------------
 
 IKOS analyzes programs transformed into the Abstract Representation (AR), an intermediate representation that represents the control-flow graph of the program. The IKOS distribution provides a compiler frontend that transforms C/C++ programs into the AR using the LLVM compiler framework.
 
-The next section illustrates how to install LLVM. If you already have LLVM on your system, then please verify if the version of your installation is above 3.7.0. You can skip the next section if you already have the right version of LLVM on your system.
+The next section illustrates how to install the required dependencies. 
 
 ### DEPENDENCIES
 
 To build and run the analyzer, you will need the following dependencies:
 
-* CMake 2.8.12.2 or higher
-* GMP 6.1 or higher
-* Boost 1.55 or higher
-* Python 2.7 or 3.3 or higher
-* SQLite 3
-* LLVM 3.7 or higher
-* llvm-clang 3.7 or higher
-* A C++ compiler that supports C++14 (gcc 5 or higher, clang 3.4 or higher)
+* CMake >= 2.8.12.2
+* GMP >= 4.3.1
+* Boost >= 1.55
+* Python 2 >= 2.7.3 or Python 3 >= 3.3
+* SQLite >= 3.6.20
+* LLVM and Clang >= 3.7
+* A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
 
 Most of them can be installed using your package manager.
 
-### INSTALL DEPENDENCIES ON MAC OS X
+Installation instructions for Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat and Ubuntu are available in the `docs` directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in `docs/INSTALL_ROOTLESS.md`.
 
-Here are the steps to install all dependencies on MAC OS X using **Homebrew**.
-
-First, install homebrew: http://brew.sh/
-
-Once you have homebrew, install the required packages:
-
-```
-$ brew install cmake gmp boost sqlite homebrew/versions/llvm37
-```
-
-Now, add the LLVM directory to your PATH (consider adding this in your *.bashrc*):
-
-```
-$ export PATH="$(brew --prefix)/opt/llvm37/lib/llvm-3.7/bin:$PATH"
-```
-
-You are now ready to build IKOS.
-
-### INSTALL DEPENDENCIES ON DEBIAN 8 (JESSIE)
-
-Here are the steps to install all dependencies on Debian 8 (Jessie).
-
-First, you will need to add LLVM repositories to your apt *sources.list*:
-
-```
-$ echo "deb http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.7 main" | sudo tee -a /etc/apt/sources.list
-$ echo "deb-src http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.7 main" | sudo tee -a /etc/apt/sources.list
-```
-
-Then, run the following commands:
-
-```
-$ sudo apt-get update
-$ sudo apt-get install cmake libgmp-dev libboost-dev libboost-program-options-dev libboost-filesystem-dev libsqlite3-dev libz-dev libedit-dev llvm-3.7 clang-3.7
-```
-
-Now, add the LLVM directory to your PATH (consider adding this in your *.bashrc*):
-
-```
-export PATH="/usr/lib/llvm-3.7/bin:$PATH"
-```
-
-Unfortunately, there is a bug in the *llvm-3.7* package, you will also need to provide an extra argument to cmake when you build IKOS in the next section:
-
-```
-$ cmake -DCMAKE_INSTALL_PREFIX=/path/to/ikos-install-directory -DCMAKE_MODULE_PATH=/usr/share/llvm-3.7/cmake ..
-```
-
-You are now ready to build IKOS.
-
-### INSTALL DEPENDENCIES ON RED HAT
-
-Here are the steps to install IKOS and all needed dependencies on Red Hat Enterprise Linux.
-It has been tested on RHEL server 7.1, arch x86_64. We believe it should work on any RHEL 6.x and 7.x
-
-IKOS requires certain versions of CMake, GCC, LLVM and Boost that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
-
-**Warning**: You will need at least 10G of disk space.
-
-First, install the following packages using yum:
-
-```
-sudo yum install subversion bzip2 sqlite-devel gcc gcc-c++
-```
-
-The next step will use bootstrap-redhat.sh to build and install CMake, GCC, LLVM, Boost and IKOS.
-We will use /path/to/ikos-install as the installation directory and /path/to/build as the build directory. Replace it with the location where you want to put ikos and all dependencies (for instance, ~/ikos-install and ~/ikos-build).
-
-In IKOS root directory, run:
-
-```
-scripts/bootstrap-redhat.sh /path/to/ikos-install /path/to/ikos-build .
-```
-
-It might take a lot of time (probably a few hours) to complete.
-
-This script will also build and install IKOS, so you can skip the next section.
+Once you have all the required dependencies, move to the next section.
 
 ### BUILD AND INSTALL IKOS
 
-Now that you have all the dependencies on your system, we can install IKOS.
+Now that you have all the dependencies on your system, you can build and install IKOS.
 
 As you open the IKOS distribution, you shall see the following content:
 
@@ -143,10 +65,12 @@ As you open the IKOS distribution, you shall see the following content:
 ├── analyzer
 ├── cmake
 ├── core
-└── frontends
+├── docs
+├── frontends
+└── scripts
 ```
 
-We use CMake to build IKOS. You will need to specify an installation directory that will contain all the binaries, libraries and headers after installation. If you do not specify this directory, CMake will install everything under install/ in the root directory of the distribution. In the following steps, we will install IKOS under /path/to/ikos-install-directory. After installation, it will contain the following structure:
+We use CMake to build IKOS. You will need to specify an installation directory that will contain all the binaries, libraries and headers after installation. If you do not specify this directory, CMake will install everything under `install` in the root directory of the distribution. In the following steps, we will install IKOS under `/path/to/ikos-install-directory`. After installation, it will contain the following structure:
 
 ```
 .
@@ -166,11 +90,11 @@ $ make install
 ```
 
 Note: We recommend to use Ninja to speed up the build process: https://ninja-build.org/
-To build IKOS using Ninja, just add the option -G Ninja when you run cmake. Then use 'ninja' instead of 'make' as you build and install IKOS.
+To build IKOS using Ninja, just add the option `-G Ninja` when you run cmake. Then use `ninja` instead of `make` as you build and install IKOS.
 
 ### RUNNING CTEST
 
-To run the tests, we will need the full installation of IKOS. In addition, we will also need to build and install
+To run the tests, we will need the full installation of IKOS. In addition, we will also need to build and install the verifier passes:
 
 ```
 $ make verifier-passes
@@ -214,12 +138,15 @@ Then you shall see the following output and that IKOS reports two occurrences of
 ```
 dlopen successful on /path/to/ikos-install-directory/lib/libpointer-shift-opt.dylib
 Loaded ARBOS pass: ps-opt - Optimize pointer shift statements
+dlopen successful on /path/to/ikos-install-directory/lib/libbranching-opt.dylib
+Loaded ARBOS pass: branching-opt - Optimize the Control Flow Graph
 dlopen successful on /path/to/ikos-install-directory/lib/libinline-init-gv.dylib
 Loaded ARBOS pass: inline-init-gv - Inline initialization of global variables in main
 dlopen successful on /path/to/ikos-install-directory/lib/libanalyzer.dylib
 Loaded ARBOS pass: analyzer - Analyzer pass.
-3 pass(es) registered.
+4 pass(es) registered.
 Executing pass - ps-opt Optimize pointer shift statements
+Executing pass - branching-opt Optimize the Control Flow Graph
 Executing pass - inline-init-gv Inline initialization of global variables in main
 Executing pass - analyzer Analyzer pass.
 Running liveness variable analysis ...
@@ -266,7 +193,7 @@ BRUNCH_STAT llvm-to-ar 0.02
 ----------------------------------------------------------------------
 ```
 
-The ikos command can also take LLVM bitcode as the input. You can use the following command to generate the LLVM bitcode for *loop.c*:
+The `ikos` command can also take LLVM bitcode as the input. You can use the following command to generate the LLVM bitcode for *loop.c*:
 
 ```
 $ clang -emit-llvm -g -c loop.c -o loop.bc
@@ -324,13 +251,13 @@ TROUBLESHOOTING
 
 ### IKOS could not find LLVM
 
-If you used homebrew to install LLVM, remember to add the LLVM directory to your path:
+If you used Homebrew on MAC OS X to install LLVM, remember to add the LLVM directory to your path:
 
 ```
 $ export PATH="$(brew --prefix)/opt/llvm37/lib/llvm-3.7/bin:$PATH"
 ```
 
-If you have a custom LLVM installation, you shall use the environment variable LLVM_INSTALL:
+If you have a custom LLVM installation, you shall use the environment variable `LLVM_INSTALL`:
 
 ```
 $ export LLVM_INSTALL=/path/to/llvm
@@ -350,20 +277,24 @@ The following illustrates the content of the root directory:
 ├── analyzer
 ├── cmake
 ├── core
-└── frontends
+├── docs
+├── frontends
+└── scripts
 ```
 
 
-**CMakeLists.txt** is the root CMake file.
+`CMakeLists.txt` is the root CMake file.
 
-**RELEASE_NOTES.md** contains the release notes for this released version.
+`RELEASE_NOTES.md` contains the release notes for the latest versions.
 
-**cmake** contains CMake files to search for related software libraries.
+`cmake` contains CMake files to search for related software libraries.
 
-**core** contains the implementation of the theory of Abstract Interpretation, which includes the abstract domains, the fixpoint iterator, and various algorithms that support the implementation. More information can be found at ./core/README.md.
+`core` contains the implementation of the theory of Abstract Interpretation, which includes the abstract domains, the fixpoint iterator, and various algorithms that support the implementation. More information can be found at `core/README.md`.
 
-**abs-repr** contains the implementation of the ARBOS, a plugin framework that parses the AR and executes AR passes that perform various analysis. More information can be found at ./abs-repr/README.md.
+`abs-repr` contains the implementation of the ARBOS, a plugin framework that parses the AR and executes AR passes that perform various analysis. More information can be found at `abs-repr/README.md`.
 
-**analyzer** contains the implementation of various analyses for specific defect detections. These analyses are implemented as AR passes and use the fixpoint iterator and abstract domains to perform analysis.
+`analyzer` contains the implementation of various analyses for specific defect detections. These analyses are implemented as AR passes and use the fixpoint iterator and abstract domains to perform analysis. More information can be found at `analyzer/README.md`.
 
-**frontends** contains implementation of various frontend compilers to translate programs into AR. Currenlty we only support the LLVM frontend. More information can be found at frontends/llvm/README.md.
+`frontends` contains implementation of various frontend compilers to translate programs into AR. Currenlty we only support the LLVM frontend. More information can be found at `frontends/llvm/README.md`.
+
+`scripts` contains the `bootstrap` script for a rootless installation.

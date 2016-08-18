@@ -637,7 +637,11 @@ public:
                                                 checkers,
                                                 value_summary_pass);
         std::cout << "Running value analysis (top-down) ... " << std::endl;
-        check_pass.execute(bundle, db, strong_comp_graph, topo_order);
+        check_pass.execute(bundle,
+                           entry_points,
+                           db,
+                           strong_comp_graph,
+                           topo_order);
       } else {
         typedef memory_domain< abs_num_domain_t, varname_t, number_t >
             abs_value_domain_t;

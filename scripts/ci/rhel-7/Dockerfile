@@ -1,0 +1,40 @@
+FROM rhel7
+MAINTAINER Maxime Arthaud <maxime.arthaud@nasa.gov>
+
+# Installs the following versions (note that it might be out of date):
+# cmake 3.6.1
+# gmp 6.0.0
+# boost 1.61.0
+# python 2.7.5
+# sqlite 3.7.17
+# llvm 3.7.1
+# clang 3.7.1
+# gcc 6.1.0
+
+# Subscribe
+ARG RHEL_USERNAME
+ARG RHEL_PASSWORD
+RUN subscription-manager register --username=$RHEL_USERNAME --password=$RHEL_PASSWORD --auto-attach
+
+# Upgrade
+RUN yum -y update
+
+# Install dependencies
+RUN yum -y install which patch tar bzip2 xz zlib-devel ncurses-devel sqlite-devel gmp-devel gcc gcc-c++ make
+
+# Add ikos source code
+ADD . /root/ikos
+
+# Use the bootstrap script to install ikos
+WORKDIR /root/ikos/scripts
+RUN ./bootstrap -vf --prefix=/opt/ikos --builddir=/root/ikos-build
+
+# Build the tests
+WORKDIR /root/ikos-build/ikos-1.1.1
+RUN source /opt/ikos/activate-full && make verifier-passes && make install
+
+# Run the tests
+RUN source /opt/ikos/activate-minimal && make test
+
+# Done
+WORKDIR /

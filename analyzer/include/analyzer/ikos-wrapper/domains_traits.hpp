@@ -46,57 +46,14 @@
 #include <analyzer/analysis/common.hpp>
 
 #include <ikos/domains/congruences.hpp>
+#include <ikos/domains/constants.hpp>
+#include <ikos/domains/dbm.hpp>
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/intervals_congruences.hpp>
 #include <ikos/domains/octagons.hpp>
 #include <ikos/domains/var_packing_dbm_congruences.hpp>
 
 namespace ikos {
-
-namespace num_abstract_domain_impl {
-
-template < typename AbsDomain >
-struct is_octagon {
-  static const bool value = false;
-};
-
-template <>
-struct is_octagon< octagon< z_number, analyzer::varname_t > > {
-  static const bool value = true;
-};
-
-template < typename AbsDomain >
-struct is_interval {
-  static const bool value = false;
-};
-
-template <>
-struct is_interval< interval_domain< z_number, analyzer::varname_t > > {
-  static const bool value = true;
-};
-
-template < typename AbsDomain >
-struct is_congruence {
-  static const bool value = false;
-};
-
-template <>
-struct is_congruence< congruence_domain< z_number, analyzer::varname_t > > {
-  static const bool value = true;
-};
-
-template < typename AbsDomain >
-struct is_interval_with_congruence {
-  static const bool value = false;
-};
-
-template <>
-struct is_interval_with_congruence<
-    interval_congruence_domain< z_number, analyzer::varname_t > > {
-  static const bool value = true;
-};
-
-} // end namespace num_abstract_domain_impl
 
 namespace num_abstract_domain_impl {
 
@@ -118,13 +75,33 @@ inline void from_interval(AbsNumDomain& inv, VariableName v, z_interval i) {
 // Specialized version
 template <>
 inline z_interval to_interval(
+    constant_domain< z_number, analyzer::varname_t > inv,
+    analyzer::varname_t v) {
+  constant< z_number > c = inv[v];
+
+  if (c.is_bottom()) {
+    return z_interval::bottom();
+  } else if (c.is_top()) {
+    return z_interval::top();
+  } else {
+    return z_interval(*c.number());
+  }
+}
+
+// Specialized version
+template <>
+inline z_interval to_interval(
     congruence_domain< z_number, analyzer::varname_t > inv,
     analyzer::varname_t v) {
-  boost::optional< z_number > n = inv[v].singleton();
-  if (n)
-    return z_interval(*n);
-  else
+  congruence< z_number > c = inv[v];
+
+  if (c.is_bottom()) {
+    return z_interval::bottom();
+  } else if (!c.singleton()) {
     return z_interval::top();
+  } else {
+    return z_interval(*c.singleton());
+  }
 }
 
 // Specialized version
@@ -145,13 +122,31 @@ inline z_interval to_interval(
 
 // Specialized version
 template <>
+inline void from_interval(constant_domain< z_number, analyzer::varname_t >& inv,
+                          analyzer::varname_t v,
+                          z_interval val) {
+  if (val.is_bottom()) {
+    inv.set(v, constant< z_number >::bottom());
+  } else if (!val.singleton()) {
+    inv.set(v, constant< z_number >::top());
+  } else {
+    inv.set(v, constant< z_number >(*val.singleton()));
+  }
+}
+
+// Specialized version
+template <>
 inline void from_interval(
     congruence_domain< z_number, analyzer::varname_t >& inv,
     analyzer::varname_t v,
     z_interval val) {
-  boost::optional< z_number > n = val.singleton();
-  if (n)
-    inv.set(v, *n);
+  if (val.is_bottom()) {
+    inv.set(v, congruence< z_number >::bottom());
+  } else if (!val.singleton()) {
+    inv.set(v, congruence< z_number >::top());
+  } else {
+    inv.set(v, congruence< z_number >(*val.singleton()));
+  }
 }
 
 // Specialized version
@@ -180,6 +175,12 @@ inline void from_interval(
 // Default implementation
 template < typename AbsNumDomain >
 void normalize(AbsNumDomain& inv) {}
+
+// Specialized version
+template <>
+void normalize(dbm< z_number, analyzer::varname_t >& inv) {
+  inv.normalize();
+}
 
 // Specialized version
 template <>

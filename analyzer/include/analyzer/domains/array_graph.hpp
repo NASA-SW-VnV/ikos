@@ -59,7 +59,6 @@
 #include <boost/optional.hpp>
 
 #include <ikos/algorithms/mergeable_map.hpp>
-#include <ikos/algorithms/patricia_trees.hpp>
 
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/ikos-wrapper/domains_traits.hpp>

@@ -91,7 +91,10 @@ boost::filesystem::path relative_to(boost::filesystem::path from,
 
 inline std::string location_to_string(const location& loc) {
   boost::filesystem::path relpath =
-      relative_to(boost::filesystem::current_path(), loc.file);
+      relative_to(boost::filesystem::current_path(),
+                  boost::filesystem::exists(loc.file)
+                      ? boost::filesystem::canonical(loc.file)
+                      : loc.file);
   return relpath.string() + ":" + std::to_string(loc.line) + ":" +
          std::to_string(loc.column);
 }

@@ -91,6 +91,12 @@ inline void from_interval(
   inv.from_interval(v, intv);
 }
 
+template < typename AbsNumDomain >
+void normalize(
+    memory_domain< AbsNumDomain, analyzer::varname_t, z_number >& inv) {
+  inv.normalize();
+}
+
 } // end namespace num_abstract_domain_impl
 
 // The pointer domain can express integer scalar (modelled directly in
@@ -315,6 +321,8 @@ public:
 
     num_abstract_domain_impl::from_interval(_inv, x, intv);
   }
+
+  void normalize() { num_abstract_domain_impl::normalize(_inv); }
 
   void write(std::ostream& o) {
     if (is_bottom())
@@ -1097,6 +1105,8 @@ public:
     // - nullity
     // - uninitialized variables
   }
+
+  void normalize() { _ptr.normalize(); }
 
   void write(std::ostream& o) {
     if (is_bottom())

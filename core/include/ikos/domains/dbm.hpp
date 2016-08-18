@@ -46,7 +46,6 @@
 #ifndef IKOS_DBM_HPP
 #define IKOS_DBM_HPP
 
-#include <ikos/common/bignums.hpp>
 #include <ikos/common/types.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>

@@ -55,7 +55,7 @@ if (NOT IKOS_FOUND)
   find_path(IKOS_INCLUDE_DIR
     NAMES ikos/iterators/fwd_fixpoint_iterators.hpp
     NAMES ikos/domains/intervals.hpp
-    PATHS ${IKOS_INCLUDE_SEARCH_DIRS}
+    HINTS ${IKOS_INCLUDE_SEARCH_DIRS}
   )
 
   mark_as_advanced(IKOS_INCLUDE_DIR)

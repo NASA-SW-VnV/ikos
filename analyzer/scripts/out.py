@@ -36,6 +36,7 @@
 #
 #*****************************************************************************/
 
+import atexit
 import os
 import sqlite3
 import subprocess
@@ -104,26 +105,59 @@ def get_analysis_results_per_location(database_path, table):
     return results
 
 
-# Use c++filt (if available) to demangle a set of symbol names
-# Returns a map from symbol names to demangled names
-def demangle_symbols(symbols):
-    symbols = list(symbols)
+# Use c++filt (if available) to demangle symbol names
+
+# is c++filt available?
+_cppfilt_available = None
+
+# current c++filt process
+_cppfilt_proc = None
+
+# cache of already demangled symbols
+_cache_demangle = {}
+
+
+# kill the current c++filt process
+def _cppfilt_kill():
+    global _cppfilt_proc
+
+    if _cppfilt_proc and _cppfilt_proc.poll() is None:
+        _cppfilt_proc.communicate()
+
+
+# demangle a symbol name using c++filt if available
+def demangle_symbol(symbol):
+    global _cppfilt_available
+    global _cppfilt_proc
+    global _cache_demangle
+
+    if _cppfilt_available is False:
+        return symbol
+
+    if symbol in _cache_demangle:
+        return _cache_demangle[symbol]
 
     try:
-        p = subprocess.Popen(['c++filt', '--no-verbose'],
-                             stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        stdout, _ = p.communicate('\n'.join(symbols).encode('utf8'))
-        lines = stdout.decode('utf8').strip().split('\n')
+        if not _cppfilt_proc:
+            _cppfilt_proc = subprocess.Popen(['c++filt', '--no-strip-underscores', '--no-verbose'],
+                                             stdin=subprocess.PIPE,
+                                             stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE)
+            _cppfilt_available = True
+            atexit.register(_cppfilt_kill)
 
-        demangled = {}
-        for symbol, function_name in zip(symbols, lines):
-            demangled[symbol] = function_name
+        if _cppfilt_proc.poll() is not None:
+            return symbol
 
-        return demangled
-    except FileNotFoundError:
-        return {}
+        _cppfilt_proc.stdin.write(symbol.encode('utf8') + b'\n')
+        stdout = _cppfilt_proc.stdout.readline()
+        result = stdout.decode('utf8').strip()
+    except OSError:
+        _cppfilt_available = False
+        result = symbol
+
+    _cache_demangle[symbol] = result
+    return result
 
 
 # Print all analysis checks to standard output
@@ -143,35 +177,21 @@ def print_checks(database_path, inter_mode, table):
 
     # Demangle context info
     if inter_mode:
-        # Collect all symbols
-        symbols = set()
-
-        for row in all_rows:
-            for callsite in row[1].split(':'):
-                if '@' not in callsite:
-                    continue
-                symbol, line = callsite.split('@')
-                symbols.add(symbol)
-
-        # Demangle
-        demangled = demangle_symbols(symbols)
-
-        # Update all_rows
         for i, row in enumerate(all_rows):
             context = []
-            for callsite in row[1].split(':'):
+            for callsite in row[1].split('/'):
                 if '@' not in callsite:
                     context.append(callsite)
                 else:
-                    symbol, line = callsite.split('@')
-                    context.append('%s@%s' % (demangled.get(symbol, symbol), line))
+                    symbol, line, col = callsite.split('@')
+                    context.append('%s@%s@%s' % (demangle_symbol(symbol), line, col))
 
             context = '/'.join(context)
-            filepath = os.path.relpath(row[2], os.getcwd())
+            filepath = os.path.relpath(os.path.realpath(row[2]), os.getcwd())
             all_rows[i] = (row[0], context, filepath, row[3], row[4], row[6])
     else:
         for i, row in enumerate(all_rows):
-            filepath = os.path.relpath(row[1], os.getcwd())
+            filepath = os.path.relpath(os.path.realpath(row[1]), os.getcwd())
             all_rows[i] = (row[0], filepath, row[2], row[3], row[5])
 
     # Reorganize data by columns

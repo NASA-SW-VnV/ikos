@@ -61,7 +61,6 @@
 #include <vector>
 
 #include <ikos/common/bignums.hpp>
-#include <ikos/common/bignums.hpp>
 #include <ikos/common/types.hpp>
 #include <ikos/domains/intervals.hpp>
 

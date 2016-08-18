@@ -10,6 +10,4 @@ $ cmake -DIKOS_ROOT=../../.. ..
 $ make all install
 ```
 
-All the test executables are installed under:
-
-- ```cd run_tests/bin```
+All the test executables are installed under `run_tests/bin`
