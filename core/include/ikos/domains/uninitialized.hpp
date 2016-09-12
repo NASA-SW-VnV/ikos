@@ -1,8 +1,10 @@
 /*******************************************************************************
  *
- * Abstract domain for uninitialized variables.
+ * Implementation of an abstract domain for (un)initialized variables.
  *
  * Author: Jorge A. Navas
+ *
+ * Contributors: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
@@ -48,25 +50,27 @@
 #include <vector>
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/separate_domains.hpp>
+#include <ikos/domains/uninitialized_domains_api.hpp>
 
 namespace ikos {
 
 // A simple lattice for uninitialization
 class uninitialized_value : public writeable {
+private:
   typedef enum {
-    Bottom = 0x0, /*unused*/
+    Bottom = 0x0, /* unused */
     Initialized = 0x1,
     Uninitialized = 0x2,
     MayUninitialized = 0x3
   } kind_t;
 
+private:
   kind_t _value;
 
-  uninitialized_value(kind_t v) : _value(v){};
-
-public:
-  uninitialized_value() : _value(MayUninitialized) {}
+private:
+  uninitialized_value(kind_t v) : _value(v) {}
 
 public:
   static uninitialized_value bottom() { return uninitialized_value(Bottom); }
@@ -84,8 +88,10 @@ public:
   }
 
 public:
+  uninitialized_value() : _value(MayUninitialized) {}
+
   uninitialized_value(const uninitialized_value& other)
-      : writeable(), _value(other._value) {}
+      : _value(other._value) {}
 
   uninitialized_value& operator=(uninitialized_value other) {
     this->_value = other._value;
@@ -101,18 +107,18 @@ public:
   bool is_uninitialized() const { return (this->_value == Uninitialized); }
 
   bool operator<=(uninitialized_value other) {
-    if (this->_value == Bottom)
+    if (this->_value == Bottom) {
       return true;
-    else if (this->_value == MayUninitialized)
+    } else if (this->_value == MayUninitialized) {
       return (other._value == MayUninitialized);
-    else if (this->_value == Initialized)
+    } else if (this->_value == Initialized) {
       return ((other._value == this->_value) ||
               (other._value == MayUninitialized));
-    else if (this->_value == Uninitialized)
-      return (this->_value <= other._value);
-    else {
-      assert(false && "unreachable");
-      return false;
+    } else if (this->_value == Uninitialized) {
+      return ((other._value == this->_value) ||
+              (other._value == MayUninitialized));
+    } else {
+      throw ikos_error("unreachable");
     }
   }
 
@@ -158,16 +164,15 @@ public:
       }
     }
   }
+
 }; // end class uninitialized_value
 
 // An abstract domain for reasoning about uninitialized variables.
 template < typename VariableName >
-class uninitialized_domain : public writeable {
+class uninitialized_domain_impl : public abstract_domain,
+                                  public uninitialized_domain< VariableName > {
   template < typename Any1, typename Any2, typename Any3 >
   friend class uninitialized_array_domain;
-
-public:
-  typedef uninitialized_domain< VariableName > uninitialized_domain_t;
 
 private:
   typedef separate_domain< VariableName, uninitialized_value >
@@ -175,33 +180,27 @@ private:
 
 public:
   typedef typename separate_domain_t::iterator iterator;
+  typedef uninitialized_domain_impl< VariableName > uninitialized_domain_t;
 
 private:
   separate_domain_t _env;
 
-  uninitialized_domain(separate_domain_t env) : _env(env) {}
-
-  struct mkVal
-      : public std::unary_function< VariableName, uninitialized_value > {
-    separate_domain_t _env;
-    mkVal(separate_domain_t env) : _env(env) {}
-    uninitialized_value operator()(VariableName v) { return _env[v]; }
-  };
+private:
+  uninitialized_domain_impl(separate_domain_t env) : _env(env) {}
 
 public:
   static uninitialized_domain_t top() {
-    return uninitialized_domain(separate_domain_t::top());
+    return uninitialized_domain_impl(separate_domain_t::top());
   }
 
   static uninitialized_domain_t bottom() {
-    return uninitialized_domain(separate_domain_t::bottom());
+    return uninitialized_domain_impl(separate_domain_t::bottom());
   }
 
 public:
-  uninitialized_domain() : _env(separate_domain_t::top()) {}
+  uninitialized_domain_impl() : _env(separate_domain_t::top()) {}
 
-  uninitialized_domain(const uninitialized_domain_t& e)
-      : writeable(), _env(e._env) {}
+  uninitialized_domain_impl(const uninitialized_domain_t& e) : _env(e._env) {}
 
   uninitialized_domain_t& operator=(uninitialized_domain_t e) {
     this->_env = e._env;
@@ -245,28 +244,88 @@ public:
     this->_env.set(v, e);
   }
 
-  void assign(VariableName x, VariableName y) {
+  void make_initialized(VariableName v) {
+    this->set(v, uninitialized_value::initialized());
+  }
+
+  void make_uninitialized(VariableName v) {
+    this->set(v, uninitialized_value::uninitialized());
+  }
+
+  uninitialized_value operator[](VariableName v) { return this->_env[v]; }
+
+  bool is_initialized(VariableName v) {
+    if (is_bottom()) {
+      throw ikos_error(
+          "uninitialized domain: trying to call is_initialized() on bottom");
+    } else {
+      return this->_env[v].is_initialized();
+    }
+  }
+
+  bool is_uninitialized(VariableName v) {
+    if (is_bottom()) {
+      throw ikos_error(
+          "uninitialized domain: trying to call is_uninitialized() on bottom");
+    } else {
+      return this->_env[v].is_uninitialized();
+    }
+  }
+
+  void assign_uninitialized(VariableName x, VariableName y) {
     if (is_bottom())
       return;
 
     this->_env.set(x, this->_env[y]);
   }
 
-  void assign(VariableName x, std::vector< VariableName > in) {
+  void assign_uninitialized(VariableName x, VariableName y, VariableName z) {
+    if (is_bottom())
+      return;
+
+    this->assign_uninitialized(x, this->_env[y], this->_env[z]);
+  }
+
+  void assign_uninitialized(VariableName x,
+                            uninitialized_value y,
+                            uninitialized_value z) {
+    if (is_bottom())
+      return;
+
+    if (y.is_uninitialized() || z.is_uninitialized()) {
+      this->_env.set(x, uninitialized_value::uninitialized());
+    } else {
+      this->_env.set(x, y | z);
+    }
+  }
+
+private:
+  struct to_uninitialized_value
+      : public std::unary_function< VariableName, uninitialized_value > {
+    separate_domain_t _env;
+    to_uninitialized_value(separate_domain_t env) : _env(env) {}
+    uninitialized_value operator()(VariableName v) { return _env[v]; }
+  };
+
+public:
+  void assign_uninitialized(VariableName x,
+                            const std::vector< VariableName >& in) {
     if (is_bottom())
       return;
 
     std::vector< uninitialized_value > out;
-    mkVal f(this->_env);
+    to_uninitialized_value f(this->_env);
     std::transform(in.begin(), in.end(), back_inserter(out), f);
-    this->assign(x, out);
+    this->assign_uninitialized(x, out);
   }
 
   // if all elements of ys are initialized so does x. If some ys is
   // uninitialized so does x. Otherwise, x is top.
-  void assign(VariableName x, std::vector< uninitialized_value > ys) {
+  void assign_uninitialized(VariableName x,
+                            const std::vector< uninitialized_value >& ys) {
     if (is_bottom())
       return;
+
     bool all_init = true;
     bool some_uninit = false;
     for (unsigned int i = 0; i < ys.size(); i++) {
@@ -274,57 +333,23 @@ public:
       all_init &= abs_val.is_initialized();
       some_uninit |= abs_val.is_uninitialized();
     }
-    if (all_init)
+
+    if (all_init) {
       this->_env.set(x, uninitialized_value::initialized());
-    else if (some_uninit)
+    } else if (some_uninit) {
       this->_env.set(x, uninitialized_value::uninitialized());
-    else
+    } else {
       this->_env.set(x, uninitialized_value::top());
-  }
-
-  void apply(operation_t /*op*/,
-             VariableName x,
-             VariableName y,
-             uninitialized_value z) {
-    if (is_bottom())
-      return;
-
-    apply(x, this->_env[y], z);
-  }
-
-  void apply(operation_t /*op*/,
-             VariableName x,
-             VariableName y,
-             VariableName z) {
-    if (is_bottom())
-      return;
-
-    apply(x, this->_env[y], this->_env[z]);
-  }
-
-  void apply(VariableName x, VariableName y, VariableName z) {
-    if (is_bottom())
-      return;
-
-    apply(x, this->_env[y], this->_env[z]);
-  }
-
-  void apply(VariableName x, uninitialized_value y, uninitialized_value z) {
-    if (is_bottom())
-      return;
-    if (y.is_uninitialized() || z.is_uninitialized())
-      this->_env.set(x, uninitialized_value::uninitialized());
-    else
-      this->_env.set(x, y | z);
+    }
   }
 
   void operator-=(VariableName v) { this->_env -= v; }
 
-  uninitialized_value operator[](VariableName v) { return this->_env[v]; }
-
   void write(std::ostream& o) { this->_env.write(o); }
 
-}; // class uninitialized_domain
+  static std::string domain_name() { return "Uninitialized"; }
+
+}; // end class uninitialized_domain_impl
 
 } // end ikos namespace
 

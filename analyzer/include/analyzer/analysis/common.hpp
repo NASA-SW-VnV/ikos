@@ -44,6 +44,7 @@
 
 #include <stdint.h>
 #include <memory>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -149,8 +150,9 @@ public:
                         this);
       _map.insert(std::pair< std::string, indexed_string >(s, is));
       return is;
-    } else
+    } else {
       return it->second;
+    }
   }
 }; // class VariableFactory
 
@@ -161,6 +163,63 @@ inline std::size_t hash_value(const varname_t& v) {
 }
 
 } // end namespace analyzer
+
+namespace ikos {
+namespace var_name_traits {
+
+// forward declaration
+template < typename VariableName, typename Number >
+struct value_domain_cell_var;
+
+// see value_domain.hpp
+template < typename Number >
+struct value_domain_cell_var< analyzer::varname_t, Number > {
+  analyzer::varname_t operator()(analyzer::varname_t addr,
+                                 Number offset,
+                                 Number size) {
+    std::ostringstream buf;
+    buf << "C{" << addr.name() << "," << offset << "," << size << "}";
+    std::string name = buf.str();
+    return addr.getVarFactory()[name];
+  }
+};
+
+// forward declaration
+template < typename VariableName, typename Number >
+struct summary_domain_cell_var;
+
+// see summary_domain.hpp
+template < typename Number >
+struct summary_domain_cell_var< analyzer::varname_t, Number > {
+  analyzer::varname_t operator()(analyzer::varname_t addr,
+                                 Number offset,
+                                 bound< Number > size,
+                                 bool output) {
+    std::ostringstream buf;
+    buf << "C{" << addr.name() << "," << offset << "," << size << ","
+        << (output ? "O" : "I") << "}";
+    std::string name = buf.str();
+    return addr.getVarFactory()[name];
+  }
+};
+
+// forward declaration
+template < typename VariableName >
+struct summary_domain_tmp_var;
+
+// see summary_domain.hpp
+template <>
+struct summary_domain_tmp_var< analyzer::varname_t > {
+  analyzer::varname_t operator()(analyzer::varname_t v) {
+    static analyzer::index_t i = 1;
+    std::string name = "shadow.tmp." + std::to_string(i);
+    i++;
+    return v.getVarFactory()[name];
+  }
+};
+
+} // end namespace var_name_traits
+} // end namespace ikos
 
 namespace std {
 
@@ -187,10 +246,9 @@ typedef boost::optional< unord_varname_set_t > opt_unord_varname_set_t;
 
 class PointerInfo {
   typedef varname_t VariableName;
-  typedef std::unordered_map<
-      VariableName,
-      std::pair< ikos::discrete_domain< VariableName >, ikos::z_interval > >
-      ptr_map_t;
+  typedef std::unordered_map< VariableName,
+                              std::pair< ikos::discrete_domain< VariableName >,
+                                         ikos::z_interval > > ptr_map_t;
   std::shared_ptr< ptr_map_t > _ptr_map;
 
 public:

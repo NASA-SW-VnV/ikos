@@ -101,7 +101,7 @@ public:
         if (lit.is_num())
           divisor = z_interval(lit.get_num< ikos::z_number >());
         else {
-          divisor = num_abstract_domain_impl::to_interval(inv, lit.get_var());
+          divisor = num_domain_traits::to_interval(inv, lit.get_var());
         }
 
         boost::optional< ikos::z_number > d = divisor.singleton();

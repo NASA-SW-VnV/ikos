@@ -44,11 +44,12 @@
 #define IKOS_DATAFLOW_DOMAIN_HPP
 
 #include <ikos/domains/discrete_domains.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
 template < typename Element >
-class dataflow_domain : public writeable {
+class dataflow_domain : public abstract_domain {
 private:
   typedef dataflow_domain< Element > dataflow_domain_t;
 
@@ -73,12 +74,11 @@ public:
 public:
   dataflow_domain() : _inv(discrete_domain_t::top()) {}
 
-  dataflow_domain(Element e) : writeable(), _inv(e) {}
+  dataflow_domain(Element e) : _inv(e) {}
 
-  dataflow_domain(discrete_domain_t inv) : writeable(), _inv(inv) {}
+  dataflow_domain(discrete_domain_t inv) : _inv(inv) {}
 
-  dataflow_domain(const dataflow_domain_t& other)
-      : writeable(), _inv(other._inv) {}
+  dataflow_domain(const dataflow_domain_t& other) : _inv(other._inv) {}
 
   dataflow_domain_t& operator=(dataflow_domain_t other) {
     this->_inv = other._inv;
@@ -123,8 +123,11 @@ public:
   dataflow_domain_t operator&&(dataflow_domain_t after) { return after; }
 
   void write(std::ostream& o) { this->_inv.write(o); }
-}; // end dataflow_domain
 
-} // end namespace
+  static std::string domain_name() { return "Dataflow"; }
+
+}; // end class dataflow_domain
+
+} // end namespace ikos
 
 #endif // IKOS_DATAFLOW_DOMAIN_HPP

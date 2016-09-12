@@ -128,11 +128,11 @@ class PointerPass {
         }
       }
       void visit(Invoke_ref s) { visit(ar::getFunctionCall(s)); }
+      void visit(Return_Value_ref s) { _post.exec(s); }
 
       // NOT IMPLEMENTED
       void visit(FP_Op_ref) {}
       void visit(FP_Comparison_ref) {}
-      void visit(Return_Value_ref) {}
     };
 
     typedef fwd_fixpoint_iterator< Basic_Block_ref, arbos_cfg, AbsNumDomain >
@@ -297,7 +297,7 @@ public:
     //   if (lit.is_var ())
     //   {
     //     z_interval max_itv =
-    //         num_abstract_domain_impl::to_interval (_block_inv, lit.get_var
+    //         num_domain_traits::to_interval (_block_inv, lit.get_var
     //         ());
     //     size_itv = z_interval (Literal::make_num<Number> (0),
     //                            max_itv.ub () -
@@ -487,8 +487,7 @@ public:
           o = z_interval(Offset.get_num< Number >(),
                          Offset.get_num< Number >());
         } else if (Offset.is_var()) {
-          o = num_abstract_domain_impl::to_interval(_block_inv,
-                                                    Offset.get_var());
+          o = num_domain_traits::to_interval(_block_inv, Offset.get_var());
         } else {
           assert(false && "unreachable");
         }
@@ -800,8 +799,7 @@ private:
   //! for external queries
   typedef std::unordered_map<
       VariableName,
-      std::pair< discrete_domain< VariableName >, z_interval > >
-      ptr_map_t;
+      std::pair< discrete_domain< VariableName >, z_interval > > ptr_map_t;
 
   CfgFactory& _cfg_fac;
   VariableFactory& _vfac;

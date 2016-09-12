@@ -334,15 +334,9 @@ This folder contains classes that check for properties on the code (out-of-bound
    * backward abstract interpreter
   The backward abstract interpreter is limited to dataflow analyses, otherwise although sound it will be too imprecise.
 
-`include/analyzer/ikos-wrapper/domains_traits.hpp`: extend IKOS abstract domains with some extra functionality.
-
 ##### include/analyzer/domains
 
 This folder contains analysis-specific abstract domains not available in ikos core library.
-
-`include/analyzer/domains/value_domain.hpp`: this is a core abstract domain used for most of the analyses. This implements a value analysis 'a la' Mine.
-   * class `pointer_domain` extends an arbitrary numerical abstract domain to reason about pointer offsets.
-   * class `memory_domain` extends `pointer_domain` to reason about memory contents. For more precision, it uses also the nullity and uninitialized abstract domains.
 
 ##### include/analyzer/utils
 

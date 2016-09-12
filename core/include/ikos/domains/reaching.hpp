@@ -44,11 +44,12 @@
 #define IKOS_REACHING_HPP
 
 #include <ikos/domains/dataflow_domain.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
 template < typename VariableName >
-class reaching_domain : public writeable {
+class reaching_domain : public abstract_domain {
 private:
   typedef dataflow_domain< VariableName > dataflow_domain_t;
 
@@ -61,7 +62,7 @@ private:
   dataflow_domain_t _inv;
 
 public:
-  reaching_domain(dataflow_domain_t inv) : writeable(), _inv(inv) {}
+  reaching_domain(dataflow_domain_t inv) : _inv(inv) {}
 
   static reaching_domain_t top() {
     return reaching_domain(dataflow_domain_t::top());
@@ -71,12 +72,11 @@ public:
     return reaching_domain(dataflow_domain_t::bottom());
   }
 
-  reaching_domain() : writeable(), _inv(dataflow_domain_t::bottom()) {}
+  reaching_domain() : _inv(dataflow_domain_t::bottom()) {}
 
-  reaching_domain(VariableName v) : writeable(), _inv(v) {}
+  reaching_domain(VariableName v) : _inv(v) {}
 
-  reaching_domain(const reaching_domain_t& other)
-      : writeable(), _inv(other._inv) {}
+  reaching_domain(const reaching_domain_t& other) : _inv(other._inv) {}
 
   reaching_domain_t& operator=(reaching_domain_t other) {
     this->_inv = other._inv;
@@ -117,8 +117,10 @@ public:
 
   void write(std::ostream& o) { this->_inv.write(o); }
 
-}; // end reaching_domain class
+  static std::string domain_name() { return "Reaching"; }
 
-} // end of ikos namespace
+}; // end class reaching_domain
+
+} // end namespace ikos
 
 #endif // IKOS_REACHING_HPP

@@ -58,7 +58,7 @@ class bignum_error : public ikos_error {
 public:
   bignum_error(std::string msg_) : ikos_error("[bignums] " + msg_) {}
 
-}; // class bignum_error
+}; // end class bignum_error
 
 class z_number {
   friend class q_number;
@@ -229,7 +229,7 @@ public:
 
   void write(std::ostream& o) { o << this->_n; }
 
-}; // class z_number
+}; // end class z_number
 
 inline std::ostream& operator<<(std::ostream& o, z_number z) {
   z.write(o);
@@ -404,7 +404,7 @@ public:
 
   void write(std::ostream& o) { o << this->_n; }
 
-}; // class q_number
+}; // end class q_number
 
 inline std::ostream& operator<<(std::ostream& o, q_number q) {
   q.write(o);

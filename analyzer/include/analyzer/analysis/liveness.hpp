@@ -52,9 +52,10 @@
 
 namespace analyzer {
 namespace liveness_set_impl {
+
 //! Lattice of liveness using std::set
 template < typename VariableName >
-class liveness_domain : public ikos::writeable {
+class liveness_domain : public ikos::abstract_domain {
 private:
   typedef liveness_domain< VariableName > liveness_domain_t;
   typedef std::set< VariableName > ElemVector;
@@ -67,8 +68,7 @@ private:
   bool _is_top;
   ElemVector _inv;
 
-  liveness_domain(ElemVector inv, bool is_top)
-      : ikos::writeable(), _is_top(is_top), _inv(inv) {
+  liveness_domain(ElemVector inv, bool is_top) : _is_top(is_top), _inv(inv) {
     if (this->_is_top)
       _inv.clear();
   }
@@ -82,14 +82,11 @@ public:
 
   liveness_domain() : _is_top(false) {}
 
-  liveness_domain(VariableName e) : ikos::writeable(), _is_top(false) {
-    this->_inv.insert(e);
-  }
+  liveness_domain(VariableName e) : _is_top(false) { this->_inv.insert(e); }
 
   ~liveness_domain() { this->_inv.clear(); }
 
-  liveness_domain(const liveness_domain_t& other)
-      : ikos::writeable(), _is_top(other._is_top) {
+  liveness_domain(const liveness_domain_t& other) : _is_top(other._is_top) {
     if (!is_top()) {
       std::copy(other._inv.begin(),
                 other._inv.end(),
@@ -206,13 +203,20 @@ public:
       o << "}";
     }
   }
-};
-} // end namespace
+
+  static std::string domain_name() {
+    return "Liveness (std::set implementation)";
+  }
+
+}; // end class liveness_domain
+
+} // end namespace liveness_set_impl
 
 namespace liveness_discrete_impl {
+
 //! Lattice of liveness using dataflow_domain
 template < typename VariableName >
-class liveness_domain : public ikos::writeable {
+class liveness_domain : public ikos::abstract_domain {
 private:
   typedef ikos::dataflow_domain< VariableName > dataflow_domain_t;
 
@@ -224,7 +228,7 @@ private:
 
   dataflow_domain_t _inv;
 
-  liveness_domain(dataflow_domain_t inv) : ikos::writeable(), _inv(inv) {}
+  liveness_domain(dataflow_domain_t inv) : _inv(inv) {}
 
 public:
   static liveness_domain_t top() {
@@ -235,12 +239,11 @@ public:
     return liveness_domain(dataflow_domain_t::bottom());
   }
 
-  liveness_domain() : ikos::writeable(), _inv(dataflow_domain_t::bottom()) {}
+  liveness_domain() : _inv(dataflow_domain_t::bottom()) {}
 
-  liveness_domain(VariableName v) : ikos::writeable(), _inv(v) {}
+  liveness_domain(VariableName v) : _inv(v) {}
 
-  liveness_domain(const liveness_domain_t& other)
-      : ikos::writeable(), _inv(other._inv) {}
+  liveness_domain(const liveness_domain_t& other) : _inv(other._inv) {}
 
   liveness_domain_t& operator=(liveness_domain_t other) {
     this->_inv = other._inv;
@@ -282,9 +285,13 @@ public:
 
   void write(std::ostream& o) { this->_inv.write(o); }
 
-}; // end liveness_domain class
+  static std::string domain_name() {
+    return "Liveness (ikos::patricia_tree implementation)";
+  }
 
-} // end namespace
+}; // end class liveness_domain
+
+} // end namespace liveness_discrete_impl
 
 //! Compute liveness for an arbos cfg
 class Liveness : public backward_fixpoint_iterator<
@@ -352,6 +359,14 @@ private:
       }
       _kg_map.insert(
           kill_gen_map_t::value_type(node.get(), kill_gen_t(kill, gen)));
+    }
+  }
+
+  void run(liveness_domain_t inv) {
+    try {
+      backward_fixpoint_iterator_t::run(inv);
+    } catch (cfg_not_reversible_error&) {
+      // safely ignored
     }
   }
 
@@ -433,22 +448,11 @@ public:
     FuncRange entries = ar::getFunctions(bundle);
     for (FuncRange::iterator I = entries.begin(), E = entries.end(); I != E;
          ++I) {
-      try {
-        arbos_cfg cfg = _cfg_fac[*I];
-        // note that we clone cfg because Liveness will reverse it.
-        liveness_ptr live(new Liveness(cfg.clone()));
-        live->run(Liveness::liveness_domain_t::bottom());
-        _map->insert(std::make_pair(cfg.get_func_name(), live));
-      } catch (ikos::ikos_error& e) {
-        std::cerr << "ikos error: " << e << std::endl;
-        exit(EXIT_FAILURE);
-      } catch (arbos::error& e) {
-        std::cerr << "arbos error: " << e << std::endl;
-        exit(EXIT_FAILURE);
-      } catch (...) {
-        std::cerr << "unknown error occurred" << std::endl;
-        exit(EXIT_FAILURE);
-      }
+      arbos_cfg cfg = _cfg_fac[*I];
+      // note that we clone cfg because Liveness will reverse it.
+      liveness_ptr live(new Liveness(cfg.clone()));
+      live->run(Liveness::liveness_domain_t::bottom());
+      _map->insert(std::make_pair(cfg.get_func_name(), live));
     }
   }
 

@@ -45,8 +45,9 @@
 
 #include <vector>
 
+#include <ikos/domains/uninitialized_domains_api.hpp>
+
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/analysis/num_sym_exec.hpp>
 #include <analyzer/checkers/checker_api.hpp>
 
 namespace analyzer {
@@ -326,21 +327,21 @@ private:
 
       for (Iterator it = begin; it != end; ++it) {
         varname_t v = *it;
-        safe &= value_domain_impl::is_initialized(inv, v);
-        unsafe |= value_domain_impl::is_uninitialized(inv, v);
+        safe &= uninit_domain_traits::is_initialized(inv, v);
+        unsafe |= uninit_domain_traits::is_uninitialized(inv, v);
 
-        if (value_domain_impl::is_initialized(inv, v) &&
+        if (uninit_domain_traits::is_initialized(inv, v) &&
             this->display_check(OK)) {
           std::cout << location_to_string(loc) << ": [ok] check(" << v
                     << "): " << v << " is initialized" << std::endl;
         }
-        if (value_domain_impl::is_uninitialized(inv, v) &&
+        if (uninit_domain_traits::is_uninitialized(inv, v) &&
             this->display_check(ERR)) {
           std::cout << location_to_string(loc) << ": [error] check(" << v
                     << "): " << v << " is uninitialized" << std::endl;
         }
-        if (!value_domain_impl::is_initialized(inv, v) &&
-            !value_domain_impl::is_uninitialized(inv, v) &&
+        if (!uninit_domain_traits::is_initialized(inv, v) &&
+            !uninit_domain_traits::is_uninitialized(inv, v) &&
             this->display_check(WARNING)) {
           std::cout << location_to_string(loc) << ": [warning] check(" << v
                     << "): " << v << " may be uninitialized" << std::endl;

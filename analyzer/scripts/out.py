@@ -125,11 +125,18 @@ def _cppfilt_kill():
         _cppfilt_proc.communicate()
 
 
+def is_mangled(symbol):
+    return len(symbol) >= 2 and symbol[0] == '_' and symbol[1] >= 'A' and symbol[1] <= 'Z'
+
+
 # demangle a symbol name using c++filt if available
 def demangle_symbol(symbol):
     global _cppfilt_available
     global _cppfilt_proc
     global _cache_demangle
+
+    if not is_mangled(symbol):
+        return symbol
 
     if _cppfilt_available is False:
         return symbol
@@ -160,6 +167,24 @@ def demangle_symbol(symbol):
     return result
 
 
+def format_context(context):
+    ctx = []
+    for callsite in context.split('/'):
+        if '@' not in callsite:
+            ctx.append(callsite)
+        else:
+            symbol, line, col = callsite.split('@')
+            ctx.append('%s@%s@%s' % (demangle_symbol(symbol), line, col))
+
+    return '/'.join(ctx)
+
+
+def format_path(path):
+    abs_path = os.path.realpath(path)
+    rel_path = os.path.relpath(os.path.realpath(path), os.getcwd())
+    return min(abs_path, rel_path, key=len)
+
+
 # Print all analysis checks to standard output
 def print_checks(database_path, inter_mode, table):
     if inter_mode:
@@ -178,21 +203,11 @@ def print_checks(database_path, inter_mode, table):
     # Demangle context info
     if inter_mode:
         for i, row in enumerate(all_rows):
-            context = []
-            for callsite in row[1].split('/'):
-                if '@' not in callsite:
-                    context.append(callsite)
-                else:
-                    symbol, line, col = callsite.split('@')
-                    context.append('%s@%s@%s' % (demangle_symbol(symbol), line, col))
-
-            context = '/'.join(context)
-            filepath = os.path.relpath(os.path.realpath(row[2]), os.getcwd())
-            all_rows[i] = (row[0], context, filepath, row[3], row[4], row[6])
+            all_rows[i] = (row[0], format_context(row[1]), format_path(row[2]),
+                           row[3], row[4], row[6])
     else:
         for i, row in enumerate(all_rows):
-            filepath = os.path.relpath(os.path.realpath(row[1]), os.getcwd())
-            all_rows[i] = (row[0], filepath, row[2], row[3], row[5])
+            all_rows[i] = (row[0], format_path(row[1]), row[2], row[3], row[5])
 
     # Reorganize data by columns
     cols = zip(*([header] + all_rows))

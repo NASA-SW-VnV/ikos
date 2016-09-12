@@ -1,4 +1,4 @@
-IKOS v.1.1.1
+IKOS v.1.1.2
 ============
 
 LICENSE

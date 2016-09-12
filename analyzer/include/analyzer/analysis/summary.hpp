@@ -49,7 +49,6 @@
 #include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/pointer.hpp>
 #include <analyzer/checkers/checker_api.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 #include <analyzer/utils/demangle.hpp>
 
 //#define DEBUG
@@ -125,6 +124,7 @@ public:
   void visit(Invoke_ref stmt) { visit(ar::getFunctionCall(stmt)); }
 
   void visit(Return_Value_ref stmt) {
+    _sym_exec.exec(stmt);
     _sym_exec_call->exec_ret(stmt, _sym_exec.inv());
   }
 
@@ -689,7 +689,7 @@ private:
 
         // convert the AbsNumDomain to a SumAbsNumDomain
         SumAbsNumDomain inv =
-            num_abstract_domain_impl::convert< AbsNumDomain, SumAbsNumDomain >(
+            num_domain_traits::convert< AbsNumDomain, SumAbsNumDomain >(
                 caller_inv);
 
         CfgFactory& cfg_fac = _pointer_pass.cfg_factory();
@@ -723,8 +723,7 @@ private:
         inv -= from_local_vars(cfg_fac[callee].get_local_variables(), lfac);
         inv -= from_internal_vars(formal_params, lfac);
 
-        return num_abstract_domain_impl::convert< SumAbsNumDomain,
-                                                  AbsNumDomain >(inv);
+        return num_domain_traits::convert< SumAbsNumDomain, AbsNumDomain >(inv);
       }
 
       AbsNumDomain exec_call_forget(Call_ref stmt, AbsNumDomain inv) {
@@ -1391,8 +1390,7 @@ private:
                             AbsValueDomain,
                             SumAbsValueDomain,
                             VariableName,
-                            Number >
-      check_summary_pass_t;
+                            Number > check_summary_pass_t;
   typedef sym_exec_call< FunctionAnalyzer, AbsValueDomain > sym_exec_call_t;
   typedef typename sym_exec_call_t::sym_exec_call_ptr_t sym_exec_call_ptr_t;
   typedef typename sym_exec_call_t::function_names_t function_names_t;
@@ -1542,7 +1540,8 @@ private:
 
       // convert the AbsValueDomain to a SumAbsValueDomain
       SumAbsValueDomain inv =
-          caller_inv.template convert< SumAbsValueDomain >();
+          num_domain_traits::convert< AbsValueDomain, SumAbsValueDomain >(
+              caller_inv);
 
       CfgFactory& cfg_fac = _check_pass.cfg_factory();
       VariableFactory& vfac = _check_pass.var_factory();
@@ -1581,7 +1580,8 @@ private:
       inv.forget_mem_surface(from_internal_vars(formal_params, lfac));
 
       // convert the SumAbsValueDomain to a AbsValueDomain
-      return inv.template convert< AbsValueDomain >();
+      return num_domain_traits::convert< SumAbsValueDomain, AbsValueDomain >(
+          inv);
     }
 
     // might be unsound because the memory could be updated

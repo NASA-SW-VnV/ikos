@@ -102,7 +102,7 @@ public:
       } else {
         z_interval flag = z_interval::bottom();
         if (cond.is_var()) {
-          flag = num_abstract_domain_impl::to_interval(inv, cond.get_var());
+          flag = num_domain_traits::to_interval(inv, cond.get_var());
         } else if (cond.is_num()) {
           flag = z_interval(cond.get_num< ikos::z_number >());
         } else {

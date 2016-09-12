@@ -2146,14 +2146,16 @@ AR_Code::AR_Code(index64_t parent_function, s_expression e)
     : AR_Node(),
       _entry_block(0),
       _exit_block(0),
+      _unreachable_block(0),
+      _unwind_block(0),
       _bblocks_connected(false),
       _parent_function(parent_function) {
   /**
    * Example s-expr: ($code ($entry ($init)) ($exit ($init)) ($basicblocks
    * ($basicblock) ...) ($trans ($edge () ()) ...))
    */
-  s_expression_ref en, ex, bbs, t;
-  if (s_pattern("code", s_pattern("entry", en), ex, bbs, t) ^ e) {
+  s_expression_ref en, ex, ur, uw, bbs, t;
+  if (s_pattern("code", s_pattern("entry", en), ex, ur, uw, bbs, t) ^ e) {
     ARModel::Instance()->setCurrentBuildingScope(
         AR_Node_Ref< AR_Code >(getUID()));
 
@@ -2166,17 +2168,21 @@ AR_Code::AR_Code(index64_t parent_function, s_expression e)
     }
     connect_basic_blocks(*t);
 
-    std::string entry_block_name = (static_cast< string_atom& >(**en)).data();
-    _entry_block = (*getBasicBlockByNameId(entry_block_name)).getUID();
-    if ((*ex).n_args() == 0) {
-      _exit_block = 0;
-    } else {
-      std::string exit_block_name =
-          (static_cast< string_atom& >(*(*ex)[1])).data();
-      _exit_block = (exit_block_name.empty())
+    _entry_block =
+        getBasicBlockUIDByName((static_cast< string_atom& >(**en)).data());
+    _exit_block = (*ex).n_args() == 0
+                      ? 0
+                      : getBasicBlockUIDByName(
+                            (static_cast< string_atom& >(*(*ex)[1])).data());
+    _unreachable_block =
+        (*ur).n_args() == 0
+            ? 0
+            : getBasicBlockUIDByName(
+                  (static_cast< string_atom& >(*(*ur)[1])).data());
+    _unwind_block = (*uw).n_args() == 0
                         ? 0
-                        : (*getBasicBlockByNameId(exit_block_name)).getUID();
-    }
+                        : getBasicBlockUIDByName(
+                              (static_cast< string_atom& >(*(*uw)[1])).data());
   } else {
     throw parse_error("AR_Code", e);
   }
@@ -2198,6 +2204,14 @@ AR_Node_Ref< AR_Internal_Variable > AR_Code::getInternalVariable(
 void AR_Code::addInternalVariable(
     AR_Node_Ref< AR_Internal_Variable > internal_var) {
   _internal_variables.push_back(internal_var);
+}
+
+index64_t AR_Code::getBasicBlockUIDByName(const std::string& name) {
+  if (name.empty())
+    return 0;
+  AR_Node_Ref< AR_Basic_Block > bb(_name_to_uid[name]);
+  assert(bb.getUID() > 0);
+  return bb.getUID();
 }
 
 AR_Node_Ref< AR_Basic_Block > AR_Code::getBasicBlockByNameId(
@@ -2237,13 +2251,30 @@ AR_Code::~AR_Code() {}
 void AR_Code::print(std::ostream& out) {
   AR_Node_Ref< AR_Basic_Block > entry(_entry_block);
   AR_Node_Ref< AR_Basic_Block > exit(_exit_block);
+  AR_Node_Ref< AR_Basic_Block > unreachable(_unreachable_block);
+  AR_Node_Ref< AR_Basic_Block > unwind(_unwind_block);
 
   out << "entry: " << (*entry).getNameId() << "!" << entry.getUID()
       << std::endl;
+
   if (_exit_block != 0) {
     out << "exit: " << (*exit).getNameId() << "!" << exit.getUID() << std::endl;
   } else {
     out << "exit: none" << std::endl;
+  }
+
+  if (_unreachable_block != 0) {
+    out << "unreachable: " << (*unreachable).getNameId() << "!"
+        << unreachable.getUID() << std::endl;
+  } else {
+    out << "unreachable: none" << std::endl;
+  }
+
+  if (_unwind_block != 0) {
+    out << "unwind: " << (*unwind).getNameId() << "!" << unwind.getUID()
+        << std::endl;
+  } else {
+    out << "unwind: none" << std::endl;
   }
 
   out << std::endl;

@@ -55,13 +55,13 @@ namespace ikos {
 // An abstract domain for reasoning about uninitialized variables
 // with arrays
 template < typename NumDomain, typename Number, typename VariableName >
-class uninitialized_array_domain : public ikos::writeable {
+class uninitialized_array_domain : public abstract_domain {
 private:
   typedef uninitialized_array_domain< NumDomain, Number, VariableName >
       uninitialized_array_domain_t;
 
 private:
-  typedef uninitialized_domain< VariableName > uva_scalar_domain_t;
+  typedef uninitialized_domain_impl< VariableName > uva_scalar_domain_t;
 
 private:
   typedef array_graph_domain< NumDomain,
@@ -85,9 +85,9 @@ private:
 private:
   // Helpers
   void assign_scalar(VariableName x, linear_expression_t e) {
-    if (e.is_constant())
+    if (e.is_constant()) {
       this->_inv.first().set(x, uninitialized_value::initialized());
-    else {
+    } else {
       typename linear_expression_t::variable_set_t vars = e.variables();
       std::vector< VariableName > varnames;
       for (typename linear_expression_t::variable_set_t::iterator it =
@@ -96,29 +96,30 @@ private:
            ++it) {
         varnames.push_back((*it).name());
       }
-      this->_inv.first().assign(x, varnames);
+      this->_inv.first().assign_uninitialized(x, varnames);
     }
   }
 
   uva_scalar_domain_t eval_scalar(VariableName x, linear_expression_t e) {
     uva_scalar_domain_t out = uva_scalar_domain_t::top();
-    if (e.is_constant())
+    if (e.is_constant()) {
       out.set(x, uninitialized_value::initialized());
-    else {
+    } else {
       typename linear_expression_t::variable_set_t vars = e.variables();
       std::vector< uninitialized_value > values;
       for (typename linear_expression_t::variable_set_t::iterator it =
                vars.begin();
            it != vars.end();
-           ++it)
+           ++it) {
         values.push_back(this->_inv.first()[(*it).name()]);
-      out.assign(x, values);
+      }
+      out.assign_uninitialized(x, values);
     }
     return out;
   }
 
 private:
-  uninitialized_array_domain(uva_product_t inv) : writeable(), _inv(inv) {}
+  uninitialized_array_domain(uva_product_t inv) : _inv(inv) {}
 
 public:
   static uninitialized_array_domain_t top() {
@@ -135,10 +136,10 @@ public:
   uva_array_domain_t& arrays() { return this->_inv.second(); }
 
 public:
-  uninitialized_array_domain() : writeable(), _inv(uva_product_t::top()) {}
+  uninitialized_array_domain() : _inv(uva_product_t::top()) {}
 
   uninitialized_array_domain(const uninitialized_array_domain_t& other)
-      : writeable(), _inv(other._inv) {}
+      : _inv(other._inv) {}
 
   uninitialized_array_domain_t& operator=(uninitialized_array_domain_t other) {
     this->_inv = other._inv;
@@ -200,7 +201,7 @@ public:
              VariableName y,
              VariableName z,
              analyzer::VariableFactory& vfac) {
-    this->_inv.first().apply(op, x, y, z);
+    this->_inv.first().assign_uninitialized(x, y, z);
     this->_inv.second().apply(op, x, y, z, vfac);
   }
 
@@ -216,7 +217,7 @@ public:
              VariableName y,
              Number z,
              analyzer::VariableFactory& vfac) {
-    this->_inv.first().apply(op, x, y, uninitialized_value::initialized());
+    this->_inv.first().assign_uninitialized(x, y);
     this->_inv.second().apply(op, x, y, z, vfac);
   }
 
@@ -225,7 +226,6 @@ public:
              VariableName x,
              Number z,
              analyzer::VariableFactory& vfac) {
-    this->_inv.first().apply(op, x, x, uninitialized_value::initialized());
     this->_inv.second().apply(op, x, z, vfac);
   }
 
@@ -244,15 +244,19 @@ public:
 
   void write(std::ostream& o) {
 #if 0
-      o << this->_inv;
+    o << this->_inv;
 #else
     // less verbose: only the scalar variables
     o << this->_inv.first();
 #endif
   }
 
-}; // class uninitialized_arrays_domain
+  static std::string domain_name() {
+    return "Uninitialized Array of " + NumDomain::domain_name();
+  }
 
-} // end ikos namespace
+}; // end class uninitialized_array_domain
+
+} // end namespace ikos
 
 #endif // ANALYZER_UNINITIALIZED_ARRAY_HPP

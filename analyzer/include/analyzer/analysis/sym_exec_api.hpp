@@ -54,7 +54,6 @@
 #include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/liveness.hpp>
 #include <analyzer/ar-wrapper/cfg.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 
 namespace analyzer {
 
@@ -91,6 +90,7 @@ public:
                                   std::string fun_name,
                                   OpRange arguments) = 0;
   virtual void exec(Invoke_ref stmt) = 0;
+  virtual void exec(Return_Value_ref) = 0;
   virtual void exec(Landing_Pad_ref stmt) = 0;
   virtual void exec(Resume_ref stmt) = 0;
   virtual void exec(Unreachable_ref stmt) = 0;

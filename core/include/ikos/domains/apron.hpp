@@ -58,6 +58,7 @@
 #include <ikos/algorithms/linear_constraints.hpp>
 #include <ikos/common/bignums.hpp>
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
@@ -241,7 +242,7 @@ const char* domain_name(domain_t d) {
       return "APRON Reduced Product of NewPolka Convex Polyhedra and PPL "
              "Linear Congruences";
     default:
-      assert(false && "unreachable");
+      throw ikos_error("unreachable");
   }
 }
 
@@ -263,7 +264,7 @@ ap_manager_t* alloc_domain_manager(domain_t d) {
       return ap_pkgrid_manager_alloc(pk_manager_alloc(false),
                                      ap_ppl_grid_manager_alloc());
     default:
-      assert(false && "unreachable");
+      throw ikos_error("unreachable");
   }
 }
 
@@ -282,7 +283,7 @@ ap_abstract0_t* domain_narrowing(domain_t d,
 } // end namespace apron
 
 template < apron::domain_t ApronDomain, typename Number, typename VariableName >
-class apron_domain : public writeable,
+class apron_domain : public abstract_domain,
                      public numerical_domain< Number, VariableName >,
                      public bitwise_operators< Number, VariableName >,
                      public division_operators< Number, VariableName > {
@@ -1164,8 +1165,22 @@ public:
     }
   }
 
-  const char* getDomainName() const { return apron::domain_name(ApronDomain); }
+  static std::string domain_name() { return apron::domain_name(ApronDomain); }
+
+}; // end class apron_domain
+
+namespace num_domain_traits {
+namespace detail {
+
+template < apron::domain_t ApronDomain, typename Number, typename VariableName >
+struct normalize_impl< apron_domain< ApronDomain, Number, VariableName > > {
+  void operator()(apron_domain< ApronDomain, Number, VariableName >& inv) {
+    inv.normalize();
+  }
 };
+
+} // end namespace detail
+} // end namespace num_domain_traits
 
 } // end namespace ikos
 

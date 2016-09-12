@@ -33,7 +33,7 @@ typedef linear_expression_t::variable_set_t variable_set_t;
 typedef interval_domain< ikos::z_number, varname_t > interval_domain_t;
 typedef octagon< ikos::z_number, varname_t > octagon_domain_t;
 // scalar uva
-typedef uninitialized_domain< varname_t > uva_domain_t;
+typedef uninitialized_domain_impl< varname_t > uva_domain_t;
 // scalar+array uva
 typedef uninitialized_array_domain< octagon_domain_t,
                                     ikos::z_number,
@@ -263,10 +263,9 @@ template <>
 inline void visit(uva_domain_t& inv,
                   visitor_t::z_binary_operation_t& stmt,
                   VariableFactory&) {
-  inv.apply(stmt.operation(),
-            stmt.lhs().name(),
-            stmt.left_operand().name(),
-            stmt.right_operand().name());
+  inv.assign_uninitialized(stmt.lhs().name(),
+                           stmt.left_operand().name(),
+                           stmt.right_operand().name());
 }
 
 template <>
@@ -282,7 +281,7 @@ inline void visit(uva_domain_t& inv,
          ++it) {
       varnames.push_back(it->second.name());
     }
-    inv.assign(stmt.lhs().name(), varnames);
+    inv.assign_uninitialized(stmt.lhs().name(), varnames);
   }
 }
 template <>

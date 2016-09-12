@@ -44,6 +44,7 @@
 #define IKOS_CPA_HPP
 
 #include <ikos/algorithms/expression.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/dataflow_domain.hpp>
 
 namespace ikos {
@@ -87,7 +88,7 @@ public:
 }; // end class Substitution
 
 template < typename VariableName, typename Number >
-class cpa_domain : public writeable {
+class cpa_domain : public abstract_domain {
   /*
 
     This domain is a must domain so the confluence operator is the
@@ -116,18 +117,18 @@ private:
   typedef cpa_domain< VariableName, Number > cpa_domain_t;
   dataflow_domain_t _inv;
 
-  cpa_domain(dataflow_domain_t inv) : writeable(), _inv(inv) {}
+  cpa_domain(dataflow_domain_t inv) : _inv(inv) {}
 
 public:
   static cpa_domain_t top() { return cpa_domain(dataflow_domain_t::bottom()); }
 
   static cpa_domain_t bottom() { return cpa_domain(dataflow_domain_t::top()); }
 
-  cpa_domain() : writeable(), _inv(dataflow_domain_t::top()) {}
+  cpa_domain() : _inv(dataflow_domain_t::top()) {}
 
-  cpa_domain(substitution_t s) : writeable(), _inv(s) {}
+  cpa_domain(substitution_t s) : _inv(s) {}
 
-  cpa_domain(const cpa_domain_t& other) : writeable(), _inv(other._inv) {}
+  cpa_domain(const cpa_domain_t& other) : _inv(other._inv) {}
 
   cpa_domain_t& operator=(cpa_domain_t other) {
     this->_inv = other._inv;
@@ -184,8 +185,10 @@ public:
 
   void write(std::ostream& o) { this->_inv.write(o); }
 
-}; // end cpa_domain class
+  static std::string domain_name() { return "Copy Propagation Analysis"; }
 
-} // end namespace
+}; // end class cpa_domain
+
+} // end namespace ikos
 
 #endif // IKOS_CPA_HPP

@@ -67,7 +67,7 @@ public:
       expression_visitor_ptr;
 
 protected:
-  _expression() : writeable() {}
+  _expression() {}
 
 public:
   virtual ~_expression() {}
@@ -259,7 +259,7 @@ private:
   _expression_ptr _ptr;
 
 private:
-  expression(_expression_ptr ptr) : writeable(), _ptr(ptr) {}
+  expression(_expression_ptr ptr) : _ptr(ptr) {}
 
 public:
   static expression_t variable(VariableName v) {
@@ -288,28 +288,28 @@ public:
 }; // end class expression
 
 template < typename VariableName, typename Number >
-expression< VariableName, Number > operator+(
+inline expression< VariableName, Number > operator+(
     expression< VariableName, Number > x,
     expression< VariableName, Number > y) {
   return x.combine(add, y);
 }
 
 template < typename VariableName, typename Number >
-expression< VariableName, Number > operator-(
+inline expression< VariableName, Number > operator-(
     expression< VariableName, Number > x,
     expression< VariableName, Number > y) {
   return x.combine(sub, y);
 }
 
 template < typename VariableName, typename Number >
-expression< VariableName, Number > operator*(
+inline expression< VariableName, Number > operator*(
     expression< VariableName, Number > x,
     expression< VariableName, Number > y) {
   return x.combine(mul, y);
 }
 
 template < typename VariableName, typename Number >
-expression< VariableName, Number > operator/(
+inline expression< VariableName, Number > operator/(
     expression< VariableName, Number > x,
     expression< VariableName, Number > y) {
   return x.combine(sdiv, y);

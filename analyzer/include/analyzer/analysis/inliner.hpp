@@ -116,8 +116,7 @@ class inline_sym_exec_call
 private:
   typedef num_sym_exec< AbsDomain,
                         varname_t /*VariableName*/,
-                        number_t /*Number*/ >
-      sym_exec_t;
+                        number_t /*Number*/ > sym_exec_t;
   typedef sym_exec_call< FunctionAnalyzer, AbsDomain > sym_exec_call_t;
   typedef typename sym_exec_call_t::sym_exec_call_ptr_t sym_exec_call_ptr_t;
   typedef typename sym_exec_call_t::function_names_t function_names_t;
@@ -175,16 +174,14 @@ public:
       std::pair< PointerInfo::ptr_set_t, ikos::z_interval > ptr_info =
           ctx.pointer_info()[fvar.get_var()];
 
-      value_domain_impl::refine_addrs(caller_inv,
+      ptr_domain_traits::refine_addrs(caller_inv,
                                       fvar.get_var(),
                                       ptr_info.first);
 
-      if (!value_domain_impl::is_unknown_addr(caller_inv, fvar.get_var())) {
-        std::vector< varname_t > ptr_set =
-            value_domain_impl::get_addrs_set(caller_inv, fvar.get_var());
-        for (std::vector< varname_t >::iterator it = ptr_set.begin();
-             it != ptr_set.end();
-             ++it) {
+      if (!ptr_domain_traits::is_unknown_addr(caller_inv, fvar.get_var())) {
+        ikos::discrete_domain< varname_t > ptr_set =
+            ptr_domain_traits::addrs_set(caller_inv, fvar.get_var());
+        for (auto it = ptr_set.begin(); it != ptr_set.end(); ++it) {
           callees.push_back(it->name());
         }
       } else {
@@ -364,6 +361,9 @@ public:
   //! Store the invariants at the end of the function for being
   //  collected by the caller.
   virtual void ret(Return_Value_ref s, AbsDomain pre) {
+    // Assume the code has only one return statement.
+    // This is enforced by the UnifyFunctionExitNodesPass llvm pass
+    assert(!_exit_inv.second || _exit_inv.second == ar::getReturnValue(s));
     _exit_inv.first = pre;
     _exit_inv.second = ar::getReturnValue(s);
   }

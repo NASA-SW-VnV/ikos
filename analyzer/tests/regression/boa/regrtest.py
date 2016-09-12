@@ -420,6 +420,12 @@ if __name__ == '__main__':
                line_checks=[(19, 'unreachable'), (21, 'unreachable')]))
     t.add(Test('test-44.c', 'test-44.c', 'boa', 'safe'))
     t.add(Test('test-44-unsafe.c', 'test-44-unsafe.c', 'boa', 'unsafe'))
+    t.add(Test('test-45.c', 'test-45.c', 'boa', 'safe'))
+    t.add(Test('test-45-unsafe.c', 'test-45-unsafe.c', 'boa', 'error',
+               line_checks=[(7, 'ok'), (15, 'error'), (16, 'error')]))
+    t.add(Test('test-46.c', 'test-46.c', 'boa', 'safe'))
+    t.add(Test('test-46-unsafe.c', 'test-46-unsafe.c', 'boa', 'error',
+               line_checks=[(9, 'error')]))
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe', line_checks=[(20, 'ok', 'warning')]))
     t.run()

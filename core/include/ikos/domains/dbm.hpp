@@ -47,6 +47,7 @@
 #define IKOS_DBM_HPP
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
@@ -55,7 +56,7 @@
 namespace ikos {
 
 template < typename Number, typename VariableName >
-class dbm : public writeable,
+class dbm : public abstract_domain,
             public numerical_domain< Number, VariableName >,
             public bitwise_operators< Number, VariableName >,
             public division_operators< Number, VariableName > {
@@ -145,7 +146,7 @@ private:
       }
     }
 
-  }; // class dbmatrix
+  }; // end class dbmatrix
 
 private:
   typedef boost::container::flat_map< VariableName, unsigned int >
@@ -1245,10 +1246,21 @@ public:
     o << csts;
   }
 
-  const char* getDomainName() const { return "DBM"; }
+  static std::string domain_name() { return "DBM"; }
 
-}; // class dbm
+}; // end class dbm
 
-} // namespace ikos
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number, typename VariableName >
+struct normalize_impl< dbm< Number, VariableName > > {
+  void operator()(dbm< Number, VariableName >& inv) { inv.normalize(); }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_DBM_HPP

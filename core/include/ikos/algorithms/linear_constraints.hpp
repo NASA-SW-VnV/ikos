@@ -125,11 +125,11 @@ public:
         return component_t(this->_it->second, this->_it->first);
       } else {
         throw ikos_error(
-            "Linear expression: trying to dereference an empty iterator");
+            "linear expression: trying to dereference an empty iterator");
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
 public:
   linear_expression() : _map(map_ptr(new map_t)), _cst(0) {}
@@ -287,7 +287,7 @@ public:
     }
   }
 
-}; // class linear_expression
+}; // end class linear_expression
 
 template < typename Number, typename VariableName >
 inline linear_expression< Number, VariableName > operator*(
@@ -454,7 +454,7 @@ public:
       case INEQUALITY: {
         return this->_expr.is_constant() && this->_expr.constant() <= 0;
       }
-      default: { throw ikos_error("Unreachable"); }
+      default: { throw ikos_error("unreachable"); }
     }
   }
 
@@ -469,7 +469,7 @@ public:
       case INEQUALITY: {
         return this->_expr.is_constant() && this->_expr.constant() > 0;
       }
-      default: { throw ikos_error("Unreachable"); }
+      default: { throw ikos_error("unreachable"); }
     }
   }
 
@@ -522,7 +522,7 @@ public:
     }
   }
 
-}; // class linear_constraint
+}; // end class linear_constraint
 
 template < typename Number, typename VariableName >
 inline linear_constraint< Number, VariableName > operator<=(
@@ -1027,8 +1027,8 @@ public:
 
   void write(std::ostream& o) { this->_csts.write(o); }
 
-}; // class linear_constraint_system
+}; // end class linear_constraint_system
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_LINEAR_CONSTRAINTS_HPP

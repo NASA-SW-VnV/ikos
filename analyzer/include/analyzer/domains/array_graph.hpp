@@ -59,9 +59,9 @@
 #include <boost/optional.hpp>
 
 #include <ikos/algorithms/mergeable_map.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 
 namespace ikos {
 
@@ -131,8 +131,7 @@ private:
                                  boost::listS,
                                  boost::bidirectionalS,
                                  graph_vertex_t,
-                                 graph_edge_t >
-      graph_t;
+                                 graph_edge_t > graph_t;
   typedef std::shared_ptr< graph_t > graph_ptr;
 
 private:
@@ -318,8 +317,7 @@ public:
   static array_graph_t top() { return array_graph(false); }
 
   array_graph(const array_graph_t& other)
-      : ikos::writeable(),
-        _is_bottom(other._is_bottom),
+      : _is_bottom(other._is_bottom),
         //_graph(new graph_t(*other._graph)),
         //_vertex_map(new vertex_map_t(*other._vertex_map)),
         //_vertices_set( new vertex_names_set_t(*other._vertices_set))
@@ -707,7 +705,7 @@ template < typename ScalarNumDomain,
            typename Number,
            typename VariableName,
            typename Weight >
-class array_graph_domain : public ikos::writeable {
+class array_graph_domain : public ikos::abstract_domain {
 private:
   typedef array_graph_domain< ScalarNumDomain, Number, VariableName, Weight >
       array_graph_domain_t;
@@ -896,8 +894,7 @@ private:
   array_graph_domain(ScalarNumDomain scalar,
                      array_graph_t g,
                      succ_index_map_ptr map)
-      : ikos::writeable(),
-        _is_bottom(false),
+      : _is_bottom(false),
         _scalar(scalar),
         _g(g),
         _succ_idx_map(new succ_index_map_t(*map)) {
@@ -909,15 +906,13 @@ private:
 
 public:
   array_graph_domain()
-      : ikos::writeable(),
-        _is_bottom(false),
+      : _is_bottom(false),
         _scalar(ScalarNumDomain::top()),
         _g(array_graph_t::top()),
         _succ_idx_map(new succ_index_map_t()) {}
 
   array_graph_domain(const array_graph_domain_t& other)
-      : ikos::writeable(),
-        _is_bottom(other._is_bottom),
+      : _is_bottom(other._is_bottom),
         _scalar(other._scalar),
         _g(other._g),
         _succ_idx_map(new succ_index_map_t(*other._succ_idx_map)) {}
@@ -939,7 +934,7 @@ public:
   void reduce() {
     if (this->_is_bottom)
       return;
-    num_abstract_domain_impl::normalize< ScalarNumDomain >(this->_scalar);
+    num_domain_traits::normalize(this->_scalar);
     if (this->_scalar.is_bottom() || this->_g.is_bottom())
       set_to_bottom();
     else
@@ -1257,8 +1252,13 @@ public:
     o << "," << this->_g;
     o << ")";
   }
-}; // end array_graph_domain
 
-} // namespace ikos
+  static std::string domain_name() {
+    return "Array Graph of " + ScalarNumDomain::domain_name();
+  }
+
+}; // end class array_graph_domain
+
+} // end namespace ikos
 
 #endif // ANALYZER_ARRAY_GRAPH_HPP

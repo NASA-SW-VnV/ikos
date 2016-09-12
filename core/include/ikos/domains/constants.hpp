@@ -48,10 +48,12 @@
 #include <boost/optional.hpp>
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/separate_domains.hpp>
 
 namespace ikos {
 
@@ -88,8 +90,7 @@ public:
 
   constant(int n) : _kind(NUMBER), _n(n) {}
 
-  constant(const constant_t& other)
-      : writeable(), _kind(other._kind), _n(other._n) {}
+  constant(const constant_t& other) : _kind(other._kind), _n(other._n) {}
 
   constant_t& operator=(constant_t other) {
     this->_kind = other._kind;
@@ -308,7 +309,7 @@ public:
     }
   }
 
-}; // class constant
+}; // end class constant
 
 template < typename Number >
 inline constant< Number > operator+(Number c, constant< Number > x) {
@@ -356,7 +357,7 @@ typedef constant< q_number > q_constant;
 template < typename Number,
            typename VariableName,
            std::size_t max_reduction_cycles = 10 >
-class constant_domain : public writeable,
+class constant_domain : public abstract_domain,
                         public numerical_domain< Number, VariableName >,
                         public bitwise_operators< Number, VariableName >,
                         public division_operators< Number, VariableName > {
@@ -396,12 +397,7 @@ public:
 public:
   constant_domain() : _env(separate_domain_t::top()) {}
 
-  constant_domain(const constant_domain_t& e)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        bitwise_operators< Number, VariableName >(),
-        division_operators< Number, VariableName >(),
-        _env(e._env) {}
+  constant_domain(const constant_domain_t& e) : _env(e._env) {}
 
   constant_domain_t& operator=(constant_domain_t e) {
     this->_env = e._env;
@@ -769,10 +765,55 @@ public:
     return csts;
   }
 
-  const char* getDomainName() const { return "Constant Propagation"; }
+  static std::string domain_name() { return "Constants"; }
 
-}; // class constant_domain
+}; // end class constant_domain
 
-} // namespace ikos
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number,
+           typename VariableName,
+           std::size_t max_reduction_cycles >
+struct var_to_interval_impl<
+    constant_domain< Number, VariableName, max_reduction_cycles > > {
+  interval< Number > operator()(
+      constant_domain< Number, VariableName, max_reduction_cycles >& inv,
+      VariableName v) {
+    constant< Number > c = inv[v];
+
+    if (c.is_bottom()) {
+      return interval< Number >::bottom();
+    } else if (c.is_top()) {
+      return interval< Number >::top();
+    } else {
+      return interval< Number >(*c.number());
+    }
+  }
+};
+
+template < typename Number,
+           typename VariableName,
+           std::size_t max_reduction_cycles >
+struct from_interval_impl<
+    constant_domain< Number, VariableName, max_reduction_cycles > > {
+  void operator()(
+      constant_domain< Number, VariableName, max_reduction_cycles >& inv,
+      VariableName v,
+      interval< Number > i) {
+    if (i.is_bottom()) {
+      inv.set(v, constant< Number >::bottom());
+    } else if (!i.singleton()) {
+      inv.set(v, constant< Number >::top());
+    } else {
+      inv.set(v, constant< Number >(*i.singleton()));
+    }
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_CONSTANTS_HPP

@@ -43,8 +43,9 @@
 #ifndef ANALYZER_NULL_DEREFERENCE_CHECKER_HPP
 #define ANALYZER_NULL_DEREFERENCE_CHECKER_HPP
 
+#include <ikos/domains/nullity_domains_api.hpp>
+
 #include <analyzer/analysis/common.hpp>
-#include <analyzer/analysis/num_sym_exec.hpp>
 #include <analyzer/checkers/checker_api.hpp>
 
 namespace analyzer {
@@ -161,7 +162,7 @@ private:
     if (ptr_lit.is_var()) {
       varname_t ptr_var = ptr_lit.get_var();
 
-      if (value_domain_impl::is_null(inv, ptr_var)) {
+      if (null_domain_traits::is_null(inv, ptr_var)) {
         if (this->display_check(ERR)) {
           std::cout << location_to_string(loc)
                     << ": [error] check_null_dereference(" << ptr
@@ -169,7 +170,7 @@ private:
         }
 
         res = ERR;
-      } else if (value_domain_impl::is_non_null(inv, ptr_var)) {
+      } else if (null_domain_traits::is_non_null(inv, ptr_var)) {
         if (this->display_check(OK)) {
           std::cout << location_to_string(loc)
                     << ": [ok] check_null_dereference(" << ptr

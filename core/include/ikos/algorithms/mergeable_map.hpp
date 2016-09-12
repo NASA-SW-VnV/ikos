@@ -69,14 +69,15 @@ private:
       if (x == y)
         return boost::optional< Value >(x);
       else {
-        throw ikos_error("Merging a key with two different values");
+        throw ikos_error(
+            "mergeable map: merging a key with two different values");
         return boost::optional< Value >();
       }
     };
 
     bool default_is_absorbing() { return false; }
 
-  }; // class union_op
+  }; // end class union_op
 
 private:
   static patricia_tree_t do_union(patricia_tree_t t1, patricia_tree_t t2) {
@@ -91,7 +92,7 @@ private:
 public:
   mergeable_map() : _tree(patricia_tree_t()) {}
 
-  mergeable_map(const mergeable_map_t& e) : writeable(), _tree(e._tree) {}
+  mergeable_map(const mergeable_map_t& e) : _tree(e._tree) {}
 
   mergeable_map_t& operator=(const mergeable_map_t& e) {
     this->_tree = e._tree;
@@ -137,8 +138,9 @@ public:
     }
     o << "}";
   }
-}; // class mergeable_map
 
-} // end namespace
+}; // end class mergeable_map
+
+} // end namespace ikos
 
 #endif // IKOS_MERGEABLE_MAP_HPP

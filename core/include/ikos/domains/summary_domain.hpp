@@ -42,20 +42,50 @@
  *
  ******************************************************************************/
 
-#ifndef ANALYZER_SUMMARY_DOMAIN_HPP
-#define ANALYZER_SUMMARY_DOMAIN_HPP
+#ifndef IKOS_SUMMARY_DOMAIN_HPP
+#define IKOS_SUMMARY_DOMAIN_HPP
+
+#include <set>
 
 #include <boost/iterator/filter_iterator.hpp>
 
-#include <analyzer/domains/value_domain.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
+#include <ikos/domains/bitwise_operators_api.hpp>
+#include <ikos/domains/division_operators_api.hpp>
+#include <ikos/domains/memory_domains_api.hpp>
+#include <ikos/domains/nullity.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/pointer.hpp>
+#include <ikos/domains/separate_domains.hpp>
+#include <ikos/domains/uninitialized.hpp>
 
 namespace ikos {
 
+namespace var_name_traits {
+
+template < typename VariableName, typename Number >
+struct summary_domain_cell_var {
+  // Return the variable that represents the value at a given memory location
+  VariableName operator()(VariableName addr,
+                          Number offset,
+                          bound< Number > size,
+                          bool output);
+};
+
+template < typename VariableName >
+struct summary_domain_tmp_var {
+  // Return a new temporary variable
+  // The parameter v can be any variable name. It is given as a way to get
+  // the internal variable factory in the implementation.
+  VariableName operator()(VariableName v);
+};
+
+} // end namespace var_name_traits
+
 namespace summary_domain_impl {
 
-// A cell is a quadruple <V, o, size, type> modelling all bytes starting at
-// offset o in variable V up to (o + size - 1). The type indicates whether it
+// A cell is a quadruple <b, o, s, type> modelling all bytes at address b,
+// starting at offset o up to (o + size - 1). The type indicates whether it
 // refers to the old value (Input) or the new value (Output).
 //
 // Note that the offset is an integer and the size is a bound (can be +oo).
@@ -74,15 +104,9 @@ private:
   Number _offset;
   bound_t _size;
   cell_type_t _type;
-  VariableName _scalar_var;
 
-private:
-  inline std::string name() const {
-    std::ostringstream buf;
-    buf << "C{" << _base.name() << "," << _offset << "," << _size << ","
-        << ((_type == Input) ? "I" : "O") << "}";
-    return buf.str();
-  }
+  // represents the cell in the pointer+scalar domain
+  VariableName _scalar_var;
 
 public:
   Cell(VariableName base, Number offset, bound_t size, cell_type_t type)
@@ -92,7 +116,12 @@ public:
         _type(type),
         _scalar_var(base) {
     assert(_offset >= 0 && _size >= 1);
-    _scalar_var = _base.getVarFactory()[name()];
+    _scalar_var =
+        var_name_traits::summary_domain_cell_var< VariableName,
+                                                  Number >()(_base,
+                                                             _offset,
+                                                             _size,
+                                                             _type == Output);
   }
 
   Cell(VariableName base, interval_t range, cell_type_t type)
@@ -102,7 +131,12 @@ public:
         _type(type),
         _scalar_var(base) {
     assert(!range.is_bottom() && range.lb().number());
-    _scalar_var = _base.getVarFactory()[name()];
+    _scalar_var =
+        var_name_traits::summary_domain_cell_var< VariableName,
+                                                  Number >()(_base,
+                                                             _offset,
+                                                             _size,
+                                                             _type == Output);
   }
 
   VariableName base() const { return _base; }
@@ -115,7 +149,7 @@ public:
 
   bool operator<(const Cell& o) const {
     // lexicographical order ensures that !(c1 < c2) && !(c2 < c1) => c1 == c2
-    // it is needed to use std::set< Cell >
+    // it is required to use std::set< Cell >
     return _offset < o._offset || (_offset == o._offset && _size < o._size) ||
            (_offset == o._offset && _size == o._size && _type < o._type) ||
            (_offset == o._offset && _size == o._size && _type == o._type &&
@@ -150,7 +184,7 @@ public:
       inv += (variable_t(offset) <= _offset + *_size.number() - 1);
     }
 
-    interval_t rng = inv[offset];
+    interval_t rng = inv.to_interval(offset);
     if (rng.is_bottom()) {
       return 0;
     } else if (rng.ub().is_infinite()) {
@@ -171,22 +205,42 @@ public:
     return !inv.is_bottom();
   }
 
-  void write(std::ostream& o) { o << name(); }
+  void write(std::ostream& o) {
+    o << "C{" << _base.name() << "," << _offset << "," << _size << ","
+      << ((_type == Input) ? "I" : "O") << "}";
+  }
 
   friend std::ostream& operator<<(std::ostream& o, Cell c) {
     c.write(o);
     return o;
   }
-};
+
+}; // end class Cell
 
 } // end namespace summary_domain_impl
 
-template < typename ScalarDomain, typename VariableName, typename Number >
-class summary_domain : public writeable,
-                       public numerical_domain< Number, VariableName >,
-                       public bitwise_operators< Number, VariableName >,
-                       public division_operators< Number, VariableName > {
+template < typename ScalarDomain >
+class summary_domain
+    : public abstract_domain,
+      public numerical_domain< typename ScalarDomain::number_t,
+                               typename ScalarDomain::variable_name_t >,
+      public bitwise_operators< typename ScalarDomain::number_t,
+                                typename ScalarDomain::variable_name_t >,
+      public division_operators< typename ScalarDomain::number_t,
+                                 typename ScalarDomain::variable_name_t >,
+      public pointer_domain< typename ScalarDomain::number_t,
+                             typename ScalarDomain::variable_name_t >,
+      public uninitialized_domain< typename ScalarDomain::variable_name_t >,
+      public nullity_domain< typename ScalarDomain::variable_name_t >,
+      public memory_domain< typename ScalarDomain::number_t,
+                            typename ScalarDomain::variable_name_t > {
+private:
+  typedef typename ScalarDomain::number_t Number;
+  typedef typename ScalarDomain::variable_name_t VariableName;
+
 public:
+  typedef Number number_t;
+  typedef VariableName variable_name_t;
   typedef bound< Number > bound_t;
   typedef interval< Number > interval_t;
   typedef variable< Number, VariableName > variable_t;
@@ -195,17 +249,18 @@ public:
   typedef linear_constraint_system< Number, VariableName >
       linear_constraint_system_t;
   typedef patricia_tree_set< variable_t > variable_set_t;
+  typedef Number offset_number_t;
   typedef discrete_domain< VariableName > points_to_set_t;
   typedef ScalarDomain scalar_domain_t;
-  typedef summary_domain< ScalarDomain, VariableName, Number > summary_domain_t;
+  typedef summary_domain< ScalarDomain > summary_domain_t;
 
 private:
   typedef summary_domain_impl::Cell< VariableName, Number > Cell;
   typedef std::set< Cell > cell_set_t;
   typedef patricia_tree< VariableName, cell_set_t > var_to_cell_set_t;
-  typedef pointer_domain< ScalarDomain, VariableName, Number > pointer_domain_t;
-  typedef uninitialized_domain< VariableName > uninitialized_domain_t;
-  typedef nullity_domain< VariableName > nullity_domain_t;
+  typedef pointer_domain_impl< ScalarDomain > pointer_domain_t;
+  typedef uninitialized_domain_impl< VariableName > uninitialized_domain_t;
+  typedef nullity_domain_impl< VariableName > nullity_domain_t;
 
 private:
   /* _cells is a map from a memory object to a set of cells (ordered by offset).
@@ -280,13 +335,10 @@ private:
       }
     }
 
-    // remove the cell from the pointer+scalar abstraction
+    // remove the cell from the pointer+scalar abstraction, nullity
+    // abstraction and uninitialized variable abstraction
     _ptr -= c.scalar_var();
-
-    // remove the cell from the nullity abstraction
     _nullity -= c.scalar_var();
-
-    // remove the cell from the uninitialized variable abstraction
     _uninitialized -= c.scalar_var();
   }
 
@@ -376,7 +428,7 @@ private:
                                               VariableName offset,
                                               Number size) {
     // get the interval
-    interval_t offset_intv = _ptr[offset];
+    interval_t offset_intv = _ptr.to_interval(offset);
     offset_intv = offset_intv & interval_t(0, bound_t::plus_infinity());
     assert(!offset_intv.is_bottom());
     interval_t range = offset_intv + interval_t(0, size - 1);
@@ -431,15 +483,30 @@ private:
     }
   }
 
+  // Get all variables in a linear expression
+  static std::vector< VariableName > get_variables(linear_expression_t e) {
+    std::vector< VariableName > vs;
+    for (typename linear_expression_t::iterator it = e.begin(); it != e.end();
+         ++it) {
+      vs.push_back(it->second.name());
+    }
+    return vs;
+  }
+
   // Perform a strong update `x = e`
   void strong_update(VariableName x, linear_expression_t e, bool is_pointer) {
     _ptr.assign(x, e);
 
     std::vector< VariableName > rhs = get_variables(e);
     if (is_pointer) {
-      _nullity.assign(x, rhs);
+      assert(rhs.size() <= 1);
+      if (rhs.size() == 1) {
+        _nullity.assign_nullity(x, rhs[0]);
+      } else {
+        _nullity -= x;
+      }
     } else {
-      _uninitialized.assign(x, rhs);
+      _uninitialized.assign_uninitialized(x, rhs);
     }
   }
 
@@ -451,31 +518,26 @@ private:
 
     std::vector< VariableName > rhs = get_variables(e);
     if (is_pointer) {
+      assert(rhs.size() <= 1);
       nullity_domain_t inv(_nullity);
-      inv.assign(x, rhs);
+      if (rhs.size() == 1) {
+        inv.assign_nullity(x, rhs[0]);
+      } else {
+        inv -= x;
+      }
       _nullity = _nullity | inv;
     } else {
       uninitialized_domain_t inv(_uninitialized);
-      inv.assign(x, rhs);
+      inv.assign_uninitialized(x, rhs);
       _uninitialized = _uninitialized | inv;
     }
   }
 
-  // Get all variables in a linear expression
-  std::vector< VariableName > get_variables(linear_expression_t e) const {
-    std::vector< VariableName > vs;
-    for (typename linear_expression_t::iterator it = e.begin(); it != e.end();
-         ++it) {
-      vs.push_back(it->second.name());
-    }
-    return vs;
-  }
+  // Forget all memory cells that can be accessible through pointer p
+  void forget_reachable_cells(VariableName p) {
+    points_to_set_t addrs_set = _ptr.addrs_set(p); // p's base address
 
-  //! Forget all memory cells that can be accessible through pointer o
-  void forget_reachable_cells(VariableName o) {
-    points_to_set_t addrs_set = _ptr.get_addrs_set(o);
-
-    if (addrs_set.is_top() || addrs_set.is_bottom())
+    if (addrs_set.is_top())
       return;
 
     for (typename points_to_set_t::iterator it = addrs_set.begin();
@@ -485,22 +547,22 @@ private:
     }
   }
 
-  //! Forget all memory cells that can be accessible through pointer o and that
-  //  overlap with [o, ..., o + size - 1]
-  void forget_reachable_cells(VariableName o, interval_t size) {
-    points_to_set_t addrs_set = _ptr.get_addrs_set(o);
+  // Forget all memory cells that can be accessible through pointer p and that
+  // overlap with [p.offset, ..., p.offset + size - 1]
+  void forget_reachable_cells(VariableName p, interval_t size) {
+    points_to_set_t addrs_set = _ptr.addrs_set(p);
 
-    if (addrs_set.is_top() || addrs_set.is_bottom())
+    if (addrs_set.is_top())
       return;
 
     for (typename points_to_set_t::iterator it = addrs_set.begin();
          it != addrs_set.end();
          ++it) {
-      forget_cells(*it, o, size);
+      forget_cells(*it, offset_var(p), size);
     }
   }
 
-  //! Forget all memory cells of base address `base`
+  // Forget all memory cells of base address `base`
   void forget_cells(VariableName base) {
     // remove all output cells
     boost::optional< cell_set_t > found = this->_cells.lookup(base);
@@ -518,18 +580,18 @@ private:
     add_cell(Cell(base, 0, bound_t::plus_infinity(), Cell::Output));
   }
 
-  //! Forget all memory cells of base address `base` that overlap
-  //  with [offset, ..., offset + size - 1]
+  // Forget all memory cells of base address `base` that overlap
+  // with [offset, ..., offset + size - 1]
   void forget_cells(VariableName base, VariableName offset, interval_t size) {
     interval_t offset_intv =
-        _ptr[offset] & interval_t(0, bound_t::plus_infinity());
+        _ptr.to_interval(offset) & interval_t(0, bound_t::plus_infinity());
     size = size & interval_t(1, bound_t::plus_infinity());
     interval_t range = offset_intv + interval_t(0, size.ub() - 1);
     forget_cells(base, range);
   }
 
-  //! Forget all memory cells of base address `base` that overlap
-  //  with [offset, ..., offset + size - 1]
+  // Forget all memory cells of base address `base` that overlap with a given
+  // range
   void forget_cells(VariableName base, interval_t range) {
     boost::optional< cell_set_t > found = this->_cells.lookup(base);
     if (found) {
@@ -826,8 +888,9 @@ private:
           _right_nullity(right_nullity) {}
 
     // Get a new temporary variable
-    VariableName new_tmp_var(analyzer::VariableFactory& vfac) {
-      VariableName tmp = vfac["shadow.tmp." + std::to_string(_tmp_vars.size())];
+    VariableName new_tmp_var(VariableName base) {
+      VariableName tmp =
+          var_name_traits::summary_domain_tmp_var< VariableName >()(base);
       _tmp_vars.push_back(tmp);
       return tmp;
     }
@@ -864,7 +927,7 @@ private:
         if (left_out_it == output_end(left)) {
           result.insert(right_in_c);
         } else if (right_in_c.range() == left_out_it->range()) { // matches
-          VariableName tmp = new_tmp_var(base.getVarFactory());
+          VariableName tmp = new_tmp_var(base);
           _left_ptr.assign(tmp, linear_expression_t(left_out_it->scalar_var()));
           _right_ptr.assign(tmp, linear_expression_t(right_in_c.scalar_var()));
           _right_ptr -= right_in_c.scalar_var();
@@ -976,15 +1039,15 @@ public:
   };
 
   bool operator<=(summary_domain_t o) {
-    if (is_top())
+    if (is_top()) {
       return o.is_top();
-    else if (o.is_top())
+    } else if (o.is_top()) {
       return true;
-    else if (is_bottom())
+    } else if (is_bottom()) {
       return true;
-    else if (o.is_bottom())
+    } else if (o.is_bottom()) {
       return false;
-    else {
+    } else {
       pointer_domain_t left(_ptr);
       pointer_domain_t& right(o._ptr);
       return leq_cells(_cells, left, o._cells, right) && left <= right &&
@@ -993,13 +1056,13 @@ public:
   }
 
   summary_domain_t operator|(summary_domain_t o) {
-    if (is_top() || o.is_top())
+    if (is_top() || o.is_top()) {
       return summary_domain_t::top();
-    else if (is_bottom())
+    } else if (is_bottom()) {
       return o;
-    else if (o.is_bottom())
+    } else if (o.is_bottom()) {
       return *this;
-    else {
+    } else {
       pointer_domain_t left(_ptr);
       pointer_domain_t& right(o._ptr);
 
@@ -1013,13 +1076,13 @@ public:
   }
 
   summary_domain_t operator||(summary_domain_t o) {
-    if (is_top() || o.is_top())
+    if (is_top() || o.is_top()) {
       return summary_domain_t::top();
-    else if (is_bottom())
+    } else if (is_bottom()) {
       return o;
-    else if (o.is_bottom())
+    } else if (o.is_bottom()) {
       return *this;
-    else {
+    } else {
       pointer_domain_t left(_ptr);
       pointer_domain_t& right(o._ptr);
 
@@ -1033,13 +1096,13 @@ public:
   }
 
   summary_domain_t operator&(summary_domain_t o) {
-    if (is_top())
+    if (is_top()) {
       return o;
-    else if (o.is_top())
+    } else if (o.is_top()) {
       return *this;
-    else if (is_bottom() || o.is_bottom())
+    } else if (is_bottom() || o.is_bottom()) {
       return summary_domain_t::bottom();
-    else {
+    } else {
       pointer_domain_t left(_ptr);
       pointer_domain_t& right(o._ptr);
 
@@ -1053,13 +1116,13 @@ public:
   }
 
   summary_domain_t operator&&(summary_domain_t o) {
-    if (is_top())
+    if (is_top()) {
       return o;
-    else if (o.is_top())
+    } else if (o.is_top()) {
       return *this;
-    else if (is_bottom() || o.is_bottom())
+    } else if (is_bottom() || o.is_bottom()) {
       return summary_domain_t::bottom();
-    else {
+    } else {
       pointer_domain_t left(_ptr);
       pointer_domain_t& right(o._ptr);
 
@@ -1074,11 +1137,11 @@ public:
 
   // Simulate a function call, applying the summary o
   summary_domain_t compose(summary_domain_t o) {
-    if (is_top() || o.is_top())
+    if (is_top() || o.is_top()) {
       return summary_domain_t::top();
-    else if (is_bottom() || o.is_bottom())
+    } else if (is_bottom() || o.is_bottom()) {
       return summary_domain_t::bottom();
-    else {
+    } else {
       pointer_domain_t left_ptr(_ptr);
       uninitialized_domain_t left_uninitialized(_uninitialized);
       nullity_domain_t left_nullity(_nullity);
@@ -1109,22 +1172,24 @@ public:
   // Forget both the surface of v (base addresses and offsets) and
   // all the memory contents that may be accessible through v.
   void operator-=(VariableName v) {
-    if (is_top())
-      return;
-
     forget_mem_contents(v); // has to be before forget_mem_surface
     forget_mem_surface(v);
   }
+
+  /*
+   * Implement numerical_domain
+   *
+   * These methods only affect the surface semantic.
+   *
+   * The user is responsible for calling the appropriate methods of
+   * pointer_domain, uninitialized_domain and nullity_domain, so we don't
+   * call them here.
+   */
 
   void assign(VariableName x, linear_expression_t e) {
     if (is_top())
       return;
 
-    boost::optional< variable_t > y = e.get_variable();
-    if (y && ((*y).name() == x))
-      return;
-
-    // Only affect the "surface" semantics so no need to kill cells.
     _ptr.assign(x, e);
   }
 
@@ -1149,31 +1214,68 @@ public:
     _ptr += cst;
   }
 
-  void operator+=(linear_constraint_system_t cst) {
+  void operator+=(linear_constraint_system_t csts) {
     if (is_top())
       return;
 
-    _ptr += cst;
+    _ptr += csts;
   }
 
-  interval_t operator[](VariableName x) {
+  linear_constraint_system_t to_linear_constraint_system() {
     if (is_top())
-      return interval_t::top();
-    else if (is_bottom())
-      return interval_t::bottom();
+      return linear_constraint_system_t();
 
-    return _ptr[x];
-  }
-
-  void set(VariableName x, interval_t intv) {
-    if (is_top())
-      return;
-
-    _ptr.set(x, intv);
+    return _ptr.to_linear_constraint_system();
   }
 
   /*
-   * bitwise_operators_api and division_operators_api
+   * Helpers for num_domain_traits
+   */
+
+  void normalize() {
+    if (is_top())
+      return;
+
+    _ptr.normalize();
+  }
+
+  // convert to another abstract domain
+  // uses num_domain_traits::convert() internally
+  template < typename ScalarDomainTo >
+  summary_domain< ScalarDomainTo > convert() {
+    return summary_domain<
+        ScalarDomainTo >(_is_top,
+                         _cells,
+                         num_domain_traits::convert<
+                             pointer_domain_impl< ScalarDomain >,
+                             pointer_domain_impl< ScalarDomainTo > >(_ptr),
+                         _uninitialized,
+                         _nullity);
+  }
+
+  interval_t to_interval(VariableName v) {
+    if (is_top())
+      return interval_t::top();
+
+    return _ptr.to_interval(v);
+  }
+
+  interval_t to_interval(linear_expression_t e) {
+    if (is_top())
+      return interval_t::top();
+
+    return _ptr.to_interval(e);
+  }
+
+  void from_interval(VariableName v, interval_t i) {
+    if (is_top())
+      return;
+
+    _ptr.from_interval(v, i);
+  }
+
+  /*
+   * Implement bitwise_operators
    */
 
   void apply(conv_operation_t op,
@@ -1210,6 +1312,10 @@ public:
     _ptr.apply(op, x, y, k);
   }
 
+  /*
+   * Implement division_operators
+   */
+
   void apply(div_operation_t op,
              VariableName x,
              VariableName y,
@@ -1227,214 +1333,231 @@ public:
     _ptr.apply(op, x, y, k);
   }
 
-  void write(std::ostream& o) {
+  /*
+   * Implement pointer_domain
+   */
+
+  void assign_object(VariableName p, VariableName obj) {
     if (is_top())
-      o << "T";
-    else if (is_bottom())
-      o << "_|_";
-    else {
-      o << "({";
-      for (typename var_to_cell_set_t::iterator it = _cells.begin();
-           it != _cells.end();) {
-        o << it->first << " -> {";
-        cell_set_t cells = it->second;
-        for (typename cell_set_t::iterator it2 = cells.begin();
-             it2 != cells.end();) {
-          o << *it2;
-          ++it2;
-          if (it2 != cells.end())
-            o << ", ";
-        }
-        o << "}";
-        ++it;
-        if (it != _cells.end())
-          o << "; ";
-      }
-      o << "}, " << _ptr << ", " << _uninitialized << ", " << _nullity << ")";
+      return;
+
+    _ptr.assign_object(p, obj);
+  }
+
+  void assign_pointer(VariableName p, VariableName q) {
+    if (is_top())
+      return;
+
+    _ptr.assign_pointer(p, q);
+  }
+
+  void assign_pointer(VariableName p, VariableName q, VariableName o) {
+    if (is_top())
+      return;
+
+    _ptr.assign_pointer(p, q, o);
+  }
+
+  void assign_pointer(VariableName p, VariableName q, Number o) {
+    if (is_top())
+      return;
+
+    _ptr.assign_pointer(p, q, o);
+  }
+
+  void assert_pointer(bool equality, VariableName p, VariableName q) {
+    if (is_top())
+      return;
+
+    _ptr.assert_pointer(equality, p, q);
+  }
+
+  void refine_addrs(VariableName p, points_to_set_t addrs) {
+    if (is_top() || is_bottom())
+      return;
+
+    if (!_nullity.is_null(p)) {
+      _ptr.refine_addrs(p, addrs);
     }
   }
 
-  /*
-   * Non-standard operations in numerical abstract domains
-   */
-
-  // create a new memory object
-  void make_object(VariableName x) {
-    if (is_top())
+  void refine_addrs_offset(VariableName p,
+                           points_to_set_t addrs,
+                           interval_t offset) {
+    if (is_top() || is_bottom())
       return;
 
-    _ptr.make_object(x);
+    if (!_nullity.is_null(p)) {
+      _ptr.refine_addrs_offset(p, addrs, offset);
+    }
   }
 
-  // x points to y
-  void assign_ptr(VariableName x, VariableName y) {
-    if (is_top())
-      return;
-
-    _ptr.assign_ptr(x, y);
-  }
-
-  // return true if the set of possible addresses of x is unknown
-  bool is_unknown_addr(VariableName x) {
+  bool is_unknown_addr(VariableName p) {
     if (is_top())
       return true;
 
-    return _ptr.get_addrs_set(x).is_top();
+    return _ptr.is_unknown_addr(p);
   }
 
-  // return the set of possible addresses of x
-  std::vector< VariableName > get_addrs_set(VariableName x) {
-    assert(!is_unknown_addr(x));
-    // points_to_set does not satisfy requirements of boost::copy
-    points_to_set_t addrs = _ptr.get_addrs_set(x);
-
-    std::vector< VariableName > res;
-    if (!addrs.is_bottom()) {
-      for (typename points_to_set_t::iterator it = addrs.begin();
-           it != addrs.end();
-           ++it) {
-        res.push_back(*it);
-      }
-    }
-    return res;
-  }
-
-  // reduction step: refine the set of possible addresses
-  void refine_addrs(VariableName v, points_to_set_t addrs) {
-    if (is_top() || is_bottom())
-      return;
-
-    // addrs is just a set of addresses to which v can
-    // point-to. However, v can be still null. To be safe, we refine
-    // the addresses of v only if we know that v cannot be null.
-    if (!is_null(v)) {
-      _ptr.meet_addrs_set(v, addrs);
-    }
-  }
-
-  // reduction step: refine the set of possible addresses and offset
-  void refine_addrs_and_offset(VariableName v_addr,
-                               points_to_set_t addrs,
-                               VariableName v_offset,
-                               z_interval offset) {
-    if (is_top() || is_bottom())
-      return;
-
-    // refine addresses
-    refine_addrs(v_addr, addrs);
-
-    // refine offset
-    summary_domain_t other(*this);
-    num_abstract_domain_impl::from_interval(other, v_offset, offset);
-    *this = *this & other;
-  }
-
-  // v is definitely an uninitialized variable.
-  void make_uninitialized(VariableName v) {
+  points_to_set_t addrs_set(VariableName p) {
     if (is_top())
-      return;
+      return points_to_set_t::top();
 
-    _uninitialized.set(v, uninitialized_value::uninitialized());
+    return _ptr.addrs_set(p);
   }
 
-  // return if v is uninitialized
-  bool is_uninitialized(VariableName v) {
-    if (is_top())
-      return false;
+  VariableName offset_var(VariableName p) { return _ptr.offset_var(p); }
 
-    return _uninitialized[v].is_uninitialized();
-  }
+  /*
+   * Implement uninitialized_domain
+   */
 
-  // v is definitely an initialized variable.
   void make_initialized(VariableName v) {
     if (is_top())
       return;
 
-    _uninitialized.set(v, uninitialized_value::initialized());
+    _uninitialized.make_initialized(v);
   }
 
-  // return if v is initialized
+  void make_uninitialized(VariableName v) {
+    if (is_top())
+      return;
+
+    _uninitialized.make_uninitialized(v);
+  }
+
+  void assign_uninitialized(VariableName x, VariableName y) {
+    if (is_top())
+      return;
+
+    _uninitialized.assign_uninitialized(x, y);
+  }
+
+  void assign_uninitialized(VariableName x, VariableName y, VariableName z) {
+    if (is_top())
+      return;
+
+    _uninitialized.assign_uninitialized(x, y, z);
+  }
+
+  void assign_uninitialized(VariableName x,
+                            const std::vector< VariableName >& y) {
+    if (is_top())
+      return;
+
+    _uninitialized.assign_uninitialized(x, y);
+  }
+
   bool is_initialized(VariableName v) {
     if (is_top())
       return false;
 
-    return _uninitialized[v].is_initialized();
+    return _uninitialized.is_initialized(v);
   }
 
-  // v is definitely null
+  bool is_uninitialized(VariableName v) {
+    if (is_top())
+      return false;
+
+    return _uninitialized.is_uninitialized(v);
+  }
+
+  /*
+   * Implement nullity_domain
+   */
+
   void make_null(VariableName v) {
     if (is_top())
       return;
 
-    _nullity.set(v, nullity_value::null());
+    _nullity.make_null(v);
   }
 
-  // return if v is null
-  bool is_null(VariableName v) {
-    if (is_top())
-      return false;
-
-    return _nullity[v].is_null();
-  }
-
-  // v is definitely non null
   void make_non_null(VariableName v) {
     if (is_top())
       return;
 
-    _nullity.set(v, nullity_value::non_null());
+    _nullity.make_non_null(v);
   }
 
-  // return if v is not null
-  bool is_non_null(VariableName v) {
-    if (is_top())
-      return false;
-
-    return _nullity[v].is_non_null();
-  }
-
-  // propagates y's nullity value to x
   void assign_nullity(VariableName x, VariableName y) {
     if (is_top())
       return;
 
-    _nullity.assign(x, y);
+    _nullity.assign_nullity(x, y);
   }
 
-  // propagate ys's uninitialized values to x
-  void assign_uninitialized(VariableName x,
-                            const std::vector< VariableName >& ys) {
+  void assert_null(VariableName v) {
     if (is_top())
       return;
 
-    _uninitialized.assign(x, ys);
+    _nullity.assert_null(v);
+    if (_nullity.is_bottom()) {
+      *this = bottom();
+    }
   }
 
-  // memory write: store e at memory object associated with offset in
-  // bytes [offset, offset + size - 1].
-  void mem_write(VariableName offset,
-                 Number size,
+  void assert_non_null(VariableName v) {
+    if (is_top())
+      return;
+
+    _nullity.assert_non_null(v);
+    if (_nullity.is_bottom()) {
+      *this = bottom();
+    }
+  }
+
+  void assert_nullity(bool equality, VariableName x, VariableName y) {
+    if (is_top())
+      return;
+
+    _nullity.assert_nullity(equality, x, y);
+    if (_nullity.is_bottom()) {
+      *this = bottom();
+    }
+  }
+
+  bool is_null(VariableName v) {
+    if (is_top())
+      return false;
+
+    return _nullity.is_null(v);
+  }
+
+  bool is_non_null(VariableName v) {
+    if (is_top())
+      return false;
+
+    return _nullity.is_non_null(v);
+  }
+
+  /*
+   * Implement memory_domain
+   */
+
+  void mem_write(VariableName pointer,
                  linear_expression_t e,
+                 Number size,
                  bool is_pointer) {
     if (is_top() || is_bottom())
       return;
 
-    if (is_null(offset)) { // null dereference!
+    if (_nullity.is_null(pointer)) { // null dereference!
       *this = bottom();
       return;
     }
 
-    // get memory locations associated with offset
-    points_to_set_t addrs = _ptr.get_addrs_set(offset);
+    // get memory locations pointed by pointer
+    points_to_set_t addrs = _ptr.addrs_set(pointer);
     if (addrs.is_top()) {
 #if 1
-      std::cerr << "Ignored memory write to " << offset << " with value " << e
+      std::cerr << "Ignored memory write to " << pointer << " with value " << e
                 << std::endl;
 #endif
       return;
     }
 
-    interval_t offset_intv = _ptr[offset];
+    interval_t offset_intv = _ptr.to_interval(offset_var(pointer));
     offset_intv = offset_intv & interval_t(0, bound_t::plus_infinity());
 
     if (offset_intv.is_bottom()) {
@@ -1460,7 +1583,8 @@ public:
       for (typename points_to_set_t::iterator it = addrs.begin();
            it != addrs.end();
            ++it) {
-        std::vector< Cell > cells = realize_range_out_cells(*it, offset, size);
+        std::vector< Cell > cells =
+            realize_range_out_cells(*it, offset_var(pointer), size);
         for (typename std::vector< Cell >::iterator it2 = cells.begin();
              it2 != cells.end();
              ++it2) {
@@ -1470,30 +1594,29 @@ public:
     }
   }
 
-  // memory read: read from memory object associated with offset from
-  // bytes [offset, offset + size - 1]
   void mem_read(VariableName lhs,
-                VariableName offset,
+                VariableName pointer,
                 Number size,
                 bool is_pointer) {
     if (is_top() || is_bottom())
       return;
 
-    if (is_null(offset)) { // null dereference!
+    if (_nullity.is_null(pointer)) { // null dereference!
       *this = bottom();
       return;
     }
 
-    // get memory locations associated with offset
-    points_to_set_t addrs = _ptr.get_addrs_set(offset);
+    // get memory locations pointed by pointer
+    points_to_set_t addrs = _ptr.addrs_set(pointer);
     if (addrs.is_top()) {
 #if 1
-      std::cerr << "Ignored memory read from offset " << offset << std::endl;
+      std::cerr << "Ignored memory read from pointer " << pointer << std::endl;
 #endif
       return;
     }
 
-    interval_t offset_intv = _ptr[offset];
+    // get the offset interval
+    interval_t offset_intv = _ptr.to_interval(offset_var(pointer));
     offset_intv = offset_intv & interval_t(0, bound_t::plus_infinity());
 
     if (offset_intv.is_bottom()) {
@@ -1532,19 +1655,18 @@ public:
     }
   }
 
-  //! copy bytes {src, ..., src + size - 1} to {dest, ..., dest + size - 1}
   void mem_copy(VariableName dest, VariableName src, linear_expression_t size) {
     if (is_top() || is_bottom())
       return;
 
-    if (is_null(dest) || is_null(src)) { // null dereference!
+    if (_nullity.is_null(dest) || _nullity.is_null(src)) { // null dereference!
       *this = bottom();
       return;
     }
 
-    // Get memory locations associated with dest and src
-    points_to_set_t src_addrs = _ptr.get_addrs_set(src);
-    points_to_set_t dest_addrs = _ptr.get_addrs_set(dest);
+    // get memory locations pointed by dest and src
+    points_to_set_t src_addrs = _ptr.addrs_set(src);
+    points_to_set_t dest_addrs = _ptr.addrs_set(dest);
 
     if (dest_addrs.is_top()) {
 #if 0
@@ -1553,11 +1675,18 @@ public:
       return;
     }
 
-    // Get size and pointer offsets approximation
-    interval_t dest_intv = _ptr[dest] & interval_t(0, bound_t::plus_infinity());
-    interval_t src_intv = _ptr[src] & interval_t(0, bound_t::plus_infinity());
-    interval_t size_intv = _ptr[size] & interval_t(0, bound_t::plus_infinity());
-    assert(!dest_intv.is_bottom() && !src_intv.is_bottom());
+    // get size and pointer offsets approximation
+    interval_t dest_intv = _ptr.to_interval(offset_var(dest)) &
+                           interval_t(0, bound_t::plus_infinity());
+    interval_t src_intv = _ptr.to_interval(offset_var(src)) &
+                          interval_t(0, bound_t::plus_infinity());
+    interval_t size_intv =
+        _ptr.to_interval(size) & interval_t(0, bound_t::plus_infinity());
+
+    if (dest_intv.is_bottom() || src_intv.is_bottom()) { // buffer overflow
+      *this = bottom();
+      return;
+    }
 
     if (size_intv.is_bottom())
       return;
@@ -1653,25 +1782,24 @@ public:
         }
       }
     } else {
-      // To be sound, we remove all reachable cells
+      // to be sound, we remove all reachable cells
       forget_reachable_cells(dest, size_intv);
     }
   }
 
-  //! set bytes {src, ..., src + size - 1} to value
   void mem_set(VariableName dest,
                linear_expression_t value,
                linear_expression_t size) {
     if (is_top() || is_bottom())
       return;
 
-    if (is_null(dest)) { // null dereference!
+    if (_nullity.is_null(dest)) { // null dereference!
       *this = bottom();
       return;
     }
 
-    // Get memory locations
-    points_to_set_t addrs = _ptr.get_addrs_set(dest);
+    // get memory locations pointed by dest
+    points_to_set_t addrs = _ptr.addrs_set(dest);
 
     if (addrs.is_top()) {
 #if 0
@@ -1680,15 +1808,21 @@ public:
       return;
     }
 
-    // Get size and pointer offsets approximation
-    interval_t dest_intv = _ptr[dest] & interval_t(0, bound_t::plus_infinity());
-    interval_t size_intv = _ptr[size] & interval_t(1, bound_t::plus_infinity());
-    assert(!dest_intv.is_bottom());
+    // get size and pointer offsets approximation
+    interval_t dest_intv = _ptr.to_interval(offset_var(dest)) &
+                           interval_t(0, bound_t::plus_infinity());
+    interval_t size_intv =
+        _ptr.to_interval(size) & interval_t(1, bound_t::plus_infinity());
+
+    if (dest_intv.is_bottom()) { // buffer overflow
+      *this = bottom();
+      return;
+    }
 
     if (size_intv.is_bottom())
       return;
 
-    if (_ptr[value] == interval_t(Number(0))) { // memory set to 0
+    if (_ptr.to_interval(value) == interval_t(Number(0))) { // memory set to 0
       Number size_lb = *size_intv.lb().number();
 
       // offsets we know they are updated
@@ -1748,85 +1882,18 @@ public:
         }
       }
     } else {
-      // To be sound, we remove all reachable cells
+      // to be sound, we remove all reachable cells
       forget_reachable_cells(dest, size_intv);
     }
   }
 
-  // assert whether x == null or x != null
-  void cmp_mem_addr_null(bool is_equality, VariableName x) {
+  void forget_mem_surface(VariableName v) {
     if (is_top() || is_bottom())
       return;
 
-    _nullity.assertion(is_equality, x, nullity_value::null());
-
-    if (_nullity.is_bottom()) {
-      *this = bottom();
-    }
-  }
-
-  // assert whether x == y or x != y
-  void cmp_mem_addr(bool is_equality, VariableName x, VariableName y) {
-    if (is_top() || is_bottom())
-      return;
-
-    _nullity.assertion(is_equality, x, y);
-
-    if (_nullity.is_bottom()) {
-      *this = bottom();
-      return;
-    }
-
-    points_to_set_t addrs_x = _ptr.get_addrs_set(x);
-    points_to_set_t addrs_y = _ptr.get_addrs_set(y);
-
-    if (is_equality) {
-      points_to_set_t addrs_xy = addrs_x & addrs_y;
-
-      if (addrs_xy.is_bottom()) {
-        *this = bottom();
-        return;
-      }
-
-      // x and y's points-to sets
-      _ptr.set_addrs_set(x, addrs_xy);
-      _ptr.set_addrs_set(y, addrs_xy);
-
-      // x and y's offsets
-      _ptr += (linear_expression_t(x) == linear_expression_t(y));
-
-      if (_ptr.is_bottom()) {
-        *this = bottom();
-        return;
-      }
-    } else {
-      if (!addrs_x.is_top() && !addrs_y.is_top() && addrs_x.size() == 1 &&
-          addrs_x == addrs_y) {
-        // x and y's offsets
-        _ptr += (linear_expression_t(x) != linear_expression_t(y));
-
-        if (_ptr.is_bottom()) {
-          *this = bottom();
-          return;
-        }
-      }
-    }
-  }
-
-  //! Forget the surface information (pointer base address and offset) of the
-  //! variable v but without modifying the memory content.
-  void forget_mem_surface(VariableName o) {
-    if (is_top())
-      return;
-
-    // remove from the pointer+scalar abstraction
-    _ptr -= o;
-
-    // remove from nullity abstraction
-    _nullity -= o;
-
-    // remove from the uninitialized variable abstraction
-    _uninitialized -= o;
+    _ptr -= v;
+    _nullity -= v;
+    _uninitialized -= v;
   }
 
   void forget_mem_surface(variable_set_t vs) {
@@ -1836,43 +1903,104 @@ public:
     }
   }
 
-  //! Forget all memory cells that can be accessible through o
-  void forget_mem_contents(VariableName o) {
-    if (is_top())
+  void forget_mem_contents(VariableName p) {
+    if (is_top() || is_bottom())
       return;
 
-    forget_reachable_cells(o);
+    forget_reachable_cells(p);
   }
 
-  //! Forget all memory cells that overlap with [o, ..., o + size - 1]
-  void forget_mem_contents(VariableName o, Number size) {
-    if (is_top())
+  void forget_mem_contents(VariableName p, Number size) {
+    if (is_top() || is_bottom())
       return;
 
-    forget_reachable_cells(o, size);
+    forget_reachable_cells(p, size);
   }
 
-  // convert to another abstract domain
-  // uses num_abstract_domain_impl::convert() internally
-  template < typename T >
-  T convert() {
-    return T(_is_top,
-             _cells,
-             pointer_domain< typename T::scalar_domain_t,
-                             VariableName,
-                             Number >(_ptr._ptr_map,
-                                      num_abstract_domain_impl::convert<
-                                          ScalarDomain,
-                                          typename T::scalar_domain_t >(
-                                          _ptr._inv)),
-             _uninitialized,
-             _nullity);
+  void write(std::ostream& o) {
+    if (is_top()) {
+      o << "T";
+    } else if (is_bottom()) {
+      o << "_|_";
+    } else {
+      o << "({";
+      for (typename var_to_cell_set_t::iterator it = _cells.begin();
+           it != _cells.end();) {
+        o << it->first << " -> {";
+        cell_set_t cells = it->second;
+        for (typename cell_set_t::iterator it2 = cells.begin();
+             it2 != cells.end();) {
+          o << *it2;
+          ++it2;
+          if (it2 != cells.end())
+            o << ", ";
+        }
+        o << "}";
+        ++it;
+        if (it != _cells.end())
+          o << "; ";
+      }
+      o << "}, " << _ptr << ", " << _uninitialized << ", " << _nullity << ")";
+    }
   }
 
-  template < typename Any1, typename Any2, typename Any3 >
+  static std::string domain_name() {
+    return "Summary of " + ScalarDomain::domain_name();
+  }
+
+  // required for convert()
+  template < typename Any >
   friend class summary_domain;
+
 }; // end class summary_domain
+
+namespace num_domain_traits {
+namespace detail {
+
+template < typename ScalarDomain >
+struct normalize_impl< summary_domain< ScalarDomain > > {
+  void operator()(summary_domain< ScalarDomain >& inv) { inv.normalize(); }
+};
+
+template < typename ScalarDomainFrom, typename ScalarDomainTo >
+struct convert_impl< summary_domain< ScalarDomainFrom >,
+                     summary_domain< ScalarDomainTo > > {
+  summary_domain< ScalarDomainTo > operator()(
+      summary_domain< ScalarDomainFrom > inv) {
+    return inv.template convert< ScalarDomainTo >();
+  }
+};
+
+template < typename ScalarDomain >
+struct var_to_interval_impl< summary_domain< ScalarDomain > > {
+  interval< typename ScalarDomain::number_t > operator()(
+      summary_domain< ScalarDomain >& inv,
+      typename ScalarDomain::variable_name_t v) {
+    return inv.to_interval(v);
+  }
+};
+
+template < typename ScalarDomain >
+struct lin_expr_to_interval_impl< summary_domain< ScalarDomain > > {
+  interval< typename ScalarDomain::number_t > operator()(
+      summary_domain< ScalarDomain >& inv,
+      typename ScalarDomain::linear_expression_t e) {
+    return inv.to_interval(e);
+  }
+};
+
+template < typename ScalarDomain >
+struct from_interval_impl< summary_domain< ScalarDomain > > {
+  void operator()(summary_domain< ScalarDomain >& inv,
+                  typename ScalarDomain::variable_name_t v,
+                  interval< typename ScalarDomain::number_t > i) {
+    inv.from_interval(v, i);
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
 
 } // end namespace ikos
 
-#endif // ANALYZER_SUMMARY_DOMAIN_HPP
+#endif // IKOS_SUMMARY_DOMAIN_HPP

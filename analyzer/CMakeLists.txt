@@ -174,6 +174,10 @@ add_library(branching-opt SHARED src/ar-passes/branching_opt.cpp)
 target_link_libraries(branching-opt ${ARBOS_LIB} ${Boost_LIBRARIES})
 install(TARGETS branching-opt DESTINATION lib OPTIONAL)
 
+add_library(unify-exit-nodes SHARED src/ar-passes/unify_exit_nodes.cpp)
+target_link_libraries(unify-exit-nodes ${ARBOS_LIB} ${Boost_LIBRARIES})
+install(TARGETS unify-exit-nodes DESTINATION lib OPTIONAL)
+
 # analysis passes
 add_library(analyzer SHARED src/ar-passes/analyzer.cpp)
 target_link_libraries(analyzer ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})

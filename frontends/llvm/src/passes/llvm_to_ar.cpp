@@ -275,6 +275,8 @@ class ARCode {
 private:
   std::string _entry_block;
   std::string _exit_block;
+  std::string _unreachable_block;
+  std::string _unwind_block;
   std::unordered_map< std::string,
                       std::vector< boost::optional< s_expression > > >
       _bblocks; // bblock name ID to a vertex; a vertex consists of a list of
@@ -311,14 +313,20 @@ private:
   }
 
 public:
+  ARCode()
+      : _entry_block(""),
+        _exit_block(""),
+        _unreachable_block(""),
+        _unwind_block("") {}
   void set_entry_block(std::string block) { _entry_block = block; }
 
   void set_exit_block(std::string block) { _exit_block = block; }
+  void set_unreachable_block(std::string block) { _unreachable_block = block; }
+  void set_unwind_block(std::string block) { _unwind_block = block; }
 
   inline std::string get_exit_block() { return _exit_block; }
 
   void enter_basic_block(std::string block);
-  void exit_basic_block();
   std::string get_current_block();
   void add_statement(s_expression_ref c);
   void add_transition(std::string src, std::string dest);
@@ -589,7 +597,6 @@ void GlobalReferences::identify_global_variables(Module& m) {
       }
 
       init_code.set_exit_block(init_code.get_current_block());
-      init_code.exit_basic_block();
       s << init_code.expr();
     }
 
@@ -690,10 +697,15 @@ void GlobalReferences::set_debug_info(Instruction* inst) {
     column = di_loc->getColumn();
     StringRef File = di_loc->getFile()->getFilename();
     StringRef Dir = di_loc->getDirectory();
-    location += Dir;
-    if (!boost::ends_with(location, "/"))
-      location += "/";
-    location += File;
+    if (File.startswith("/")) {
+      location += File;
+    } else {
+      location += Dir;
+      if (!Dir.endswith("/")) {
+        location += "/";
+      }
+      location += File;
+    }
     s_expression_ostream debug("debug");
     debug << translate_srcloc(line, column, location);
     _current_debug_info = debug.expr();
@@ -735,11 +747,15 @@ void GlobalReferences::set_debug_info(GlobalVariable* gv) {
     line = digv->getLine();
     StringRef File = digv->getFile()->getFilename();
     StringRef Dir = digv->getFile()->getDirectory();
-    location += Dir;
-    if (!boost::ends_with(location, "/")) {
-      location += "/";
+    if (File.startswith("/")) {
+      location += File;
+    } else {
+      location += Dir;
+      if (!Dir.endswith("/")) {
+        location += "/";
+      }
+      location += File;
     }
-    location += File;
     s_expression_ostream debug("debug");
     debug << translate_srcloc(line, 1, location);
     _current_debug_info = debug.expr();
@@ -1837,10 +1853,6 @@ void ARCode::enter_basic_block(std::string block) {
   _bblocks[_current_ar_bblock];
 }
 
-void ARCode::exit_basic_block() {
-  set_exit_block(_current_ar_bblock);
-}
-
 std::string ARCode::get_current_block() {
   return _current_ar_bblock;
 }
@@ -1996,10 +2008,26 @@ s_expression ARCode::expr() {
   s_expression_ostream code("code");
 
   code << (s_expression_ostream("entry") << string_atom(_entry_block)).expr();
+
   if (!_exit_block.empty()) {
     code << (s_expression_ostream("exit") << string_atom(_exit_block)).expr();
   } else {
     code << s_expression_ostream("exit").expr();
+  }
+
+  if (!_unreachable_block.empty()) {
+    code << (s_expression_ostream("unreachable")
+             << string_atom(_unreachable_block))
+                .expr();
+  } else {
+    code << s_expression_ostream("unreachable").expr();
+  }
+
+  if (!_unwind_block.empty()) {
+    code << (s_expression_ostream("unwind") << string_atom(_unwind_block))
+                .expr();
+  } else {
+    code << s_expression_ostream("unwind").expr();
   }
 
   std::unordered_map< std::string,
@@ -2110,6 +2138,8 @@ void ARCode::printDOT(std::ostream& out) {
 /**
  * ARFunction implementation
  */
+enum ExitBlockType { RETURN, UNREACHABLE, UNWIND, NONE };
+
 ARFunction::ARFunction(Function* f,
                        BasicBlock* return_block,
                        BasicBlock* unreachable_block,
@@ -2142,7 +2172,18 @@ ARFunction::ARFunction(Function* f,
   // Translating instructions
   Function::iterator bb = f->begin();
   for (; bb != f->end(); bb++) {
-    _cfg.enter_basic_block(bb->getName().str());
+    std::string name = bb->getName().str();
+
+    // Check if this basic block is a return block.
+    ExitBlockType exit_ty = NONE;
+    if (return_block && (name == return_block->getName().str()))
+      exit_ty = RETURN;
+    else if (unreachable_block && (name == unreachable_block->getName().str()))
+      exit_ty = UNREACHABLE;
+    else if (unwind_block && (name == unwind_block->getName().str()))
+      exit_ty = UNWIND;
+
+    _cfg.enter_basic_block(name);
     BasicBlock::iterator i = bb->begin();
     for (; i != bb->end(); i++) {
       Instruction* inst = &*i;
@@ -2151,47 +2192,31 @@ ARFunction::ARFunction(Function* f,
       _cfg.add_statement(translate_instruction(inst));
       refs->reset_debug_info();
     }
-    _cfg.exit_basic_block();
+
+    if (exit_ty == RETURN)
+      _cfg.set_exit_block(_cfg.get_current_block());
+    if (exit_ty == UNREACHABLE)
+      _cfg.set_unreachable_block(_cfg.get_current_block());
+    if (exit_ty == UNWIND)
+      _cfg.set_unwind_block(_cfg.get_current_block());
   }
 
-  // The exit block is being tracked as we transform the cfg.
-  // However, some programs don't terminate and should not have
-  // an exit block.
-  // In this case, we set the exit block to an empty std::string if
-  // UnifyFunctionExitNodes returns a NULL return block.
-  if (return_block == NULL) {
-    _cfg.set_exit_block("");
-  } else {
-    std::string unreachable_block_name =
-        (unreachable_block != NULL) ? unreachable_block->getName().str() : "";
-    std::string unwind_block_name =
-        (unwind_block != NULL) ? unwind_block->getName().str() : "";
-
-#ifdef LLVMAR_DEBUG
-    if (return_block->getName().str() != _cfg.get_exit_block()) {
-      cerr << "UnifyFunctionExitNodes.exit()=" << return_block->getName().str()
-           << "; arbos_cfg.exit()=" << _cfg.get_exit_block() << std::endl;
-      cerr << "UnifyFunctionExitNodes.unreachable()=" << unreachable_block_name
-           << std::endl;
-      cerr << "UnifyFunctionExitNodes.unwind()=" << unwind_block_name
-           << std::endl;
-    }
+#ifdef DEBUG
+  std::cerr << "Function " << _name << ":" << std::endl;
+  std::cerr << "  UnifyFunctionExitNodes.return: "
+            << ((return_block == nullptr) ? "null"
+                                          : return_block->getName().str())
+            << std::endl;
+  std::cerr << "  UnifyFunctionExitNodes.unreachable: "
+            << ((unreachable_block == nullptr)
+                    ? "null"
+                    : unreachable_block->getName().str())
+            << std::endl;
+  std::cerr << "  UnifyFunctionExitNodes.unwind: "
+            << ((unwind_block == nullptr) ? "null"
+                                          : unwind_block->getName().str())
+            << std::endl;
 #endif
-    // During cfg transformation, this pass may identify an unreachable/unwind
-    // block as the exit block
-    // In this case, we set the exit block to the return block set by
-    // UnifyFunctionExitNodes.
-    if (_cfg.get_exit_block() == unreachable_block_name ||
-        _cfg.get_exit_block() == unwind_block_name)
-      _cfg.set_exit_block(return_block->getName().str());
-    // If this exit block has no incoming edges, then set exit block to an empty
-    // std::string.
-    // So the AR will have no exit block, and no backward analysis shall be
-    // performed.
-    if (_cfg.get_sources_from_dest(_cfg.get_exit_block()).empty()) {
-      _cfg.set_exit_block("");
-    }
-  }
 }
 
 s_expression_ref ARFunction::gen_sexpr_intrinsic_call(ARCode& cfg,
@@ -2534,7 +2559,6 @@ s_expression_ref ARFunction::translate_instruction(Instruction* inst) {
         _cfg.remove_transition(new_incoming_block_name, current_llvm_bblock);
 
         _cfg.add_transition(new_incoming_block_name, phi_assign_bblock);
-        _cfg.exit_basic_block();
       }
       _cfg.enter_basic_block(current_llvm_bblock);
     } break;

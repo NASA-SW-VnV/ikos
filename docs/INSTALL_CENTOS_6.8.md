@@ -61,7 +61,7 @@ After installation, the install directory will contain the following structure:
 ├── boost-1.61.0
 │   ├── include
 │   └── lib
-├── ikos-1.1.1
+├── ikos-1.1.2
 │   ├── bin
 │   ├── include
 │   └── lib

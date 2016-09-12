@@ -86,7 +86,7 @@ public:
     return buf.str();
   }
 
-}; // class pointer_var
+}; // end class pointer_var
 
 bool operator<(pointer_var v1, pointer_var v2) {
   return v1._uid < v2._uid;
@@ -128,7 +128,7 @@ public:
 
   virtual ~pta_ref() {}
 
-}; // class pta_ref
+}; // end class pta_ref
 
 std::ostream& operator<<(std::ostream& o, const pta_ref& p) {
   p.print(o);
@@ -152,7 +152,7 @@ public:
 
   std::string str() const { return _pointer.str(); }
 
-}; // class pointer_ref
+}; // end class pointer_ref
 
 std::shared_ptr< pointer_ref > operator+(pointer_var v, z_interval o) {
   return std::shared_ptr< pointer_ref >(new pointer_ref(v, o));
@@ -175,7 +175,7 @@ public:
     return buf.str();
   }
 
-}; // class function_ref
+}; // end class function_ref
 
 std::shared_ptr< function_ref > mk_function_ref(index64_t uid) {
   return std::shared_ptr< function_ref >(new function_ref(uid));
@@ -202,7 +202,7 @@ public:
     return buf.str();
   }
 
-}; // class object_ref
+}; // end class object_ref
 
 std::shared_ptr< object_ref > mk_object_ref(index64_t address,
                                             z_interval offset) {
@@ -230,7 +230,7 @@ public:
     return buf.str();
   }
 
-}; // class param_ref
+}; // end class param_ref
 
 std::shared_ptr< param_ref > mk_param_ref(pointer_var fptr,
                                           unsigned int param) {
@@ -254,7 +254,7 @@ public:
     return buf.str();
   }
 
-}; // class return_ref
+}; // end class return_ref
 
 std::shared_ptr< return_ref > mk_return_ref(pointer_var fptr) {
   return std::shared_ptr< return_ref >(new return_ref(fptr));
@@ -270,7 +270,7 @@ public:
 
   virtual ~pta_constraint() {}
 
-}; // class pta_constraint
+}; // end class pta_constraint
 
 std::ostream& operator<<(std::ostream& o, const pta_constraint& c) {
   c.print(o);
@@ -293,7 +293,7 @@ public:
 
   pta_constraint_kind kind() const { return CST_ASSIGN; }
 
-}; // class pta_assign
+}; // end class pta_assign
 
 std::shared_ptr< pta_constraint > operator==(
     pointer_var lhs, std::shared_ptr< pointer_ref > rhs) {
@@ -336,7 +336,7 @@ public:
 
   pta_constraint_kind kind() const { return CST_STORE; }
 
-}; // class pta_store
+}; // end class pta_store
 
 std::shared_ptr< pta_constraint > operator<<(std::shared_ptr< pta_ref > lhs,
                                              pointer_var rhs) {
@@ -359,7 +359,7 @@ public:
 
   pta_constraint_kind kind() const { return CST_LOAD; }
 
-}; // class pta_load
+}; // end class pta_load
 
 std::shared_ptr< pta_constraint > operator*=(pointer_var lhs,
                                              std::shared_ptr< pta_ref > rhs) {
@@ -576,11 +576,12 @@ private:
             break;
           }
           case OBJECT_REF: {
-            throw ikos_error("cannot dereference a memory object");
+            throw ikos_error("pta system: cannot dereference a memory object");
             break;
           }
           case FUNCTION_REF: {
-            throw ikos_error("cannot dereference a function object");
+            throw ikos_error(
+                "pta system: cannot dereference a function object");
             break;
           }
           case PARAM_REF: {
@@ -629,11 +630,12 @@ private:
             break;
           }
           case OBJECT_REF: {
-            throw ikos_error("cannot dereference a memory object");
+            throw ikos_error("pta system: cannot dereference a memory object");
             break;
           }
           case FUNCTION_REF: {
-            throw ikos_error("cannot dereference a function object");
+            throw ikos_error(
+                "pta system: cannot dereference a function object");
             break;
           }
           case PARAM_REF: {
@@ -715,7 +717,7 @@ public:
     return std::make_pair(get_address_set(p.str()), get_offset(p.str()));
   }
 
-}; // class pta_system
+}; // end class pta_system
 
 std::ostream& operator<<(std::ostream& o, const pta_system& s) {
   s.print(o);

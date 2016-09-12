@@ -71,7 +71,7 @@ public:
 
   virtual ~partial_order() {}
 
-}; // class partial_order
+}; // end class partial_order
 
 template < typename Value >
 class unary_op {
@@ -80,7 +80,7 @@ public:
 
   virtual ~unary_op() {}
 
-}; // class unary_op
+}; // end class unary_op
 
 template < typename Value >
 class binary_op {
@@ -93,7 +93,7 @@ public:
 
   virtual ~binary_op() {}
 
-}; // class binary_op
+}; // end class binary_op
 
 template < typename Value >
 class generic_binary_op {
@@ -102,7 +102,7 @@ public:
   virtual boost::optional< Value > apply_left(Value) = 0;
   virtual boost::optional< Value > apply_right(Value) = 0;
   virtual ~generic_binary_op() {}
-}; // class generic_binary_op
+}; // end class generic_binary_op
 
 namespace patricia_trees_impl {
 
@@ -243,7 +243,7 @@ public:
         }
       } else {
         throw ikos_error(
-            "Patricia tree: trying to increment an empty iterator");
+            "patricia tree: trying to increment an empty iterator");
       }
     }
 
@@ -272,13 +272,13 @@ public:
         return this->_current->binding();
       } else {
         throw ikos_error(
-            "Patricia tree: trying to dereference an empty iterator");
+            "patricia tree: trying to dereference an empty iterator");
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
-}; // class tree
+}; // end class tree
 
 template < typename Key, typename Value >
 class node : public tree< Key, Value > {
@@ -326,7 +326,7 @@ public:
   bool is_leaf() const { return false; }
 
   binding_t binding() const {
-    throw ikos_error("Patricia tree: trying to call binding() on a node");
+    throw ikos_error("patricia tree: trying to call binding() on a node");
   }
 
   tree_ptr left_branch() const { return this->_left_branch; }
@@ -349,7 +349,7 @@ public:
     }
   }
 
-}; // class node
+}; // end class node
 
 template < typename Key, typename Value >
 class leaf : public tree< Key, Value > {
@@ -381,11 +381,11 @@ public:
   binding_t binding() const { return binding_t(this->_key, this->_value); }
 
   tree_ptr left_branch() const {
-    throw ikos_error("Patricia tree: trying to call left_branch() on a leaf");
+    throw ikos_error("patricia tree: trying to call left_branch() on a leaf");
   }
 
   tree_ptr right_branch() const {
-    throw ikos_error("Patricia tree: trying to call right_branch() on a leaf");
+    throw ikos_error("patricia tree: trying to call right_branch() on a leaf");
   }
 
   boost::optional< Value > lookup(const Key& key_) const {
@@ -396,7 +396,7 @@ public:
     }
   }
 
-}; // class leaf
+}; // end class leaf
 
 template < typename Key, typename Value >
 typename tree< Key, Value >::ptr tree< Key, Value >::make_node(
@@ -1029,7 +1029,7 @@ void tree< Key, Value >::compare(typename tree< Key, Value >::ptr s,
   }
 }
 
-} // namespace patricia_trees_impl
+} // end namespace patricia_trees_impl
 
 template < typename Key, typename Value >
 class patricia_tree {
@@ -1073,7 +1073,7 @@ public:
 
     binding_t dereference() const { return *this->_it; }
 
-  }; // class iterator
+  }; // end class iterator
 
   class insert_op : public binary_op_t {
     boost::optional< Value > apply(Value /* old_value */, Value new_value) {
@@ -1082,7 +1082,7 @@ public:
 
     bool default_is_absorbing() { return false; }
 
-  }; // class insert_op
+  }; // end class insert_op
 
 public:
   patricia_tree() {}
@@ -1148,7 +1148,7 @@ public:
     }
   }
 
-}; // class patricia_tree
+}; // end class patricia_tree
 
 template < typename Element >
 class patricia_tree_set : public writeable {
@@ -1189,7 +1189,7 @@ public:
 
     Element dereference() const { return this->_it->first; }
 
-  }; // class iterator
+  }; // end class iterator
 
 private:
   class union_op : public binary_op_t {
@@ -1199,7 +1199,7 @@ private:
 
     bool default_is_absorbing() { return false; }
 
-  }; // class union_op
+  }; // end class union_op
 
   class intersection_op : public binary_op_t {
     boost::optional< bool > apply(bool /* x */, bool /* y */) {
@@ -1208,14 +1208,14 @@ private:
 
     bool default_is_absorbing() { return true; }
 
-  }; // class intersection_op
+  }; // end class intersection_op
 
   class subset_po : public partial_order_t {
     bool leq(bool /* x */, bool /* y */) { return true; };
 
     bool default_is_top() { return false; }
 
-  }; // class subset_po
+  }; // end class subset_po
 
 private:
   static patricia_tree_t do_union(patricia_tree_t t1, patricia_tree_t t2) {
@@ -1237,8 +1237,7 @@ private:
 public:
   patricia_tree_set() {}
 
-  patricia_tree_set(const patricia_tree_set_t& s)
-      : writeable(), _tree(s._tree) {}
+  patricia_tree_set(const patricia_tree_set_t& s) : _tree(s._tree) {}
 
   patricia_tree_set_t& operator=(const patricia_tree_set_t& t) {
     this->_tree = t._tree;
@@ -1329,8 +1328,8 @@ public:
     o << "}";
   }
 
-}; // class patricia_tree_set
+}; // end class patricia_tree_set
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_PATRICIA_TREES_HPP

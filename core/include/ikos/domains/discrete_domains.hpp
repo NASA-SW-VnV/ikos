@@ -48,11 +48,12 @@
 #include <ikos/algorithms/patricia_trees.hpp>
 #include <ikos/common/types.hpp>
 #include <ikos/domains/separate_domains.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
 template < typename Element >
-class discrete_domain : public writeable {
+class discrete_domain : public abstract_domain {
 private:
   typedef patricia_tree_set< Element > ptset_t;
 
@@ -79,7 +80,7 @@ public:
   discrete_domain() : _is_top(true) {}
 
   discrete_domain(const discrete_domain_t& other)
-      : writeable(), _is_top(other._is_top), _set(other._set) {}
+      : _is_top(other._is_top), _set(other._set) {}
 
   discrete_domain(Element s) : _is_top(false), _set(s) {}
 
@@ -189,7 +190,7 @@ public:
 
   std::size_t size() {
     if (this->_is_top) {
-      throw ikos_error("Size for discrete domain TOP is undefined");
+      throw ikos_error("discrete domain: trying to call size() on top");
     } else {
       return this->_set.size();
     }
@@ -197,7 +198,7 @@ public:
 
   iterator begin() {
     if (this->_is_top) {
-      throw ikos_error("Iterator for discrete domain TOP is undefined");
+      throw ikos_error("discrete domain: trying to call begin() on top");
     } else {
       return this->_set.begin();
     }
@@ -205,7 +206,7 @@ public:
 
   iterator end() {
     if (this->_is_top) {
-      throw ikos_error("Iterator for discrete domain TOP is undefined");
+      throw ikos_error("discrete domain: trying to call end() on top");
     } else {
       return this->_set.end();
     }
@@ -221,8 +222,10 @@ public:
     }
   }
 
-}; // class discrete_domain
+  static std::string domain_name() { return "Discrete"; }
 
-} // namespace ikos
+}; // end class discrete_domain
+
+} // end namespace ikos
 
 #endif // IKOS_DISCRETE_DOMAINS_HPP

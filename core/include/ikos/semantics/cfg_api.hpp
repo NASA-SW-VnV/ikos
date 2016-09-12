@@ -63,8 +63,8 @@ public:
 
   virtual ~cfg() {}
 
-}; // class cfg
+}; // end class cfg
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_CFG_API_HPP

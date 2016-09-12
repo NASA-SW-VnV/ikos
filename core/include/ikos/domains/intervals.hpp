@@ -62,6 +62,7 @@
 #include <ikos/algorithms/linear_constraints.hpp>
 #include <ikos/common/bignums.hpp>
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
@@ -167,7 +168,7 @@ public:
     } else if (this->_n == x._n) {
       return *this;
     } else {
-      throw ikos_error("Bound: undefined operation -oo + +oo");
+      throw ikos_error("bound: undefined operation -oo + +oo");
     }
   }
 
@@ -185,7 +186,7 @@ public:
 
   bound_t operator/(bound_t x) const {
     if (x._n == 0) {
-      throw ikos_error("Bound: division by zero");
+      throw ikos_error("bound: division by zero");
     } else if (this->is_finite() && x.is_finite()) {
       return bound_t(false, _n / x._n);
     } else if (this->is_finite() && x.is_infinite()) {
@@ -270,7 +271,7 @@ public:
     }
   }
 
-}; // class bound
+}; // end class bound
 
 template < typename Number >
 inline std::ostream& operator<<(std::ostream& o, bound< Number > b) {
@@ -582,7 +583,7 @@ public:
     }
   }
 
-}; //  class interval
+}; // end class interval
 
 template <>
 inline interval< q_number > interval< q_number >::operator/(
@@ -895,7 +896,7 @@ inline q_interval trim_bound(q_interval i, q_number /* c */) {
   return i;
 }
 
-} // namespace intervals_impl
+} // end namespace intervals_impl
 
 template < typename Number, typename VariableName, typename IntervalCollection >
 class linear_interval_solver {
@@ -1094,12 +1095,12 @@ public:
     }
   }
 
-}; // class linear_interval_solver
+}; // end class linear_interval_solver
 
 template < typename Number,
            typename VariableName,
            std::size_t max_reduction_cycles = 10 >
-class interval_domain : public writeable,
+class interval_domain : public abstract_domain,
                         public numerical_domain< Number, VariableName >,
                         public bitwise_operators< Number, VariableName >,
                         public division_operators< Number, VariableName > {
@@ -1139,12 +1140,7 @@ public:
 public:
   interval_domain() : _env(separate_domain_t::top()) {}
 
-  interval_domain(const interval_domain_t& e)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        bitwise_operators< Number, VariableName >(),
-        division_operators< Number, VariableName >(),
-        _env(e._env) {}
+  interval_domain(const interval_domain_t& e) : _env(e._env) {}
 
   interval_domain_t& operator=(interval_domain_t e) {
     this->_env = e._env;
@@ -1484,10 +1480,90 @@ public:
     return csts;
   }
 
-  const char* getDomainName() const { return "Intervals"; }
+  static std::string domain_name() { return "Intervals"; }
 
-}; // class interval_domain
+}; // end class interval_domain
 
-} // namespace ikos
+namespace num_domain_traits {
+
+namespace detail {
+
+// default implementation, using operator[]
+template < typename NumDomain >
+struct var_to_interval_impl {
+  interval< typename NumDomain::number_t > operator()(
+      NumDomain& inv, typename NumDomain::variable_name_t v) {
+    return inv[v];
+  }
+};
+
+} // end namespace detail
+
+// return an overapproximation of the value of the variable v using an interval
+template < typename NumDomain >
+inline interval< typename NumDomain::number_t > to_interval(
+    NumDomain& inv, typename NumDomain::variable_name_t v) {
+  return detail::var_to_interval_impl< NumDomain >()(inv, v);
+}
+
+namespace detail {
+
+// default implementation, using to_interval() on each variable
+template < typename NumDomain >
+struct lin_expr_to_interval_impl {
+  interval< typename NumDomain::number_t > operator()(
+      NumDomain& inv, typename NumDomain::linear_expression_t e) {
+    typedef interval< typename NumDomain::number_t > interval_t;
+
+    if (inv.is_bottom()) {
+      return interval_t::bottom();
+    }
+
+    interval_t r(e.constant());
+    for (auto it = e.begin(); it != e.end(); ++it) {
+      interval_t c(it->first);
+      r += c *
+           detail::var_to_interval_impl< NumDomain >()(inv, it->second.name());
+    }
+
+    return r;
+  }
+};
+
+} // end namespace detail
+
+// return an overapproximation of the value of the linear expression e using an
+// interval
+template < typename NumDomain >
+inline interval< typename NumDomain::number_t > to_interval(
+    NumDomain& inv, typename NumDomain::linear_expression_t e) {
+  return detail::lin_expr_to_interval_impl< NumDomain >()(inv, e);
+}
+
+namespace detail {
+
+// default implementation, using set()
+template < typename NumDomain >
+struct from_interval_impl {
+  void operator()(NumDomain& inv,
+                  typename NumDomain::variable_name_t v,
+                  interval< typename NumDomain::number_t > i) {
+    inv.set(v, i);
+  }
+};
+
+} // end namespace detail
+
+// should be equivalent to: inv -= v; inv += (v <= i.ub); inv += (v >= i.lb);
+template < typename NumDomain >
+inline void from_interval(NumDomain& inv,
+                          typename NumDomain::variable_name_t v,
+                          interval< typename NumDomain::number_t > i) {
+  detail::from_interval_impl< NumDomain >()(inv, v, i);
+}
+
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_INTERVALS_HPP

@@ -89,13 +89,21 @@ boost::filesystem::path relative_to(boost::filesystem::path from,
   return final_path;
 }
 
+inline std::string format_path(const std::string& path) {
+  boost::filesystem::path abs_path = boost::filesystem::exists(path)
+                                         ? boost::filesystem::canonical(path)
+                                         : path;
+  boost::filesystem::path rel_path =
+      relative_to(boost::filesystem::current_path(), abs_path);
+  if (rel_path.string().size() < abs_path.string().size()) {
+    return rel_path.string();
+  } else {
+    return abs_path.string();
+  }
+}
+
 inline std::string location_to_string(const location& loc) {
-  boost::filesystem::path relpath =
-      relative_to(boost::filesystem::current_path(),
-                  boost::filesystem::exists(loc.file)
-                      ? boost::filesystem::canonical(loc.file)
-                      : loc.file);
-  return relpath.string() + ":" + std::to_string(loc.line) + ":" +
+  return format_path(loc.file) + ":" + std::to_string(loc.line) + ":" +
          std::to_string(loc.column);
 }
 
@@ -364,25 +372,20 @@ private:
   std::vector< Statement_ref > _stmts;
   VariableFactory& _vfac;
   live_info::live_info_ptr _live;
-  bool _is_exit_block;
 
   arbos_node(Basic_Block_ref block,
-             bool is_exit,
              VariableFactory& vfac,
              TrackedPrecision level,
              node_collection_t preds,
              node_collection_t succs,
              std::vector< Statement_ref > stmts,
              live_info::live_info_ptr live)
-      :
-
-        _block(block),
+      : _block(block),
         _prev_nodes(preds),
         _next_nodes(succs),
         _stmts(stmts),
         _vfac(vfac),
-        _live(live),
-        _is_exit_block(is_exit) {}
+        _live(live) {}
 
 public:
   node_collection_t& next_nodes() { return _next_nodes; }
@@ -407,11 +410,6 @@ public:
   }
 
   std::string get_name() const { return ar::getName(_block); }
-
-  // Return true if the block contains a return statement.  Blocks
-  // with unreachable statements are not marked as exits even if they
-  // do not have successors.
-  bool is_exit_block() const { return _is_exit_block; }
 
   void reverse() {
     std::swap(_prev_nodes, _next_nodes);
@@ -497,7 +495,6 @@ private:
     std::vector< Statement_ref > stmts;
     node_collection_t preds, succs;
     live_info::live_info_ptr live(new live_info(_vfac, _lfac, _prec_level));
-    bool is_exit_bb = false;
 
     // Compute use and def sets
     ar::accept(bb, live);
@@ -506,9 +503,6 @@ private:
       StmtRange s = ar::getStatements(bb);
       for (StmtRange::iterator it = s.begin(), et = s.end(); it != et; ++it) {
         stmts.push_back(*it);
-        if (ar::is_return_stmt(*it)) {
-          is_exit_bb = true;
-        }
       }
     }
 
@@ -526,8 +520,7 @@ private:
       }
     }
 
-    arbos_node_t
-        node(bb, is_exit_bb, _vfac, _prec_level, preds, succs, stmts, live);
+    arbos_node_t node(bb, _vfac, _prec_level, preds, succs, stmts, live);
 
     std::pair< nodes_map_t::iterator, bool > res =
         _nodes_map->insert(std::make_pair(bb, node));

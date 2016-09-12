@@ -4,6 +4,8 @@
  *
  * Author: Arnaud J. Venet
  *
+ * Contributors: Maxime Arthaud
+ *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -46,6 +48,7 @@
 #include <iostream>
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
@@ -53,7 +56,7 @@
 namespace ikos {
 
 template < typename Domain1, typename Domain2 >
-class domain_product2 : public writeable {
+class domain_product2 : public abstract_domain {
 public:
   typedef domain_product2< Domain1, Domain2 > domain_product2_t;
 
@@ -92,8 +95,7 @@ public:
   }
 
   domain_product2(const domain_product2_t& other)
-      : writeable(),
-        _is_bottom(other._is_bottom),
+      : _is_bottom(other._is_bottom),
         _first(other._first),
         _second(other._second) {}
 
@@ -183,10 +185,14 @@ public:
     }
   }
 
-}; // class domain_product2
+  static std::string domain_name() {
+    return "Product " + Domain1::domain_name() + " x " + Domain2::domain_name();
+  }
+
+}; // end class domain_product2
 
 template < typename Domain1, typename Domain2, typename Domain3 >
-class domain_product3 : public writeable {
+class domain_product3 : public abstract_domain {
 public:
   typedef domain_product3< Domain1, Domain2, Domain3 > domain_product3_t;
 
@@ -215,8 +221,7 @@ public:
   domain_product3(Domain1 first, Domain2 second, Domain3 third)
       : _product(first, product23_t(second, third)) {}
 
-  domain_product3(const domain_product3_t& other)
-      : writeable(), _product(other._product) {}
+  domain_product3(const domain_product3_t& other) : _product(other._product) {}
 
   domain_product3_t& operator=(domain_product3_t other) {
     this->_product = other._product;
@@ -266,14 +271,19 @@ public:
     }
   }
 
-}; // class domain_product3
+  static std::string domain_name() {
+    return "Product " + Domain1::domain_name() + " x " +
+           Domain2::domain_name() + " x " + Domain3::domain_name();
+  }
+
+}; // end class domain_product3
 
 template < typename Number,
            typename VariableName,
            typename Domain1,
            typename Domain2 >
 class numerical_domain_product2
-    : public writeable,
+    : public abstract_domain,
       public numerical_domain< Number, VariableName >,
       public bitwise_operators< Number, VariableName >,
       public division_operators< Number, VariableName > {
@@ -319,9 +329,7 @@ public:
       : _product(domain_product2_t(first, second)) {}
 
   numerical_domain_product2(const numerical_domain_product2_t& other)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        _product(other._product) {}
+      : _product(other._product) {}
 
   numerical_domain_product2_t& operator=(numerical_domain_product2_t other) {
     this->_product = other._product;
@@ -444,17 +452,38 @@ public:
     }
   }
 
+  linear_constraint_system_t to_linear_constraint_system() {
+    linear_constraint_system_t csts;
+
+    if (this->is_bottom()) {
+      csts += linear_expression_t(Number(1)) == linear_expression_t(Number(0));
+      return csts;
+    }
+
+    csts += this->_product.first().to_linear_constraint_system();
+    csts += this->_product.second().to_linear_constraint_system();
+    return csts;
+  }
+
   void write(std::ostream& o) { this->_product.write(o); }
 
-}; // class numerical_domain_product2
+  static std::string domain_name() {
+    return "Numerical Product " + Domain1::domain_name() + " x " +
+           Domain2::domain_name();
+  }
+
+}; // end class numerical_domain_product2
 
 template < typename Number,
            typename VariableName,
            typename Domain1,
            typename Domain2,
            typename Domain3 >
-class numerical_domain_product3 : public writeable,
-                                  numerical_domain< Number, VariableName > {
+class numerical_domain_product3
+    : public abstract_domain,
+      public numerical_domain< Number, VariableName >,
+      public bitwise_operators< Number, VariableName >,
+      public division_operators< Number, VariableName > {
 public:
   typedef numerical_domain_product3< Number,
                                      VariableName,
@@ -498,9 +527,7 @@ public:
       : _product(product123_t(first, product23_t(second, third))) {}
 
   numerical_domain_product3(const numerical_domain_product3_t& other)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        _product(other._product) {}
+      : _product(other._product) {}
 
   numerical_domain_product3_t& operator=(numerical_domain_product3_t other) {
     this->_product = other._product;
@@ -553,6 +580,43 @@ public:
     this->_product.apply(op, x, y, k);
   }
 
+  // bitwise_operators_api
+
+  void apply(conv_operation_t op,
+             VariableName x,
+             VariableName y,
+             unsigned width) {
+    this->_product.apply(op, x, y, width);
+  }
+
+  void apply(conv_operation_t op, VariableName x, Number k, unsigned width) {
+    this->_product.apply(op, x, k, width);
+  }
+
+  void apply(bitwise_operation_t op,
+             VariableName x,
+             VariableName y,
+             VariableName z) {
+    this->_product.apply(op, x, y, z);
+  }
+
+  void apply(bitwise_operation_t op, VariableName x, VariableName y, Number k) {
+    this->_product.apply(op, x, y, k);
+  }
+
+  // division_operators_api
+
+  void apply(div_operation_t op,
+             VariableName x,
+             VariableName y,
+             VariableName z) {
+    this->_product.apply(op, x, y, z);
+  }
+
+  void apply(div_operation_t op, VariableName x, VariableName y, Number k) {
+    this->_product.apply(op, x, y, k);
+  }
+
   void operator+=(linear_constraint_system_t csts) { this->_product += csts; }
 
   void operator-=(VariableName v) { this->_product -= v; }
@@ -564,6 +628,10 @@ public:
     }
   }
 
+  linear_constraint_system_t to_linear_constraint_system() {
+    return this->_product.to_linear_constraint_system();
+  }
+
   void write(std::ostream& o) {
     if (this->is_bottom()) {
       o << "_|_";
@@ -573,8 +641,13 @@ public:
     }
   }
 
-}; // class numerical_domain_product3
+  static std::string domain_name() {
+    return "Numerical Product " + Domain1::domain_name() + " x " +
+           Domain2::domain_name() + " x " + Domain3::domain_name();
+  }
 
-} // namespace ikos
+}; // end class numerical_domain_product3
+
+} // end namespace ikos
 
 #endif // IKOS_DOMAIN_PRODUCTS_HPP

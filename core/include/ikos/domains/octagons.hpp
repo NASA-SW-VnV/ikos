@@ -70,13 +70,14 @@
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 // #define VERBOSE
 
 namespace ikos {
 
 template < typename Number, typename VariableName >
-class octagon : public writeable,
+class octagon : public abstract_domain,
                 public numerical_domain< Number, VariableName >,
                 public bitwise_operators< Number, VariableName >,
                 public division_operators< Number, VariableName > {
@@ -93,10 +94,10 @@ private:
     std::size_t _num_var;
 
   public:
-    dbmatrix() : writeable(), _num_var(0) {} // Size of 0 represents top.
+    dbmatrix() : _num_var(0) {} // Size of 0 represents top.
 
     dbmatrix(const dbmatrix& other)
-        : writeable(), _matrix(other._matrix), _num_var(other._num_var) {}
+        : _matrix(other._matrix), _num_var(other._num_var) {}
 
     dbmatrix operator=(dbmatrix other) {
       this->_num_var = other._num_var;
@@ -380,7 +381,7 @@ private:
         divide_var(x, i, j, lb, ub, i == j);
         break;
       }
-      default: { assert(false && "unreachable"); }
+      default: { throw ikos_error("unreachable"); }
     }
     _norm_vector.at(i - 1) = 0;
     // Result is not normalized.
@@ -629,11 +630,7 @@ public:
   octagon() : _is_bottom(false), _is_normalized(true) {}
 
   octagon(const octagon_t& o)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        bitwise_operators< Number, VariableName >(),
-        division_operators< Number, VariableName >(),
-        _is_bottom(o._is_bottom),
+      : _is_bottom(o._is_bottom),
         _dbm(o._dbm),
         _map(o._map),
         _is_normalized(o._is_normalized),
@@ -1340,7 +1337,7 @@ public:
         xi = yi.AShr(zi);
         break;
       }
-      default: { assert(false && "unreachable"); }
+      default: { throw ikos_error("unreachable"); }
     }
     this->set(x, xi);
   }
@@ -1376,7 +1373,7 @@ public:
         xi = yi.AShr(zi);
         break;
       }
-      default: { assert(false && "unreachable"); }
+      default: { throw ikos_error("unreachable"); }
     }
     this->set(x, xi);
   }
@@ -1408,7 +1405,7 @@ public:
           xi = yi.URem(zi);
           break;
         }
-        default: { assert(false && "unreachable"); }
+        default: { throw ikos_error("unreachable"); }
       }
       this->set(x, xi);
     }
@@ -1436,7 +1433,7 @@ public:
           xi = yi.URem(zi);
           break;
         }
-        default: { assert(false && "unreachable"); }
+        default: { throw ikos_error("unreachable"); }
       }
       this->set(x, xi);
     }
@@ -1543,9 +1540,21 @@ public:
 #endif
   } // Maintains normalization.
 
-  const char* getDomainName() const { return "Octagons"; }
+  static std::string domain_name() { return "Octagons"; }
 
-}; // class octagon
-} // namespace ikos
+}; // end class octagon
+
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number, typename VariableName >
+struct normalize_impl< octagon< Number, VariableName > > {
+  void operator()(octagon< Number, VariableName >& inv) { inv.normalize(); }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_OCTAGONS_HPP

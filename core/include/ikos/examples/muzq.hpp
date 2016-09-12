@@ -74,7 +74,7 @@ public:
 
   virtual ~statement() {}
 
-}; // class statement
+}; // end class statement
 
 template < typename Number, typename VariableName, typename CheckPointName >
 class binary_operation : public writeable {
@@ -131,7 +131,7 @@ public:
     o << this->_op2;
   }
 
-}; // class binary_operation
+}; // end class binary_operation
 
 template < typename VariableName, typename CheckPointName >
 class z_binary_operation : public statement< VariableName, CheckPointName > {
@@ -159,7 +159,7 @@ public:
 
   void write(std::ostream& o) { this->_stmt.write(o); }
 
-}; // class z_binary_operation
+}; // end class z_binary_operation
 
 template < typename VariableName, typename CheckPointName >
 class q_binary_operation : public statement< VariableName, CheckPointName > {
@@ -187,7 +187,7 @@ public:
 
   void write(std::ostream& o) { this->_stmt.write(o); }
 
-}; // class q_binary_operation
+}; // end class q_binary_operation
 
 template < typename Number, typename VariableName, typename CheckPointName >
 class linear_assignment : public writeable {
@@ -214,7 +214,7 @@ public:
 
   void write(std::ostream& o) { o << this->_lhs << " = " << this->_rhs; }
 
-}; // class linear_assignment
+}; // end class linear_assignment
 
 template < typename VariableName, typename CheckPointName >
 class z_linear_assignment : public statement< VariableName, CheckPointName > {
@@ -240,7 +240,7 @@ public:
 
   void write(std::ostream& o) { this->_stmt.write(o); }
 
-}; // class z_linear_assignment
+}; // end class z_linear_assignment
 
 template < typename VariableName, typename CheckPointName >
 class q_linear_assignment : public statement< VariableName, CheckPointName > {
@@ -266,7 +266,7 @@ public:
 
   void write(std::ostream& o) { this->_stmt.write(o); }
 
-}; // class q_linear_assignment
+}; // end class q_linear_assignment
 
 template < typename Number, typename VariableName, typename CheckPointName >
 class linear_assertion : public writeable {
@@ -289,7 +289,7 @@ public:
 
   void write(std::ostream& o) { o << "assert(" << _cst << ")"; }
 
-}; // class linear_assertion
+}; // end class linear_assertion
 
 template < typename VariableName, typename CheckPointName >
 class z_linear_assertion : public statement< VariableName, CheckPointName > {
@@ -314,7 +314,7 @@ public:
 
   void write(std::ostream& o) { this->_stmt.write(o); }
 
-}; // class z_linear_assertion
+}; // end class z_linear_assertion
 
 template < typename VariableName, typename CheckPointName >
 class q_linear_assertion : public statement< VariableName, CheckPointName > {
@@ -339,7 +339,7 @@ public:
 
   void write(std::ostream& o) { this->_stmt.write(o); }
 
-}; // class q_linear_assertion
+}; // end class q_linear_assertion
 
 template < typename VariableName, typename CheckPointName >
 class checkpoint : public statement< VariableName, CheckPointName > {
@@ -360,7 +360,7 @@ public:
 
   void write(std::ostream& o) { o << "checkpoint " << this->_name; }
 
-}; // class checkpoint
+}; // end class checkpoint
 
 template < typename VariableName, typename CheckPointName >
 class muzq_cfg;
@@ -443,7 +443,7 @@ public:
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
 private:
   basic_block();
@@ -571,7 +571,7 @@ public:
         checkpoint_ptr(new checkpoint_t(name))));
   }
 
-}; // class basic_block
+}; // end class basic_block
 
 template < typename VariableName, typename CheckPointName >
 class muzq_cfg
@@ -662,7 +662,7 @@ public:
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
 private:
   muzq_cfg();
@@ -736,7 +736,7 @@ public:
     }
   }
 
-}; // class muzq_cfg
+}; // end class muzq_cfg
 
 template < typename VariableName, typename CheckPointName >
 class statement_visitor {
@@ -772,10 +772,10 @@ public:
 
   virtual ~statement_visitor() {}
 
-}; // class statement_visitor
+}; // end class statement_visitor
 
-} // namespace muzq
+} // end namespace muzq
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_MUZQ_HPP

@@ -18,10 +18,10 @@
  * - Assume that no overflow/underflow can occur.
  * - Bitwise operations are sound approximations for both signed and
  *   unsigned interpretations of bit strings.
- * - If typeSize == -1 then the domain assumes that all variables have
+ * - If TypeSize == -1 then the domain assumes that all variables have
  *   unlimited precision
- * - If typeSize > -1 the domain assumes that all variables will
- *   have the same bit width typeSize.
+ * - If TypeSize > -1 the domain assumes that all variables will
+ *   have the same bit width TypeSize.
  *
  * Notices:
  *
@@ -64,32 +64,33 @@
 #include <vector>
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
+#include <ikos/domains/intervals.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
 #include <ikos/domains/separate_domains.hpp>
 
 namespace ikos {
 
 template < typename Number,
-           int typeSize = -1 > //! typeSize = -1 means unlimited precision
+           int TypeSize = -1 > //! TypeSize = -1 means unlimited precision
 class congruence : public writeable {
 public:
-  typedef congruence< Number, typeSize > congruence_t;
+  typedef congruence< Number, TypeSize > congruence_t;
 
 private:
   bool _is_bottom;
   Number _a, _b; // Of the form (aZ + b)
 
-  bool isUnlimited(int width) { return width == -1; }
+  bool is_unlimited(int width) { return width == -1; }
 
-  congruence(bool b) : writeable(), _is_bottom(!b), _a(1), _b(0) {}
+  congruence(bool b) : _is_bottom(!b), _a(1), _b(0) {}
 
-  congruence(int x) : writeable(), _is_bottom(false), _a(0), _b(x) {}
+  congruence(int x) : _is_bottom(false), _a(0), _b(x) {}
 
   congruence(Number a, Number b)
-      : writeable(),
-        _is_bottom(false),
+      : _is_bottom(false),
         _a(a),
         // Set to standard form: 0 <= b < a for a != 0.
         _b((a == 0) ? b : ((b % a) < 0 ? (b % a) + a : b % a)) {}
@@ -112,7 +113,7 @@ private:
   static Number lcm(Number x, Number y) {
     Number tmp = gcd(x, y);
     if (tmp == 0)
-      throw ikos_error("lcm causes division by zero");
+      throw ikos_error("congruence: lcm causes division by zero");
     return abs(x * y) / tmp;
   }
 
@@ -124,20 +125,21 @@ private:
       return *this;
     }
 
-    if (typeSize < 32) {
-      Number tmp = gcd(_a, Number(1) << Number(typeSize));
+    if (TypeSize < 32) {
+      Number tmp = gcd(_a, Number(1) << Number(TypeSize));
       if (tmp == 0)
-        throw ikos_error("weakened causes division by zero");
+        throw ikos_error("congruence: weakened causes division by zero");
       return congruence_t(tmp, _b % tmp);
     } else {
-      throw ikos_error("if int is 32 bits shift can only range from 0 to 31");
+      throw ikos_error(
+          "congruence: if int is 32 bits shift can only range from 0 to 31");
     }
   }
 
   Number scanr1(Number x) {
     // Searches for the right-most bit containing a value of 1.
     Number count(1);
-    for (Number idx(1); idx < typeSize + 1;) {
+    for (Number idx(1); idx < TypeSize + 1;) {
       if ((idx & x) > 0) {
         return count;
       }
@@ -149,9 +151,9 @@ private:
 
   Number scanl1(Number x) {
     // Searches for the left-most bit containing a value of 1.
-    if (typeSize < 32) {
+    if (TypeSize < 32) {
       Number count(sizeof(x));
-      Number idx = Number(1) << Number((typeSize - 1));
+      Number idx = Number(1) << Number((TypeSize - 1));
       while (idx > 0) {
         if ((idx & x) > 0) {
           return count;
@@ -161,7 +163,8 @@ private:
       }
       return Number(-1); // to indicate not found, x==0
     } else {
-      throw ikos_error("if int is 32 bits shift can only range from 0 to 31");
+      throw ikos_error(
+          "congruence: if int is 32 bits shift can only range from 0 to 31");
     }
   }
 
@@ -170,12 +173,12 @@ public:
 
   static congruence_t bottom() { return congruence(false); }
 
-  congruence() : writeable(), _is_bottom(false), _a(1), _b(0) {}
+  congruence() : _is_bottom(false), _a(1), _b(0) {}
 
-  congruence(Number b) : writeable(), _is_bottom(false), _a(0), _b(b) {}
+  congruence(Number b) : _is_bottom(false), _a(0), _b(b) {}
 
   congruence(const congruence_t& o)
-      : writeable(), _is_bottom(o._is_bottom), _a(o._a), _b(o._b) {}
+      : _is_bottom(o._is_bottom), _a(o._a), _b(o._b) {}
 
   congruence_t operator=(congruence_t o) {
     _is_bottom = o._is_bottom;
@@ -218,17 +221,17 @@ public:
       return true;
     } else if (_a == 0) {
       if (o._a == 0)
-        throw ikos_error("operator<= causes division by zero");
+        throw ikos_error("congruence: operator<= causes division by zero");
       if ((_b % o._a < 0 ? (_b % o._a) + o._a : _b % o._a) == o._b % o._a)
         return true;
     } else if (o._a == 0) {
       if (_a == 0)
-        throw ikos_error("operator<= causes division by zero");
+        throw ikos_error("congruence: operator<= causes division by zero");
       if (_b % _a == (o._b % _a < 0 ? (o._b % _a) + _a : o._b % _a))
         return false;
     }
     if (o._a == 0)
-      throw ikos_error("operator<= causes division by zero");
+      throw ikos_error("congruence: operator<= causes division by zero");
     return (_a % o._a == 0) && (_b % o._a == o._b % o._a);
   }
 
@@ -272,7 +275,7 @@ public:
       // pre: a and o.a != 0
       Number x = gcd(_a, o._a);
       if (x == 0)
-        throw ikos_error("operator& causes division by zero");
+        throw ikos_error("congruence: operator& causes division by zero");
       if (_b % x == (o._b % x)) {
         // the part max(b,o.b) needs to be verified. What we really
         // want is to find b'' such that
@@ -374,7 +377,7 @@ public:
 
       if (o._a == 0) {
         if (o._b == 0)
-          throw ikos_error("operator/ causes division by zero");
+          throw ikos_error("congruence: operator/ causes division by zero");
         if (_a % o._b == 0)
           return congruence_t(_a / o._b, _b / o._b);
         else
@@ -420,7 +423,7 @@ public:
       */
       if (o._a == 0) {
         if (o._b == 0)
-          throw ikos_error("operator% causes division by zero");
+          throw ikos_error("congruence: operator% causes division by zero");
         if (_a % o._b == 0) {
           return congruence_t(0, _b % o._b);
         } else {
@@ -454,19 +457,20 @@ private:
       return congruence_t::bottom();
     else if (this->is_top())
       return congruence_t::top();
-    else if (isUnlimited(typeSize))
+    else if (is_unlimited(TypeSize))
       return congruence_t::top();
     else {
-      if (typeSize < 32) {
-        Number two_to_n = Number(1) << Number(typeSize);
+      if (TypeSize < 32) {
+        Number two_to_n = Number(1) << Number(TypeSize);
         return congruence_t(gcd(_a, two_to_n), -_b - 1);
       } else {
-        throw ikos_error("if int is 32 bits shift can only range from 0 to 31");
+        throw ikos_error(
+            "congruence: if int is 32 bits shift can only range from 0 to 31");
       }
     }
     // For simplicity, we don't implement the case when a==0:
     //   return (is_bottom()) ? bottom() :
-    //   (a== 0) ? congruence_t(~b) : congruence_t(gcd(a, 1 << typeSize), -b-
+    //   (a== 0) ? congruence_t(~b) : congruence_t(gcd(a, 1 << TypeSize), -b-
     //   1);
   }
 
@@ -476,7 +480,7 @@ public:
       return congruence_t::bottom();
     else if (this->is_top() || o.is_top())
       return congruence_t::top();
-    else if (isUnlimited(typeSize))
+    else if (is_unlimited(TypeSize))
       return congruence_t::top();
     else {
       // first both numbers are approximated to power of 2
@@ -504,7 +508,7 @@ public:
       return congruence_t::bottom();
     else if (this->is_top() || o.is_top())
       return congruence_t::top();
-    else if (isUnlimited(typeSize))
+    else if (is_unlimited(TypeSize))
       return congruence_t::top();
     else {
       return this->Not().And(o.Not()).Not();
@@ -516,7 +520,7 @@ public:
       return congruence_t::bottom();
     else if (this->is_top() || o.is_top())
       return congruence_t::top();
-    else if (isUnlimited(typeSize))
+    else if (is_unlimited(TypeSize))
       return congruence_t::top();
     else {
       return this->And(o.Not()).Or(this->Not().And(o));
@@ -528,7 +532,7 @@ public:
       return congruence_t::bottom();
     else if (this->is_top() || o.is_top())
       return congruence_t::top();
-    else if (isUnlimited(typeSize))
+    else if (is_unlimited(TypeSize))
       return congruence_t::top();
     else {
       if (o._a == 0) { // singleton
@@ -549,7 +553,7 @@ public:
       return congruence_t::bottom();
     else if (this->is_top() || o.is_top())
       return congruence_t::top();
-    else if (isUnlimited(typeSize))
+    else if (is_unlimited(TypeSize))
       return congruence_t::top();
     else {
       Number t = scanr1(_a);
@@ -611,66 +615,67 @@ public:
     }
     o << _a << "Z" << ((positive) ? "+ " : "- ") << _b;
   }
+
 }; // end class congruence
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator+(
-    Number c, congruence< Number, typeSize > x) {
-  return congruence< Number, typeSize >(c) + x;
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator+(
+    Number c, congruence< Number, TypeSize > x) {
+  return congruence< Number, TypeSize >(c) + x;
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator+(
-    congruence< Number, typeSize > x, Number c) {
-  return x + congruence< Number, typeSize >(c);
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator+(
+    congruence< Number, TypeSize > x, Number c) {
+  return x + congruence< Number, TypeSize >(c);
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator*(
-    Number c, congruence< Number, typeSize > x) {
-  return congruence< Number, typeSize >(c) * x;
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator*(
+    Number c, congruence< Number, TypeSize > x) {
+  return congruence< Number, TypeSize >(c) * x;
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator*(
-    congruence< Number, typeSize > x, Number c) {
-  return x * congruence< Number, typeSize >(c);
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator*(
+    congruence< Number, TypeSize > x, Number c) {
+  return x * congruence< Number, TypeSize >(c);
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator/(
-    Number c, congruence< Number, typeSize > x) {
-  return congruence< Number, typeSize >(c) / x;
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator/(
+    Number c, congruence< Number, TypeSize > x) {
+  return congruence< Number, TypeSize >(c) / x;
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator/(
-    congruence< Number, typeSize > x, Number c) {
-  return x / congruence< Number, typeSize >(c);
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator/(
+    congruence< Number, TypeSize > x, Number c) {
+  return x / congruence< Number, TypeSize >(c);
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator-(
-    Number c, congruence< Number, typeSize > x) {
-  return congruence< Number, typeSize >(c) - x;
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator-(
+    Number c, congruence< Number, TypeSize > x) {
+  return congruence< Number, TypeSize >(c) - x;
 }
 
-template < typename Number, int typeSize >
-inline congruence< Number, typeSize > operator-(
-    congruence< Number, typeSize > x, Number c) {
-  return x - congruence< Number, typeSize >(c);
+template < typename Number, int TypeSize >
+inline congruence< Number, TypeSize > operator-(
+    congruence< Number, TypeSize > x, Number c) {
+  return x - congruence< Number, TypeSize >(c);
 }
 
 template < typename Number,
            typename VariableName,
            typename CongruenceCollection,
-           int typeSize = -1 >
+           int TypeSize = -1 >
 class equality_congruence_solver {
   // TODO: check correctness of the solver. Granger provides a sound
   // and more precise solver for equality linear congruences (see
   // Theorem 4.4).
 private:
-  typedef congruence< Number, typeSize > congruence_t;
+  typedef congruence< Number, TypeSize > congruence_t;
   typedef variable< Number, VariableName > variable_t;
   typedef linear_expression< Number, VariableName > linear_expression_t;
   typedef linear_constraint< Number, VariableName > linear_constraint_t;
@@ -792,16 +797,16 @@ public:
     }
   }
 
-}; // class equality_congruence_solver
+}; // end class equality_congruence_solver
 
-template < typename Number, typename VariableName, int typeSize = -1 >
-class congruence_domain : public writeable,
+template < typename Number, typename VariableName, int TypeSize = -1 >
+class congruence_domain : public abstract_domain,
                           public numerical_domain< Number, VariableName >,
                           public bitwise_operators< Number, VariableName >,
                           public division_operators< Number, VariableName > {
 public:
-  typedef congruence< Number, typeSize > congruence_t;
-  typedef congruence_domain< Number, VariableName, typeSize >
+  typedef congruence< Number, TypeSize > congruence_t;
+  typedef congruence_domain< Number, VariableName, TypeSize >
       congruence_domain_t;
 
 public:
@@ -819,7 +824,7 @@ private:
   typedef equality_congruence_solver< Number,
                                       VariableName,
                                       separate_domain_t,
-                                      typeSize > solver_t;
+                                      TypeSize > solver_t;
 
 public:
   typedef typename separate_domain_t::iterator iterator;
@@ -842,12 +847,7 @@ public:
 public:
   congruence_domain() : _env(separate_domain_t::top()) {}
 
-  congruence_domain(const congruence_domain_t& e)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        bitwise_operators< Number, VariableName >(),
-        division_operators< Number, VariableName >(),
-        _env(e._env) {}
+  congruence_domain(const congruence_domain_t& e) : _env(e._env) {}
 
   congruence_domain_t& operator=(congruence_domain_t e) {
     this->_env = e._env;
@@ -1188,10 +1188,50 @@ public:
     return csts;
   }
 
-  const char* getDomainName() const { return "Congruences"; }
+  static std::string domain_name() { return "Congruences"; }
 
-}; // class congruence_domain
+}; // end class congruence_domain
 
-} // namespace ikos
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number, typename VariableName, int TypeSize >
+struct var_to_interval_impl<
+    congruence_domain< Number, VariableName, TypeSize > > {
+  interval< Number > operator()(
+      congruence_domain< Number, VariableName, TypeSize >& inv,
+      VariableName v) {
+    congruence< Number > c = inv[v];
+
+    if (c.is_bottom()) {
+      return interval< Number >::bottom();
+    } else if (!c.singleton()) {
+      return interval< Number >::top();
+    } else {
+      return interval< Number >(*c.singleton());
+    }
+  }
+};
+
+template < typename Number, typename VariableName, int TypeSize >
+struct from_interval_impl<
+    congruence_domain< Number, VariableName, TypeSize > > {
+  void operator()(congruence_domain< Number, VariableName, TypeSize >& inv,
+                  VariableName v,
+                  interval< Number > i) {
+    if (i.is_bottom()) {
+      inv.set(v, congruence< Number >::bottom());
+    } else if (!i.singleton()) {
+      inv.set(v, congruence< Number >::top());
+    } else {
+      inv.set(v, congruence< Number >(*i.singleton()));
+    }
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_CONGRUENCES_HPP

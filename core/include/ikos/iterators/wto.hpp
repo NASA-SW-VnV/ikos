@@ -120,7 +120,7 @@ public:
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
 private:
   wto_nesting(node_list_ptr l) : _nodes(node_list_ptr(new node_list_t(*l))) {}
@@ -199,7 +199,7 @@ public:
     o << "]";
   }
 
-}; // class nesting
+}; // end class nesting
 
 template < typename NodeName, typename CFG >
 class wto_component : public writeable {
@@ -210,7 +210,7 @@ public:
   virtual void accept(wto_component_visitor< NodeName, CFG >*) = 0;
   virtual ~wto_component() {}
 
-}; // class wto_component
+}; // end class wto_component
 
 template < typename NodeName, typename CFG >
 class wto_vertex : public wto_component< NodeName, CFG > {
@@ -229,7 +229,7 @@ public:
 
   void write(std::ostream& o) { o << this->_node; }
 
-}; // class wto_vertex
+}; // end class wto_vertex
 
 template < typename NodeName, typename CFG >
 class wto_cycle : public wto_component< NodeName, CFG > {
@@ -281,7 +281,7 @@ public:
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
 public:
   NodeName head() { return this->_head; }
@@ -308,7 +308,7 @@ public:
     o << ")";
   }
 
-}; // class wto_cycle
+}; // end class wto_cycle
 
 template < typename NodeName, typename CFG >
 class wto_component_visitor {
@@ -321,7 +321,7 @@ public:
   virtual void visit(wto_cycle_t&) = 0;
   virtual ~wto_component_visitor() {}
 
-}; // class wto_component_visitor
+}; // end class wto_component_visitor
 
 template < typename NodeName, typename CFG >
 class wto : public writeable {
@@ -384,7 +384,7 @@ private:
           std::make_pair(vertex.node(), this->_nesting));
     }
 
-  }; // class nesting_builder
+  }; // end class nesting_builder
 
 private:
   dfn_t get_dfn(NodeName n) {
@@ -512,7 +512,7 @@ public:
       }
     }
 
-  }; // class iterator
+  }; // end class iterator
 
 public:
   wto(CFG& cfg)
@@ -569,8 +569,8 @@ public:
     }
   }
 
-}; // class wto
+}; // end class wto
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_WTO_HPP

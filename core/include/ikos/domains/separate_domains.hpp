@@ -47,11 +47,12 @@
 
 #include <ikos/algorithms/patricia_trees.hpp>
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
 template < typename Key, typename Value >
-class separate_domain : public writeable {
+class separate_domain : public abstract_domain {
 private:
   typedef patricia_tree< Key, Value > patricia_tree_t;
   typedef typename patricia_tree_t::unary_op_t unary_op_t;
@@ -81,7 +82,7 @@ private:
 
     bool default_is_absorbing() { return true; }
 
-  }; // class join_op
+  }; // end class join_op
 
   class widening_op : public binary_op_t {
     boost::optional< Value > apply(Value x, Value y) {
@@ -95,7 +96,7 @@ private:
 
     bool default_is_absorbing() { return true; }
 
-  }; // class widening_op
+  }; // end class widening_op
 
   class meet_op : public binary_op_t {
     boost::optional< Value > apply(Value x, Value y) {
@@ -109,7 +110,7 @@ private:
 
     bool default_is_absorbing() { return false; }
 
-  }; // class meet_op
+  }; // end class meet_op
 
   class narrowing_op : public binary_op_t {
     boost::optional< Value > apply(Value x, Value y) {
@@ -123,14 +124,14 @@ private:
 
     bool default_is_absorbing() { return false; }
 
-  }; // class narrowing_op
+  }; // end class narrowing_op
 
   class domain_po : public partial_order_t {
     bool leq(Value x, Value y) { return x.operator<=(y); }
 
     bool default_is_top() { return true; }
 
-  }; // class domain_po
+  }; // end class domain_po
 
 public:
   static separate_domain_t top() { return separate_domain_t(); }
@@ -154,7 +155,7 @@ public:
   separate_domain() : _is_bottom(false) {}
 
   separate_domain(const separate_domain_t& e)
-      : writeable(), _is_bottom(e._is_bottom), _tree(e._tree) {}
+      : _is_bottom(e._is_bottom), _tree(e._tree) {}
 
   separate_domain_t& operator=(separate_domain_t e) {
     this->_is_bottom = e._is_bottom;
@@ -164,7 +165,7 @@ public:
 
   iterator begin() {
     if (this->is_bottom()) {
-      throw ikos_error("Separate domain: trying to invoke iterator on bottom");
+      throw ikos_error("separate domain: trying to call begin() on bottom");
     } else {
       return this->_tree.begin();
     }
@@ -172,7 +173,7 @@ public:
 
   iterator end() {
     if (this->is_bottom()) {
-      throw ikos_error("Separate domain: trying to invoke iterator on bottom");
+      throw ikos_error("separate domain: trying to call end() on bottom");
     } else {
       return this->_tree.end();
     }
@@ -308,8 +309,10 @@ public:
     }
   }
 
-}; // class separate_domain
+  static std::string domain_name() { return "Separate"; }
 
-} // namespace ikos
+}; // end class separate_domain
+
+} // end namespace ikos
 
 #endif // IKOS_SEPARATE_DOMAINS_HPP

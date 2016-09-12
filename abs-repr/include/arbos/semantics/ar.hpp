@@ -2549,6 +2549,8 @@ class AR_Code : public AR_Node {
 private:
   index64_t _entry_block;
   index64_t _exit_block;
+  index64_t _unreachable_block;
+  index64_t _unwind_block;
   std::vector< AR_Node_Ref< AR_Basic_Block > > _blocks;
   std::vector< AR_Node_Ref< AR_Internal_Variable > > _internal_variables;
   std::unordered_map< std::string, AR_Node_Ref< AR_Basic_Block > >
@@ -2595,6 +2597,22 @@ public:
     _exit_block = block.getUID();
   }
 
+  inline AR_Node_Ref< AR_Basic_Block > getUnreachableBlock() {
+    return AR_Node_Ref< AR_Basic_Block >(_unreachable_block);
+  }
+
+  inline void setUnreachableBlock(AR_Node_Ref< AR_Basic_Block > block) {
+    _unreachable_block = block.getUID();
+  }
+
+  inline AR_Node_Ref< AR_Basic_Block > getUnwindBlock() {
+    return AR_Node_Ref< AR_Basic_Block >(_unwind_block);
+  }
+
+  inline void setUnwindBlock(AR_Node_Ref< AR_Basic_Block > block) {
+    _unwind_block = block.getUID();
+  }
+
   AR_Node_Ref< AR_Internal_Variable > getInternalVariable(
       const std::string& name);
 
@@ -2622,6 +2640,7 @@ public:
   virtual void accept(std::shared_ptr< Visitor > visitor);
   AR_Node_Ref< AR_Basic_Block > getBasicBlockByNameId(
       const std::string& name_id);
+  index64_t getBasicBlockUIDByName(const std::string& name);
   virtual AR_CLASS_TYPE_CODE getClassType() { return AR_CODE_CLASS_TYPE; }
 
   //! Returns the shared_ptr to AR_Code

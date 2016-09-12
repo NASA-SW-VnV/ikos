@@ -146,11 +146,11 @@ public:
     }
   }
   void visit(Invoke_ref s) { visit(ar::getFunctionCall(s)); }
+  void visit(Return_Value_ref s) { _sym_exec.exec(s); }
 
   // not implemented
   void visit(FP_Op_ref) {}
   void visit(FP_Comparison_ref) {}
-  void visit(Return_Value_ref) {}
 };
 
 // Wrapper of AR_Function that follows ikos::cfg interface
@@ -370,6 +370,7 @@ public:
       }
       if (node == succ || has_side_effect(succ)) {
         all_unreachable_paths = false;
+        continue;
       }
 
       vis = std::make_shared< transfer_fun_visitor_t >(inv, _vfac, _lfac);
@@ -496,9 +497,11 @@ public:
     // check that there is no loop
     return child != node && !child->isNextBlock(node) &&
            !child->isNextBlock(child) &&
-           // check that it's not an entry or exit block
+           // check that it's not an entry/exit/unreachable/unwind block
            node->getContainingCode()->getEntryBlock() != child &&
            node->getContainingCode()->getExitBlock() != child &&
+           node->getContainingCode()->getUnreachableBlock() != child &&
+           node->getContainingCode()->getUnwindBlock() != child &&
            // check that it has not already been merged
            _merged.find(edge_t(node->getUID(), child->getUID())) ==
                _merged.end() &&

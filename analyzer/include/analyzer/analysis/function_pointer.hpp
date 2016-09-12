@@ -58,8 +58,12 @@ private:
   // analysis that returns always top.
 
   // Fake abstract domain that returns always top
-  template < typename VariableName, typename Number >
+  template < typename Number, typename VariableName >
   class TopDomain {
+  public:
+    typedef Number number_t;
+    typedef VariableName variable_name_t;
+
   private:
     typedef interval< Number > interval_t;
 
@@ -73,7 +77,7 @@ private:
   };
 
   // Fake numerical analysis that returns always top
-  template < typename AbsNumDomain, typename VariableName, typename Number >
+  template < typename AbsNumDomain >
   class NumericalAnalysis {
   public:
     NumericalAnalysis() {}
@@ -89,9 +93,8 @@ private:
 private:
   typedef varname_t VariableName;
   typedef ikos::z_number Number;
-  typedef TopDomain< VariableName, Number > AbsNumDomain;
-  typedef NumericalAnalysis< AbsNumDomain, VariableName, Number >
-      numerical_analysis_t;
+  typedef TopDomain< Number, VariableName > AbsNumDomain;
+  typedef NumericalAnalysis< AbsNumDomain > numerical_analysis_t;
   typedef std::shared_ptr< numerical_analysis_t > numerical_analysis_ptr_t;
   typedef PointerPass::PTA< AbsNumDomain, numerical_analysis_t > pta_t;
 

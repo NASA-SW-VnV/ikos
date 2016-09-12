@@ -65,7 +65,7 @@ class wto_iterator;
 template < typename NodeName, typename CFG, typename AbstractValue >
 class wto_processor;
 
-} // namespace interleaved_fwd_fixpoint_iterator_impl
+} // end namespace interleaved_fwd_fixpoint_iterator_impl
 
 template < typename NodeName, typename CFG, typename AbstractValue >
 class interleaved_fwd_fixpoint_iterator
@@ -77,14 +77,10 @@ private:
   typedef std::unordered_map< NodeName, AbstractValue > invariant_table_t;
   typedef std::shared_ptr< invariant_table_t > invariant_table_ptr;
   typedef wto< NodeName, CFG > wto_t;
-  typedef interleaved_fwd_fixpoint_iterator_impl::wto_iterator< NodeName,
-                                                                CFG,
-                                                                AbstractValue >
-      wto_iterator_t;
-  typedef interleaved_fwd_fixpoint_iterator_impl::wto_processor< NodeName,
-                                                                 CFG,
-                                                                 AbstractValue >
-      wto_processor_t;
+  typedef interleaved_fwd_fixpoint_iterator_impl::
+      wto_iterator< NodeName, CFG, AbstractValue > wto_iterator_t;
+  typedef interleaved_fwd_fixpoint_iterator_impl::
+      wto_processor< NodeName, CFG, AbstractValue > wto_processor_t;
 
 private:
   CFG _cfg;
@@ -166,7 +162,7 @@ public:
 
   virtual ~interleaved_fwd_fixpoint_iterator() {}
 
-}; // class interleaved_fwd_fixpoint_iterator
+}; // end class interleaved_fwd_fixpoint_iterator
 
 namespace interleaved_fwd_fixpoint_iterator_impl {
 
@@ -267,7 +263,7 @@ public:
     }
   }
 
-}; // class wto_iterator
+}; // end class wto_iterator
 
 template < typename NodeName, typename CFG, typename AbstractValue >
 class wto_processor : public wto_component_visitor< NodeName, CFG > {
@@ -299,10 +295,10 @@ public:
     }
   }
 
-}; // class wto_processor
+}; // end class wto_processor
 
-} // interleaved_fwd_fixpoint_iterator_impl
+} // end namespace interleaved_fwd_fixpoint_iterator_impl
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_FWD_FIXPOINT_ITERATORS

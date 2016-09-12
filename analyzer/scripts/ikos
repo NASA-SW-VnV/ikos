@@ -74,7 +74,7 @@ running_process = None
 def parse_opt(argv):
     import argparse
 
-    usage = '%(prog)s [options] file[.c|.bc]'
+    usage = '%(prog)s [options] file[.c|.cpp|.bc]'
     parser = argparse.ArgumentParser(usage=usage)
 
     parser.add_argument('-a', '--analysis', dest='analyses',
@@ -199,7 +199,7 @@ def parse_opt(argv):
                         default=False)
 
     # positional argument
-    parser.add_argument('file', metavar='file[.c|.bc]', help='The file to analyze')
+    parser.add_argument('file', metavar='file[.c|.cpp|.bc]', help='The file to analyze')
 
     return parser.parse_args(argv)
 
@@ -362,7 +362,7 @@ def get_llvm_to_ar_lib():
     return llvm_to_ar_lib
 
 
-# compile the C program and generate initial bitcode
+# compile the C/C++ program and generate initial bitcode
 def llvm_clang(in_name, out_name, wd):
     if not out_name:
         out_name = bc_name(in_name, wd)
@@ -382,7 +382,7 @@ def do_ar(in_name, out_name, opt, wd):
         out_name = ar_name(in_name, wd)
 
     in_base, in_ext = os.path.splitext(in_name)
-    if in_ext == '.c':
+    if in_ext in ('.c', '.cpp'):
         bc = bc_name(in_name, wd)
         with stats.timer('llvm-clang'):
             llvm_clang(in_name, bc, wd)
@@ -439,11 +439,12 @@ def do_arbos_plugins(in_name, opt):
         passes.append((os.path.join(root, 'lib'), 'pointer-shift-opt', 'ps-opt'))
         passes.append((os.path.join(root, 'lib'), 'branching-opt', 'branching-opt'))
         passes.append((os.path.join(root, 'lib'), 'inline-init-gv', 'inline-init-gv'))
-
-    passes.append((os.path.join(root, 'lib'), 'analyzer', 'analyzer'))
+        passes.append((os.path.join(root, 'lib'), 'unify-exit-nodes', 'unify-exit-nodes'))
 
     if opt.dot_cfg:
         passes.append((os.path.join(root, 'lib'), 'ar-to-dot', 'cfg-dot'))
+
+    passes.append((os.path.join(root, 'lib'), 'analyzer', 'analyzer'))
 
     libpaths = []
     passnames = []

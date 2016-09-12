@@ -73,573 +73,27 @@
 #ifndef ANALYZER_NUM_SYM_EXEC_HPP
 #define ANALYZER_NUM_SYM_EXEC_HPP
 
-#include <unordered_set>
+#include <unordered_map>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/noncopyable.hpp>
+
+#include <ikos/domains/memory_domains_api.hpp>
+#include <ikos/domains/nullity_domains_api.hpp>
+#include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/pointer_domains_api.hpp>
+#include <ikos/domains/uninitialized_domains_api.hpp>
 
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/analysis/context.hpp>
 #include <analyzer/analysis/sym_exec_api.hpp>
 #include <analyzer/ar-wrapper/cfg.hpp>
 #include <analyzer/ar-wrapper/literal.hpp>
-#include <analyzer/domains/summary_domain.hpp>
-#include <analyzer/domains/value_domain.hpp>
-#include <analyzer/ikos-wrapper/domains_traits.hpp>
 
 namespace analyzer {
 
 using namespace arbos;
 using namespace ikos;
-
-namespace value_domain_impl {
-// Here operations which are not standard in numerical abstract
-// domains but needed for a value analysis that models memory
-// contents and/or keep track of nullity and uninitialized variable
-// information.
-
-// x is a new memory object (e.g., &'s and mallocs)
-template < typename AbsDomain, typename VariableName >
-void make_object(AbsDomain& inv, VariableName x) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_object(memory_domain< AbsDomain, VariableName, Number >& inv,
-                 VariableName x) {
-  inv.make_object(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_object(summary_domain< AbsDomain, VariableName, Number >& inv,
-                 VariableName x) {
-  inv.make_object(x);
-}
-
-// x and y are may point to the same memory location
-template < typename AbsDomain, typename VariableName >
-void assign_ptr(AbsDomain& inv, VariableName x, VariableName y) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void assign_ptr(memory_domain< AbsDomain, VariableName, Number >& inv,
-                VariableName x,
-                VariableName y) {
-  inv.assign_ptr(x, y);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void assign_ptr(summary_domain< AbsDomain, VariableName, Number >& inv,
-                VariableName x,
-                VariableName y) {
-  inv.assign_ptr(x, y);
-}
-
-// Return if nothing can be said about the address of x
-template < typename AbsDomain, typename VariableName >
-bool is_unknown_addr(AbsDomain& inv, VariableName x) {
-  return true;
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_unknown_addr(memory_domain< AbsDomain, VariableName, Number >& inv,
-                     VariableName x) {
-  return inv.is_unknown_addr(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_unknown_addr(summary_domain< AbsDomain, VariableName, Number >& inv,
-                     VariableName x) {
-  return inv.is_unknown_addr(x);
-}
-
-// Return the addresses of x
-template < typename AbsDomain, typename VariableName >
-std::vector< VariableName > get_addrs_set(AbsDomain& inv, VariableName x) {
-  return std::vector< VariableName >();
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-std::vector< VariableName > get_addrs_set(
-    memory_domain< AbsDomain, VariableName, Number >& inv, VariableName x) {
-  assert(!is_unknown_addr(inv, x));
-  return inv.get_addrs_set(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-std::vector< VariableName > get_addrs_set(
-    summary_domain< AbsDomain, VariableName, Number >& inv, VariableName x) {
-  assert(!is_unknown_addr(inv, x));
-  return inv.get_addrs_set(x);
-}
-
-// Refine the addresses of x
-template < typename AbsDomain, typename VariableName, typename PtrSet >
-void refine_addrs(AbsDomain& inv, VariableName v, PtrSet addrs) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void refine_addrs(
-    memory_domain< AbsDomain, VariableName, Number >& inv,
-    VariableName v,
-    typename memory_domain< AbsDomain, VariableName, Number >::points_to_set_t
-        addrs) {
-  inv.refine_addrs(v, addrs);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void refine_addrs(
-    summary_domain< AbsDomain, VariableName, Number >& inv,
-    VariableName v,
-    typename summary_domain< AbsDomain, VariableName, Number >::points_to_set_t
-        addrs) {
-  inv.refine_addrs(v, addrs);
-}
-
-// Refine the addresses and offset of x
-template < typename AbsDomain, typename VariableName, typename PtrSet >
-void refine_addrs_and_offset(AbsDomain& inv,
-                             VariableName v_addr,
-                             PtrSet addrs,
-                             VariableName v_offset,
-                             z_interval offset) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void refine_addrs_and_offset(
-    memory_domain< AbsDomain, VariableName, Number >& inv,
-    VariableName v_addr,
-    typename memory_domain< AbsDomain, VariableName, Number >::points_to_set_t
-        addrs,
-    VariableName v_offset,
-    z_interval offset) {
-  inv.refine_addrs_and_offset(v_addr, addrs, v_offset, offset);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void refine_addrs_and_offset(
-    summary_domain< AbsDomain, VariableName, Number >& inv,
-    VariableName v_addr,
-    typename summary_domain< AbsDomain, VariableName, Number >::points_to_set_t
-        addrs,
-    VariableName v_offset,
-    z_interval offset) {
-  inv.refine_addrs_and_offset(v_addr, addrs, v_offset, offset);
-}
-
-// memory write (store)
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_write(AbsDomain& inv,
-               VariableName offset,
-               Number size,
-               typename AbsDomain::linear_expression_t e,
-               bool is_pointer) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_write(memory_domain< AbsDomain, VariableName, Number >& inv,
-               VariableName offset,
-               Number size,
-               typename memory_domain< AbsDomain,
-                                       VariableName,
-                                       Number >::linear_expression_t e,
-               bool is_pointer) {
-  inv.mem_write(offset, size, e, is_pointer);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_write(summary_domain< AbsDomain, VariableName, Number >& inv,
-               VariableName offset,
-               Number size,
-               typename summary_domain< AbsDomain,
-                                        VariableName,
-                                        Number >::linear_expression_t e,
-               bool is_pointer) {
-  inv.mem_write(offset, size, e, is_pointer);
-}
-
-// memory read (load)
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_read(AbsDomain& inv,
-              VariableName lhs,
-              VariableName offset,
-              Number size,
-              bool is_pointer) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_read(memory_domain< AbsDomain, VariableName, Number >& inv,
-              VariableName lhs,
-              VariableName offset,
-              Number size,
-              bool is_pointer) {
-  inv.mem_read(lhs, offset, size, is_pointer);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_read(summary_domain< AbsDomain, VariableName, Number >& inv,
-              VariableName lhs,
-              VariableName offset,
-              Number size,
-              bool is_pointer) {
-  inv.mem_read(lhs, offset, size, is_pointer);
-}
-
-// memory copy
-template < typename AbsDomain, typename VariableName >
-void mem_copy(AbsDomain& inv,
-              VariableName dest,
-              VariableName src,
-              typename AbsDomain::linear_expression_t size) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_copy(memory_domain< AbsDomain, VariableName, Number >& inv,
-              VariableName dest,
-              VariableName src,
-              typename memory_domain< AbsDomain,
-                                      VariableName,
-                                      Number >::linear_expression_t size) {
-  inv.mem_copy(dest, src, size);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_copy(summary_domain< AbsDomain, VariableName, Number >& inv,
-              VariableName dest,
-              VariableName src,
-              typename summary_domain< AbsDomain,
-                                       VariableName,
-                                       Number >::linear_expression_t size) {
-  inv.mem_copy(dest, src, size);
-}
-
-// memory set
-template < typename AbsDomain, typename VariableName >
-void mem_set(AbsDomain& inv,
-             VariableName dest,
-             typename AbsDomain::linear_expression_t value,
-             typename AbsDomain::linear_expression_t size) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_set(memory_domain< AbsDomain, VariableName, Number >& inv,
-             VariableName dest,
-             typename memory_domain< AbsDomain,
-                                     VariableName,
-                                     Number >::linear_expression_t value,
-             typename memory_domain< AbsDomain,
-                                     VariableName,
-                                     Number >::linear_expression_t size) {
-  inv.mem_set(dest, value, size);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void mem_set(summary_domain< AbsDomain, VariableName, Number >& inv,
-             VariableName dest,
-             typename summary_domain< AbsDomain,
-                                      VariableName,
-                                      Number >::linear_expression_t value,
-             typename summary_domain< AbsDomain,
-                                      VariableName,
-                                      Number >::linear_expression_t size) {
-  inv.mem_set(dest, value, size);
-}
-
-// compare memory addresses
-template < typename AbsDomain, typename VariableName >
-void cmp_mem_addr(AbsDomain& inv, CompOp pred, VariableName x, VariableName y) {
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void cmp_mem_addr(memory_domain< AbsDomain, VariableName, Number >& inv,
-                  CompOp pred,
-                  VariableName x,
-                  VariableName y) {
-  switch (pred) {
-    case eq:
-      inv.cmp_mem_addr(true, x, y);
-      break;
-    case ne:
-      inv.cmp_mem_addr(false, x, y);
-      break;
-    default:;
-  }
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void cmp_mem_addr(summary_domain< AbsDomain, VariableName, Number >& inv,
-                  CompOp pred,
-                  VariableName x,
-                  VariableName y) {
-  switch (pred) {
-    case eq:
-      inv.cmp_mem_addr(true, x, y);
-      break;
-    case ne:
-      inv.cmp_mem_addr(false, x, y);
-      break;
-    default:;
-  }
-}
-
-// compare memory address with null
-template < typename AbsDomain, typename VariableName >
-void cmp_mem_addr_null(AbsDomain& inv, CompOp pred, VariableName x) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void cmp_mem_addr_null(memory_domain< AbsDomain, VariableName, Number >& inv,
-                       CompOp pred,
-                       VariableName x) {
-  switch (pred) {
-    case eq:
-      inv.cmp_mem_addr_null(true, x);
-      break;
-    case ne:
-      inv.cmp_mem_addr_null(false, x);
-      break;
-    default:;
-  }
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void cmp_mem_addr_null(summary_domain< AbsDomain, VariableName, Number >& inv,
-                       CompOp pred,
-                       VariableName x) {
-  switch (pred) {
-    case eq:
-      inv.cmp_mem_addr_null(true, x);
-      break;
-    case ne:
-      inv.cmp_mem_addr_null(false, x);
-      break;
-    default:;
-  }
-}
-
-// Similar to operator-= but forgetting only the "surface" part of
-// the underlying domain. That is, if a variable represents a
-// pointer it will forget its base address and offset but not
-// memory contents.
-template < typename AbsDomain, typename VariableName >
-void forget_mem_surface(AbsDomain& inv, VariableName p) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void forget_mem_surface(memory_domain< AbsDomain, VariableName, Number >& inv,
-                        VariableName p) {
-  inv.forget_mem_surface(p);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void forget_mem_surface(summary_domain< AbsDomain, VariableName, Number >& inv,
-                        VariableName p) {
-  inv.forget_mem_surface(p);
-}
-
-// Similar to operator-= but forgetting only the memory contents
-template < typename AbsDomain, typename VariableName >
-void forget_mem_contents(AbsDomain& inv, VariableName p) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void forget_mem_contents(memory_domain< AbsDomain, VariableName, Number >& inv,
-                         VariableName p) {
-  inv.forget_mem_contents(p);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void forget_mem_contents(summary_domain< AbsDomain, VariableName, Number >& inv,
-                         varname_t p) {
-  inv.forget_mem_contents(p);
-}
-
-// Similar to operator-= but forgetting only all the memory contents
-// included in the range [p, ..., p + len - 1]. The value of len is given
-// in bytes.
-template < typename AbsDomain, typename VariableName >
-void forget_mem_contents(AbsDomain& inv, VariableName p, ikos::z_number len) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void forget_mem_contents(memory_domain< AbsDomain, VariableName, Number >& inv,
-                         VariableName p,
-                         ikos::z_number len) {
-  inv.forget_mem_contents(p, len);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void forget_mem_contents(summary_domain< AbsDomain, VariableName, Number >& inv,
-                         varname_t p,
-                         ikos::z_number len) {
-  inv.forget_mem_contents(p, len);
-}
-
-////
-// Uninitialized variable analysis
-////
-
-template < typename AbsDomain, typename VariableName >
-void make_uninitialized(AbsDomain& inv, VariableName x) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_uninitialized(memory_domain< AbsDomain, VariableName, Number >& inv,
-                        VariableName x) {
-  inv.make_uninitialized(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_uninitialized(summary_domain< AbsDomain, VariableName, Number >& inv,
-                        VariableName x) {
-  inv.make_uninitialized(x);
-}
-
-template < typename AbsDomain, typename VariableName >
-void make_initialized(AbsDomain& inv, VariableName x) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_initialized(memory_domain< AbsDomain, VariableName, Number >& inv,
-                      VariableName x) {
-  inv.make_initialized(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_initialized(summary_domain< AbsDomain, VariableName, Number >& inv,
-                      VariableName x) {
-  inv.make_initialized(x);
-}
-
-template < typename AbsDomain, typename VariableName >
-void assign_uninitialized(AbsDomain& inv,
-                          VariableName x,
-                          std::vector< VariableName > ys) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void assign_uninitialized(memory_domain< AbsDomain, VariableName, Number >& inv,
-                          VariableName x,
-                          std::vector< VariableName > ys) {
-  inv.assign_uninitialized(x, ys);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void assign_uninitialized(
-    summary_domain< AbsDomain, VariableName, Number >& inv,
-    VariableName x,
-    std::vector< VariableName > ys) {
-  inv.assign_uninitialized(x, ys);
-}
-
-// true iff x is definitely uninitialized.
-template < typename AbsDomain, typename VariableName >
-bool is_uninitialized(AbsDomain inv, VariableName x) {
-  return false;
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_uninitialized(memory_domain< AbsDomain, VariableName, Number > inv,
-                      VariableName x) {
-  return inv.is_uninitialized(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_uninitialized(summary_domain< AbsDomain, VariableName, Number > inv,
-                      VariableName x) {
-  return inv.is_uninitialized(x);
-}
-
-// true iff x is definitely initialized.
-template < typename AbsDomain, typename VariableName >
-bool is_initialized(AbsDomain inv, VariableName x) {
-  return false;
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_initialized(memory_domain< AbsDomain, VariableName, Number > inv,
-                    VariableName x) {
-  return inv.is_initialized(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_initialized(summary_domain< AbsDomain, VariableName, Number > inv,
-                    VariableName x) {
-  return inv.is_initialized(x);
-}
-
-////
-// Nullity analysis
-////
-
-template < typename AbsDomain, typename VariableName >
-void make_null(AbsDomain& inv, VariableName x) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_null(memory_domain< AbsDomain, VariableName, Number >& inv,
-               VariableName x) {
-  inv.make_null(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_null(summary_domain< AbsDomain, VariableName, Number >& inv,
-               VariableName x) {
-  inv.make_null(x);
-}
-
-template < typename AbsDomain, typename VariableName >
-void make_non_null(AbsDomain& inv, VariableName x) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_non_null(memory_domain< AbsDomain, VariableName, Number >& inv,
-                   VariableName x) {
-  inv.make_non_null(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void make_non_null(summary_domain< AbsDomain, VariableName, Number >& inv,
-                   VariableName x) {
-  inv.make_non_null(x);
-}
-
-template < typename AbsDomain, typename VariableName >
-void assign_nullity(AbsDomain& inv, VariableName x, VariableName y) {}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void assign_nullity(memory_domain< AbsDomain, VariableName, Number >& inv,
-                    VariableName x,
-                    VariableName y) {
-  inv.assign_nullity(x, y);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-void assign_nullity(summary_domain< AbsDomain, VariableName, Number >& inv,
-                    VariableName x,
-                    VariableName y) {
-  inv.assign_nullity(x, y);
-}
-
-// true iff x is definitely null.
-template < typename AbsDomain, typename VariableName >
-bool is_null(AbsDomain inv, VariableName x) {
-  return false;
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_null(memory_domain< AbsDomain, VariableName, Number > inv,
-             VariableName x) {
-  return inv.is_null(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_null(summary_domain< AbsDomain, VariableName, Number > inv,
-             VariableName x) {
-  return inv.is_null(x);
-}
-
-// true iff x is definitely non null.
-template < typename AbsDomain, typename VariableName >
-bool is_non_null(AbsDomain inv, VariableName x) {
-  return false;
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_non_null(memory_domain< AbsDomain, VariableName, Number > inv,
-                 VariableName x) {
-  return inv.is_non_null(x);
-}
-
-template < typename AbsDomain, typename VariableName, typename Number >
-bool is_non_null(summary_domain< AbsDomain, VariableName, Number > inv,
-                 VariableName x) {
-  return inv.is_non_null(x);
-}
-
-} // end namespace value_domain_impl
 
 namespace ar_size {
 
@@ -674,6 +128,7 @@ inline uint64_t getAllocSize(const Operand_ref& o) {
 } // end namespace ar_size
 
 namespace num_sym_exec_impl {
+
 //! Shadow variable to propagate the _whole_ memory allocation size
 //  of an alloca, global variable or a malloc-like allocation site.
 template < typename VariableName >
@@ -682,29 +137,7 @@ inline VariableName get_shadow_size(VariableName v) {
   return v.getVarFactory()["shadow." + v.name() + ".size"];
 }
 
-//! Return the size of the object to which v points to. Note that v
-//  may point to more than one object so we join the sizes of all.
-template < typename AbsValueDomain, typename VariableName >
-z_interval getPtrAllocSize(AbsValueDomain inv, VariableName ptr) {
-  if (value_domain_impl::is_unknown_addr(inv, ptr))
-    return z_interval::top();
-
-  std::vector< VariableName > ptrSet =
-      value_domain_impl::get_addrs_set(inv, ptr);
-  assert(!ptrSet.empty());
-
-  z_interval size = z_interval::bottom();
-  for (typename std::vector< VariableName >::iterator I = ptrSet.begin(),
-                                                      E = ptrSet.end();
-       I != E;
-       ++I) {
-    VariableName v = num_sym_exec_impl::get_shadow_size(*I);
-    size = size | num_abstract_domain_impl::to_interval(inv, v);
-  }
-  return size;
-}
-
-} // end namespace
+} // end namespace num_sym_exec_impl
 
 using namespace num_sym_exec_impl;
 
@@ -759,12 +192,10 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
   PointerInfo _pointer;
   std::vector< VariableName > _dead_vars;
 
-  typedef std::unordered_set< Operand_ref,
-                              Operand_Hasher::hash,
-                              Operand_Hasher::eq >
-      operand_set_t;
+  typedef std::unordered_map< VariableName, Operand_ref > mem_objects_t;
 
-  operand_set_t _mem_objects; //! keep track of memory objects
+  //! keep track of memory objects, and the source Operand_ref
+  mem_objects_t _mem_objects;
 
   enum nullity_value_t { MUSTNULL, MUSTNONNULL, MAYNULL };
 
@@ -785,23 +216,26 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
                         Operand_ref ptr,
                         LiteralFactory& lfac,
                         nullity_value_t NullVal) {
-    if (_mem_objects.find(ptr) != _mem_objects.end())
-      return false;
-    _mem_objects.insert(ptr);
-
     Literal lPtr = lfac[ptr];
+    assert(lPtr.is_var());
+
+    if (_mem_objects.find(lPtr.get_var()) != _mem_objects.end()) {
+      return false;
+    }
+
+    _mem_objects.insert(
+        typename mem_objects_t::value_type(lPtr.get_var(), ptr));
 
     // update nullity
-    if (NullVal == MUSTNULL)
-      value_domain_impl::make_null(inv, lPtr.get_var());
-    else if (NullVal == MUSTNONNULL)
-      value_domain_impl::make_non_null(inv, lPtr.get_var());
+    if (NullVal == MUSTNULL) {
+      null_domain_traits::make_null(inv, lPtr.get_var());
+    } else if (NullVal == MUSTNONNULL) {
+      null_domain_traits::make_non_null(inv, lPtr.get_var());
+    }
 
-    // zero offset in the numerical abstraction
-    inv.assign(lPtr.get_var(), Literal::make_num< Number >((uint64_t)0));
-
-    // pointer info: create a new memory object
-    value_domain_impl::make_object(inv, lPtr.get_var());
+    // update pointer info and offset
+    // note: use lPtr as a base address
+    ptr_domain_traits::assign_object(inv, lPtr.get_var(), lPtr.get_var());
 
     // make sure that the scope of the memory object survives the rest
     // of the program.
@@ -853,8 +287,7 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
     ikos::z_number n = -1;
     if (Len.is_var()) {
       boost::optional< ikos::z_number > len =
-          num_abstract_domain_impl::to_interval(_inv, Len.get_var())
-              .singleton();
+          num_domain_traits::to_interval(_inv, Len.get_var()).singleton();
       if (len) {
         n = *len;
       }
@@ -862,10 +295,11 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
       n = Len.get_num< ikos::z_number >();
     }
 
-    if (n < 0)
-      value_domain_impl::forget_mem_contents(_inv, Base.get_var());
-    else
-      value_domain_impl::forget_mem_contents(_inv, Base.get_var(), n);
+    if (n < 0) {
+      mem_domain_traits::forget_mem_contents(_inv, Base.get_var());
+    } else {
+      mem_domain_traits::forget_mem_contents(_inv, Base.get_var(), n);
+    }
   }
 
   //! Model an assignment lhs := rhs
@@ -875,14 +309,14 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
 
     if (rhs_lit.is_undefined_cst()) {
       _inv -= lhs_var;
-      value_domain_impl::make_uninitialized(_inv, lhs_var);
+      uninit_domain_traits::make_uninitialized(_inv, lhs_var);
       return;
     }
 
     if (_prec_level >= PTR && IsPointer) {
       if (rhs_lit.is_null_cst()) {
-        value_domain_impl::forget_mem_surface(_inv, lhs_var);
-        value_domain_impl::make_null(_inv, lhs_var);
+        mem_domain_traits::forget_mem_surface(_inv, lhs_var);
+        null_domain_traits::make_null(_inv, lhs_var);
         return;
       }
 
@@ -901,17 +335,12 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
                         Literal::make_num< Number >(0));
       }
 
-      // TODO: wrap these three operations into
-      //       value_domain_impl::assign_ptr
-
-      // update offset in the numerical abstraction
-      _inv.assign(lhs_var, linExpr(rhs_lit.get_var()));
-
-      // update pointer info
-      value_domain_impl::assign_ptr(_inv, lhs_var, rhs_lit.get_var());
+      // update pointer info and offset
+      ptr_domain_traits::assign_pointer(_inv, lhs_var, rhs_lit.get_var());
 
       // update nullity
-      value_domain_impl::assign_nullity(_inv, lhs_var, rhs_lit.get_var());
+      null_domain_traits::assign_nullity(_inv, lhs_var, rhs_lit.get_var());
+
       return;
     }
 
@@ -921,15 +350,15 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
         _inv.assign(lhs_var, linExpr(rhs_lit.get_var()));
 
         // update uninitialized variables
-        std::vector< VariableName > vs;
-        vs.push_back(rhs_lit.get_var());
-        value_domain_impl::assign_uninitialized(_inv, lhs_var, vs);
+        uninit_domain_traits::assign_uninitialized(_inv,
+                                                   lhs_var,
+                                                   rhs_lit.get_var());
       } else if (rhs_lit.is_num()) {
         // update numerical abstraction
         _inv.assign(lhs_var, rhs_lit.get_num< Number >());
 
         // update uninitialized variables
-        value_domain_impl::make_initialized(_inv, lhs_var);
+        uninit_domain_traits::make_initialized(_inv, lhs_var);
       } else {
         _inv -= lhs_var;
       }
@@ -947,7 +376,7 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
 
     if (left.is_undefined_cst() || right.is_undefined_cst()) {
       _inv -= res;
-      value_domain_impl::make_uninitialized(_inv, res);
+      uninit_domain_traits::make_uninitialized(_inv, res);
       return;
     }
 
@@ -955,41 +384,34 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
            (right.is_var() || right.is_num()));
 
     if (left.is_var() && right.is_var()) {
-      // TODO: do together apply/assign and propagation of
-      //       uninitialized info
-
       // update numerical abstraction
       _inv.apply(op, res, left.get_var(), right.get_var());
 
       // update uninitialized variables
-      std::vector< VariableName > vs;
-      vs.push_back(left.get_var());
-      vs.push_back(right.get_var());
-      value_domain_impl::assign_uninitialized(_inv, res, vs);
+      uninit_domain_traits::assign_uninitialized(_inv,
+                                                 res,
+                                                 left.get_var(),
+                                                 right.get_var());
     } else if (left.is_var() && right.is_num()) {
       // update numerical abstraction
       _inv.apply(op, res, left.get_var(), right.get_num< Number >());
 
       // update uninitialized variables
-      std::vector< VariableName > vs;
-      vs.push_back(left.get_var());
-      value_domain_impl::assign_uninitialized(_inv, res, vs);
+      uninit_domain_traits::assign_uninitialized(_inv, res, left.get_var());
     } else if (left.is_num() && right.is_var()) {
       // update numerical abstraction
       _inv.assign(res, left.get_num< Number >());
       _inv.apply(op, res, res, right.get_var());
 
       // update uninitialized variables
-      std::vector< VariableName > vs;
-      vs.push_back(right.get_var());
-      value_domain_impl::assign_uninitialized(_inv, res, vs);
+      uninit_domain_traits::assign_uninitialized(_inv, res, right.get_var());
     } else if (left.is_num() && right.is_num()) {
       // update numerical abstraction
       _inv.assign(res, left.get_num< Number >());
       _inv.apply(op, res, res, right.get_num< Number >());
 
       // update uninitialized variables
-      value_domain_impl::make_initialized(_inv, res);
+      uninit_domain_traits::make_initialized(_inv, res);
     }
   }
 
@@ -1076,7 +498,7 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
     std::pair< PointerInfo::ptr_set_t, z_interval > ptr_info = _pointer[ptr];
     if (ptr_info.first.is_top())
       return false;
-    value_domain_impl::refine_addrs(_inv, ptr, ptr_info.first);
+    ptr_domain_traits::refine_addrs(_inv, ptr, ptr_info.first);
     return true;
   }
 
@@ -1086,16 +508,10 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
     std::pair< PointerInfo::ptr_set_t, z_interval > ptr_info = _pointer[ptr];
     if (ptr_info.first.is_top())
       return false;
-    value_domain_impl::refine_addrs_and_offset(_inv,
-                                               ptr,
-                                               ptr_info.first,
-                                               ptr,
-                                               ptr_info.second);
-#if 0                                      
-    std::cout << "REFINE addresses of " << ptr
-         << " with " << "(" << ptr_info.first << "," 
-         << ptr_info.second << ")" << "\n";
-#endif
+    ptr_domain_traits::refine_addrs_offset(_inv,
+                                           ptr,
+                                           ptr_info.first,
+                                           ptr_info.second);
     return true;
   }
 
@@ -1155,7 +571,7 @@ public:
     for (typename std::vector< VariableName >::iterator it = _dead_vars.begin();
          it != _dead_vars.end();
          ++it) {
-      value_domain_impl::forget_mem_surface(_inv, *it);
+      mem_domain_traits::forget_mem_surface(_inv, *it);
     }
   }
 
@@ -1223,19 +639,31 @@ public:
       if (lX.is_var() && lY.is_null_cst()) { // x == null or x != null
         // reduction with the external pointer analysis
         refineAddr(lX.get_var());
-        value_domain_impl::cmp_mem_addr_null(_inv, n_pred, lX.get_var());
+        if (n_pred == eq) {
+          null_domain_traits::assert_null(_inv, lX.get_var());
+        } else {
+          null_domain_traits::assert_non_null(_inv, lX.get_var());
+        }
       } else if (lX.is_null_cst() && lY.is_var()) { // y == null or y != null
         // reduction with the external pointer analysis
         refineAddr(lY.get_var());
-        value_domain_impl::cmp_mem_addr_null(_inv, n_pred, lY.get_var());
+        if (n_pred == eq) {
+          null_domain_traits::assert_null(_inv, lY.get_var());
+        } else {
+          null_domain_traits::assert_non_null(_inv, lY.get_var());
+        }
       } else if (lX.is_var() && lY.is_var()) {
         // reduction with the external pointer analysis
         refineAddr(lX.get_var());
         refineAddr(lY.get_var());
-        value_domain_impl::cmp_mem_addr(_inv,
-                                        n_pred,
-                                        lX.get_var(),
-                                        lY.get_var());
+        null_domain_traits::assert_nullity(_inv,
+                                           n_pred == eq,
+                                           lX.get_var(),
+                                           lY.get_var());
+        ptr_domain_traits::assert_pointer(_inv,
+                                          n_pred == eq,
+                                          lX.get_var(),
+                                          lY.get_var());
       }
     } else {
       // X and Y are registers.
@@ -1365,15 +793,15 @@ public:
       _inv.apply(op, dest_var, lSrc.get_var(), Width);
 
       // update uninitialized variables
-      std::vector< VariableName > vs;
-      vs.push_back(lSrc.get_var());
-      value_domain_impl::assign_uninitialized(_inv, dest_var, vs);
+      uninit_domain_traits::assign_uninitialized(_inv,
+                                                 dest_var,
+                                                 lSrc.get_var());
     } else if (lSrc.is_num()) {
       // update numerical abstraction
       _inv.apply(op, dest_var, lSrc.get_num< Number >(), Width);
 
       // update uninitialized variables
-      value_domain_impl::make_initialized(_inv, dest_var);
+      uninit_domain_traits::make_initialized(_inv, dest_var);
     }
   }
 
@@ -1404,14 +832,14 @@ public:
     Literal lOffset = _lfac[offset];
 
     if (lBase.is_undefined_cst()) {
-      value_domain_impl::forget_mem_surface(_inv, lhs.get_var());
-      value_domain_impl::make_uninitialized(_inv, lhs.get_var());
+      mem_domain_traits::forget_mem_surface(_inv, lhs.get_var());
+      uninit_domain_traits::make_uninitialized(_inv, lhs.get_var());
       return;
     }
 
     if (lBase.is_null_cst()) {
-      value_domain_impl::forget_mem_surface(_inv, lhs.get_var());
-      value_domain_impl::make_null(_inv, lhs.get_var());
+      mem_domain_traits::forget_mem_surface(_inv, lhs.get_var());
+      null_domain_traits::make_null(_inv, lhs.get_var());
       return;
     }
 
@@ -1423,27 +851,21 @@ public:
       make_mem_object(_inv, base, _lfac, MUSTNONNULL);
     }
 
-    // TODO: wrap these three operations into
-    //       value_domain_impl::apply_ptr
+    null_domain_traits::assign_nullity(_inv, lhs.get_var(), lBase.get_var());
 
-    value_domain_impl::assign_nullity(_inv, lhs.get_var(), lBase.get_var());
-
-    // update the offset: lhs = base + offset
+    // update the pointer info and offset
     if (lOffset.is_var()) {
-      _inv.apply(ikos::OP_ADDITION,
-                 lhs.get_var(),
-                 lBase.get_var(),
-                 lOffset.get_var());
+      ptr_domain_traits::assign_pointer(_inv,
+                                        lhs.get_var(),
+                                        lBase.get_var(),
+                                        lOffset.get_var());
     } else {
       assert(lOffset.is_num());
-      _inv.apply(ikos::OP_ADDITION,
-                 lhs.get_var(),
-                 lBase.get_var(),
-                 lOffset.get_num< Number >());
+      ptr_domain_traits::assign_pointer(_inv,
+                                        lhs.get_var(),
+                                        lBase.get_var(),
+                                        lOffset.get_num< Number >());
     }
-
-    // update pointer info
-    value_domain_impl::assign_ptr(_inv, lhs.get_var(), lBase.get_var());
   }
 
 private:
@@ -1481,7 +903,7 @@ private:
     if (_prec_level >= MEM) {
       linExpr size_expr = size.is_var() ? linExpr(size.get_var())
                                         : linExpr(size.get_num< Number >());
-      value_domain_impl::mem_copy(_inv,
+      mem_domain_traits::mem_copy(_inv,
                                   dest.get_var(),
                                   src.get_var(),
                                   size_expr);
@@ -1518,7 +940,7 @@ public:
                                           : linExpr(value.get_num< Number >());
       linExpr size_expr = size.is_var() ? linExpr(size.get_var())
                                         : linExpr(size.get_num< Number >());
-      value_domain_impl::mem_set(_inv, dest.get_var(), value_expr, size_expr);
+      mem_domain_traits::mem_set(_inv, dest.get_var(), value_expr, size_expr);
     }
   }
 
@@ -1563,7 +985,7 @@ public:
           if (ar::isPointer(*it)) {
             Literal p = _lfac[*it];
             if (p.is_var()) {
-              value_domain_impl::forget_mem_contents(_inv, p.get_var());
+              mem_domain_traits::forget_mem_contents(_inv, p.get_var());
             }
           }
         }
@@ -1584,13 +1006,34 @@ public:
         // pointer, we do not assume that a non-null pointer is
         // returned.
         if (!ar::isPointer(*lhs)) {
-          value_domain_impl::make_initialized(_inv, ret.get_var());
+          uninit_domain_traits::make_initialized(_inv, ret.get_var());
         }
       }
     }
   }
 
   void exec(Invoke_ref stmt) { exec(ar::getFunctionCall(stmt)); }
+
+  void exec(Return_Value_ref stmt) {
+    if (_prec_level < PTR)
+      return;
+
+    // Cleanup local variables
+    for (typename mem_objects_t::iterator it = _mem_objects.begin();
+         it != _mem_objects.end();
+         ++it) {
+      if (ar::isAllocaVar(it->second)) {
+        // Set the size to 0
+        _inv.assign(get_shadow_size(it->first), 0);
+
+        // Forget the memory content
+        mem_domain_traits::forget_mem_contents(_inv, it->first);
+
+        // No need to remove ptr from _mem_objects, because _mem_objects is not
+        // propagated to the caller
+      }
+    }
+  }
 
   void exec(Store_ref stmt) {
     Literal lPtr = _lfac[ar::getPointer(stmt)];
@@ -1630,10 +1073,10 @@ public:
                                  : linExpr(lVal.get_num< Number >()));
       ikos::z_number size(ar::getSize(ar::getType(ar::getValue(stmt))));
       assert(lPtr.is_var());
-      value_domain_impl::mem_write(_inv,
+      mem_domain_traits::mem_write(_inv,
                                    lPtr.get_var(),
-                                   size,
                                    e,
+                                   size,
                                    ar::isPointer(
                                        ar::getType(ar::getValue(stmt))));
     }
@@ -1659,7 +1102,7 @@ public:
 
       // Take the address of a global variable x:
       // int x = 0; int * p = &x;
-      value_domain_impl::make_non_null(_inv, lhs_var);
+      null_domain_traits::make_non_null(_inv, lhs_var);
     }
 
     // Reduction between value and pointer analysis
@@ -1677,7 +1120,7 @@ public:
     assert(lPtr.is_var());
     if (ar::isInteger(ar::getType(lhs)) || ar::isPointer(ar::getType(lhs))) {
       ikos::z_number size(ar::getSize(ar::getType(lhs)));
-      value_domain_impl::mem_read(_inv,
+      mem_domain_traits::mem_read(_inv,
                                   lhs_var,
                                   lPtr.get_var(),
                                   size,
@@ -1820,16 +1263,17 @@ private:
     if (_prec_level < PTR)
       return;
 
-    if (value_domain_impl::is_unknown_addr(_inv, ptr.get_var()))
+    if (_inv.is_bottom())
       return;
 
     // set the size to 0
-    std::vector< VariableName > points_to =
-        value_domain_impl::get_addrs_set(_inv, ptr.get_var());
+    ikos::discrete_domain< VariableName > points_to =
+        ptr_domain_traits::addrs_set(_inv, ptr.get_var());
 
-    for (typename std::vector< VariableName >::iterator it = points_to.begin();
-         it != points_to.end();
-         it++) {
+    if (points_to.is_top())
+      return;
+
+    for (auto it = points_to.begin(); it != points_to.end(); ++it) {
       if (points_to.size() == 1) {
         _inv.assign(get_shadow_size(*it), 0);
       } else {
@@ -1841,7 +1285,7 @@ private:
       return;
 
     // forget memory contents
-    value_domain_impl::forget_mem_contents(_inv, ptr.get_var());
+    mem_domain_traits::forget_mem_contents(_inv, ptr.get_var());
   }
 
   /*
@@ -1865,7 +1309,7 @@ private:
       Literal ret = _lfac[*lhs];
       assert(ret.is_var());
       _inv -= ret.get_var();
-      value_domain_impl::make_initialized(_inv, ret.get_var());
+      uninit_domain_traits::make_initialized(_inv, ret.get_var());
     }
 
     if (_prec_level < MEM)

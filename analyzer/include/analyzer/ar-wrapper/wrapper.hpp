@@ -487,6 +487,25 @@ inline boost::optional< Basic_Block_ref > getExitBlock(const Code_ref& c) {
   else
     return boost::optional< Basic_Block_ref >(bb);
 }
+//! unreachable block of the function
+inline boost::optional< Basic_Block_ref > getUnreachableBlock(
+    const Code_ref& c) {
+  assert(!ar_internal::is_null_ref(c));
+  Basic_Block_ref bb = DEREF(c).getUnreachableBlock();
+  if (ar_internal::is_null_ref(bb))
+    return boost::optional< Basic_Block_ref >();
+  else
+    return boost::optional< Basic_Block_ref >(bb);
+}
+//! unwind block of the function
+inline boost::optional< Basic_Block_ref > getUnwindBlock(const Code_ref& c) {
+  assert(!ar_internal::is_null_ref(c));
+  Basic_Block_ref bb = DEREF(c).getUnwindBlock();
+  if (ar_internal::is_null_ref(bb))
+    return boost::optional< Basic_Block_ref >();
+  else
+    return boost::optional< Basic_Block_ref >(bb);
+}
 //! local variables of the function
 inline LvRange getLocalVars(const Function_ref& f) {
   // boost::make_iterator_range (DEREF(f).getLocalVariables ().begin (),
@@ -1120,7 +1139,7 @@ inline Type_ref getType(const Operand_ref& o) {
 /// get methods for sizes
 ///////
 
-//! return the size of a pointer in bits
+//! return the size of a pointer in bytes
 inline uint64_t getPointerSize(const Bundle_ref& b) {
   z_number sz = DEREF(b).get_sizeofptr();
   std::ostringstream buf;
@@ -1129,7 +1148,7 @@ inline uint64_t getPointerSize(const Bundle_ref& b) {
   return r;
 }
 
-//! size of an arbitrary type in bits
+//! size of an arbitrary type in bytes
 inline uint64_t getSize(const Type_ref& t) {
   assert(!ar_internal::is_null_ref(t));
   z_number sz = DEREF(t).getStoreSize();
@@ -1139,7 +1158,7 @@ inline uint64_t getSize(const Type_ref& t) {
   return r;
 }
 
-//! bitwidth of an integer in bits
+//! bitwidth of an integer in bytes
 inline uint64_t getSize(const Integer_Constant_ref& n) {
   assert(!ar_internal::is_null_ref(n));
   return getSize(DEREF(n).getType());

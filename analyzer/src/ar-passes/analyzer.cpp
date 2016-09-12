@@ -45,6 +45,9 @@
 #include <memory>
 #include <vector>
 
+#include <ikos/domains/value_domain.hpp>
+#include <ikos/domains/summary_domain.hpp>
+
 #include <analyzer/ar-wrapper/wrapper.hpp>
 #include <analyzer/config.hpp>
 #include <analyzer/utils/demangle.hpp>
@@ -64,7 +67,6 @@
 #include <analyzer/analysis/num_sym_exec.hpp>
 #include <analyzer/analysis/pointer.hpp>
 #include <analyzer/analysis/summary.hpp>
-#include <analyzer/domains/value_domain.hpp>
 
 namespace analyzer {
 
@@ -203,7 +205,10 @@ private:
       }
     }
     void visit(Invoke_ref s) { visit(ar::getFunctionCall(s)); }
-    void visit(Return_Value_ref s) { _call_semantic->ret(s, _sym_exec.inv()); }
+    void visit(Return_Value_ref s) {
+      _sym_exec.exec(s);
+      _call_semantic->ret(s, _sym_exec.inv());
+    }
     void visit(Landing_Pad_ref s) { _sym_exec.exec(s); }
     void visit(Resume_ref s) { _sym_exec.exec(s); }
     void visit(Unreachable_ref s) { _sym_exec.exec(s); }
@@ -597,10 +602,8 @@ public:
        */
       stats.start("value", "Value analysis");
       if (use_summaries) {
-        typedef summary_domain< abs_num_domain_t, varname_t, number_t >
-            abs_value_domain_t;
-        typedef summary_domain< sum_abs_num_domain_t, varname_t, number_t >
-            sum_abs_value_domain_t;
+        typedef summary_domain< abs_num_domain_t > abs_value_domain_t;
+        typedef summary_domain< sum_abs_num_domain_t > sum_abs_value_domain_t;
         typedef function_analyzer< abs_value_domain_t, varname_t, number_t >
             function_analyzer_t;
         typedef checker< abs_value_domain_t > checker_t;
@@ -643,8 +646,7 @@ public:
                            strong_comp_graph,
                            topo_order);
       } else {
-        typedef memory_domain< abs_num_domain_t, varname_t, number_t >
-            abs_value_domain_t;
+        typedef value_domain< abs_num_domain_t > abs_value_domain_t;
         typedef function_analyzer< abs_value_domain_t, varname_t, number_t >
             function_analyzer_t;
         typedef sym_exec_call< function_analyzer_t, abs_value_domain_t >

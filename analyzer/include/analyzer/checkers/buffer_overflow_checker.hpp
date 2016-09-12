@@ -78,11 +78,16 @@ public:
     // Skip if writing to an integer/floating point global
     // variable or a local variable whose address has been taken
     // since it's always safe
-    if ((!ar::isGlobalVar(store_pointer)) &&
-        (!ar::isAllocaVar(store_pointer))) {
+    if (!ar::isGlobalVar(store_pointer) && !ar::isAllocaVar(store_pointer)) {
       location loc = ar::getSrcLoc(store);
-      check_overflow(store_pointer, inv, call_context, loc, ar::getUID(store));
-      check_underflow(store_pointer, inv, call_context, loc, ar::getUID(store));
+      LiteralFactory& lfac = this->_context.lit_factory();
+      uint64_t store_size = ar::getSize(ar::getType(ar::getValue(store)));
+      check_mem_access(lfac[store_pointer],
+                       lfac[store_size],
+                       inv,
+                       call_context,
+                       loc,
+                       ar::getUID(store));
     }
   }
 
@@ -94,10 +99,16 @@ public:
     // Skip if reading to an integer/floating point global
     // variable or a local variable whose address has been taken
     // since it's always safe
-    if ((!ar::isGlobalVar(load_pointer)) && (!ar::isAllocaVar(load_pointer))) {
+    if (!ar::isGlobalVar(load_pointer) && !ar::isAllocaVar(load_pointer)) {
       location loc = ar::getSrcLoc(load);
-      check_overflow(load_pointer, inv, call_context, loc, ar::getUID(load));
-      check_underflow(load_pointer, inv, call_context, loc, ar::getUID(load));
+      LiteralFactory& lfac = this->_context.lit_factory();
+      uint64_t load_size = ar::getSize(ar::getType(ar::getResult(load)));
+      check_mem_access(lfac[load_pointer],
+                       lfac[load_size],
+                       inv,
+                       call_context,
+                       loc,
+                       ar::getUID(load));
     }
   }
 
@@ -112,8 +123,8 @@ public:
 
     // Both dest and src are already allocated in memory so we need to
     // check that their offsets are in-bounds.
-    check_mem_intr_ptr(src, len, inv, call_context, loc, ar::getUID(memcpy));
-    check_mem_intr_ptr(dest, len, inv, call_context, loc, ar::getUID(memcpy));
+    check_mem_access(src, len, inv, call_context, loc, ar::getUID(memcpy));
+    check_mem_access(dest, len, inv, call_context, loc, ar::getUID(memcpy));
   }
 
   virtual void check(MemMove_ref memmove,
@@ -127,8 +138,8 @@ public:
 
     // Both dest and src are already allocated in memory so we need to
     // check that their offsets are in-bounds.
-    check_mem_intr_ptr(src, len, inv, call_context, loc, ar::getUID(memmove));
-    check_mem_intr_ptr(dest, len, inv, call_context, loc, ar::getUID(memmove));
+    check_mem_access(src, len, inv, call_context, loc, ar::getUID(memmove));
+    check_mem_access(dest, len, inv, call_context, loc, ar::getUID(memmove));
   }
 
   virtual void check(MemSet_ref memset,
@@ -141,228 +152,213 @@ public:
 
     // dest is already allocated in memory so we need to check
     // that its offset is in-bounds.
-    check_mem_intr_ptr(dest, len, inv, call_context, loc, ar::getUID(memset));
+    check_mem_access(dest, len, inv, call_context, loc, ar::getUID(memset));
   }
 
 private:
-  void check_mem_intr_ptr(const Literal& ptr,
-                          const Literal& len,
-                          AbsDomain inv,
-                          const std::string& call_context,
-                          const location& loc,
-                          unsigned long stmt_uid) {
-    if (!(ptr.is_var() && (len.is_var() || len.is_num()))) {
-      // this can happen if for instance ptr and len can be undefined
+  /*
+   * Write the results of a memory access check (buffer overflow + underflow) in
+   * the database.
+   */
+  inline void write_result(analysis_result overflow_result,
+                           analysis_result underflow_result,
+                           const std::string& call_context,
+                           const location& loc,
+                           unsigned long stmt_uid) {
+    this->_db->write("overflow",
+                     call_context,
+                     loc.file,
+                     loc.line,
+                     loc.column,
+                     stmt_uid,
+                     tostr(overflow_result));
+    this->_db->write("underflow",
+                     call_context,
+                     loc.file,
+                     loc.line,
+                     loc.column,
+                     stmt_uid,
+                     tostr(underflow_result));
+  }
 
-      if (this->display_check(WARNING)) {
+  /*
+   * Check a memory access (read/write) for overflow/underflow.
+   *
+   * Arguments:
+   *   pointer: The pointer variable, as a literal
+   *   access_size: The read/written size (in bytes), as a literal
+   *   inv: The invariant, as an abstract value
+   *   call_context: The calling context
+   *   loc: The source location
+   *   stmt_uid: The UID of the AR_Statement
+   *
+   * Description:
+   *   The method checks that the memory access is valid and writes the result
+   *   in the database.
+   */
+  void check_mem_access(const Literal& pointer,
+                        const Literal& access_size,
+                        AbsDomain inv,
+                        const std::string& call_context,
+                        const location& loc,
+                        unsigned long stmt_uid) {
+    if (pointer.is_undefined_cst() || pointer.is_null_cst() ||
+        access_size.is_undefined_cst()) {
+      if (this->display_check(ERR)) {
         std::cout << location_to_string(loc)
-                  << ": [warning] check_mem_intr_ptr(ptr=";
-        ptr.dump(std::cout);
-        std::cout << ", len=";
-        len.dump(std::cout);
-        std::cout << "): unexpected ptr or len" << std::endl;
+                  << ": [error] check_mem_access(ptr=";
+        pointer.dump(std::cout);
+        std::cout << ", access_size=";
+        access_size.dump(std::cout);
+        std::cout << "): ";
+        if (pointer.is_undefined_cst()) {
+          std::cout << "ptr is undefined" << std::endl;
+        } else if (pointer.is_null_cst()) {
+          std::cout << "ptr is null" << std::endl;
+        } else {
+          std::cout << "access_size is undefined" << std::endl;
+        }
       }
-      if (this->display_invariant(WARNING)) {
+      if (this->display_invariant(ERR)) {
         std::cout << location_to_string(loc) << ": Invariant:" << std::endl
                   << inv << std::endl;
       }
 
-      this->_db->write("overflow",
-                       call_context,
-                       loc.file,
-                       loc.line,
-                       loc.column,
-                       stmt_uid,
-                       "warning");
+      write_result(ERR, ERR, call_context, loc, stmt_uid);
       return;
     }
 
-    varname_t ptr_var = ptr.get_var();
-    linear_expression_t lenght_expr =
-        len.is_var() ? linear_expression_t(len.get_var())
-                     : linear_expression_t(len.get_num< ikos::z_number >());
-    analysis_result over_result =
-        check_overflow(ptr_var,
-                       variable_t(ptr_var) + lenght_expr - 1,
-                       inv,
-                       loc);
-    analysis_result under_result =
-        check_underflow(ptr_var, variable_t(ptr_var), inv, loc);
+    assert(pointer.is_var());
+    assert(access_size.is_var() || access_size.is_num());
 
-    if (this->display_invariant(over_result) ||
-        this->display_invariant(under_result)) {
+    varname_t pointer_var = pointer.get_var();
+    linear_expression_t offset_expr = variable_t(inv.offset_var(pointer_var));
+    linear_expression_t access_size_expr =
+        access_size.is_var()
+            ? linear_expression_t(access_size.get_var())
+            : linear_expression_t(access_size.get_num< ikos::z_number >());
+
+    analysis_result overflow_result =
+        check_overflow(pointer_var, offset_expr, access_size_expr, inv, loc);
+    analysis_result underflow_result =
+        check_underflow(pointer_var, offset_expr, access_size_expr, inv, loc);
+
+    if (this->display_invariant(overflow_result) ||
+        this->display_invariant(underflow_result)) {
       std::cout << location_to_string(loc) << ": Invariant:" << std::endl
                 << inv << std::endl;
     }
 
-    this->_db->write("overflow",
-                     call_context,
-                     loc.file,
-                     loc.line,
-                     loc.column,
-                     stmt_uid,
-                     tostr(over_result));
-    this->_db->write("underflow",
-                     call_context,
-                     loc.file,
-                     loc.line,
-                     loc.column,
-                     stmt_uid,
-                     tostr(under_result));
+    write_result(overflow_result,
+                 underflow_result,
+                 call_context,
+                 loc,
+                 stmt_uid);
   }
 
-  void check_overflow(const Operand_ref& ptr,
-                      AbsDomain inv,
-                      const std::string& call_context,
-                      const location& loc,
-                      unsigned long stmt_uid) {
-    LiteralFactory& lfac = this->_context.lit_factory();
-    Literal ptr_lit = lfac[ptr];
-
-    analysis_result result = WARNING;
-
-    if (ptr_lit.is_var()) {
-      varname_t ptr_var = ptr_lit.get_var();
-      result = check_overflow(ptr_var, variable_t(ptr_var), inv, loc);
-    } else if (ptr_lit.is_undefined_cst() || ptr_lit.is_null_cst()) {
-      if (this->display_check(ERR)) {
-        std::cout << location_to_string(loc)
-                  << ": [error] check_overflow(ptr=" << ptr
-                  << "): ptr is null or undefined" << std::endl;
-      }
-
-      result = ERR;
-    } else {
-      assert(false && "unexpected operand");
-    }
-
-    if (this->display_invariant(result)) {
-      std::cout << location_to_string(loc) << ": Invariant:" << std::endl
-                << inv << std::endl;
-    }
-
-    this->_db->write("overflow",
-                     call_context,
-                     loc.file,
-                     loc.line,
-                     loc.column,
-                     stmt_uid,
-                     tostr(result));
-  }
-
-  void check_underflow(const Operand_ref& ptr,
-                       AbsDomain inv,
-                       const std::string& call_context,
-                       const location& loc,
-                       unsigned long stmt_uid) {
-    LiteralFactory& lfac = this->_context.lit_factory();
-    Literal ptr_lit = lfac[ptr];
-
-    analysis_result result = WARNING;
-
-    if (ptr_lit.is_var()) {
-      varname_t ptr_var = ptr_lit.get_var();
-      result = check_underflow(ptr_var, variable_t(ptr_var), inv, loc);
-    } else if (ptr_lit.is_undefined_cst() || ptr_lit.is_null_cst()) {
-      if (this->display_check(ERR)) {
-        std::cout << location_to_string(loc)
-                  << ": [error] check_underflow(ptr=" << ptr
-                  << "): ptr is null or undefined" << std::endl;
-      }
-
-      result = ERR;
-    } else {
-      assert(false && "unexpected operand");
-    }
-
-    if (this->display_invariant(result)) {
-      std::cout << location_to_string(loc) << ": Invariant:" << std::endl
-                << inv << std::endl;
-    }
-
-    this->_db->write("underflow",
-                     call_context,
-                     loc.file,
-                     loc.line,
-                     loc.column,
-                     stmt_uid,
-                     tostr(result));
-  }
-
+  /*
+   * Check a memory access (read/write) for overflow
+   *
+   * Arguments:
+   *   pointer: The pointer variable
+   *   offset: A linear expression for the offset of the pointer (in bytes)
+   *   access_size: A linear expression for the read/written size (in bytes)
+   *   inv: The invariant, as an abstract value
+   *   loc: The source location
+   *
+   * Returns:
+   *   The analysis result (OK, WARNING, ERR, UNREACHABLE)
+   *
+   * Description:
+   *   The method checks that the memory access to
+   *   [offset, offset + access_size - 1] is valid.
+   *
+   *   It checks the following property:
+   *     addrs_set(pointer) != TOP &&
+   *     ∀a ∈ addrs_set(pointer), ∀o ∈ offset, o + access_size <= a.size
+   */
   analysis_result check_overflow(varname_t pointer,
                                  linear_expression_t offset,
+                                 linear_expression_t access_size,
                                  AbsDomain inv,
                                  const location& loc) {
     if (inv.is_bottom()) {
       if (this->display_check(UNREACHABLE)) {
         std::cout << location_to_string(loc)
                   << ": [unreachable] check_overflow(ptr=" << pointer
-                  << ", offset=" << offset << ")" << std::endl;
+                  << ", offset=" << offset << ", access_size=" << access_size
+                  << ")" << std::endl;
       }
 
       return UNREACHABLE;
     }
 
-    if (value_domain_impl::is_unknown_addr(inv, pointer)) {
+    if (ptr_domain_traits::is_unknown_addr(inv, pointer)) {
       if (this->display_check(WARNING)) {
         std::cout << location_to_string(loc)
                   << ": [warning] check_overflow(ptr=" << pointer
-                  << ", offset=" << offset << "): no points-to information for "
-                  << pointer << std::endl;
+                  << ", offset=" << offset << ", access_size=" << access_size
+                  << "): no points-to information for " << pointer << std::endl;
       }
 
       return WARNING;
     } else {
-      std::vector< varname_t > addrs_set =
-          value_domain_impl::get_addrs_set(inv, pointer);
-      assert(!addrs_set.empty());
+      ikos::discrete_domain< varname_t > addrs_set =
+          ptr_domain_traits::addrs_set(inv, pointer);
+      assert(!addrs_set.is_top());
       bool all_valid = true;
       bool all_invalid = true;
 
-      for (typename std::vector< varname_t >::iterator it = addrs_set.begin();
-           it != addrs_set.end();
-           ++it) {
+      for (auto it = addrs_set.begin(); it != addrs_set.end(); ++it) {
         varname_t size_var = num_sym_exec_impl::get_shadow_size(*it);
 
         if (all_valid) {
           AbsDomain tmp(inv);
-          tmp += (offset >= variable_t(size_var));
+          tmp += (offset + access_size - 1 >= variable_t(size_var));
           bool is_bottom = tmp.is_bottom();
 
           if (is_bottom && this->display_check(OK)) {
             std::cout << location_to_string(loc)
                       << ": [ok] check_overflow(ptr=" << pointer
-                      << ", offset=" << offset << "): ∀o ∈ offset, o < "
-                      << size_var << std::endl;
+                      << ", offset=" << offset
+                      << ", access_size=" << access_size
+                      << "): ∀o ∈ offset, o + access_size <= " << size_var
+                      << std::endl;
           } else if (!is_bottom && this->display_check(WARNING)) {
             std::cout << location_to_string(loc)
                       << ": [warning] check_overflow(ptr=" << pointer
                       << ", offset=" << offset
-                      << "): ∃o ∈ offset, o >= " << size_var << std::endl;
+                      << ", access_size=" << access_size
+                      << "): ∃o ∈ offset, o + access_size > " << size_var
+                      << std::endl;
           }
 
           all_valid = all_valid && is_bottom;
+          all_invalid = all_invalid && !is_bottom;
         }
 
         if (all_invalid) {
           AbsDomain tmp(inv);
-          tmp += (offset >= 0);
-          tmp += (offset <= variable_t(size_var) - 1);
+          tmp += (offset + access_size <= variable_t(size_var));
           bool is_bottom = tmp.is_bottom();
 
           if (!is_bottom && this->display_check(OK)) {
             std::cout << location_to_string(loc)
                       << ": [ok] check_overflow(ptr=" << pointer
-                      << ", offset=" << offset << "): ∃o ∈ offset, 0 <= o < "
-                      << size_var << std::endl;
+                      << ", offset=" << offset
+                      << ", access_size=" << access_size
+                      << "): ∃o ∈ offset, o + access_size <= " << size_var
+                      << std::endl;
           } else if (is_bottom && this->display_check(WARNING)) {
             std::cout << location_to_string(loc)
                       << ": [warning|error] check_overflow(ptr=" << pointer
                       << ", offset=" << offset
-                      << "): ∀o ∈ offset, (o < 0 or o >= " << size_var << ")"
+                      << ", access_size=" << access_size
+                      << "): ∀o ∈ offset, o + access_size > " << size_var
                       << std::endl;
           }
 
+          all_valid = all_valid && !is_bottom;
           all_invalid = all_invalid && is_bottom;
         }
       }
@@ -377,26 +373,48 @@ private:
     }
   }
 
+  /*
+   * Check a memory access (read/write) for underflow
+   *
+   * Arguments:
+   *   pointer: The pointer variable
+   *   offset: A linear expression for the offset of the pointer (in bytes)
+   *   access_size: A linear expression for the read/written size (in bytes)
+   *   inv: The invariant, as an abstract value
+   *   loc: The source location
+   *
+   * Returns:
+   *   The analysis result (OK, WARNING, ERR, UNREACHABLE)
+   *
+   * Description:
+   *   The method checks that the memory access to
+   *   [offset, offset + access_size - 1] is valid.
+   *
+   *   It checks the following property:
+   *     addrs_set(pointer) != TOP && ∀o ∈ offset, o >= 0
+   */
   analysis_result check_underflow(varname_t pointer,
                                   linear_expression_t offset,
+                                  linear_expression_t access_size,
                                   AbsDomain inv,
                                   const location& loc) {
     if (inv.is_bottom()) {
       if (this->display_check(UNREACHABLE)) {
         std::cout << location_to_string(loc)
                   << ": [unreachable] check_underflow(ptr=" << pointer
-                  << ", offset=" << offset << ")" << std::endl;
+                  << ", offset=" << offset << ", access_size=" << access_size
+                  << ")" << std::endl;
       }
 
       return UNREACHABLE;
     }
 
-    if (value_domain_impl::is_unknown_addr(inv, pointer)) {
+    if (ptr_domain_traits::is_unknown_addr(inv, pointer)) {
       if (this->display_check(WARNING)) {
         std::cout << location_to_string(loc)
                   << ": [warning] check_underflow(ptr=" << pointer
-                  << ", offset=" << offset
-                  << "): no points-to information for ptr" << std::endl;
+                  << ", offset=" << offset << ", access_size=" << access_size
+                  << "): no points-to information for " << pointer << std::endl;
       }
 
       return WARNING;
@@ -409,8 +427,9 @@ private:
           if (this->display_check(ERR)) {
             std::cout << location_to_string(loc)
                       << ": [error] check_underflow(ptr=" << pointer
-                      << ", offset=" << offset << "): ∀o ∈ offset, o < 0"
-                      << std::endl;
+                      << ", offset=" << offset
+                      << ", access_size=" << access_size
+                      << "): ∀o ∈ offset, o < 0" << std::endl;
           }
 
           return ERR;
@@ -418,24 +437,26 @@ private:
           if (this->display_check(WARNING)) {
             std::cout << location_to_string(loc)
                       << ": [warning] check_underflow(ptr=" << pointer
-                      << ", offset=" << offset << "): ∃o ∈ offset, o < 0"
-                      << std::endl;
+                      << ", offset=" << offset
+                      << ", access_size=" << access_size
+                      << "): ∃o ∈ offset, o < 0" << std::endl;
           }
 
           return WARNING;
         }
-      }
+      } else { // safe
+        if (this->display_check(OK)) {
+          std::cout << location_to_string(loc)
+                    << ": [ok] check_underflow(ptr=" << pointer
+                    << ", offset=" << offset << ", access_size=" << access_size
+                    << "): ∀o ∈ offset, o >= 0" << std::endl;
+        }
 
-      if (this->display_check(OK)) {
-        std::cout << location_to_string(loc)
-                  << ": [ok] check_underflow(ptr=" << pointer
-                  << ", offset=" << offset << "): ∀o ∈ offset, o >= 0"
-                  << std::endl;
+        return OK;
       }
-
-      return OK;
     }
   }
+
 }; // end class buffer_overflow_checker
 
 } // end namespace analyzer

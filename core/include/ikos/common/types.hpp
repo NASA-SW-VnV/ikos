@@ -73,7 +73,7 @@ public:
 
   virtual ~ikos_error() {}
 
-}; // class ikos_error
+}; // end class ikos_error
 
 inline std::ostream& operator<<(std::ostream& o, ikos_error& e) {
   e.write(o);
@@ -111,7 +111,7 @@ private:
 public:
   collection() : _slist() {}
 
-  collection(const collection_t& c) : writeable(), _slist(c._slist) {}
+  collection(const collection_t& c) : _slist(c._slist) {}
 
   collection_t& operator=(const collection_t& c) {
     this->_slist = c._slist;
@@ -155,7 +155,7 @@ public:
     o << "}";
   }
 
-}; // class collection
+}; // end class collection
 
 // Container data structure for typed variables
 template < typename Type, typename VariableName >
@@ -169,7 +169,7 @@ public:
 public:
   variable(const VariableName& n) : _n(n) {}
 
-  variable(const variable_t& v) : writeable(), _n(v._n) {}
+  variable(const variable_t& v) : _n(v._n) {}
 
   variable_t& operator=(const variable_t& v) {
     this->_n = v._n;
@@ -186,7 +186,7 @@ public:
 
   void write(std::ostream& o) { o << _n; }
 
-}; // class variable
+}; // end class variable
 
 // Simple index management for strings
 class string_factory {
@@ -204,8 +204,7 @@ public:
         : _s(s), _id(id) {}
 
   public:
-    indexed_string(const indexed_string& is)
-        : writeable(), _s(is._s), _id(is._id) {}
+    indexed_string(const indexed_string& is) : _s(is._s), _id(is._id) {}
 
     indexed_string& operator=(const indexed_string& is) {
       this->_s = is._s;
@@ -227,7 +226,7 @@ public:
 
     void write(std::ostream& o) { o << *_s; }
 
-  }; // class indexed_string
+  }; // end class indexed_string
 
 private:
   typedef std::unordered_map< std::string, indexed_string > map_t;
@@ -259,7 +258,7 @@ std::size_t hash_value(const string_factory::indexed_string& v) {
   return v.index();
 }
 
-} // namespace ikos
+} // end namespace ikos
 
 namespace std {
 
@@ -281,6 +280,22 @@ typedef enum {
   OP_MULTIPLICATION,
   OP_DIVISION
 } operation_t;
+
+// Enumeration type for conversion operations
+typedef enum { OP_TRUNC, OP_SEXT, OP_ZEXT } conv_operation_t;
+
+// Enumeration type for bitwise operations
+typedef enum {
+  OP_AND,
+  OP_OR,
+  OP_XOR,
+  OP_SHL,
+  OP_LSHR,
+  OP_ASHR
+} bitwise_operation_t;
+
+// Enumeration type for division operations
+typedef enum { OP_SDIV, OP_UDIV, OP_SREM, OP_UREM } div_operation_t;
 
 } // end namespace ikos
 

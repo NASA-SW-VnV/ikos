@@ -58,18 +58,19 @@
 #include <ikos/domains/domain_products.hpp>
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
-template < typename Number, int typeSize = -1 >
+template < typename Number, int TypeSize = -1 >
 class interval_congruence : public writeable {
 public:
-  typedef interval_congruence< Number, typeSize > interval_congruence_t;
+  typedef interval_congruence< Number, TypeSize > interval_congruence_t;
 
 private:
   typedef interval< Number > interval_t;
   typedef bound< Number > bound_t;
-  typedef congruence< Number, typeSize > congruence_t;
+  typedef congruence< Number, TypeSize > congruence_t;
 
 private:
   interval_t _first;
@@ -77,8 +78,7 @@ private:
 
 private:
   interval_congruence(bool is_bottom)
-      : writeable(),
-        _first(is_bottom ? interval_t::bottom() : interval_t::top()),
+      : _first(is_bottom ? interval_t::bottom() : interval_t::top()),
         _second(is_bottom ? congruence_t::bottom() : congruence_t::top()) {}
 
 public:
@@ -322,26 +322,27 @@ public:
     return interval_congruence_t(this->_first.AShr(x.first()),
                                  this->_second.AShr(x.second()));
   }
-};
 
-template < typename Number, typename VariableName, int typeSize = -1 >
+}; // end class interval_congruence
+
+template < typename Number, typename VariableName, int TypeSize = -1 >
 class interval_congruence_domain
-    : public writeable,
+    : public abstract_domain,
       public numerical_domain< Number, VariableName >,
       public bitwise_operators< Number, VariableName >,
       public division_operators< Number, VariableName > {
 public:
   // note that this is assuming that all variables have the same
   // bit width for the congruence domain which is unrealistic.
-  typedef interval_congruence< Number, typeSize > interval_congruence_t;
-  typedef interval_congruence_domain< Number, VariableName, typeSize >
+  typedef interval_congruence< Number, TypeSize > interval_congruence_t;
+  typedef interval_congruence_domain< Number, VariableName, TypeSize >
       interval_congruence_domain_t;
 
 public:
   typedef variable< Number, VariableName > variable_t;
   typedef patricia_tree_set< variable_t > variable_set_t;
   typedef interval< Number > interval_t;
-  typedef congruence< Number, typeSize > congruence_t;
+  typedef congruence< Number, TypeSize > congruence_t;
   typedef linear_expression< Number, VariableName > linear_expression_t;
   typedef linear_constraint< Number, VariableName > linear_constraint_t;
   typedef linear_constraint_system< Number, VariableName >
@@ -349,7 +350,7 @@ public:
 
 private:
   typedef interval_domain< Number, VariableName > interval_domain_t;
-  typedef congruence_domain< Number, VariableName, typeSize >
+  typedef congruence_domain< Number, VariableName, TypeSize >
       congruence_domain_t;
   typedef numerical_domain_product2< Number,
                                      VariableName,
@@ -411,11 +412,7 @@ public:
   interval_congruence_domain() : _product() {}
 
   interval_congruence_domain(const interval_congruence_domain_t& other)
-      : writeable(),
-        numerical_domain< Number, VariableName >(),
-        bitwise_operators< Number, VariableName >(),
-        division_operators< Number, VariableName >(),
-        _product(other._product) {}
+      : _product(other._product) {}
 
   interval_congruence_domain(const interval_domain_t& first,
                              const congruence_domain_t& second)
@@ -537,16 +534,44 @@ public:
     this->reduce_variable(x);
   }
 
-  void write(std::ostream& o) { this->_product.write(o); }
-
   linear_constraint_system_t to_linear_constraint_system() {
     return this->_product.first().to_linear_constraint_system();
   }
 
-  const char* getDomainName() const { return "Intervals+Congruences"; }
+  void write(std::ostream& o) { this->_product.write(o); }
 
-}; // class interval_congruence_domain
+  static std::string domain_name() { return "Intervals + Congruences"; }
 
-} // namespace ikos
+}; // end class interval_congruence_domain
+
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number, typename VariableName, int TypeSize >
+struct var_to_interval_impl<
+    interval_congruence_domain< Number, VariableName, TypeSize > > {
+  interval< Number > operator()(
+      interval_congruence_domain< Number, VariableName, TypeSize >& inv,
+      VariableName v) {
+    return inv[v].first();
+  }
+};
+
+template < typename Number, typename VariableName, int TypeSize >
+struct from_interval_impl<
+    interval_congruence_domain< Number, VariableName, TypeSize > > {
+  void operator()(
+      interval_congruence_domain< Number, VariableName, TypeSize >& inv,
+      VariableName v,
+      interval< Number > i) {
+    interval_congruence< Number > ic(i);
+    inv.set(v, ic);
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_INTERVALS_CONGRUENCES_HPP

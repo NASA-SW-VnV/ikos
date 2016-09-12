@@ -47,6 +47,7 @@
 #include <memory>
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
@@ -58,7 +59,7 @@ template < typename Number,
            typename VariableName,
            typename Domain,
            std::size_t MaxHeight >
-class union_domain : public writeable,
+class union_domain : public abstract_domain,
                      public numerical_domain< Number, VariableName >,
                      public bitwise_operators< Number, VariableName >,
                      public division_operators< Number, VariableName > {
@@ -487,7 +488,9 @@ public:
     }
   }
 
-  const char* getDomainName() const { return "Union Domain"; }
+  static std::string domain_name() {
+    return "Union of " + Domain::domain_name();
+  }
 
 }; // end class union_domain
 

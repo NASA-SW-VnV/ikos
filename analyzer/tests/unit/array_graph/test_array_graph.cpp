@@ -12,7 +12,7 @@ using namespace ikos;
 using namespace analyzer;
 
 typedef variable< z_number, varname_t > var_t;
-typedef uninitialized_domain< varname_t > uninitialized_domain_t;
+typedef uninitialized_domain_impl< varname_t > uninitialized_domain_t;
 typedef linear_constraint< z_number, varname_t > linear_constraint_t;
 typedef linear_constraint_system< z_number, varname_t >
     linear_constraint_system_t;

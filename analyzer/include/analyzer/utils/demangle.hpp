@@ -53,20 +53,37 @@
 
 namespace analyzer {
 
+inline bool is_mangled(const std::string& name) {
+  return name.size() >= 2 && name[0] == '_' && name[1] >= 'A' && name[1] <= 'Z';
+}
+
+inline bool is_mangled(const char* name) {
+  // name ends with a null byte
+  return name[0] == '_' && name[1] >= 'A' && name[1] <= 'Z';
+}
+
 std::string demangle(const std::string& name) {
+  if (is_mangled(name)) {
 #if BOOST_VERSION <= 105500
-  return boost::units::detail::demangle(name.c_str());
+    return boost::units::detail::demangle(name.c_str());
 #else
-  return boost::core::demangle(name.c_str());
+    return boost::core::demangle(name.c_str());
 #endif
+  } else {
+    return name;
+  }
 }
 
 std::string demangle(const char* name) {
+  if (is_mangled(name)) {
 #if BOOST_VERSION <= 105500
-  return boost::units::detail::demangle(name);
+    return boost::units::detail::demangle(name);
 #else
-  return boost::core::demangle(name);
+    return boost::core::demangle(name);
 #endif
+  } else {
+    return name;
+  }
 }
 
 } // end namespace analyzer

@@ -10,6 +10,7 @@ add_subdirectory(parsing/call-args)
 add_subdirectory(parsing/check-srcloc)
 add_subdirectory(parsing/gv-init)
 add_subdirectory(parsing/src-lines/1)
+add_subdirectory(parsing/check-exit-nodes)
 add_subdirectory(parsing/basic)
 add_subdirectory(uid/internal_var)
 
@@ -28,4 +29,5 @@ add_custom_target(verifier-passes DEPENDS
   test-parsing-src-lines-1
   test-parsing-uid-internal_var
   test-parsing-basic
+  test-parsing-exit-nodes
 )

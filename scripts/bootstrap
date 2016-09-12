@@ -68,7 +68,7 @@
 progname=$(basename "$0")
 
 # Version settings
-ikos_version="1.1.1"
+ikos_version="1.1.2"
 gcc_required_version="4.9.2"
 clang_required_version="3.4"
 apple_clang_required_version="3.4"

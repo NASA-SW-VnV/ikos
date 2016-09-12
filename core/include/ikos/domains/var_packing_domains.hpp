@@ -59,6 +59,7 @@
 #include <ikos/domains/division_operators_api.hpp>
 #include <ikos/domains/intervals.hpp>
 #include <ikos/domains/numerical_domains_api.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
@@ -74,7 +75,7 @@ template < typename Number,
 class var_packing_dbm_congruence;
 
 template < typename Number, typename VariableName, typename Domain >
-class var_packing_domain : public writeable,
+class var_packing_domain : public abstract_domain,
                            public numerical_domain< Number, VariableName >,
                            public bitwise_operators< Number, VariableName >,
                            public division_operators< Number, VariableName > {
@@ -1062,10 +1063,43 @@ public:
 #endif
   }
 
-  const char* getDomainName() const { return "VariablePacking"; }
+  static std::string domain_name() {
+    return Domain::domain_name() + " with Variable Packing";
+  }
 
 }; // end class var_packing_domain
 
-} // namespace ikos
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number, typename VariableName, typename Domain >
+struct normalize_impl< var_packing_domain< Number, VariableName, Domain > > {
+  void operator()(var_packing_domain< Number, VariableName, Domain >& inv) {
+    return inv.normalize();
+  }
+};
+
+template < typename Number, typename VariableName, typename Domain >
+struct convert_impl< var_packing_domain< Number, VariableName, Domain >,
+                     interval_domain< Number, VariableName > > {
+  interval_domain< Number, VariableName > operator()(
+      var_packing_domain< Number, VariableName, Domain > inv) {
+    return inv.get_interval_domain();
+  }
+};
+
+template < typename Number, typename VariableName, typename Domain >
+struct convert_impl< interval_domain< Number, VariableName >,
+                     var_packing_domain< Number, VariableName, Domain > > {
+  var_packing_domain< Number, VariableName, Domain > operator()(
+      interval_domain< Number, VariableName > inv) {
+    return var_packing_domain< Number, VariableName, Domain >(inv);
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_VAR_PACKING_DOMAINS_HPP

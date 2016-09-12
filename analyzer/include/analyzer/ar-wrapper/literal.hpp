@@ -176,6 +176,9 @@ class Literal {
   Literal(Internal_Variable_ref var, VariableFactory& vfac)
       : _lit(lookup(var)), _vfac(vfac) {}
 
+  Literal(uint64_t val, VariableFactory& vfac)
+      : _lit(make_num(std::to_string(val), -1)), _vfac(vfac) {}
+
   // Do not implement
   Literal& operator=(const Literal& other);
 
@@ -344,6 +347,7 @@ public:
   Literal& operator[](Operand_ref op) { return lookup(op); }
   Literal& operator[](Local_Variable_ref v) { return lookup(v); }
   Literal& operator[](Internal_Variable_ref v) { return lookup(v); }
+  Literal operator[](uint64_t v) { return Literal(v, _vfac); }
 
   std::ostream& dump(std::ostream& o) {
     for (iterator it = _map.begin(); it != _map.end(); ++it) {

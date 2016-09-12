@@ -482,10 +482,12 @@ Local variable reference
 ($code
   ($entry ($entry))
   ($exit ($return))
+  ($unreachable ($if.then))
+  ($unwind ($unwind))
   ($basicblocks ($basicblock) ...)
   ($trans ($edge () ()) ...))
 ```
-Note ($exit) may have zero arguments. In this case the function does not terminate with a return block.
+We support three different types of terminating blocks in AR_Code: exit, unreachable, and unwind. In an AR _Code, we allow at most one basic block per type. Using the LLVM frontend, we transform the LLVM IR using the  UnifyFunctionExitNodes pass to acheive this before we translate the LLVM IR to AR. Note that ($exit), ($unreachable), and ($unwind) may have zero arguments, which means these blocks may be absent in the function in the LLVM IR. If the exit block is missing, then this means the function does not terminate with a return block that ends with a return instruction.
 
 #### AR_Basic_Block
 

@@ -56,8 +56,8 @@ public:
 
   virtual ~forward_fixpoint_iterator() {}
 
-}; // class fixpoint_iterator
+}; // end class fixpoint_iterator
 
-} // namespace ikos
+} // end namespace ikos
 
 #endif // IKOS_FIXPOINT_ITERATORS_API_HPP

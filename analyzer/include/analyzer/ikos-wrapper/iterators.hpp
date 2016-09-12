@@ -53,6 +53,17 @@
 
 namespace analyzer {
 
+class fixpoint_iterator_error : public ikos::ikos_error {
+public:
+  fixpoint_iterator_error(const std::string msg) : ikos::ikos_error(msg) {}
+};
+
+class cfg_not_reversible_error : public fixpoint_iterator_error {
+public:
+  cfg_not_reversible_error()
+      : fixpoint_iterator_error("control flow graph not reversible") {}
+};
+
 // Wrapper for ikos forward fixpoint iterator
 template < typename NodeName, typename CFG, typename AbsDomain >
 class fwd_fixpoint_iterator
@@ -142,8 +153,9 @@ public:
   void run(AbsDomain inv) {
     if (this->_is_reversible) {
       fwd_fixpoint_iterator_t::run(inv);
+    } else {
+      throw cfg_not_reversible_error();
     }
-    // TODO: display a warning
   }
 
 private:

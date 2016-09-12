@@ -47,11 +47,12 @@
 
 #include <ikos/domains/dbm.hpp>
 #include <ikos/domains/var_packing_domains.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 
 namespace ikos {
 
 template < typename Number, typename VariableName >
-class var_packing_dbm : public writeable,
+class var_packing_dbm : public abstract_domain,
                         public numerical_domain< Number, VariableName >,
                         public bitwise_operators< Number, VariableName >,
                         public division_operators< Number, VariableName > {
@@ -474,9 +475,33 @@ public:
 
   void write(std::ostream& o) { _domain.write(o); }
 
-  const char* getDomainName() const { return "VariablePackingDBM"; }
+  static std::string domain_name() { return "DBM with Variable Packing"; }
 
 }; // end class var_packing_dbm
+
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number, typename VariableName >
+struct convert_impl< interval_domain< Number, VariableName >,
+                     var_packing_dbm< Number, VariableName > > {
+  var_packing_dbm< Number, VariableName > operator()(
+      interval_domain< Number, VariableName > inv) {
+    return var_packing_dbm< Number, VariableName >(inv);
+  }
+};
+
+template < typename Number, typename VariableName >
+struct convert_impl< var_packing_dbm< Number, VariableName >,
+                     interval_domain< Number, VariableName > > {
+  interval_domain< Number, VariableName > operator()(
+      var_packing_dbm< Number, VariableName > inv) {
+    return inv.get_interval_domain();
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
 
 } // end namespace ikos
 

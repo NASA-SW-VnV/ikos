@@ -1,3 +1,28 @@
+IKOS VERSION 1.1.2 RELEASE NOTES
+================================
+
+RELEASE DATE
+------------
+
+September 2016
+
+LIST OF CHANGES
+---------------
+
+### IKOS Core Changes
+
+* Added interfaces for abstract domains, nullity domains, uninitialized variables domains, pointer domains and memory domains.
+* Moved the pointer domain, the value domain and the summary domain under IKOS core.
+
+### Analyzer Changes
+
+* Added a pass to unify exit nodes.
+
+### ARBOS Changes
+
+* Added APIs to set and retrieve "unreachable" and "unwind" basic blocks in an AR_Code
+
+
 IKOS VERSION 1.1.1 RELEASE NOTES
 ================================
 
@@ -115,26 +140,12 @@ The current implementation of LLVM frontend does not support LLVM vector type (h
 Exception Handling
 ------------------
 
-IKOS 1.1.1 is able to analyze C++ code containing exceptions, but exception propagation through functions is not handled. If the code you are analyzing can raise an exception and does not catch it within the same function, IKOS might be unsound, meaning that it can miss runtime errors. If your code only uses exceptions to report a runtime error and stop the program, then IKOS should be sound.
+IKOS 1.1.2 is able to analyze C++ code containing exceptions, but exception propagation through functions is not handled. If the code you are analyzing can raise an exception and does not catch it within the same function, IKOS might be unsound, meaning that it can miss runtime errors. If your code only uses exceptions to report a runtime error and stop the program, then IKOS should be sound.
 
 Octagon Abstract Domain
 -----------------------
 
 The octagon abstract domain has some implementation issues. Do not use it.
-
-Functions Returning a Temporary Array/Structure
------------------------------------------------
-
-IKOS is unsound if you have a function that returns a temporary array or structure. For instance:
-
-```
-int* f() {
-  int tab[42];
-  return tab;
-}
-```
-
-By the way, this should be forbidden and your compiler should warn you.
 
 Variable Length Array
 ---------------------

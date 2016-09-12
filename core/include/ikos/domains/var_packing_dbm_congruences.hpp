@@ -46,6 +46,7 @@
 #define IKOS_VAR_PACKING_DBM_CONGRUENCES_HPP
 
 #include <ikos/common/types.hpp>
+#include <ikos/domains/abstract_domains_api.hpp>
 #include <ikos/domains/bitwise_operators_api.hpp>
 #include <ikos/domains/congruences.hpp>
 #include <ikos/domains/division_operators_api.hpp>
@@ -59,9 +60,9 @@ namespace ikos {
 template < typename Number,
            typename VariableName,
            std::size_t max_reduction_cycles = 10,
-           int typeSize = -1 >
+           int TypeSize = -1 >
 class var_packing_dbm_congruence
-    : public writeable,
+    : public abstract_domain,
       public numerical_domain< Number, VariableName >,
       public bitwise_operators< Number, VariableName >,
       public division_operators< Number, VariableName > {
@@ -73,25 +74,23 @@ public:
   typedef linear_constraint_system< Number, VariableName >
       linear_constraint_system_t;
   typedef interval< Number > interval_t;
-  typedef congruence< Number, typeSize > congruence_t;
+  typedef congruence< Number, TypeSize > congruence_t;
   typedef var_packing_dbm< Number, VariableName > var_packing_dbm_t;
-  typedef congruence_domain< Number, VariableName, typeSize >
+  typedef congruence_domain< Number, VariableName, TypeSize >
       congruence_domain_t;
-  typedef interval_congruence< Number, typeSize > interval_congruence_t;
-  typedef interval_congruence_domain< Number, VariableName, typeSize >
+  typedef interval_congruence< Number, TypeSize > interval_congruence_t;
+  typedef interval_congruence_domain< Number, VariableName, TypeSize >
       interval_congruence_domain_t;
   typedef var_packing_dbm_congruence< Number,
                                       VariableName,
                                       max_reduction_cycles,
-                                      typeSize >
-      var_packing_dbm_congruence_t;
+                                      TypeSize > var_packing_dbm_congruence_t;
 
 private:
   typedef numerical_domain_product2< Number,
                                      VariableName,
                                      var_packing_dbm_t,
-                                     congruence_domain_t >
-      domain_product_t;
+                                     congruence_domain_t > domain_product_t;
   typedef std::shared_ptr< dbm< Number, VariableName > > dbm_ptr_t;
   typedef typename var_packing_dbm_t::var_packing_domain_t::equivalence_relation
       equivalence_relation_t;
@@ -358,9 +357,93 @@ public:
     return _product.first().to_linear_constraint_system();
   }
 
-  const char* getDomainName() const { return "VariablePackingDBM+Congruences"; }
+  static std::string domain_name() {
+    return "DBM with Variable Packing + Congruences";
+  }
 
 }; // end class var_packing_dbm_congruence
-}
+
+namespace num_domain_traits {
+namespace detail {
+
+template < typename Number,
+           typename VariableName,
+           std::size_t max_reduction_cycles,
+           int TypeSize >
+struct var_to_interval_impl< var_packing_dbm_congruence< Number,
+                                                         VariableName,
+                                                         max_reduction_cycles,
+                                                         TypeSize > > {
+  interval< Number > operator()(
+      var_packing_dbm_congruence< Number,
+                                  VariableName,
+                                  max_reduction_cycles,
+                                  TypeSize >& inv,
+      VariableName v) {
+    return inv[v].first();
+  }
+};
+
+template < typename Number,
+           typename VariableName,
+           std::size_t max_reduction_cycles,
+           int TypeSize >
+struct from_interval_impl< var_packing_dbm_congruence< Number,
+                                                       VariableName,
+                                                       max_reduction_cycles,
+                                                       TypeSize > > {
+  void operator()(var_packing_dbm_congruence< Number,
+                                              VariableName,
+                                              max_reduction_cycles,
+                                              TypeSize >& inv,
+                  VariableName v,
+                  interval< Number > i) {
+    interval_congruence< Number > ic(i);
+    inv.set(v, ic);
+  }
+};
+
+template < typename Number,
+           typename VariableName,
+           std::size_t max_reduction_cycles,
+           int TypeSize >
+struct convert_impl<
+    interval_congruence_domain< Number, VariableName, TypeSize >,
+    var_packing_dbm_congruence< Number,
+                                VariableName,
+                                max_reduction_cycles,
+                                TypeSize > > {
+  var_packing_dbm_congruence< Number,
+                              VariableName,
+                              max_reduction_cycles,
+                              TypeSize >
+  operator()(interval_congruence_domain< Number, VariableName, TypeSize > inv) {
+    return var_packing_dbm_congruence< Number, VariableName >(inv);
+  }
+};
+
+template < typename Number,
+           typename VariableName,
+           std::size_t max_reduction_cycles,
+           int TypeSize >
+struct convert_impl<
+    var_packing_dbm_congruence< Number,
+                                VariableName,
+                                max_reduction_cycles,
+                                TypeSize >,
+    interval_congruence_domain< Number, VariableName, TypeSize > > {
+  interval_congruence_domain< Number, VariableName, TypeSize > operator()(
+      var_packing_dbm_congruence< Number,
+                                  VariableName,
+                                  max_reduction_cycles,
+                                  TypeSize > inv) {
+    return inv.get_interval_congruence_domain();
+  }
+};
+
+} // end namespace detail
+} // end namespace num_domain_traits
+
+} // end namespace ikos
 
 #endif // IKOS_VAR_PACKING_DBM_CONGRUENCES_HPP

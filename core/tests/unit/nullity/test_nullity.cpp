@@ -3,18 +3,12 @@
 #include <ikos/algorithms/linear_constraints.hpp>
 #include <ikos/common/bignums.hpp>
 #include <ikos/domains/intervals.hpp>
-
 #include <ikos/domains/nullity.hpp>
 
 using namespace ikos;
 
 typedef string_factory::indexed_string varname_t;
-typedef variable< z_number, varname_t > z_var;
-typedef nullity_domain< varname_t > nullity_domain_t;
-
-typedef linear_constraint< z_number, varname_t > linear_constraint_t;
-typedef linear_expression< z_number, varname_t > linear_expression_t;
-typedef interval_domain< z_number, varname_t > interval_domain_t;
+typedef nullity_domain_impl< varname_t > nullity_domain_t;
 
 int main(int argc, char** argv) {
   string_factory vfac;
