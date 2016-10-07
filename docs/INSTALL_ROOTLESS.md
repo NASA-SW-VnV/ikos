@@ -62,7 +62,7 @@ After installation, the install directory will contain the following structure:
 ├── activate-full
 ├── activate-minimal
 ├── [...]
-├── ikos-1.1.2
+├── ikos-1.2
 │   ├── bin
 │   ├── include
 │   └── lib
@@ -100,7 +100,7 @@ For instance, if the **bootstrap** script installed cmake, the cmake `bin` direc
 Now, build and install the tests:
 
 ```
-$ cd /path/to/ikos-build/ikos-1.1.2
+$ cd /path/to/ikos-build/ikos-1.2
 $ make verifier-passes
 $ make install
 ```

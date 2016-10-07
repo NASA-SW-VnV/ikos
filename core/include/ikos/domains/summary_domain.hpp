@@ -233,6 +233,7 @@ class summary_domain
       public uninitialized_domain< typename ScalarDomain::variable_name_t >,
       public nullity_domain< typename ScalarDomain::variable_name_t >,
       public memory_domain< typename ScalarDomain::number_t,
+                            dummy_number,
                             typename ScalarDomain::variable_name_t > {
 private:
   typedef typename ScalarDomain::number_t Number;
@@ -251,6 +252,7 @@ public:
   typedef patricia_tree_set< variable_t > variable_set_t;
   typedef Number offset_number_t;
   typedef discrete_domain< VariableName > points_to_set_t;
+  typedef literal< Number, dummy_number, VariableName > literal_t;
   typedef ScalarDomain scalar_domain_t;
   typedef summary_domain< ScalarDomain > summary_domain_t;
 
@@ -483,58 +485,166 @@ private:
     }
   }
 
-  // Get all variables in a linear expression
-  static std::vector< VariableName > get_variables(linear_expression_t e) {
-    std::vector< VariableName > vs;
-    for (typename linear_expression_t::iterator it = e.begin(); it != e.end();
-         ++it) {
-      vs.push_back(it->second.name());
+  class literal_writer : public literal_t::template visitor<> {
+  private:
+    VariableName _lhs;
+    pointer_domain_t& _ptr;
+    uninitialized_domain_t& _uninitialized;
+    nullity_domain_t& _nullity;
+
+  public:
+    literal_writer(VariableName lhs,
+                   pointer_domain_t& ptr,
+                   uninitialized_domain_t& uninitialized,
+                   nullity_domain_t& nullity)
+        : _lhs(lhs),
+          _ptr(ptr),
+          _uninitialized(uninitialized),
+          _nullity(nullity) {}
+
+    void integer(Number rhs) {
+      _ptr.assign(_lhs, rhs);
+      _uninitialized.make_initialized(_lhs);
+      _nullity -= _lhs;
     }
-    return vs;
+
+    void floating_point(dummy_number) {
+      _ptr -= _lhs; // ignored
+      _uninitialized.make_initialized(_lhs);
+      _nullity -= _lhs;
+    }
+
+    void undefined() {
+      _ptr -= _lhs;
+      _uninitialized.make_uninitialized(_lhs);
+      _nullity -= _lhs;
+    }
+
+    void null() {
+      _ptr -= _lhs;
+      _uninitialized -= _lhs;
+      _nullity.make_null(_lhs);
+    }
+
+    void integer_var(VariableName rhs) {
+      _ptr.assign(_lhs, variable_t(rhs));
+      _uninitialized.assign_uninitialized(_lhs, rhs);
+      _nullity -= _lhs;
+    }
+
+    void floating_point_var(VariableName rhs) {
+      _ptr -= _lhs; // ignored
+      _uninitialized.assign_uninitialized(_lhs, rhs);
+      _nullity -= _lhs;
+    }
+
+    void pointer_var(VariableName rhs) {
+      _ptr -= _lhs; // for now, ignored
+      _uninitialized -= _lhs;
+      _nullity.assign_nullity(_lhs, rhs);
+    }
+
+  }; // end class literal_writer
+
+  class literal_reader : public literal_t::template visitor<> {
+  private:
+    VariableName _rhs;
+    pointer_domain_t& _ptr;
+    uninitialized_domain_t& _uninitialized;
+    nullity_domain_t& _nullity;
+
+  public:
+    literal_reader(VariableName rhs,
+                   pointer_domain_t& ptr,
+                   uninitialized_domain_t& uninitialized,
+                   nullity_domain_t& nullity)
+        : _rhs(rhs),
+          _ptr(ptr),
+          _uninitialized(uninitialized),
+          _nullity(nullity) {}
+
+    void integer(Number v) {
+      throw ikos_error("value_domain: trying to assign an integer");
+    }
+
+    void floating_point(dummy_number) {
+      throw ikos_error("value_domain: trying to assign a floating point");
+    }
+
+    void undefined() {
+      throw ikos_error("value_domain: trying to assign undefined");
+    }
+
+    void null() { throw ikos_error("value_domain: trying to assign null"); }
+
+    void integer_var(VariableName lhs) {
+      _ptr.assign(lhs, variable_t(_rhs));
+      _uninitialized.assign_uninitialized(lhs, _rhs);
+      _nullity -= lhs;
+    }
+
+    void floating_point_var(VariableName lhs) {
+      _ptr -= lhs; // ignored
+      _uninitialized.assign_uninitialized(lhs, _rhs);
+      _nullity -= lhs;
+    }
+
+    void pointer_var(VariableName lhs) {
+      _ptr -= lhs; // for now, ignored
+      _uninitialized -= lhs;
+      _nullity.assign_nullity(lhs, _rhs);
+    }
+
+  }; // end class literal_reader
+
+  // Perform a strong update `lhs = rhs`
+  void strong_update(VariableName lhs, literal_t rhs) {
+    literal_writer v(lhs, _ptr, _uninitialized, _nullity);
+    rhs.apply_visitor(v);
   }
 
-  // Perform a strong update `x = e`
-  void strong_update(VariableName x, linear_expression_t e, bool is_pointer) {
-    _ptr.assign(x, e);
-
-    std::vector< VariableName > rhs = get_variables(e);
-    if (is_pointer) {
-      assert(rhs.size() <= 1);
-      if (rhs.size() == 1) {
-        _nullity.assign_nullity(x, rhs[0]);
-      } else {
-        _nullity -= x;
-      }
-    } else {
-      _uninitialized.assign_uninitialized(x, rhs);
-    }
+  // Perform a strong update `lhs = rhs`
+  void strong_update(literal_t lhs, VariableName rhs) {
+    literal_reader v(rhs, _ptr, _uninitialized, _nullity);
+    lhs.apply_visitor(v);
   }
 
-  // Perform a weak update `x = e`
-  void weak_update(VariableName x, linear_expression_t e, bool is_pointer) {
+  // Perform a weak update `lhs = rhs`
+  void weak_update(VariableName lhs, literal_t rhs) {
     pointer_domain_t ptr_inv(_ptr);
-    ptr_inv.assign(x, e);
-    _ptr = _ptr | ptr_inv;
+    uninitialized_domain_t uninitialized_inv(_uninitialized);
+    nullity_domain_t nullity_inv(_nullity);
 
-    std::vector< VariableName > rhs = get_variables(e);
-    if (is_pointer) {
-      assert(rhs.size() <= 1);
-      nullity_domain_t inv(_nullity);
-      if (rhs.size() == 1) {
-        inv.assign_nullity(x, rhs[0]);
-      } else {
-        inv -= x;
-      }
-      _nullity = _nullity | inv;
-    } else {
-      uninitialized_domain_t inv(_uninitialized);
-      inv.assign_uninitialized(x, rhs);
-      _uninitialized = _uninitialized | inv;
-    }
+    literal_writer v(lhs, ptr_inv, uninitialized_inv, nullity_inv);
+    rhs.apply_visitor(v);
+
+    _ptr = _ptr | ptr_inv;
+    _uninitialized = _uninitialized | uninitialized_inv;
+    _nullity = _nullity | nullity_inv;
+  }
+
+  // Perform a weak update `lhs = rhs`
+  void weak_update(literal_t lhs, VariableName rhs) {
+    pointer_domain_t ptr_inv(_ptr);
+    uninitialized_domain_t uninitialized_inv(_uninitialized);
+    nullity_domain_t nullity_inv(_nullity);
+
+    literal_reader v(rhs, ptr_inv, uninitialized_inv, nullity_inv);
+    lhs.apply_visitor(v);
+
+    _ptr = _ptr | ptr_inv;
+    _uninitialized = _uninitialized | uninitialized_inv;
+    _nullity = _nullity | nullity_inv;
   }
 
   // Forget all memory cells that can be accessible through pointer p
   void forget_reachable_cells(VariableName p) {
+    if (is_top() || is_bottom())
+      return;
+
+    if (_nullity.is_null(p))
+      return;
+
     points_to_set_t addrs_set = _ptr.addrs_set(p); // p's base address
 
     if (addrs_set.is_top())
@@ -550,6 +660,12 @@ private:
   // Forget all memory cells that can be accessible through pointer p and that
   // overlap with [p.offset, ..., p.offset + size - 1]
   void forget_reachable_cells(VariableName p, interval_t size) {
+    if (is_top() || is_bottom())
+      return;
+
+    if (_nullity.is_null(p))
+      return;
+
     points_to_set_t addrs_set = _ptr.addrs_set(p);
 
     if (addrs_set.is_top())
@@ -1535,10 +1651,7 @@ public:
    * Implement memory_domain
    */
 
-  void mem_write(VariableName pointer,
-                 linear_expression_t e,
-                 Number size,
-                 bool is_pointer) {
+  void mem_write(VariableName pointer, literal_t rhs, Number size) {
     if (is_top() || is_bottom())
       return;
 
@@ -1551,8 +1664,8 @@ public:
     points_to_set_t addrs = _ptr.addrs_set(pointer);
     if (addrs.is_top()) {
 #if 1
-      std::cerr << "Ignored memory write to " << pointer << " with value " << e
-                << std::endl;
+      std::cerr << "Ignored memory write to " << pointer << " with value "
+                << rhs << std::endl;
 #endif
       return;
     }
@@ -1573,9 +1686,9 @@ public:
         Cell c = realize_single_out_cell(*it, *offset_intv.singleton(), size);
 
         if (addrs.size() == 1) {
-          strong_update(c.scalar_var(), e, is_pointer);
+          strong_update(c.scalar_var(), rhs);
         } else {
-          weak_update(c.scalar_var(), e, is_pointer);
+          weak_update(c.scalar_var(), rhs);
         }
       }
     } else {
@@ -1588,16 +1701,15 @@ public:
         for (typename std::vector< Cell >::iterator it2 = cells.begin();
              it2 != cells.end();
              ++it2) {
-          weak_update(it2->scalar_var(), e, is_pointer);
+          weak_update(it2->scalar_var(), rhs);
         }
       }
     }
   }
 
-  void mem_read(VariableName lhs,
-                VariableName pointer,
-                Number size,
-                bool is_pointer) {
+  void mem_read(literal_t lhs, VariableName pointer, Number size) {
+    assert(lhs.is_var());
+
     if (is_top() || is_bottom())
       return;
 
@@ -1634,24 +1746,24 @@ public:
             realize_single_in_cell(*it, *offset_intv.singleton(), size);
 
         if (!c) { // cannot realize the cell : just forget it
-          _ptr -= lhs;
-          _nullity -= lhs;
-          _uninitialized -= lhs;
+          _ptr -= lhs.var();
+          _nullity -= lhs.var();
+          _uninitialized -= lhs.var();
           break;
         }
 
         if (first) {
-          strong_update(lhs, variable_t(c->scalar_var()), is_pointer);
+          strong_update(lhs, c->scalar_var());
           first = false;
         } else {
-          weak_update(lhs, variable_t(c->scalar_var()), is_pointer);
+          weak_update(lhs, c->scalar_var());
         }
       }
     } else {
       // The offset is a range.
-      _ptr -= lhs;
-      _nullity -= lhs;
-      _uninitialized -= lhs;
+      _ptr -= lhs.var();
+      _nullity -= lhs.var();
+      _uninitialized -= lhs.var();
     }
   }
 
@@ -1851,9 +1963,9 @@ public:
 
             if (c.range() <= safe_range) {
               if (addrs.size() == 1) {
-                strong_update(c.scalar_var(), 0, false);
+                strong_update(c.scalar_var(), literal_t::integer(0));
               } else {
-                weak_update(c.scalar_var(), 0, false);
+                weak_update(c.scalar_var(), literal_t::integer(0));
               }
 
               // create a cell from range.lb to c.offset - 1 if needed
@@ -1903,17 +2015,9 @@ public:
     }
   }
 
-  void forget_mem_contents(VariableName p) {
-    if (is_top() || is_bottom())
-      return;
-
-    forget_reachable_cells(p);
-  }
+  void forget_mem_contents(VariableName p) { forget_reachable_cells(p); }
 
   void forget_mem_contents(VariableName p, Number size) {
-    if (is_top() || is_bottom())
-      return;
-
     forget_reachable_cells(p, size);
   }
 

@@ -58,6 +58,7 @@ private:
   typedef typename analysis_db::db_ptr db_ptr_t;
 
   typedef typename AbsDomain::variable_t variable_t;
+  typedef typename AbsDomain::number_t number_t;
   typedef typename AbsDomain::linear_expression_t linear_expression_t;
 
 public:
@@ -81,7 +82,8 @@ public:
     if (!ar::isGlobalVar(store_pointer) && !ar::isAllocaVar(store_pointer)) {
       location loc = ar::getSrcLoc(store);
       LiteralFactory& lfac = this->_context.lit_factory();
-      uint64_t store_size = ar::getSize(ar::getType(ar::getValue(store)));
+      uint64_t store_size =
+          ar::getSize(ar::getPointeeType(ar::getType(store_pointer)));
       check_mem_access(lfac[store_pointer],
                        lfac[store_size],
                        inv,
@@ -102,7 +104,8 @@ public:
     if (!ar::isGlobalVar(load_pointer) && !ar::isAllocaVar(load_pointer)) {
       location loc = ar::getSrcLoc(load);
       LiteralFactory& lfac = this->_context.lit_factory();
-      uint64_t load_size = ar::getSize(ar::getType(ar::getResult(load)));
+      uint64_t load_size =
+          ar::getSize(ar::getPointeeType(ar::getType(load_pointer)));
       check_mem_access(lfac[load_pointer],
                        lfac[load_size],
                        inv,
@@ -155,7 +158,122 @@ public:
     check_mem_access(dest, len, inv, call_context, loc, ar::getUID(memset));
   }
 
+  virtual void check(Call_ref call,
+                     AbsDomain inv,
+                     const std::string& call_context) {
+    if (ar::isDirectCall(call)) {
+      location loc = ar::getSrcLoc(call);
+      LiteralFactory& lfac = this->_context.lit_factory();
+      std::string fun_name = ar::getFunctionName(call);
+      OpRange arguments = ar::getArguments(call);
+
+      /*
+       * IKOS does not keep track of the string length (which is different from
+       * the allocated size), thus it is hard to check if these function calls
+       * are safe or not.
+       *
+       * In most cases here, we just check if the first byte is accessible.
+       */
+      if (fun_name == "strlen" && arguments.size() == 1) {
+        Literal s = lfac[arguments[0]];
+        check_mem_access(s, lfac[1], inv, call_context, loc, ar::getUID(call));
+      } else if (fun_name == "strnlen" && arguments.size() == 2) {
+        Literal s = lfac[arguments[0]];
+        Literal n = lfac[arguments[1]];
+        if (is_greater_equal(n, 1, inv)) {
+          check_mem_access(s,
+                           lfac[1],
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(call));
+        }
+      } else if (fun_name == "strcpy" && arguments.size() == 2) {
+        Literal dest = lfac[arguments[0]];
+        Literal src = lfac[arguments[1]];
+        check_mem_access(dest,
+                         lfac[1],
+                         inv,
+                         call_context,
+                         loc,
+                         ar::getUID(call));
+        check_mem_access(src,
+                         lfac[1],
+                         inv,
+                         call_context,
+                         loc,
+                         ar::getUID(call));
+        check_strcpy(dest, src, inv, call_context, loc, ar::getUID(call));
+      } else if (fun_name == "strncpy" && arguments.size() == 3) {
+        Literal dest = lfac[arguments[0]];
+        Literal src = lfac[arguments[1]];
+        Literal n = lfac[arguments[2]];
+        if (is_greater_equal(n, 1, inv)) {
+          check_mem_access(dest,
+                           lfac[1],
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(call));
+          check_mem_access(src,
+                           lfac[1],
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(call));
+        }
+        // TODO: check_strncpy
+      } else if (fun_name == "strcat" && arguments.size() == 2) {
+        Literal s1 = lfac[arguments[0]];
+        Literal s2 = lfac[arguments[1]];
+        check_mem_access(s1, lfac[1], inv, call_context, loc, ar::getUID(call));
+        check_mem_access(s2, lfac[1], inv, call_context, loc, ar::getUID(call));
+      } else if (fun_name == "strncat" && arguments.size() == 3) {
+        Literal s1 = lfac[arguments[0]];
+        Literal s2 = lfac[arguments[1]];
+        Literal n = lfac[arguments[2]];
+        if (is_greater_equal(n, 1, inv)) {
+          check_mem_access(s1,
+                           lfac[1],
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(call));
+          check_mem_access(s2,
+                           lfac[1],
+                           inv,
+                           call_context,
+                           loc,
+                           ar::getUID(call));
+        }
+      }
+    }
+  }
+
+  virtual void check(Invoke_ref s,
+                     AbsDomain inv,
+                     const std::string& call_context) {
+    check(ar::getFunctionCall(s), inv, call_context);
+  }
+
 private:
+  // Return true if lit >= n
+  static bool is_greater_equal(const Literal& lit, number_t n, AbsDomain inv) {
+    if (lit.is_undefined_cst()) {
+      return false;
+    } else if (lit.is_num()) {
+      return lit.get_num< number_t >() >= n;
+    } else if (lit.is_var()) {
+      if (exc_domain_traits::is_normal_flow_bottom(inv))
+        return false;
+
+      inv += (variable_t(lit.get_var()) <= n - 1);
+      return exc_domain_traits::is_normal_flow_bottom(inv);
+    } else {
+      assert(false && "unreachable");
+    }
+  }
+
   /*
    * Write the results of a memory access check (buffer overflow + underflow) in
    * the database.
@@ -282,7 +400,7 @@ private:
                                  linear_expression_t access_size,
                                  AbsDomain inv,
                                  const location& loc) {
-    if (inv.is_bottom()) {
+    if (exc_domain_traits::is_normal_flow_bottom(inv)) {
       if (this->display_check(UNREACHABLE)) {
         std::cout << location_to_string(loc)
                   << ": [unreachable] check_overflow(ptr=" << pointer
@@ -315,7 +433,7 @@ private:
         if (all_valid) {
           AbsDomain tmp(inv);
           tmp += (offset + access_size - 1 >= variable_t(size_var));
-          bool is_bottom = tmp.is_bottom();
+          bool is_bottom = exc_domain_traits::is_normal_flow_bottom(tmp);
 
           if (is_bottom && this->display_check(OK)) {
             std::cout << location_to_string(loc)
@@ -340,7 +458,7 @@ private:
         if (all_invalid) {
           AbsDomain tmp(inv);
           tmp += (offset + access_size <= variable_t(size_var));
-          bool is_bottom = tmp.is_bottom();
+          bool is_bottom = exc_domain_traits::is_normal_flow_bottom(tmp);
 
           if (!is_bottom && this->display_check(OK)) {
             std::cout << location_to_string(loc)
@@ -398,7 +516,7 @@ private:
                                   linear_expression_t access_size,
                                   AbsDomain inv,
                                   const location& loc) {
-    if (inv.is_bottom()) {
+    if (exc_domain_traits::is_normal_flow_bottom(inv)) {
       if (this->display_check(UNREACHABLE)) {
         std::cout << location_to_string(loc)
                   << ": [unreachable] check_underflow(ptr=" << pointer
@@ -421,9 +539,9 @@ private:
     } else {
       AbsDomain tmp(inv);
       tmp += (offset <= -1);
-      if (!tmp.is_bottom()) { // warning or error
+      if (!exc_domain_traits::is_normal_flow_bottom(tmp)) { // warning or error
         inv += (offset >= 0);
-        if (inv.is_bottom()) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv)) {
           if (this->display_check(ERR)) {
             std::cout << location_to_string(loc)
                       << ": [error] check_underflow(ptr=" << pointer
@@ -455,6 +573,152 @@ private:
         return OK;
       }
     }
+  }
+
+  /*
+   * Check a string copy for overflow
+   *
+   * Arguments:
+   *   dest: The destination pointer
+   *   src: The source pointer
+   *   inv: The invariant, as an abstract value
+   *   call_context: The calling context
+   *   loc: The source location
+   *   stmt_uid: The UID of the AR_Statement
+   */
+  void check_strcpy(Literal dest,
+                    Literal src,
+                    AbsDomain inv,
+                    const std::string& call_context,
+                    const location& loc,
+                    unsigned long stmt_uid) {
+    analysis_result overflow_result = OK;
+
+    if (dest.is_undefined_cst() || dest.is_null_cst() ||
+        src.is_undefined_cst() || src.is_null_cst()) {
+      if (this->display_check(ERR)) {
+        std::cout << location_to_string(loc) << ": [error] check_strcpy(dest=";
+        dest.dump(std::cout);
+        std::cout << ", src=";
+        src.dump(std::cout);
+        std::cout << "): ";
+        if (dest.is_undefined_cst()) {
+          std::cout << "dest is undefined" << std::endl;
+        } else if (dest.is_null_cst()) {
+          std::cout << "dest is null" << std::endl;
+        } else if (src.is_undefined_cst()) {
+          std::cout << "src is undefined" << std::endl;
+        } else {
+          std::cout << "src is null" << std::endl;
+        }
+      }
+
+      overflow_result = ERR;
+    } else {
+      assert(dest.is_var());
+      assert(src.is_var());
+
+      if (exc_domain_traits::is_normal_flow_bottom(inv)) {
+        if (this->display_check(UNREACHABLE)) {
+          std::cout << location_to_string(loc)
+                    << ": [unreachable] check_strcpy(dest=";
+          dest.dump(std::cout);
+          std::cout << ", src=";
+          src.dump(std::cout);
+          std::cout << ")";
+        }
+
+        overflow_result = UNREACHABLE;
+      } else if (ptr_domain_traits::is_unknown_addr(inv, dest.get_var())) {
+        if (this->display_check(WARNING)) {
+          std::cout << location_to_string(loc)
+                    << ": [error] check_strcpy(dest=";
+          dest.dump(std::cout);
+          std::cout << ", src=";
+          src.dump(std::cout);
+          std::cout << "): no points-to information for dest" << std::endl;
+        }
+
+        overflow_result = WARNING;
+      } else if (ptr_domain_traits::is_unknown_addr(inv, src.get_var())) {
+        if (this->display_check(WARNING)) {
+          std::cout << location_to_string(loc)
+                    << ": [error] check_strcpy(dest=";
+          dest.dump(std::cout);
+          std::cout << ", src=";
+          src.dump(std::cout);
+          std::cout << "): no points-to information for src" << std::endl;
+        }
+
+        overflow_result = WARNING;
+      } else {
+        ikos::discrete_domain< varname_t > dest_addrs_set =
+            ptr_domain_traits::addrs_set(inv, dest.get_var());
+        ikos::discrete_domain< varname_t > src_addrs_set =
+            ptr_domain_traits::addrs_set(inv, src.get_var());
+        bool all_valid = true;
+
+        for (auto dest_it = dest_addrs_set.begin();
+             dest_it != dest_addrs_set.end();
+             dest_it++) {
+          varname_t dest_size = num_sym_exec_impl::get_shadow_size(*dest_it);
+          varname_t dest_offset = inv.offset_var(dest.get_var());
+          linear_expression_t max_space_available =
+              variable_t(dest_size) - variable_t(dest_offset);
+
+          for (auto src_it = src_addrs_set.begin();
+               src_it != src_addrs_set.end();
+               src_it++) {
+            varname_t src_size = num_sym_exec_impl::get_shadow_size(*src_it);
+            varname_t src_offset = inv.offset_var(src.get_var());
+            linear_expression_t max_space_needed =
+                variable_t(src_size) - variable_t(src_offset);
+
+            AbsDomain tmp(inv);
+            tmp += (max_space_needed >= max_space_available + 1);
+            bool is_bottom = exc_domain_traits::is_normal_flow_bottom(tmp);
+
+            if (is_bottom && this->display_check(OK)) {
+              std::cout << location_to_string(loc) << ": [ok] strcpy(dest=";
+              dest.dump(std::cout);
+              std::cout << ", src=";
+              src.dump(std::cout);
+              std::cout << "): ∀(s, d) ∈ src.offset x dest.offset, " << src_size
+                        << " - s <= " << dest_size << " - d" << std::endl;
+            } else if (!is_bottom && this->display_check(WARNING)) {
+              std::cout << location_to_string(loc)
+                        << ": [warning] strcpy(dest=";
+              dest.dump(std::cout);
+              std::cout << ", src=";
+              src.dump(std::cout);
+              std::cout << "): ∃(s, d) ∈ src.offset x dest.offset, " << src_size
+                        << " - s > " << dest_size << " - d" << std::endl;
+            }
+
+            all_valid = all_valid && is_bottom;
+          }
+        }
+
+        if (all_valid) {
+          overflow_result = OK;
+        } else {
+          overflow_result = WARNING;
+        }
+      }
+    }
+
+    if (this->display_invariant(overflow_result)) {
+      std::cout << location_to_string(loc) << ": Invariant:" << std::endl
+                << inv << std::endl;
+    }
+
+    this->_db->write("overflow",
+                     call_context,
+                     loc.file,
+                     loc.line,
+                     loc.column,
+                     stmt_uid,
+                     tostr(overflow_result));
   }
 
 }; // end class buffer_overflow_checker

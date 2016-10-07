@@ -274,7 +274,8 @@ public:
           }
         }
 
-        if (inv.is_bottom() || !ar::getReturnValue(stmt)) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv) ||
+            !ar::getReturnValue(stmt)) {
           return inv;
         } else {
           AbsNumDomain result = AbsNumDomain::bottom();
@@ -317,7 +318,8 @@ public:
                                           AbsNumDomain inv,
                                           Function_ref callee,
                                           numerical_analysis_ptr_t summary) {
-        if (inv.is_bottom() || !ar::getReturnValue(stmt)) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv) ||
+            !ar::getReturnValue(stmt)) {
           return inv;
         }
 
@@ -627,7 +629,8 @@ private:
               exec_match_parameters(stmt, inv, callee));
         }
 
-        if (inv.is_bottom() || !ar::getReturnValue(stmt)) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv) ||
+            !ar::getReturnValue(stmt)) {
           return inv;
         } else {
           AbsNumDomain result = AbsNumDomain::bottom();
@@ -652,7 +655,7 @@ private:
       AbsNumDomain exec_match_parameters(Call_ref stmt,
                                          AbsNumDomain inv,
                                          Function_ref callee) {
-        if (inv.is_bottom()) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv)) {
           return inv;
         }
 
@@ -683,7 +686,8 @@ private:
                                           AbsNumDomain caller_inv,
                                           Function_ref callee,
                                           const summary_t& summary) {
-        if (caller_inv.is_bottom() || !ar::getReturnValue(stmt)) {
+        if (exc_domain_traits::is_normal_flow_bottom(caller_inv) ||
+            !ar::getReturnValue(stmt)) {
           return caller_inv;
         }
 
@@ -1091,7 +1095,7 @@ public:
           }
         }
 
-        if (inv.is_bottom()) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv)) {
           return inv;
         } else {
           AbsValueDomain result = AbsValueDomain::bottom();
@@ -1139,7 +1143,7 @@ public:
                                             AbsValueDomain inv,
                                             Function_ref callee,
                                             numerical_analysis_ptr_t summary) {
-        if (inv.is_bottom()) {
+        if (exc_domain_traits::is_normal_flow_bottom(inv)) {
           return inv;
         }
 
@@ -1475,7 +1479,7 @@ private:
                                      match_parameters(stmt, inv, callee));
       }
 
-      if (inv.is_bottom()) {
+      if (exc_domain_traits::is_normal_flow_bottom(inv)) {
         return inv;
       } else {
         AbsValueDomain result = AbsValueDomain::bottom();
@@ -1496,11 +1500,13 @@ private:
 
     void ret(Return_Value_ref stmt, AbsValueDomain pre) {}
 
+    void exit(AbsValueDomain inv) {}
+
   private:
     AbsValueDomain match_parameters(Call_ref stmt,
                                     AbsValueDomain inv,
                                     Function_ref callee) {
-      if (inv.is_bottom()) {
+      if (exc_domain_traits::is_normal_flow_bottom(inv)) {
         return inv;
       }
 
@@ -1534,7 +1540,7 @@ private:
                                      AbsValueDomain caller_inv,
                                      Function_ref callee,
                                      const summary_t& summary) {
-      if (caller_inv.is_bottom()) {
+      if (exc_domain_traits::is_normal_flow_bottom(caller_inv)) {
         return caller_inv;
       }
 
@@ -1657,7 +1663,7 @@ public:
   void add_call_context(Function_ref fun,
                         const std::string& path,
                         AbsValueDomain inv) {
-    if (inv.is_bottom())
+    if (exc_domain_traits::is_normal_flow_bottom(inv))
       return;
 
     if (_call_contexts.find(fun) == _call_contexts.end()) {

@@ -432,4 +432,14 @@ struct hash< ikos::q_number > {
 
 } // end namespace std
 
+namespace ikos {
+
+class dummy_number {
+public:
+  void write(std::ostream& o) { o << "dummy"; }
+
+}; // end class dummy_number
+
+} // end namespace ikos
+
 #endif // IKOS_BIGNUMS_HPP

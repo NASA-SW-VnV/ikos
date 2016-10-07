@@ -464,12 +464,6 @@ Local variable reference
 ($unreachable ($debug ($srcloc ($line (#48)) ($file (!27)))))
 ```
 
-##### AR_Unwind
-
-```
-($unwind ($debug ($srcloc ($line (#48)) ($file (!27)))))
-```
-
 #### AR_Function
 
 ```
@@ -483,11 +477,11 @@ Local variable reference
   ($entry ($entry))
   ($exit ($return))
   ($unreachable ($if.then))
-  ($unwind ($unwind))
+  ($ehresume ($eh.resume))
   ($basicblocks ($basicblock) ...)
   ($trans ($edge () ()) ...))
 ```
-We support three different types of terminating blocks in AR_Code: exit, unreachable, and unwind. In an AR _Code, we allow at most one basic block per type. Using the LLVM frontend, we transform the LLVM IR using the  UnifyFunctionExitNodes pass to acheive this before we translate the LLVM IR to AR. Note that ($exit), ($unreachable), and ($unwind) may have zero arguments, which means these blocks may be absent in the function in the LLVM IR. If the exit block is missing, then this means the function does not terminate with a return block that ends with a return instruction.
+We support three different types of terminating blocks in AR_Code: `exit`, `unreachable`, and `ehresume`. In an `AR_Code`, we allow at most one basic block per type. Using the LLVM frontend, we transform the LLVM IR using the `UnifyFunctionExitNodes` pass to obtain the `exit` and `unreachable` blocks, where each represents the unified block for all returning and unreachable blocks, respectively. `ehresume` is already a unified block that contains the `resume` instruction to resume propagation of an exception whose unwinding was interrupted with the LLVM `landingpad` instruction. Note that ($exit), ($unreachable), and ($ehresume) may have zero arguments, which means these blocks may be absent in the function in the LLVM IR. If the exit block is missing, then this means the function does not terminate with a return block that ends with a return instruction.
 
 #### AR_Basic_Block
 

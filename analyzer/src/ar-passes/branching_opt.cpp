@@ -497,11 +497,11 @@ public:
     // check that there is no loop
     return child != node && !child->isNextBlock(node) &&
            !child->isNextBlock(child) &&
-           // check that it's not an entry/exit/unreachable/unwind block
+           // check that it's not an entry/exit/unreachable/ehresume block
            node->getContainingCode()->getEntryBlock() != child &&
            node->getContainingCode()->getExitBlock() != child &&
            node->getContainingCode()->getUnreachableBlock() != child &&
-           node->getContainingCode()->getUnwindBlock() != child &&
+           node->getContainingCode()->getEHResumeBlock() != child &&
            // check that it has not already been merged
            _merged.find(edge_t(node->getUID(), child->getUID())) ==
                _merged.end() &&
@@ -584,8 +584,7 @@ public:
     }
 
     if (ar::getPreds(node).empty() && !ar::getSuccs(node).empty() &&
-        node->getContainingCode()->getEntryBlock() != node &&
-        node->getContainingCode()->getExitBlock() != node) {
+        node->getContainingCode()->getEntryBlock() != node) {
       remove_edges(node);
       changed = true;
     }
@@ -598,8 +597,7 @@ public:
 
     for (BBRange::iterator it = blocks.begin(); it != blocks.end(); ++it) {
       if (ar::getPreds(*it).empty() && ar::getSuccs(*it).empty() &&
-          f->getFunctionBody()->getEntryBlock() != *it &&
-          f->getFunctionBody()->getExitBlock() != *it) {
+          f->getFunctionBody()->getEntryBlock() != *it) {
 #ifdef DEBUG
         std::cerr << "** Remove node " << ar::getName(*it) << std::endl;
 #endif

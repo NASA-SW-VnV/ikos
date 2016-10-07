@@ -126,26 +126,26 @@ private:
   typedef typename std::shared_ptr< inline_sym_exec_call_t >
       inline_sym_exec_call_ptr_t;
 
-  typedef std::pair< AbsDomain, boost::optional< Operand_ref > > exit_inv_t;
-
 private:
-  exit_inv_t _exit_inv; //! to store the invariants at the end of the callee
+  AbsDomain _exit_inv; // invariant at the end of the callee
+  boost::optional< Operand_ref > _exit_op;
 
 public:
   inline_sym_exec_call(TrackedPrecision prec_level)
       : sym_exec_call_t(prec_level),
         sym_exec_call_params_matcher< AbsDomain >(),
-        _exit_inv(AbsDomain::bottom(), boost::optional< Operand_ref >()) {}
+        _exit_inv(AbsDomain::bottom()),
+        _exit_op() {}
 
-  virtual AbsDomain call(context& ctx,
-                         Call_ref call_stmt,
-                         AbsDomain caller_inv,
-                         bool convergence_achieved,
-                         bool is_context_stable,
-                         FunctionAnalyzer& caller,
-                         std::string call_context,
-                         function_names_t analyzed_functions) {
-    if (caller_inv.is_bottom()) {
+  AbsDomain call(context& ctx,
+                 Call_ref call_stmt,
+                 AbsDomain caller_inv,
+                 bool convergence_achieved,
+                 bool is_context_stable,
+                 FunctionAnalyzer& caller,
+                 std::string call_context,
+                 function_names_t analyzed_functions) {
+    if (exc_domain_traits::is_normal_flow_bottom(caller_inv)) {
       return caller_inv;
     }
 
@@ -212,7 +212,10 @@ public:
      * Compute the post invariant
      */
 
-    AbsDomain post = AbsDomain::bottom();
+    // by default, propagate the exception states
+    AbsDomain post = caller_inv;
+    exc_domain_traits::set_normal_flow_bottom(post);
+
     bool resolved = false;
 
     for (std::vector< std::string >::iterator it = callees.begin();
@@ -303,11 +306,13 @@ public:
 
         inline_sym_exec_call_ptr_t inliner =
             std::static_pointer_cast< inline_sym_exec_call_t >(callee_it);
-        AbsDomain callee_exit_inv = inliner->_exit_inv.first;
-        boost::optional< Operand_ref > ret_val = inliner->_exit_inv.second;
+        AbsDomain callee_exit_inv = inliner->_exit_inv;
+        boost::optional< Operand_ref > ret_val = inliner->_exit_op;
 
-        if (callee_exit_inv.is_bottom())
+        if (exc_domain_traits::is_normal_flow_bottom(callee_exit_inv)) {
+          post = post | callee_exit_inv; // collect the exception states
           continue;
+        }
 
         // call-by-ref of pointers and propagation of return value
         OpRange out_actuals;
@@ -358,15 +363,14 @@ public:
     return post;
   }
 
-  //! Store the invariants at the end of the function for being
-  //  collected by the caller.
-  virtual void ret(Return_Value_ref s, AbsDomain pre) {
+  void ret(Return_Value_ref s, AbsDomain pre) {
     // Assume the code has only one return statement.
     // This is enforced by the UnifyFunctionExitNodesPass llvm pass
-    assert(!_exit_inv.second || _exit_inv.second == ar::getReturnValue(s));
-    _exit_inv.first = pre;
-    _exit_inv.second = ar::getReturnValue(s);
+    assert(!_exit_op || _exit_op == ar::getReturnValue(s));
+    _exit_op = ar::getReturnValue(s);
   }
+
+  void exit(AbsDomain inv) { _exit_inv = inv; }
 
 private:
   inline bool is_recursive(const std::string& function_name,

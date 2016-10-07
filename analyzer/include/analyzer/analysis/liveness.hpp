@@ -489,17 +489,19 @@ public:
   }
 
   std::ostream& dump(std::ostream& o) {
-    for (LivenessPass::const_iterator F = begin(); F != end(); ++F) {
+    for (auto F = begin(); F != end(); ++F) {
       o << "function " << F->first << std::endl;
       std::shared_ptr< Liveness > L = F->second;
-      for (Liveness::live_const_iterator B = L->live_begin();
-           B != L->live_end();
-           ++B) {
-        o << ar::getName(B->first) << " :";
-        o << "{";
-        for (unord_varname_set_t::const_iterator V = B->second.begin();
-             V != B->second.end();
-             ++V) {
+      for (auto B = L->live_begin(); B != L->live_end(); ++B) {
+        o << ar::getName(B->first) << " : live={";
+        for (auto V = B->second.begin(); V != B->second.end(); ++V) {
+          o << *V << ";";
+        }
+        o << "}\n";
+      }
+      for (auto B = L->dead_begin(); B != L->dead_end(); ++B) {
+        o << ar::getName(B->first) << " : dead={";
+        for (auto V = B->second.begin(); V != B->second.end(); ++V) {
           o << *V << ";";
         }
         o << "}\n";

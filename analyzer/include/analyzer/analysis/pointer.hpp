@@ -10,6 +10,8 @@
  *
  * Author: Jorge A. Navas
  *
+ * Contributors: Maxime Arthaud
+ *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -49,13 +51,14 @@
 #ifndef ANALYZER_POINTER_HPP
 #define ANALYZER_POINTER_HPP
 
+#include <ikos/domains/exception.hpp>
+#include <ikos/domains/intervals.hpp>
+#include <ikos/domains/pta.hpp>
+
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
 #include <analyzer/ar-wrapper/cfg.hpp>
 #include <analyzer/ikos-wrapper/iterators.hpp>
-
-#include <ikos/domains/intervals.hpp>
-#include <ikos/domains/pta.hpp>
 
 //#define DEBUG
 
@@ -116,12 +119,15 @@ class PointerPass {
         if (ar::isDirectCall(s) && ar::isExternal(s)) {
           _post.exec(s);
         } else {
-          if (_post.inv().is_bottom())
+          AbsNumDomain inv = _post.inv();
+
+          if (exc_domain_traits::is_normal_flow_bottom(inv))
             return;
+
+          exc_domain_traits::set_pending_exceptions_top(inv);
 
           if (ar::getReturnValue(s)) {
             VariableName lhs = _vfac[ar::getName(*(ar::getReturnValue(s)))];
-            AbsNumDomain inv = _post.inv();
             inv -= lhs;
             _post.set_inv(inv);
           }
@@ -166,7 +172,10 @@ class PointerPass {
     }
 
     void check_pre(Basic_Block_ref bb, AbsNumDomain pre) {
-      _inv_table.insert(typename inv_table_t::value_type(bb, pre));
+      // we need to call explicitly visit_start()
+      std::shared_ptr< Post > vis(new Post(pre, _vfac, _lfac));
+      vis->visit_start(bb);
+      _inv_table.insert(typename inv_table_t::value_type(bb, vis->post()));
     }
 
     void check_post(Basic_Block_ref bb, AbsNumDomain post) {}
@@ -183,10 +192,11 @@ class PointerPass {
     //! Get invariants that hold at the entry of a basic block
     AbsNumDomain operator[](Basic_Block_ref bb) {
       typename inv_table_t::iterator it = _inv_table.find(bb);
-      if (it != _inv_table.end())
+      if (it != _inv_table.end()) {
         return it->second;
-      else
+      } else {
         return AbsNumDomain::top();
+      }
     }
   };
 
@@ -288,29 +298,6 @@ public:
       return z_interval(Literal::make_num< Number >(0),
                         Literal::make_num< Number >(sz - 1));
     }
-
-    // //! Return the interval [0, k-1] where k is the evaluation of lit
-    // // in the numerical abstraction.
-    // z_interval get_size_interval (Literal lit) const
-    // {
-    //   z_interval size_itv = z_interval::top ();
-    //   if (lit.is_var ())
-    //   {
-    //     z_interval max_itv =
-    //         num_domain_traits::to_interval (_block_inv, lit.get_var
-    //         ());
-    //     size_itv = z_interval (Literal::make_num<Number> (0),
-    //                            max_itv.ub () -
-    //                            Literal::make_num<Number> (1));
-    //   }
-    //   else if (lit.is_num ())
-    //   {
-    //     size_itv = z_interval (Literal::make_num<Number> (0),
-    //                            lit.get_num <Number> () -
-    //                            Literal::make_num<Number> (1));
-    //   }
-    //   return size_itv;
-    // }
 
     void assign(Literal Lhs, Operand_ref rhs) {
       Literal Rhs = _lfac[rhs];
@@ -790,9 +777,10 @@ public:
 
 private:
   typedef interval_domain< Number, VariableName > num_domain_t;
+  typedef exception_domain_impl< num_domain_t > abs_domain_t;
 
-  typedef NumInvGen< num_domain_t > num_inv_gen_t;
-  typedef PTA< num_domain_t, num_inv_gen_t > pta_t;
+  typedef NumInvGen< abs_domain_t > num_inv_gen_t;
+  typedef PTA< abs_domain_t, num_inv_gen_t > pta_t;
   typedef std::unordered_map< Function_ref, std::shared_ptr< num_inv_gen_t > >
       inv_gen_map_t;
 
@@ -872,7 +860,7 @@ public:
       arbos_cfg cfg = _cfg_fac[*I];
       std::shared_ptr< num_inv_gen_t > inv_gen(
           new num_inv_gen_t(cfg, _vfac, _lfac, _live));
-      inv_gen->run(num_domain_t::top());
+      inv_gen->run(abs_domain_t::top_no_exception());
       inv_table.insert(inv_gen_map_t::value_type(cfg.get_func(), inv_gen));
     }
 

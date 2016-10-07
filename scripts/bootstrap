@@ -68,7 +68,7 @@
 progname=$(basename "$0")
 
 # Version settings
-ikos_version="1.1.2"
+ikos_version="1.2"
 gcc_required_version="4.9.2"
 clang_required_version="3.4"
 apple_clang_required_version="3.4"
@@ -434,6 +434,12 @@ function cmake_parse_version() {
     debug "'$1 --version':\n$version_output"
 
     echo "$version_output" | match "^cmake version ($version_regex)$" 1
+}
+
+# Parse the output of gcc -v to get the installation prefix
+function gcc_install_prefix() {
+    local output=$("$1" -v 2>&1 | egrep -o -- '--prefix=([^-]|(-[^-]))+ --')
+    echo -n "${output:9:${#output}-12}"
 }
 
 function cc_compile() {
@@ -1865,6 +1871,17 @@ EOF
             llvm_targets="all" # default to all
         fi
 
+        cmake_extra_args=()
+
+        # If the compiler is gcc, tell clang to use the same SEARCH_PATH
+        compiler_parse_version "$CXX" || error_parse_version "$CXX"
+        if [[ "${result[1]}" = "g++" ]]; then
+            gcc_install_dir=$(gcc_install_prefix "$CXX")
+            if [[ -d "$gcc_install_dir" ]]; then
+                cmake_extra_args+=("-DGCC_INSTALL_PREFIX=$gcc_install_dir")
+            fi
+        fi
+
         progress_run cmake \
             -DCMAKE_INSTALL_PREFIX="$install_dir/llvm-$llvm_install_version" \
             -DLLVM_TARGETS_TO_BUILD="$llvm_targets" \
@@ -1872,6 +1889,7 @@ EOF
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_ENABLE_EH=ON \
             -DLLVM_ENABLE_CXX1Y=ON \
+            "${cmake_extra_args[@]}" \
             .. || error_configure llvm
 
         progress_run make || error_make llvm

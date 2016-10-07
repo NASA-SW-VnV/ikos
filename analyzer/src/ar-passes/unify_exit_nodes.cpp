@@ -3,7 +3,7 @@
  * Unify Exit Nodes pass.
  *
  * This pass creates an extra basic block to unify all exit nodes (exit,
- * unreachable, unwind). This is necessary for the backward fixpoint iterator
+ * unreachable, ehresume). This is necessary for the backward fixpoint iterator
  * in the analyzer.
  *
  * Authors: Maxime Arthaud
@@ -57,8 +57,7 @@ public:
 
   virtual void execute(Bundle_ref bundle) {
     FuncRange functions = ar::getFunctions(bundle);
-    for (FuncRange::iterator it = functions.begin(); it != functions.end();
-         ++it) {
+    for (auto it = functions.begin(); it != functions.end(); ++it) {
       execute(*it);
     }
   }
@@ -68,7 +67,7 @@ public:
     Code_ref body = ar::getBody(f);
 
     /*
-     * Collect all exit nodes (exit, unreachable, unwind)
+     * Collect all exit nodes (exit, unreachable, resume)
      */
 
     boost::optional< Basic_Block_ref > exit = ar::getExitBlock(body);
@@ -82,9 +81,9 @@ public:
       exit_nodes.push_back(*unreachable);
     }
 
-    boost::optional< Basic_Block_ref > unwind = ar::getUnwindBlock(body);
-    if (unwind) {
-      exit_nodes.push_back(*unwind);
+    boost::optional< Basic_Block_ref > ehresume = ar::getEHResumeBlock(body);
+    if (ehresume) {
+      exit_nodes.push_back(*ehresume);
     }
 
     /*
@@ -96,7 +95,7 @@ public:
       return;
 
     if (exit_nodes.size() == 1) {
-      unified_exit = exit_nodes[0];
+      unified_exit = exit_nodes.front();
     } else {
       unified_exit = Basic_Block_ref(
           AR_Basic_Block::create(body->getUID(), "_unified_exit")->getUID());
@@ -112,7 +111,7 @@ public:
     assert(!ar::ar_internal::is_null_ref(unified_exit));
     body->setExitBlock(unified_exit);
     body->setUnreachableBlock(Basic_Block_ref());
-    body->setUnwindBlock(Basic_Block_ref());
+    body->setEHResumeBlock(Basic_Block_ref());
   }
 }; // end class UnifyExitNodesPass
 

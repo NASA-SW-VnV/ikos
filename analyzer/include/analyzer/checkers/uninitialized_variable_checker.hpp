@@ -299,7 +299,7 @@ private:
     if (std::distance(begin, end) == 0)
       return;
 
-    if (inv.is_bottom()) {
+    if (exc_domain_traits::is_normal_flow_bottom(inv)) {
       if (this->display_check(UNREACHABLE)) {
         std::cout << location_to_string(loc) << ": [unreachable] check(";
         for (Iterator it = begin; it != end;) {

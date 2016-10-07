@@ -47,6 +47,7 @@
 
 #include <ikos/domains/value_domain.hpp>
 #include <ikos/domains/summary_domain.hpp>
+#include <ikos/domains/exception.hpp>
 
 #include <analyzer/ar-wrapper/wrapper.hpp>
 #include <analyzer/config.hpp>
@@ -363,6 +364,8 @@ public:
   }
 
   void check_pre(Basic_Block_ref bb, AbsDomain pre) {
+    assert(this->_is_context_stable);
+
     arbos_cfg::arbos_node_t node = this->get_cfg().get_node(bb);
 
     transfer_fun_visitor_ptr_t transfer_fun_vis = std::make_shared<
@@ -383,6 +386,15 @@ public:
                                             _checkers);
 
     node.accept(checker_vis);
+  }
+
+  void process_post(Basic_Block_ref bb, AbsDomain post) {
+    boost::optional< Basic_Block_ref > exit = this->get_cfg().exit();
+    if (exit && *exit == bb) { // exit node
+      _call_semantic->exit(post);
+    }
+
+    fwd_fixpoint_iterator_t::process_post(bb, post);
   }
 
   void check_post(Basic_Block_ref bb, AbsDomain post) {}
@@ -646,7 +658,8 @@ public:
                            strong_comp_graph,
                            topo_order);
       } else {
-        typedef value_domain< abs_num_domain_t > abs_value_domain_t;
+        typedef exception_domain_impl< value_domain< abs_num_domain_t > >
+            abs_value_domain_t;
         typedef function_analyzer< abs_value_domain_t, varname_t, number_t >
             function_analyzer_t;
         typedef sym_exec_call< function_analyzer_t, abs_value_domain_t >
@@ -687,7 +700,7 @@ public:
           function_analyzer_t analyzer(cfg, ctx, call_semantic, ".", checkers);
           std::cout << "*** Analyzing function: "
                     << demangle(ar::getName(function)) << std::endl;
-          analyzer.run(abs_value_domain_t::top());
+          analyzer.run(abs_value_domain_t::top_no_exception());
         }
 
         if (interprocedural) {
@@ -707,7 +720,7 @@ public:
                                            checkers);
               std::cout << "*** Analyzing intra-procedurally vararg function: "
                         << demangle(ar::getName(function)) << std::endl;
-              analyzer.run(abs_value_domain_t::top());
+              analyzer.run(abs_value_domain_t::top_no_exception());
             }
           }
         }

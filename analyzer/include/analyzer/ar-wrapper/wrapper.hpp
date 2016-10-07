@@ -390,6 +390,14 @@ inline bool is_float_type(const Type_ref& type) {
 inline bool is_array_type(const Type_ref& type) {
   return (DEREF(type).getClassType() == AR_ARRAY_TYPE_CLASS_TYPE);
 }
+//! if stmt is an invoke statement
+inline bool is_invoke(const Statement_ref& stmt) {
+  return (DEREF(stmt).getClassType() == AR_INVOKE_STATEMENT_CLASS_TYPE);
+}
+//! if stmt is a resume statement
+inline bool is_resume(const Statement_ref& stmt) {
+  return (DEREF(stmt).getClassType() == AR_RESUME_CLASS_TYPE);
+}
 //! helper to get callee address from memory
 inline Function_Addr_Constant_ref getFunctionAddr(
     const Call_ref& call) { // pre: call is a direct call.
@@ -497,10 +505,10 @@ inline boost::optional< Basic_Block_ref > getUnreachableBlock(
   else
     return boost::optional< Basic_Block_ref >(bb);
 }
-//! unwind block of the function
-inline boost::optional< Basic_Block_ref > getUnwindBlock(const Code_ref& c) {
+//! ehresume block of the function
+inline boost::optional< Basic_Block_ref > getEHResumeBlock(const Code_ref& c) {
   assert(!ar_internal::is_null_ref(c));
-  Basic_Block_ref bb = DEREF(c).getUnwindBlock();
+  Basic_Block_ref bb = DEREF(c).getEHResumeBlock();
   if (ar_internal::is_null_ref(bb))
     return boost::optional< Basic_Block_ref >();
   else

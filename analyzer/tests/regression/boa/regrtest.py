@@ -409,7 +409,8 @@ if __name__ == '__main__':
     t.add(Test('test-24-safe.c', 'test-24-safe.c', 'boa', 'safe'))
     t.add(Test('test-33.c', 'test-33.c', 'boa', 'safe'))
     t.add(Test('test-34.c', 'test-34.c', 'boa', 'safe'))
-    t.add(Test('test-35.c', 'test-35.c', 'boa', 'safe'))
+    t.add(Test('test-35.c', 'test-35.c', 'boa', 'safe', expected='unsafe',
+               line_checks=[(42, 'ok', 'warning')]))
     t.add(Test('test-36.c', 'test-36.c', 'boa', 'safe'))
     t.add(Test('test-37.c', 'test-37.c', 'boa', 'safe'))
     t.add(Test('test-39.c', 'test-39.c', 'boa', 'safe'))
@@ -426,6 +427,19 @@ if __name__ == '__main__':
     t.add(Test('test-46.c', 'test-46.c', 'boa', 'safe'))
     t.add(Test('test-46-unsafe.c', 'test-46-unsafe.c', 'boa', 'error',
                line_checks=[(9, 'error')]))
+    t.add(Test('test-47.cpp', 'test-47.cpp', 'boa', 'safe'))
+    t.add(Test('test-47-unsafe.cpp', 'test-47-unsafe.cpp', 'boa', 'unsafe',
+               line_checks=[(23, 'warning')]))
+    t.add(Test('test-48.c', 'test-48.c', 'boa', 'safe'))
+    t.add(Test('test-48-unsafe-1.c', 'test-48-unsafe-1.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(7, 'error', 'warning')]))
+    t.add(Test('test-48-unsafe-2.c', 'test-48-unsafe-2.c', 'boa', 'error'))
+    t.add(Test('test-49.c', 'test-49.c', 'boa', 'safe'))
+    t.add(Test('test-49-unsafe-1.c', 'test-49-unsafe-1.c', 'boa', 'error'))
+    t.add(Test('test-49-unsafe-2.c', 'test-49-unsafe-2.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(7, 'error', 'warning')]))
+    t.add(Test('test-50.c', 'test-50.c', 'boa', 'safe'))
+    t.add(Test('test-50-unsafe.c', 'test-50-unsafe.c', 'boa', 'error'))
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe', line_checks=[(20, 'ok', 'warning')]))
     t.run()

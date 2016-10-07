@@ -81,19 +81,20 @@ public:
             cfg),
         _is_context_stable(is_context_stable) {}
 
-  virtual ~fwd_fixpoint_iterator() {}
-
-private:
   // forward analysis of a cfg node starting from the pre
+  // returns the post invariant at the end of the node
   virtual AbsDomain analyze(NodeName node_name, AbsDomain pre) = 0;
 
-  // check of a cfg node starting from the pre
+  // process the pre invariant at a given node when the fixpoint is reached
+  // and the context is stable
   virtual void check_pre(NodeName node_name, AbsDomain pre) = 0;
 
-  // check of a cfg node starting from the post
+  // process the post invariant at a given node when the fixpoint is reached
+  // and the context is stable
   virtual void check_post(NodeName node_name, AbsDomain post) = 0;
 
-  void process_pre(NodeName node_name, AbsDomain pre) {
+  // process the pre invariant at a given node when the fixpoint is reached
+  virtual void process_pre(NodeName node_name, AbsDomain pre) {
     if (this->_is_context_stable) {
 #ifdef DEBUG
       std::cout << "Invariant at the entry of "
@@ -104,7 +105,8 @@ private:
     }
   }
 
-  void process_post(NodeName node_name, AbsDomain post) {
+  // process the post invariant at a given node when the fixpoint is reached
+  virtual void process_post(NodeName node_name, AbsDomain post) {
     if (this->_is_context_stable) {
 #ifdef DEBUG
       std::cout << "Invariant at the exit of "
@@ -114,6 +116,9 @@ private:
       check_post(node_name, post);
     }
   }
+
+  virtual ~fwd_fixpoint_iterator() {}
+
 }; // end fwd_fixpoint_iterator class
 
 // A naive backward fixpoint by computing a forward fixpoint on the
@@ -146,8 +151,6 @@ public:
       : fwd_fixpoint_iterator_t(reverse(cfg)),
         _is_context_stable(is_context_stable) {}
 
-  virtual ~backward_fixpoint_iterator() {}
-
   CFG get_cfg() { return fwd_fixpoint_iterator_t::get_cfg(); }
 
   void run(AbsDomain inv) {
@@ -158,17 +161,19 @@ public:
     }
   }
 
-private:
   // backward analysis of a cfg node starting from the post
   virtual AbsDomain analyze(NodeName node_name, AbsDomain post) = 0;
 
-  // check of a cfg node starting from the pre
+  // process the pre invariant at a given node when the fixpoint is reached
+  // and the context is stable
   virtual void check_pre(NodeName node_name, AbsDomain pre) = 0;
 
-  // check of a cfg node starting from the post
+  // process the post invariant at a given node when the fixpoint is reached
+  // and the context is stable
   virtual void check_post(NodeName node_name, AbsDomain post) = 0;
 
-  void process_pre(NodeName node_name, AbsDomain post) {
+  // process the pre invariant at a given node when the fixpoint is reached
+  virtual void process_pre(NodeName node_name, AbsDomain post) {
     if (this->_is_context_stable) {
 #ifdef DEBUG
       std::cout << "Invariant at the exit of "
@@ -179,7 +184,8 @@ private:
     }
   }
 
-  void process_post(NodeName node_name, AbsDomain pre) {
+  // process the post invariant at a given node when the fixpoint is reached
+  virtual void process_post(NodeName node_name, AbsDomain pre) {
     if (this->_is_context_stable) {
 #ifdef DEBUG
       std::cout << "Invariant at the entry of "
@@ -189,6 +195,9 @@ private:
       check_pre(node_name, pre);
     }
   }
+
+  virtual ~backward_fixpoint_iterator() {}
+
 }; // end backward_fixpoint_iterator class
 
 } // end namespace analyzer

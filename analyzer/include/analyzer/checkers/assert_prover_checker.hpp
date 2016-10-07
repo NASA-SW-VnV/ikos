@@ -46,6 +46,7 @@
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/analysis/num_sym_exec.hpp>
 #include <analyzer/checkers/checker_api.hpp>
+#include <analyzer/utils/demangle.hpp>
 
 namespace analyzer {
 
@@ -71,7 +72,9 @@ public:
                      AbsDomain inv,
                      const std::string& call_context) {
     if (ar::isDirectCall(stmt) &&
-        ar::getFunctionName(stmt) == "__ikos_assert") {
+        (ar::getFunctionName(stmt) == "__ikos_assert" ||
+         demangle(ar::getFunctionName(stmt)) == "__ikos_assert(int)" ||
+         demangle(ar::getFunctionName(stmt)) == "__ikos_assert(bool)")) {
       LiteralFactory& lfac = this->_context.lit_factory();
       location loc = ar::getSrcLoc(stmt);
       OpRange arguments = ar::getArguments(stmt);
@@ -81,7 +84,7 @@ public:
 
       Literal cond = lfac[arguments[0]];
 
-      if (inv.is_bottom()) {
+      if (exc_domain_traits::is_normal_flow_bottom(inv)) {
         if (this->display_check(UNREACHABLE)) {
           std::cout << location_to_string(loc)
                     << ": [unreachable] __ikos_assert(" << arguments[0] << ")"
@@ -111,33 +114,34 @@ public:
         boost::optional< ikos::z_number > v = flag.singleton();
         analysis_result result;
 
-        if (v) {
-          if (*v == 0) {
-            if (this->display_check(ERR)) {
-              std::cout << location_to_string(loc) << ": [error] __ikos_assert("
-                        << arguments[0] << "): ∀x ∈ " << arguments[0]
-                        << ", x == 0" << std::endl;
-            }
-
-            result = ERR;
-          } else {
-            if (this->display_check(OK)) {
-              std::cout << location_to_string(loc) << ": [ok] __ikos_assert("
-                        << arguments[0] << "): ∀x ∈ " << arguments[0]
-                        << ", x > 0" << std::endl;
-            }
-
-            result = OK;
+        if (v && *v == 0) {
+          // the condition is definitely 0
+          if (this->display_check(ERR)) {
+            std::cout << location_to_string(loc) << ": [error] __ikos_assert("
+                      << arguments[0] << "): ∀x ∈ " << arguments[0]
+                      << ", x == 0" << std::endl;
           }
-        } else {
+
+          result = ERR;
+        } else if (flag[0]) {
+          // the condition may be 0
           if (this->display_check(WARNING)) {
             std::cout << location_to_string(loc) << ": [warning] __ikos_assert("
                       << arguments[0] << "): (∃x ∈ " << arguments[0]
-                      << ", x == 0) and (∃x ∈ " << arguments[0] << ", x > 0)"
+                      << ", x == 0) and (∃x ∈ " << arguments[0] << ", x != 0)"
                       << std::endl;
           }
 
           result = WARNING;
+        } else {
+          // the condition cannot be 0
+          if (this->display_check(OK)) {
+            std::cout << location_to_string(loc) << ": [ok] __ikos_assert("
+                      << arguments[0] << "): ∀x ∈ " << arguments[0]
+                      << ", x != 0" << std::endl;
+          }
+
+          result = OK;
         }
 
         if (this->display_invariant(result)) {

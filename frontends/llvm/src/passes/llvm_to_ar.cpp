@@ -276,7 +276,7 @@ private:
   std::string _entry_block;
   std::string _exit_block;
   std::string _unreachable_block;
-  std::string _unwind_block;
+  std::string _resume_block;
   std::unordered_map< std::string,
                       std::vector< boost::optional< s_expression > > >
       _bblocks; // bblock name ID to a vertex; a vertex consists of a list of
@@ -317,12 +317,12 @@ public:
       : _entry_block(""),
         _exit_block(""),
         _unreachable_block(""),
-        _unwind_block("") {}
+        _resume_block("") {}
   void set_entry_block(std::string block) { _entry_block = block; }
 
   void set_exit_block(std::string block) { _exit_block = block; }
   void set_unreachable_block(std::string block) { _unreachable_block = block; }
-  void set_unwind_block(std::string block) { _unwind_block = block; }
+  void set_ehresume_block(std::string block) { _resume_block = block; }
 
   inline std::string get_exit_block() { return _exit_block; }
 
@@ -357,8 +357,7 @@ private:
 public:
   ARFunction(Function*,
              BasicBlock* return_block,
-             BasicBlock* unreachable_block,
-             BasicBlock* unwind_block);
+             BasicBlock* unreachable_block);
   void printAR(std::ostream& outf);
   void printDOT();
 };
@@ -467,8 +466,7 @@ bool ARPass::runOnModule(Module& m) {
       _functions.push_back(std::shared_ptr< ARFunction >(
           new ARFunction(&*f,
                          ufen.getReturnBlock(),
-                         ufen.getUnreachableBlock(),
-                         ufen.getUnwindBlock())));
+                         ufen.getUnreachableBlock())));
     }
 
     printAR(); // dump to AR
@@ -2023,11 +2021,11 @@ s_expression ARCode::expr() {
     code << s_expression_ostream("unreachable").expr();
   }
 
-  if (!_unwind_block.empty()) {
-    code << (s_expression_ostream("unwind") << string_atom(_unwind_block))
+  if (!_resume_block.empty()) {
+    code << (s_expression_ostream("ehresume") << string_atom(_resume_block))
                 .expr();
   } else {
-    code << s_expression_ostream("unwind").expr();
+    code << s_expression_ostream("ehresume").expr();
   }
 
   std::unordered_map< std::string,
@@ -2138,12 +2136,11 @@ void ARCode::printDOT(std::ostream& out) {
 /**
  * ARFunction implementation
  */
-enum ExitBlockType { RETURN, UNREACHABLE, UNWIND, NONE };
+enum UnifiedExitBlockType { RETURN, UNREACHABLE, NONE };
 
 ARFunction::ARFunction(Function* f,
                        BasicBlock* return_block,
-                       BasicBlock* unreachable_block,
-                       BasicBlock* unwind_block)
+                       BasicBlock* unreachable_block)
     : _next_llvm_inst(NULL) {
   _cfg.set_entry_block(f->getEntryBlock().getName().str());
   _name = f->getName().str();
@@ -2175,13 +2172,11 @@ ARFunction::ARFunction(Function* f,
     std::string name = bb->getName().str();
 
     // Check if this basic block is a return block.
-    ExitBlockType exit_ty = NONE;
+    UnifiedExitBlockType exit_ty = NONE;
     if (return_block && (name == return_block->getName().str()))
       exit_ty = RETURN;
     else if (unreachable_block && (name == unreachable_block->getName().str()))
       exit_ty = UNREACHABLE;
-    else if (unwind_block && (name == unwind_block->getName().str()))
-      exit_ty = UNWIND;
 
     _cfg.enter_basic_block(name);
     BasicBlock::iterator i = bb->begin();
@@ -2197,8 +2192,6 @@ ARFunction::ARFunction(Function* f,
       _cfg.set_exit_block(_cfg.get_current_block());
     if (exit_ty == UNREACHABLE)
       _cfg.set_unreachable_block(_cfg.get_current_block());
-    if (exit_ty == UNWIND)
-      _cfg.set_unwind_block(_cfg.get_current_block());
   }
 
 #ifdef DEBUG
@@ -2211,10 +2204,6 @@ ARFunction::ARFunction(Function* f,
             << ((unreachable_block == nullptr)
                     ? "null"
                     : unreachable_block->getName().str())
-            << std::endl;
-  std::cerr << "  UnifyFunctionExitNodes.unwind: "
-            << ((unwind_block == nullptr) ? "null"
-                                          : unwind_block->getName().str())
             << std::endl;
 #endif
 }
@@ -2587,13 +2576,6 @@ s_expression_ref ARFunction::translate_instruction(Instruction* inst) {
           "first");
     } break;
 
-    //    case Instruction::Unwind: { // Unwind the stack when an exception is
-    //    thrown
-    //      s_expression_ostream op("exception");
-    //      op << refs->get_debug_sexpr();
-    //      return op.expr();
-    //    } break;
-
     case Instruction::VAArg: { // va_arg instruction
       VAArgInst* vararg = dyn_cast< VAArgInst >(inst);
 
@@ -2631,6 +2613,7 @@ s_expression_ref ARFunction::translate_instruction(Instruction* inst) {
     } break;
 
     case Instruction::Resume: {
+      _cfg.set_ehresume_block(_cfg.get_current_block());
       s_expression_ostream op("resume");
       s_expression_ostream exception("exception");
       exception << refs->get_value(_cfg, inst);

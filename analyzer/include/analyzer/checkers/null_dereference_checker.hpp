@@ -124,6 +124,45 @@ public:
     check_null_dereference(ptr, inv, call_context, loc, ar::getUID(memset));
   }
 
+  virtual void check(Call_ref stmt,
+                     AbsDomain inv,
+                     const std::string& call_context) {
+    if (ar::isDirectCall(stmt)) {
+      location loc = ar::getSrcLoc(stmt);
+      std::string fun_name = ar::getFunctionName(stmt);
+      OpRange arguments = ar::getArguments(stmt);
+
+      if ((fun_name == "strlen" && arguments.size() == 1) ||
+          (fun_name == "strnlen" && arguments.size() == 2)) {
+        check_null_dereference(arguments[0],
+                               inv,
+                               call_context,
+                               loc,
+                               ar::getUID(stmt));
+      } else if ((fun_name == "strcpy" && arguments.size() == 2) ||
+                 (fun_name == "strncpy" && arguments.size() == 3) ||
+                 (fun_name == "strcat" && arguments.size() == 2) ||
+                 (fun_name == "strncat" && arguments.size() == 3)) {
+        check_null_dereference(arguments[0],
+                               inv,
+                               call_context,
+                               loc,
+                               ar::getUID(stmt));
+        check_null_dereference(arguments[1],
+                               inv,
+                               call_context,
+                               loc,
+                               ar::getUID(stmt));
+      }
+    }
+  }
+
+  virtual void check(Invoke_ref s,
+                     AbsDomain inv,
+                     const std::string& call_context) {
+    check(ar::getFunctionCall(s), inv, call_context);
+  }
+
 private:
   void check_null_dereference(Operand_ref ptr,
                               AbsDomain inv,
@@ -134,7 +173,7 @@ private:
     if (ar::isGlobalVar(ptr) || ar::isAllocaVar(ptr))
       return;
 
-    if (inv.is_bottom()) {
+    if (exc_domain_traits::is_normal_flow_bottom(inv)) {
       if (this->display_check(UNREACHABLE)) {
         std::cout << location_to_string(loc)
                   << ": [unreachable] check_null_dereference(" << ptr << ")"

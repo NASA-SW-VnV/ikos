@@ -368,8 +368,13 @@ def llvm_clang(in_name, out_name, wd):
         out_name = bc_name(in_name, wd)
 
     llvm_clang_cmd = [get_llvm_clang(),
-                      '-emit-llvm', '-c', '-S', '-g', '-D_FORTIFY_SOURCE=0',
+                      '-emit-llvm', '-c',
+                      '-g', '-D_FORTIFY_SOURCE=0', '-Wall',
                       in_name, '-o', out_name]
+
+    if in_name.endswith('.cpp'):
+        llvm_clang_cmd.append('-std=c++14') # available because clang >= 3.7
+
     try:
         sub.check_call(llvm_clang_cmd)
     except sub.CalledProcessError as e:

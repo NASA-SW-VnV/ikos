@@ -47,8 +47,9 @@
 
 #include <unordered_set>
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
+
+#include <ikos/domains/exception_domains_api.hpp>
 
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/analysis/context.hpp>
@@ -59,15 +60,10 @@ namespace analyzer {
 
 using namespace arbos;
 
-/// API for executing relevant ARBOS statements
+// API for executing relevant ARBOS statements
 template < typename AbsDomain >
 class sym_exec {
-protected:
-  sym_exec() {}
-
 public:
-  virtual ~sym_exec() {}
-
   virtual void exec_start(Basic_Block_ref b) = 0;
   virtual void exec_end(Basic_Block_ref b) = 0;
   virtual void exec(Arith_Op_ref stmt) = 0;
@@ -85,7 +81,7 @@ public:
   virtual void exec(MemCpy_ref stmt) = 0;
   virtual void exec(MemMove_ref stmt) = 0;
   virtual void exec(MemSet_ref stmt) = 0;
-  virtual void exec(Call_ref stmt) = 0; //! only for external calls
+  virtual void exec(Call_ref stmt) = 0; // only for external calls
   virtual void exec_external_call(boost::optional< Internal_Variable_ref > lhs,
                                   std::string fun_name,
                                   OpRange arguments) = 0;
@@ -95,20 +91,37 @@ public:
   virtual void exec(Resume_ref stmt) = 0;
   virtual void exec(Unreachable_ref stmt) = 0;
 
-  /// For executing call sites
+  /*
+   * Assign the formal parameters to the actual parameters before a function
+   * call.
+   *
+   * Arguments:
+   *   formals: The list of formal parameters
+   *   actuals: The list of actual parameters
+   */
   virtual void match_down(IvRange formals, OpRange actuals) = 0;
 
-  /// For executing call sites
+  /*
+   * Assign the return value after a function call.
+   *
+   * Arguments:
+   *   actuals: The list of actual parameters
+   *   lhs_ret: The result variable of the caller
+   *   formals: The list of formal parameters
+   *   callee_ret: The return statement operand of the callee
+   */
   virtual void match_up(OpRange actuals,
-                        boost::optional< Internal_Variable_ref > lhs_cs_ret,
+                        boost::optional< Internal_Variable_ref > lhs_ret,
                         IvRange formals,
                         boost::optional< Operand_ref > callee_ret) = 0;
+
+  virtual ~sym_exec() {}
 };
 
-/// API to analyze internal function calls based on some
-/// inter-procedural strategy (e.g., inlining, summaries-based, etc).
-/// An internal function is one which is neither a declaration or
-/// external so its code is available for analysis.
+// API to analyze internal function calls based on some
+// inter-procedural strategy (e.g., inlining, summaries-based, etc).
+// An internal function is one which is neither a declaration or
+// external so its code is available for analysis.
 template < typename FunctionAnalyzer, typename AbsDomain >
 class sym_exec_call {
 protected:
@@ -122,11 +135,21 @@ public:
 public:
   sym_exec_call(TrackedPrecision level) : _prec_level(level) {}
 
-  virtual ~sym_exec_call() {}
-
-  /// convergence_achieved, is_context_stable, analyzed_functions and ctx
-  /// cannot be stored in the global state (gs) since they must
-  /// synchronize with the call stack if inlining is done.
+  /*
+   * Analyze a function call
+   *
+   * Arguments:
+   *   ctx: The global context
+   *   call_stmt: The AR call statement
+   *   pre: The pre invariant
+   *   convergence_achieved: true iff the fixpoint has been reached for the
+   *                         current function
+   *   is_context_stable: true iff the calling context is stable, ie. the
+   *                      fixpoint has been reached for all calling functions
+   *   caller: The function analyzer object of the caller
+   *   call_context: The full call trace
+   *   analyzed_functions: The set of already analyzed functions
+   */
   virtual AbsDomain call(context& ctx,
                          Call_ref call_stmt,
                          AbsDomain pre,
@@ -136,11 +159,29 @@ public:
                          std::string call_context,
                          function_names_t analyzed_functions) = 0;
 
-  virtual void ret(Return_Value_ref cs, AbsDomain pre) = 0;
+  /*
+   * Analyze a return statement
+   *
+   * Arguments:
+   *   stmt: The return statement
+   *   pre: The pre invariant
+   */
+  virtual void ret(Return_Value_ref stmt, AbsDomain pre) = 0;
+
+  /*
+   * Catch the invariant at the end of the function
+   *
+   * This is called whenever we reach the exit node. Note that this can be
+   * different from the invariant at the return statement, if an exception
+   * has been thrown for instance.
+   */
+  virtual void exit(AbsDomain inv) = 0;
+
+  virtual ~sym_exec_call() {}
 };
 
-/// A default implementation for sym_exec_call that performs
-/// context-insensitive analysis.
+// A default implementation for sym_exec_call that performs
+// context-insensitive analysis.
 template < typename FunctionAnalyzer, typename AbsDomain >
 class context_insensitive_sym_exec_call
     : public sym_exec_call< FunctionAnalyzer, AbsDomain > {
@@ -153,9 +194,11 @@ public:
       : sym_exec_call_t(prec_level) {}
 
   AbsDomain call(context& ctx, Call_ref call_stmt, AbsDomain pre) {
-    if (pre.is_bottom()) {
+    if (ikos::exc_domain_traits::is_normal_flow_bottom(pre)) {
       return pre;
     }
+
+    ikos::exc_domain_traits::set_pending_exceptions_top(pre);
 
     // abstract the lhs of the call site instruction
     if (ar::getReturnValue(call_stmt)) {
@@ -172,35 +215,35 @@ public:
     return pre;
   }
 
-  virtual AbsDomain call(context& ctx,
-                         Call_ref call_stmt,
-                         AbsDomain pre,
-                         bool /*convergence_achieved*/,
-                         bool /*is_context_stable*/,
-                         FunctionAnalyzer& /*caller*/,
-                         std::string /*call_context*/,
-                         function_names_t /*analyzed_functions*/) {
+  AbsDomain call(context& ctx,
+                 Call_ref call_stmt,
+                 AbsDomain pre,
+                 bool /*convergence_achieved*/,
+                 bool /*is_context_stable*/,
+                 FunctionAnalyzer& /*caller*/,
+                 std::string /*call_context*/,
+                 function_names_t /*analyzed_functions*/) {
     return call(ctx, call_stmt, pre);
   }
 
-  virtual void ret(Return_Value_ref /*cs*/, AbsDomain /*pre*/) {}
+  void ret(Return_Value_ref /*stmt*/, AbsDomain /*pre*/) {}
+
+  void exit(AbsDomain /*pre*/) {}
 };
 
-/// API for modelling matching of formal and actual parameters as well
-/// as simulating call-by-ref during a function call.
+// API for modelling matching of formal and actual parameters as well
+// as simulating call-by-ref during a function call.
 template < class AbsDomain >
 class sym_exec_match_call_params {
 public:
-  virtual ~sym_exec_match_call_params() {}
-
-  /// Match formal and actual parameters
+  // Match formal and actual parameters
   virtual AbsDomain propagate_down(IvRange formals,
                                    AbsDomain callee,
                                    OpRange actuals,
                                    AbsDomain caller,
                                    context& ctx) = 0;
 
-  /// Simulate call-by-reference and propagate return value
+  // Simulate call-by-reference and propagate return value
   virtual AbsDomain propagate_up(
       OpRange actuals,
       boost::optional< Internal_Variable_ref > lhs_cs,
@@ -209,6 +252,8 @@ public:
       boost::optional< Operand_ref > callee_ret,
       AbsDomain callee,
       context& ctx) = 0;
+
+  virtual ~sym_exec_match_call_params() {}
 };
 
 } // end namespace analyzer

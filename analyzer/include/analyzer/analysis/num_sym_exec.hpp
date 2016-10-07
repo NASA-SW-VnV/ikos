@@ -12,7 +12,7 @@
  * It can reason about registers (REG), pointers (PTR) and memory
  * contents (MEM). In the case of registers and memory contents only
  * those storing integers are modelled. Thus, floating-point
- * computations or memory contents accesible through multiple pointer
+ * computations or memory contents accessible through multiple pointer
  * dereferences are safely ignored.
  *
  * Levels of precision:
@@ -75,7 +75,6 @@
 
 #include <unordered_map>
 
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/noncopyable.hpp>
 
 #include <ikos/domains/memory_domains_api.hpp>
@@ -83,6 +82,7 @@
 #include <ikos/domains/numerical_domains_api.hpp>
 #include <ikos/domains/pointer_domains_api.hpp>
 #include <ikos/domains/uninitialized_domains_api.hpp>
+#include <ikos/domains/exception_domains_api.hpp>
 
 #include <analyzer/analysis/common.hpp>
 #include <analyzer/analysis/context.hpp>
@@ -280,6 +280,7 @@ class num_sym_exec : public sym_exec< AbsValueDomain >,
   void abstract_memory(Operand_ref base, Operand_ref len) {
     Literal Base = _lfac[base];
     assert(Base.is_var());
+
     Literal Len = _lfac[len];
 
     // If len is not constant we do not bother and remove anything
@@ -536,6 +537,25 @@ public:
     }
   }
 
+  void clear_local_vars() {
+    if (_prec_level < PTR)
+      return;
+
+    // Cleanup local variables
+    for (auto it = _mem_objects.begin(); it != _mem_objects.end(); ++it) {
+      if (ar::isAllocaVar(it->second)) {
+        // set the size to 0
+        _inv.assign(get_shadow_size(it->first), 0);
+
+        // forget the memory content
+        mem_domain_traits::forget_mem_contents(_inv, it->first);
+
+        // no need to remove ptr from _mem_objects, because _mem_objects is not
+        // propagated to the caller
+      }
+    }
+  }
+
   num_sym_exec(
       AbsValueDomain inv,
       VariableFactory& vfac,
@@ -555,19 +575,37 @@ public:
 
   void set_inv(AbsValueDomain inv) { _inv = inv; }
 
-  void exec_start(Basic_Block_ref b) {}
+  void exec_start(Basic_Block_ref bb) {
+    // check if it is a catch block
+    BBRange preds = ar::getPreds(bb);
+    if (!preds.empty()) {
+      // check if all predecessors end with an invoke statement and if
+      // this basic block is the normal/non-exception path.
+      bool invoke_normal = true;
+      for (auto it = preds.begin(); it != preds.end() && invoke_normal; ++it) {
+        StmtRange stmts = ar::getStatements(*it);
+        if (!stmts.empty() && ar::ar_internal::is_invoke(stmts.back())) {
+          Invoke_ref invoke = node_cast< Invoke >(stmts.back());
+          invoke_normal &= (invoke->getNormal() == bb);
+        } else {
+          invoke_normal = false;
+        }
+      }
 
-  void exec_end(Basic_Block_ref b) {
-// Note that _dead_vars do not contain shadow variables (internal
-// variables added by the analyses) since shadow variables do not
-// appear in the ARBOS Cfg.
-#if 0
-    std::cout << "Removing dead variables at exit of block " << ar::getName (b) << "{";
-    for(typename std::vector<VariableName>::iterator I=_dead_vars.begin();
-        I!=_dead_vars.end();++I)
-    { std::cout << *I << ";"; }
-    std::cout << "}\n";
-#endif
+      // mark the beginning of a block that should be executed only if there was
+      // no exception
+      if (invoke_normal) {
+        exc_domain_traits::ignore_exceptions(_inv);
+      }
+      // exc_domain_traits::enter_catch() is called when we reach the
+      // landing pad statement
+    }
+  }
+
+  void exec_end(Basic_Block_ref bb) {
+    // Note that _dead_vars do not contain shadow variables (internal
+    // variables added by the analyses) since shadow variables do not
+    // appear in the ARBOS CFG.
     for (typename std::vector< VariableName >::iterator it = _dead_vars.begin();
          it != _dead_vars.end();
          ++it) {
@@ -711,15 +749,23 @@ public:
     _inv -= n;
   }
 
+  // Mark the beginning of a catch() {...} block
   void exec(Landing_Pad_ref stmt) {
     Internal_Variable_ref exc = ar::getVar(stmt);
     VariableName exc_var = _vfac[ar::getName(exc)];
-    _inv -= exc_var;
+    exc_domain_traits::enter_catch(_inv, exc_var);
   }
 
-  void exec(Resume_ref /*stmt*/) { _inv = AbsValueDomain::bottom(); }
+  void exec(Resume_ref stmt) {
+    Internal_Variable_ref exc = ar::getVar(stmt);
+    VariableName exc_var = _vfac[ar::getName(exc)];
+    exc_domain_traits::resume_exception(_inv, exc_var);
+  }
 
-  void exec(Unreachable_ref /*stmt*/) { _inv = AbsValueDomain::bottom(); }
+  void exec(Unreachable_ref /*stmt*/) {
+    // unreachable should propagate exceptions
+    exc_domain_traits::set_normal_flow_bottom(_inv);
+  }
 
   void exec(Assignment_ref stmt) {
     Internal_Variable_ref lhs = ar::getLeftOp(stmt);
@@ -958,6 +1004,9 @@ public:
   void exec_external_call(boost::optional< Internal_Variable_ref > lhs,
                           std::string fun_name,
                           OpRange arguments) {
+    if (exc_domain_traits::is_normal_flow_bottom(_inv))
+      return;
+
     /*
      * Here library functions that we want to consider specially.
      */
@@ -975,6 +1024,20 @@ public:
       analyze_free(arguments[0]);
     } else if (fun_name == "read" && arguments.size() == 3) {
       analyze_read(lhs, arguments[0], arguments[1], arguments[2]);
+    } else if (fun_name == "__cxa_throw" && arguments.size() == 3) {
+      analyze_cxa_throw(arguments[0], arguments[1], arguments[2]);
+    } else if (fun_name == "strlen" && arguments.size() == 1) {
+      analyze_strlen(lhs, arguments[0]);
+    } else if (fun_name == "strnlen" && arguments.size() == 2) {
+      analyze_strnlen(lhs, arguments[0], arguments[1]);
+    } else if (fun_name == "strcpy" && arguments.size() == 2) {
+      analyze_strcpy(lhs, arguments[0], arguments[1]);
+    } else if (fun_name == "strncpy" && arguments.size() == 3) {
+      analyze_strncpy(lhs, arguments[0], arguments[1], arguments[2]);
+    } else if (fun_name == "strcat" && arguments.size() == 2) {
+      analyze_strcat(lhs, arguments[0], arguments[1]);
+    } else if (fun_name == "strncat" && arguments.size() == 3) {
+      analyze_strncat(lhs, arguments[0], arguments[1], arguments[2]);
     } else {
       // default case: forget all actual parameters of pointer type
       // (very conservative!)
@@ -1009,36 +1072,32 @@ public:
           uninit_domain_traits::make_initialized(_inv, ret.get_var());
         }
       }
+
+      // ASSUMPTION:
+      // The external call will not raise an exception.
     }
   }
 
   void exec(Invoke_ref stmt) { exec(ar::getFunctionCall(stmt)); }
 
   void exec(Return_Value_ref stmt) {
-    if (_prec_level < PTR)
-      return;
-
-    // Cleanup local variables
-    for (typename mem_objects_t::iterator it = _mem_objects.begin();
-         it != _mem_objects.end();
-         ++it) {
-      if (ar::isAllocaVar(it->second)) {
-        // Set the size to 0
-        _inv.assign(get_shadow_size(it->first), 0);
-
-        // Forget the memory content
-        mem_domain_traits::forget_mem_contents(_inv, it->first);
-
-        // No need to remove ptr from _mem_objects, because _mem_objects is not
-        // propagated to the caller
+    // mark the result variable as alive
+    boost::optional< Operand_ref > ret = ar::getReturnValue(stmt);
+    if (ret) {
+      Literal lRet = _lfac[*ret];
+      if (lRet.is_var()) {
+        keep_alive(lRet.get_var());
       }
     }
+
+    // deallocate the memory for local variables
+    clear_local_vars();
   }
 
   void exec(Store_ref stmt) {
     Literal lPtr = _lfac[ar::getPointer(stmt)];
     if (lPtr.is_undefined_cst() || lPtr.is_null_cst()) {
-      _inv = AbsValueDomain::bottom();
+      exc_domain_traits::set_normal_flow_bottom(_inv);
       return;
     }
 
@@ -1053,6 +1112,13 @@ public:
     if (ar::isGlobalVar(ar::getValue(stmt)) ||
         ar::isAllocaVar(ar::getValue(stmt))) {
       make_mem_object(_inv, ar::getValue(stmt), _lfac, MUSTNONNULL);
+    } else if (ar::isFunctionPointer(ar::getValue(stmt))) {
+      make_mem_object(_inv,
+                      ar::getValue(stmt),
+                      _lfac,
+                      MUSTNONNULL,
+                      /*no size if function pointer*/
+                      Literal::make_num< Number >(0));
     }
 
     // Reduction between value and pointer analysis
@@ -1063,29 +1129,70 @@ public:
       return;
 
     // Perform memory write in the value domain
-    if (ar::isInteger(ar::getType(ar::getValue(stmt))) ||
-        ar::isPointer(ar::getType(ar::getValue(stmt)))) {
-      Literal lVal = _lfac[ar::getValue(stmt)];
-      if (!lVal.is_var() && !lVal.is_num())
-        return;
+    assert(lPtr.is_var());
+    Literal lVal = _lfac[ar::getValue(stmt)];
+    ikos::z_number size =
+        ar::getSize(ar::getPointeeType(ar::getType(ar::getPointer(stmt))));
 
-      linExpr e = (lVal.is_var() ? linExpr(lVal.get_var())
-                                 : linExpr(lVal.get_num< Number >()));
-      ikos::z_number size(ar::getSize(ar::getType(ar::getValue(stmt))));
-      assert(lPtr.is_var());
+    // TODO: replace analyzer::Literal by ikos::literal
+    typedef ikos::literal< ikos::z_number, ikos::dummy_number, varname_t >
+        literal_t;
+
+    if (lVal.is_var()) {
+      if (ar::isInteger(ar::getType(ar::getValue(stmt)))) {
+        mem_domain_traits::mem_write(_inv,
+                                     lPtr.get_var(),
+                                     literal_t::integer_var(lVal.get_var()),
+                                     size);
+      } else if (ar::isFloat(ar::getType(ar::getValue(stmt)))) {
+        mem_domain_traits::mem_write(_inv,
+                                     lPtr.get_var(),
+                                     literal_t::floating_point_var(
+                                         lVal.get_var()),
+                                     size);
+      } else if (ar::isPointer(ar::getType(ar::getValue(stmt)))) {
+        mem_domain_traits::mem_write(_inv,
+                                     lPtr.get_var(),
+                                     literal_t::pointer_var(lVal.get_var()),
+                                     size);
+      } else if (ar::isFunctionPointer(ar::getValue(stmt))) {
+        // special case for constant function pointer
+        mem_domain_traits::mem_write(_inv,
+                                     lPtr.get_var(),
+                                     literal_t::pointer_var(lVal.get_var()),
+                                     size);
+      } else {
+        assert(false && "unreachable");
+      }
+    } else if (lVal.is_num()) {
       mem_domain_traits::mem_write(_inv,
                                    lPtr.get_var(),
-                                   e,
-                                   size,
-                                   ar::isPointer(
-                                       ar::getType(ar::getValue(stmt))));
+                                   literal_t::integer(lVal.get_num< Number >()),
+                                   size);
+    } else if (lVal.is_float_cst()) {
+      mem_domain_traits::mem_write(_inv,
+                                   lPtr.get_var(),
+                                   literal_t::floating_point(dummy_number()),
+                                   size);
+    } else if (lVal.is_undefined_cst()) {
+      mem_domain_traits::mem_write(_inv,
+                                   lPtr.get_var(),
+                                   literal_t::undefined(),
+                                   size);
+    } else if (lVal.is_null_cst()) {
+      mem_domain_traits::mem_write(_inv,
+                                   lPtr.get_var(),
+                                   literal_t::null(),
+                                   size);
+    } else {
+      assert(false && "unreachable");
     }
   }
 
   void exec(Load_ref stmt) {
     Literal lPtr = _lfac[ar::getPointer(stmt)];
     if (lPtr.is_undefined_cst() || lPtr.is_null_cst()) {
-      _inv = AbsValueDomain::bottom();
+      exc_domain_traits::set_normal_flow_bottom(_inv);
       return;
     }
 
@@ -1109,22 +1216,40 @@ public:
     if (lPtr.is_var())
       refineAddrAndOffset(lPtr.get_var());
 
-    // Reduction between value and pointer analysis
-    if (ar::isPointer(lhs))
-      refineAddrAndOffset(lhs_var);
-
     if (_prec_level < MEM)
       return;
 
-    /// Perform memory read in the value domain
+    // Perform memory read in the value domain
     assert(lPtr.is_var());
-    if (ar::isInteger(ar::getType(lhs)) || ar::isPointer(ar::getType(lhs))) {
-      ikos::z_number size(ar::getSize(ar::getType(lhs)));
+    ikos::z_number size =
+        ar::getSize(ar::getPointeeType(ar::getType(ar::getPointer(stmt))));
+
+    // TODO: replace analyzer::Literal by ikos::literal
+    typedef ikos::literal< ikos::z_number, ikos::dummy_number, varname_t >
+        literal_t;
+
+    if (ar::isInteger(ar::getType(lhs))) {
       mem_domain_traits::mem_read(_inv,
-                                  lhs_var,
+                                  literal_t::integer_var(lhs_var),
                                   lPtr.get_var(),
-                                  size,
-                                  ar::isPointer(ar::getType(lhs)));
+                                  size);
+    } else if (ar::isFloat(ar::getType(lhs))) {
+      mem_domain_traits::mem_read(_inv,
+                                  literal_t::floating_point_var(lhs_var),
+                                  lPtr.get_var(),
+                                  size);
+    } else if (ar::isPointer(ar::getType(lhs))) {
+      mem_domain_traits::mem_read(_inv,
+                                  literal_t::pointer_var(lhs_var),
+                                  lPtr.get_var(),
+                                  size);
+    } else {
+      assert(false && "unreachable");
+    }
+
+    // Reduction between value and pointer analysis
+    if (ar::isPointer(lhs)) {
+      refineAddrAndOffset(lhs_var);
     }
   }
 
@@ -1145,8 +1270,7 @@ public:
 private:
   /////
   // Analysis of external (library) calls
-  // Note: This code should go to a different file if it keeps
-  // growing.
+  // Note: This code should go to a different file if it keeps growing.
   //////
 
   /*
@@ -1263,7 +1387,7 @@ private:
     if (_prec_level < PTR)
       return;
 
-    if (_inv.is_bottom())
+    if (null_domain_traits::is_null(_inv, ptr.get_var()))
       return;
 
     // set the size to 0
@@ -1317,7 +1441,276 @@ private:
 
     abstract_memory(buf, len);
   }
-};
+
+  /*
+    __cxa_throw(void* exception, std::type_info* tinfo, void (*dest)(void*))
+
+    After constructing the exception object with the throw argument value,
+    the generated code calls the __cxa_throw runtime library routine. This
+    routine never returns.
+  */
+  void analyze_cxa_throw(Operand_ref exception,
+                         Operand_ref tinfo,
+                         Operand_ref dest) {
+    Literal lException = _lfac[exception];
+    Literal lTinfo = _lfac[tinfo];
+    Literal lDest = _lfac[dest];
+    assert(lException.is_var());
+    assert(lTinfo.is_var());
+    assert(lDest.is_var() || lDest.is_null_cst());
+
+    clear_local_vars();
+
+    boost::optional< VariableName > d;
+    if (lDest.is_var()) {
+      d = lDest.get_var();
+    }
+    exc_domain_traits::throw_exception(_inv,
+                                       lException.get_var(),
+                                       lTinfo.get_var(),
+                                       d);
+  }
+
+  /*
+    #include <string.h>
+    size_t strlen(const char* s);
+
+    The strlen() function computes the length of the string s.
+
+    The strlen() function returns the number of characters that precede
+    the terminating NUL character.
+  */
+  void analyze_strlen(boost::optional< Internal_Variable_ref > lhs,
+                      Operand_ref str) {
+    Literal lStr = _lfac[str];
+
+    if (lStr.is_undefined_cst() || lStr.is_null_cst()) {
+      exc_domain_traits::set_normal_flow_bottom(_inv);
+      return;
+    }
+
+    assert(lStr.is_var());
+
+    if (_prec_level < PTR)
+      return;
+
+    if (null_domain_traits::is_null(_inv, lStr.get_var())) {
+      exc_domain_traits::set_normal_flow_bottom(_inv);
+      return;
+    }
+
+    // Create lazily memory objects
+    if (ar::isGlobalVar(str) || ar::isAllocaVar(str)) {
+      make_mem_object(_inv, str, _lfac, MUSTNONNULL);
+    }
+
+    // Reduction between value and pointer analysis
+    refineAddrAndOffset(lStr.get_var());
+
+    if (!lhs)
+      return;
+
+    Literal ret = _lfac[*lhs];
+
+    // ret is in [0, size - 1]
+    _inv -= ret.get_var();
+    _inv += (variable_t(ret.get_var()) >= 0);
+    uninit_domain_traits::make_initialized(_inv, ret.get_var());
+
+    ikos::discrete_domain< VariableName > points_to =
+        ptr_domain_traits::addrs_set(_inv, lStr.get_var());
+
+    if (points_to.is_top())
+      return;
+
+    AbsValueDomain inv = AbsValueDomain::bottom();
+    for (auto it = points_to.begin(); it != points_to.end(); ++it) {
+      AbsValueDomain tmp = _inv;
+      tmp +=
+          (variable_t(ret.get_var()) <= variable_t(get_shadow_size(*it)) - 1);
+      inv = inv | tmp;
+    }
+    _inv = inv;
+  }
+
+  /*
+    #include <string.h>
+    size_t strnlen(const char* s);
+
+    The strnlen() function attempts to compute the length of s, but
+    never scans beyond the first maxlen bytes of s.
+
+    The strnlen() function returns either the same result as strlen()
+    or maxlen, whichever is smaller.
+  */
+  void analyze_strnlen(boost::optional< Internal_Variable_ref > lhs,
+                       Operand_ref str,
+                       Operand_ref maxlen) {
+    analyze_strlen(lhs, str);
+
+    if (exc_domain_traits::is_normal_flow_bottom(_inv))
+      return;
+
+    if (!lhs)
+      return;
+
+    // ret <= maxlen
+    Literal ret = _lfac[*lhs];
+    Literal lMaxLen = _lfac[maxlen];
+    if (lMaxLen.is_var()) {
+      _inv += variable_t(ret.get_var()) <= variable_t(lMaxLen.get_var());
+    } else if (lMaxLen.is_num()) {
+      _inv += variable_t(ret.get_var()) <= lMaxLen.get_num< ikos::z_number >();
+    }
+  }
+
+  /*
+    #include <string.h>
+    char* strcpy(char* dst, const char* src);
+
+    The strcpy() function copies the string src to dst (including
+    the terminating `\0' character).
+
+    The strcpy() function returns dst.
+  */
+  void analyze_strcpy(boost::optional< Internal_Variable_ref > lhs,
+                      Operand_ref dest,
+                      Operand_ref src) {
+    Literal lDest = _lfac[dest];
+    Literal lSrc = _lfac[src];
+
+    if (lDest.is_undefined_cst() || lDest.is_null_cst() ||
+        lSrc.is_undefined_cst() || lSrc.is_null_cst()) {
+      exc_domain_traits::set_normal_flow_bottom(_inv);
+      return;
+    }
+
+    assert(lDest.is_var() && lSrc.is_var());
+
+    if (_prec_level < PTR)
+      return;
+
+    if (null_domain_traits::is_null(_inv, lDest.get_var()) ||
+        null_domain_traits::is_null(_inv, lSrc.get_var())) {
+      exc_domain_traits::set_normal_flow_bottom(_inv);
+      return;
+    }
+
+    // Create lazily memory objects
+    if (ar::isGlobalVar(dest) || ar::isAllocaVar(dest)) {
+      make_mem_object(_inv, dest, _lfac, MUSTNONNULL);
+    }
+    if (ar::isAllocaVar(src) || ar::isGlobalVar(src)) {
+      make_mem_object(_inv, src, _lfac, MUSTNONNULL);
+    }
+
+    // Reduction between value and pointer analysis
+    refineAddrAndOffset(lDest.get_var());
+    refineAddrAndOffset(lSrc.get_var());
+
+    if (_prec_level >= MEM) {
+      // Do not keep track of the content
+      mem_domain_traits::forget_mem_contents(_inv, lDest.get_var());
+    }
+
+    if (lhs) {
+      Assign(_lfac[*lhs], dest, true);
+    }
+  }
+
+  /*
+    #include <string.h>
+    char* strncpy(char* dst, const char* src, size_t n);
+
+    The strncpy() function copies at most n characters from src into dst.
+    If src is less than n characters long, the remainder of dst is filled
+    with `\0' characters.  Otherwise, dst is not terminated.
+
+    The strncpy() function returns dst.
+  */
+  void analyze_strncpy(boost::optional< Internal_Variable_ref > lhs,
+                       Operand_ref dest,
+                       Operand_ref src,
+                       Operand_ref /*size*/) {
+    analyze_strcpy(lhs, dest, src);
+  }
+
+  /*
+    #include <string.h>
+    char* strcat(char* s1, const char* s2);
+
+    The strcat() function appends a copy of the null-terminated string s2
+    to the end of the null-terminated string s1, then add a terminating `\0'.
+    The string s1 must have sufficient space to hold the result.
+
+    The strcat() function returns the pointer s1.
+  */
+  void analyze_strcat(boost::optional< Internal_Variable_ref > lhs,
+                      Operand_ref s1,
+                      Operand_ref s2) {
+    Literal lS1 = _lfac[s1];
+    Literal lS2 = _lfac[s2];
+
+    if (lS1.is_undefined_cst() || lS1.is_null_cst() || lS2.is_undefined_cst() ||
+        lS2.is_null_cst()) {
+      exc_domain_traits::set_normal_flow_bottom(_inv);
+      return;
+    }
+
+    assert(lS1.is_var() && lS2.is_var());
+
+    if (_prec_level < PTR)
+      return;
+
+    if (null_domain_traits::is_null(_inv, lS1.get_var()) ||
+        null_domain_traits::is_null(_inv, lS2.get_var())) {
+      exc_domain_traits::set_normal_flow_bottom(_inv);
+      return;
+    }
+
+    // Create lazily memory objects
+    if (ar::isGlobalVar(s1) || ar::isAllocaVar(s1)) {
+      make_mem_object(_inv, s1, _lfac, MUSTNONNULL);
+    }
+    if (ar::isAllocaVar(s2) || ar::isGlobalVar(s2)) {
+      make_mem_object(_inv, s2, _lfac, MUSTNONNULL);
+    }
+
+    // Reduction between value and pointer analysis
+    refineAddrAndOffset(lS1.get_var());
+    refineAddrAndOffset(lS2.get_var());
+
+    if (_prec_level >= MEM) {
+      // Do not keep track of the content
+      mem_domain_traits::forget_mem_contents(_inv, lS1.get_var());
+    }
+
+    if (lhs) {
+      Assign(_lfac[*lhs], s1, true);
+    }
+  }
+
+  /*
+    #include <string.h>
+    char* strncat(char* s1, const char* s2, size_t n);
+
+    The strncat() function appends a copy of the null-terminated string s2
+    to the end of the null-terminated string s1, then add a terminating `\0'.
+    The string s1 must have sufficient space to hold the result.
+
+    The strncat() function appends not more than n characters from s2, and
+    then adds a terminating `\0'.
+
+    The strncat() function returns the pointer s1.
+  */
+  void analyze_strncat(boost::optional< Internal_Variable_ref > lhs,
+                       Operand_ref s1,
+                       Operand_ref s2,
+                       Operand_ref n) {
+    analyze_strcat(lhs, s1, s2);
+  }
+
+}; // end class num_sym_exec
 
 } // end namespace analyzer
 

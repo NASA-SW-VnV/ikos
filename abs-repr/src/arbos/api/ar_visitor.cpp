@@ -104,11 +104,6 @@ void AR_Return_Value::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeEnd(*this);
 }
 
-void AR_Unwind::accept(std::shared_ptr< Visitor > visitor) {
-  visitor->nodeStart(*this);
-  visitor->nodeEnd(*this);
-}
-
 void AR_Unreachable::accept(std::shared_ptr< Visitor > visitor) {
   visitor->nodeStart(*this);
   visitor->nodeEnd(*this);

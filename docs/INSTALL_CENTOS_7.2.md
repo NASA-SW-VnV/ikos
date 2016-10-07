@@ -65,7 +65,7 @@ After installation, the install directory will contain the following structure:
 │   ├── bin
 │   ├── doc
 │   └── share
-├── ikos-1.1.2
+├── ikos-1.2
 │   ├── bin
 │   ├── include
 │   └── lib

@@ -344,5 +344,18 @@ if __name__ == '__main__':
     t = TestManager()
     t.add(Test('test-1.c', 'test-1.c', 'nullity', 'safe'))
     t.add(Test('test-2.c', 'test-2.c', 'nullity', 'error',
-               expected='unsafe', line_checks=[(10, 'error', 'warning')]))
+               line_checks=[(10, 'error')]))
+    t.add(Test('test-3.c', 'test-3.c', 'nullity', 'safe'))
+    t.add(Test('test-3-unsafe.c', 'test-3-unsafe.c', 'nullity', 'error',
+               line_checks=[(6, 'error')]))
+    t.add(Test('test-4.c', 'test-4.c', 'nullity', 'safe'))
+    t.add(Test('test-4-unsafe-1.c', 'test-4-unsafe-1.c', 'nullity', 'unsafe',
+               line_checks=[(17, 'warning')]))
+    t.add(Test('test-4-unsafe-2.c', 'test-4-unsafe-2.c', 'nullity', 'unsafe',
+               line_checks=[(19, 'warning')]))
+    t.add(Test('test-5.c', 'test-5.c', 'nullity', 'safe'))
+    t.add(Test('test-5-unsafe-1.c', 'test-5-unsafe-1.c', 'nullity', 'unsafe',
+               line_checks=[(17, 'warning')]))
+    t.add(Test('test-5-unsafe-2.c', 'test-5-unsafe-2.c', 'nullity', 'unsafe',
+               line_checks=[(19, 'warning')]))
     t.run()

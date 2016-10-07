@@ -80,7 +80,6 @@ public:
   virtual void nodeStart(AR_Load_Element& load_element);
   virtual void nodeStart(AR_NOP& nop);
   virtual void nodeStart(AR_Unreachable& unreachable);
-  virtual void nodeStart(AR_Unwind& unwind);
   virtual void nodeStart(AR_Return_Value& ret_val);
   virtual void nodeStart(AR_MemCpy& memcpy);
   virtual void nodeStart(AR_MemMove& memmv);
@@ -174,10 +173,6 @@ void Verifier::nodeStart(AR_NOP& nop) {
 
 void Verifier::nodeStart(AR_Unreachable& unreachable) {
   verify_srcline(AR_Node_Ref< AR_Statement >(unreachable.getUID()));
-}
-
-void Verifier::nodeStart(AR_Unwind& unwind) {
-  verify_srcline(AR_Node_Ref< AR_Statement >(unwind.getUID()));
 }
 
 void Verifier::nodeStart(AR_Return_Value& ret_val) {

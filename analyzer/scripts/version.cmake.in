@@ -1,0 +1,20 @@
+set(SRC_DIR "@CMAKE_CURRENT_SOURCE_DIR@")
+set(BIN_DIR "@CMAKE_CURRENT_BINARY_DIR@")
+set(PACKAGE_VERSION "@PACKAGE_VERSION@")
+
+# find the svn revision
+execute_process(
+  COMMAND svnversion
+  WORKING_DIRECTORY ${SRC_DIR}
+  OUTPUT_VARIABLE SVN_VERSION_OUTPUT
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if (SVN_VERSION_OUTPUT MATCHES "^[0-9]+[MSP]?$")
+  set(SVN_VERSION ${SVN_VERSION_OUTPUT})
+else()
+  set(SVN_VERSION "")
+endif()
+
+configure_file("${SRC_DIR}/scripts/version.py.in" "${BIN_DIR}/scripts/version.py" @ONLY)

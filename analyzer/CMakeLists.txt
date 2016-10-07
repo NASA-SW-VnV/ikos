@@ -199,7 +199,24 @@ install(PROGRAMS scripts/ikos DESTINATION bin OPTIONAL)
 install(FILES scripts/stats.py DESTINATION bin OPTIONAL)
 install(FILES scripts/ikosview.py DESTINATION bin OPTIONAL)
 install(FILES scripts/out.py DESTINATION bin OPTIONAL)
-configure_file(scripts/version.py.in scripts/version.py @ONLY)
+
+# version.py
+configure_file(scripts/version.cmake.in scripts/version.cmake @ONLY)
+add_custom_command(
+  OUTPUT
+    "${CMAKE_CURRENT_BINARY_DIR}/scripts/version.py"
+    "[force-rebuild]" # missing file to force rebuild
+  COMMAND
+    ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/scripts/version.cmake"
+  DEPENDS
+    "${CMAKE_CURRENT_BINARY_DIR}/scripts/version.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/version.py.in"
+  VERBATIM)
+add_custom_target(configure_version ALL
+  DEPENDS
+    "${CMAKE_CURRENT_BINARY_DIR}/scripts/version.py"
+    "[force-rebuild]" # missing file to force rebuild
+)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/scripts/version.py" DESTINATION bin OPTIONAL)
 
 #

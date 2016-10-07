@@ -405,4 +405,8 @@ if __name__ == '__main__':
     t.add(Test('test-1.c', 'test-1.c', 'prover', 'safe'))
     t.add(Test('test-2.c', 'test-2.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('test-3.c', 'test-3.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('test-4.cpp', 'test-4.cpp', 'prover', 'safe', expected='unsafe',
+               line_checks=[(21, 'ok'), (36, 'ok'), (37, 'ok'), (38, 'ok'),
+                            (40, 'ok'), (41, 'ok', 'warning')]))
+    t.add(Test('test-5.cpp', 'test-5.cpp', 'prover', 'safe'))
     t.run()

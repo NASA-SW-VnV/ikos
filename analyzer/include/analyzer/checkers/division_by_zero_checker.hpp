@@ -76,7 +76,7 @@ public:
         (ar::getArithOp(stmt) == urem) || (ar::getArithOp(stmt) == srem)) {
       location loc = ar::getSrcLoc(stmt);
 
-      if (inv.is_bottom()) {
+      if (exc_domain_traits::is_normal_flow_bottom(inv)) {
         if (this->display_check(UNREACHABLE)) {
           std::cout << location_to_string(loc) << ": [unreachable] " << stmt
                     << std::endl;
@@ -98,9 +98,9 @@ public:
         assert(lit.is_var() || lit.is_num());
 
         z_interval divisor = z_interval::bottom();
-        if (lit.is_num())
+        if (lit.is_num()) {
           divisor = z_interval(lit.get_num< ikos::z_number >());
-        else {
+        } else {
           divisor = num_domain_traits::to_interval(inv, lit.get_var());
         }
 

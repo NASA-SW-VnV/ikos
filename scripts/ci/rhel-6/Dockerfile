@@ -30,7 +30,7 @@ WORKDIR /root/ikos/scripts
 RUN ./bootstrap -vf --prefix=/opt/ikos --builddir=/root/ikos-build
 
 # Build the tests
-WORKDIR /root/ikos-build/ikos-1.1.2
+WORKDIR /root/ikos-build/ikos-1.2
 RUN source /opt/ikos/activate-full && make verifier-passes && make install
 
 # Run the tests

@@ -1535,29 +1535,6 @@ void AR_Abstract_Variable::print(std::ostream& out) {
 }
 
 ////
-// AR_Unwind
-////
-AR_Unwind::AR_Unwind(index64_t parent_bblock, s_expression e)
-    : AR_Statement(parent_bblock) {
-  /**
-   * Example s-expr: ($unwind ($debug ($srcloc ($line (#48)) ($file (!27)))))
-   */
-  s_expression_ref srcloc;
-  if (s_pattern("unwind", s_pattern("debug", srcloc)) ^ e) {
-    _source_location = ARFactory::createSourceLocation(*srcloc);
-  } else {
-    throw parse_error("AR_Unwind", e);
-  }
-}
-
-AR_Unwind::~AR_Unwind() {}
-
-void AR_Unwind::print(std::ostream& out) {
-  out << "unwind()";
-  print_sourcelocation(out);
-}
-
-////
 // AR_Unreachable
 ////
 AR_Unreachable::AR_Unreachable(index64_t parent_bblock, s_expression e)
@@ -2147,15 +2124,15 @@ AR_Code::AR_Code(index64_t parent_function, s_expression e)
       _entry_block(0),
       _exit_block(0),
       _unreachable_block(0),
-      _unwind_block(0),
+      _ehresume_block(0),
       _bblocks_connected(false),
       _parent_function(parent_function) {
   /**
    * Example s-expr: ($code ($entry ($init)) ($exit ($init)) ($basicblocks
    * ($basicblock) ...) ($trans ($edge () ()) ...))
    */
-  s_expression_ref en, ex, ur, uw, bbs, t;
-  if (s_pattern("code", s_pattern("entry", en), ex, ur, uw, bbs, t) ^ e) {
+  s_expression_ref en, ex, ur, ehr, bbs, t;
+  if (s_pattern("code", s_pattern("entry", en), ex, ur, ehr, bbs, t) ^ e) {
     ARModel::Instance()->setCurrentBuildingScope(
         AR_Node_Ref< AR_Code >(getUID()));
 
@@ -2179,10 +2156,11 @@ AR_Code::AR_Code(index64_t parent_function, s_expression e)
             ? 0
             : getBasicBlockUIDByName(
                   (static_cast< string_atom& >(*(*ur)[1])).data());
-    _unwind_block = (*uw).n_args() == 0
-                        ? 0
-                        : getBasicBlockUIDByName(
-                              (static_cast< string_atom& >(*(*uw)[1])).data());
+    _ehresume_block =
+        (*ehr).n_args() == 0
+            ? 0
+            : getBasicBlockUIDByName(
+                  (static_cast< string_atom& >(*(*ehr)[1])).data());
   } else {
     throw parse_error("AR_Code", e);
   }
@@ -2252,7 +2230,7 @@ void AR_Code::print(std::ostream& out) {
   AR_Node_Ref< AR_Basic_Block > entry(_entry_block);
   AR_Node_Ref< AR_Basic_Block > exit(_exit_block);
   AR_Node_Ref< AR_Basic_Block > unreachable(_unreachable_block);
-  AR_Node_Ref< AR_Basic_Block > unwind(_unwind_block);
+  AR_Node_Ref< AR_Basic_Block > ehresume(_ehresume_block);
 
   out << "entry: " << (*entry).getNameId() << "!" << entry.getUID()
       << std::endl;
@@ -2270,11 +2248,11 @@ void AR_Code::print(std::ostream& out) {
     out << "unreachable: none" << std::endl;
   }
 
-  if (_unwind_block != 0) {
-    out << "unwind: " << (*unwind).getNameId() << "!" << unwind.getUID()
+  if (_ehresume_block != 0) {
+    out << "ehresume: " << (*ehresume).getNameId() << "!" << ehresume.getUID()
         << std::endl;
   } else {
-    out << "unwind: none" << std::endl;
+    out << "ehresume: none" << std::endl;
   }
 
   out << std::endl;
@@ -2740,8 +2718,6 @@ std::string ReferenceCounter::str(AR_CLASS_TYPE_CODE class_type) {
       return "AR_Invoke";
     case AR_UNREACHABLE_STATEMENT_CLASS_TYPE:
       return "AR_Unreachable";
-    case AR_UNWIND_STATEMENT_CLASS_TYPE:
-      return "AR_Unwind";
     case AR_NOP_STATEMENT_CLASS_TYPE:
       return "AR_NOP";
     case AR_MEMCPY_STATEMENT_CLASS_TYPE:

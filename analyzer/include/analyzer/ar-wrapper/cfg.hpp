@@ -215,20 +215,22 @@ public:
   // precision
   varname_set_t uses(const Statement_ref& s) {
     varset_map_t::iterator it = _uses.find(ar::getUID(s));
-    if (it != _uses.end())
+    if (it != _uses.end()) {
       return it->second;
-    else
+    } else {
       return varname_set_t::bottom();
+    }
   }
 
   // Return the set of defined variables of s according to the level
   // of precision
   varname_set_t defs(const Statement_ref& s) {
     varset_map_t::iterator it = _defs.find(ar::getUID(s));
-    if (it != _defs.end())
+    if (it != _defs.end()) {
       return it->second;
-    else
+    } else {
       return varname_set_t::bottom();
+    }
   }
 
   // Return all the variables (used or defined) according to the level
@@ -291,20 +293,32 @@ private:
 
   void visit(Call_ref s) {
     boost::optional< Internal_Variable_ref > r = ar::getReturnValue(s);
-    if (r)
+    if (r) {
       add(this->_defs, s, *r, ar::getName(*r));
+    }
     OpRange args = ar::getArguments(s);
     for (OpRange::iterator it = args.begin(); it != args.end(); ++it) {
       add(this->_uses, s, *it, get_name(*it));
     }
   }
 
-  void visit(Invoke_ref s) { visit(ar::getFunctionCall(s)); }
+  void visit(Invoke_ref s) {
+    Call_ref call = ar::getFunctionCall(s);
+    boost::optional< Internal_Variable_ref > r = ar::getReturnValue(call);
+    if (r) {
+      add(this->_defs, s, *r, ar::getName(*r));
+    }
+    OpRange args = ar::getArguments(call);
+    for (OpRange::iterator it = args.begin(); it != args.end(); ++it) {
+      add(this->_uses, s, *it, get_name(*it));
+    }
+  }
 
   void visit(Return_Value_ref s) {
     boost::optional< Operand_ref > r = ar::getReturnValue(s);
-    if (r)
+    if (r) {
       add(this->_uses, s, *r, get_name(*r));
+    }
   }
 
   void visit(Store_ref s) {
@@ -620,6 +634,8 @@ public:
     assert(it != _nodes_map->end());
     return it->second;
   }
+
+  boost::optional< Basic_Block_ref > exit() { return this->_exit; }
 
   VariableFactory& getVarFactory() { return this->_vfac; }
 

@@ -52,7 +52,7 @@ static Option< std::vector< std::string > > list("list,L",
                                                  "Function name and names of "
                                                  "the exit nodes in this "
                                                  "sequence: function, return, "
-                                                 "unreachable, unwind.");
+                                                 "unreachable, ehresume.");
 
 class CheckExitNodesPass : public Pass {
 public:
@@ -69,22 +69,22 @@ public:
 
     AR_Node_Ref< AR_Basic_Block > exit_bb = (*c).getExitBlock();
     AR_Node_Ref< AR_Basic_Block > unreachable_bb = (*c).getUnreachableBlock();
-    AR_Node_Ref< AR_Basic_Block > unwind_bb = (*c).getUnwindBlock();
+    AR_Node_Ref< AR_Basic_Block > ehresume_bb = (*c).getEHResumeBlock();
 
     if (exit_bb.getUID() == 0)
       assert(v[1] == "null");
     else
-      assert(v[1] == (*exit_bb).getNameId());
+      assert(v[1] == "*" || v[1] == (*exit_bb).getNameId());
 
     if (unreachable_bb.getUID() == 0)
       assert(v[2] == "null");
     else
-      assert(v[2] == (*unreachable_bb).getNameId());
+      assert(v[2] == "*" || v[2] == (*unreachable_bb).getNameId());
 
-    if (unwind_bb.getUID() == 0)
+    if (ehresume_bb.getUID() == 0)
       assert(v[3] == "null");
     else
-      assert(v[3] == (*unwind_bb).getNameId());
+      assert(v[3] == "*" || v[3] == (*ehresume_bb).getNameId());
 
     std::cout << "Test passed!" << std::endl;
   }

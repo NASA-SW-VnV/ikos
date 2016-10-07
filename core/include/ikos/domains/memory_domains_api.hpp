@@ -46,34 +46,29 @@
 #include <type_traits>
 
 #include <ikos/algorithms/linear_constraints.hpp>
+#include <ikos/algorithms/literal.hpp>
 
 namespace ikos {
 
-template < typename Number, typename VariableName >
+template < typename Integer, typename Float, typename VariableName >
 class memory_domain {
 public:
-  typedef Number number_t;
+  typedef Integer integer_t;
+  typedef Float floating_point_t;
   typedef VariableName variable_name_t;
-  typedef linear_expression< Number, VariableName > linear_expression_t;
+  typedef linear_expression< Integer, VariableName > int_linear_expression_t;
+  typedef literal< Integer, Float, VariableName > literal_t;
 
 public:
   /*
-   * Perform the memory write: *p = e
+   * Perform the memory write: *p = v
    *
    * Arguments:
    *   p: The pointer variable
-   *   e: The stored value, as a linear expression
+   *   v: The stored value
    *   size: The stored size, in bytes (for instance, 4 for a int)
-   *   is_pointer: true if e is a pointer
-   *
-   * Notes:
-   *   For now, it only manages writes of integers and pointers (no
-   *   floating points).
    */
-  virtual void mem_write(VariableName p,
-                         linear_expression_t e,
-                         Number size,
-                         bool is_pointer) = 0;
+  virtual void mem_write(VariableName p, literal_t v, Integer size) = 0;
 
   /*
    * Perform the memory read: x = *p
@@ -82,16 +77,8 @@ public:
    *   x: The result variable
    *   p: The pointer variable
    *   size: The read size, in bytes (for instance, 4 for a int)
-   *   is_pointer: true if x is a pointer
-   *
-   * Notes:
-   *   For now, it only manages reads of integers and pointers (no
-   *   floating points).
    */
-  virtual void mem_read(VariableName x,
-                        VariableName p,
-                        Number size,
-                        bool is_pointer) = 0;
+  virtual void mem_read(literal_t x, VariableName p, Integer size) = 0;
 
   /*
    * Perform the memory copy: memcpy(dest, src, size)
@@ -107,7 +94,7 @@ public:
    */
   virtual void mem_copy(VariableName dest,
                         VariableName src,
-                        linear_expression_t size) = 0;
+                        int_linear_expression_t size) = 0;
 
   /*
    * Perform the memory set: memset(dest, value, size)
@@ -118,8 +105,8 @@ public:
    *   size: The number of written bytes, as a linear expression
    */
   virtual void mem_set(VariableName dest,
-                       linear_expression_t value,
-                       linear_expression_t size) = 0;
+                       int_linear_expression_t value,
+                       int_linear_expression_t size) = 0;
 
   /*
    * Forget the memory surface of p
@@ -152,7 +139,7 @@ public:
    *   Similar to operator-= but forget only all the memory contents
    *   included in the range [p, ..., p + size - 1].
    */
-  virtual void forget_mem_contents(VariableName p, Number size) = 0;
+  virtual void forget_mem_contents(VariableName p, Integer size) = 0;
 
   /*
    * Forget everything related to v
@@ -171,95 +158,111 @@ namespace mem_domain_traits {
 
 // Helpers to enable the correct implementation depending on the domain.
 
+struct _is_memory_domain_impl {
+  template < typename Domain >
+  static std::true_type _test(
+      typename std::enable_if<
+          std::is_base_of< memory_domain< typename Domain::integer_t,
+                                          typename Domain::floating_point_t,
+                                          typename Domain::variable_name_t >,
+                           Domain >::value,
+          int >::type);
+
+  template < typename >
+  static std::false_type _test(...);
+};
+
+template < typename Domain >
+struct _is_memory_domain : public _is_memory_domain_impl {
+  typedef decltype(_test< Domain >(0)) type;
+};
+
+template < typename Domain >
+struct is_memory_domain : public _is_memory_domain< Domain >::type {};
+
 template < typename Domain >
 struct enable_if_memory
-    : public std::enable_if<
-          std::is_base_of< memory_domain< typename Domain::number_t,
-                                          typename Domain::variable_name_t >,
-                           Domain >::value > {};
+    : public std::enable_if< is_memory_domain< Domain >::value > {};
 
 template < typename Domain >
 struct enable_if_not_memory
-    : public std::enable_if<
-          !std::is_base_of< memory_domain< typename Domain::number_t,
-                                           typename Domain::variable_name_t >,
-                            Domain >::value > {};
+    : public std::enable_if< !is_memory_domain< Domain >::value > {};
 
 // mem_write
 
-template < typename Domain >
+template < typename Domain, typename Literal, typename Integer >
 inline void mem_write(Domain& inv,
                       typename Domain::variable_name_t p,
-                      typename Domain::linear_expression_t e,
-                      typename Domain::number_t size,
-                      bool is_pointer,
+                      Literal v,
+                      Integer size,
                       typename enable_if_memory< Domain >::type* = 0) {
-  inv.mem_write(p, e, size, is_pointer);
+  inv.mem_write(p, v, size);
 }
 
-template < typename Domain >
+template < typename Domain, typename Literal, typename Integer >
 inline void mem_write(Domain& /*inv*/,
                       typename Domain::variable_name_t /*p*/,
-                      typename Domain::linear_expression_t /*e*/,
-                      typename Domain::number_t /*size*/,
-                      bool /*is_pointer*/,
+                      Literal /*v*/,
+                      Integer /*size*/,
                       typename enable_if_not_memory< Domain >::type* = 0) {}
 
 // mem_read
 
-template < typename Domain >
+template < typename Domain, typename Literal, typename Integer >
 inline void mem_read(Domain& inv,
-                     typename Domain::variable_name_t x,
+                     Literal x,
                      typename Domain::variable_name_t p,
-                     typename Domain::number_t size,
-                     bool is_pointer,
+                     Integer size,
                      typename enable_if_memory< Domain >::type* = 0) {
-  inv.mem_read(x, p, size, is_pointer);
+  inv.mem_read(x, p, size);
 }
 
-template < typename Domain >
+template < typename Domain, typename Literal, typename Integer >
 inline void mem_read(Domain& /*inv*/,
-                     typename Domain::variable_name_t /*x*/,
+                     Literal /*x*/,
                      typename Domain::variable_name_t /*p*/,
-                     typename Domain::number_t /*size*/,
-                     bool /*is_pointer*/,
+                     Integer /*size*/,
                      typename enable_if_not_memory< Domain >::type* = 0) {}
 
 // mem_copy
 
-template < typename Domain >
-inline void mem_copy(Domain& inv,
-                     typename Domain::variable_name_t dest,
-                     typename Domain::variable_name_t src,
-                     typename Domain::linear_expression_t size,
-                     typename enable_if_memory< Domain >::type* = 0) {
+template < typename Domain, typename Integer >
+inline void mem_copy(
+    Domain& inv,
+    typename Domain::variable_name_t dest,
+    typename Domain::variable_name_t src,
+    linear_expression< Integer, typename Domain::variable_name_t > size,
+    typename enable_if_memory< Domain >::type* = 0) {
   inv.mem_copy(dest, src, size);
 }
 
-template < typename Domain >
-inline void mem_copy(Domain& /*inv*/,
-                     typename Domain::variable_name_t /*dest*/,
-                     typename Domain::variable_name_t /*src*/,
-                     typename Domain::linear_expression_t /*size*/,
-                     typename enable_if_not_memory< Domain >::type* = 0) {}
+template < typename Domain, typename Integer >
+inline void mem_copy(
+    Domain& /*inv*/,
+    typename Domain::variable_name_t /*dest*/,
+    typename Domain::variable_name_t /*src*/,
+    linear_expression< Integer, typename Domain::variable_name_t > /*size*/,
+    typename enable_if_not_memory< Domain >::type* = 0) {}
 
 // mem_set
 
-template < typename Domain >
-inline void mem_set(Domain& inv,
-                    typename Domain::variable_name_t dest,
-                    typename Domain::linear_expression_t value,
-                    typename Domain::linear_expression_t size,
-                    typename enable_if_memory< Domain >::type* = 0) {
+template < typename Domain, typename Integer >
+inline void mem_set(
+    Domain& inv,
+    typename Domain::variable_name_t dest,
+    linear_expression< Integer, typename Domain::variable_name_t > value,
+    linear_expression< Integer, typename Domain::variable_name_t > size,
+    typename enable_if_memory< Domain >::type* = 0) {
   inv.mem_set(dest, value, size);
 }
 
-template < typename Domain >
-inline void mem_set(Domain& /*inv*/,
-                    typename Domain::variable_name_t /*dest*/,
-                    typename Domain::linear_expression_t /*value*/,
-                    typename Domain::linear_expression_t /*size*/,
-                    typename enable_if_not_memory< Domain >::type* = 0) {}
+template < typename Domain, typename Integer >
+inline void mem_set(
+    Domain& /*inv*/,
+    typename Domain::variable_name_t /*dest*/,
+    linear_expression< Integer, typename Domain::variable_name_t > /*value*/,
+    linear_expression< Integer, typename Domain::variable_name_t > /*size*/,
+    typename enable_if_not_memory< Domain >::type* = 0) {}
 
 // forget_mem_surface
 
@@ -294,20 +297,20 @@ inline void forget_mem_contents(
     typename Domain::variable_name_t /*p*/,
     typename enable_if_not_memory< Domain >::type* = 0) {}
 
-template < typename Domain >
+template < typename Domain, typename Integer >
 inline void forget_mem_contents(
     Domain& inv,
     typename Domain::variable_name_t p,
-    typename Domain::number_t size,
+    Integer size,
     typename enable_if_memory< Domain >::type* = 0) {
   inv.forget_mem_contents(p, size);
 }
 
-template < typename Domain >
+template < typename Domain, typename Integer >
 inline void forget_mem_contents(
     Domain& /*inv*/,
     typename Domain::variable_name_t /*p*/,
-    typename Domain::number_t /*size*/,
+    Integer /*size*/,
     typename enable_if_not_memory< Domain >::type* = 0) {}
 
 } // end namespace mem_domain_traits
