@@ -1,0 +1,33 @@
+add_subdirectory(cfg-trans/bitwise-cond)
+add_subdirectory(cfg-trans/llvm-phi/1)
+add_subdirectory(cfg-trans/llvm-phi/2)
+add_subdirectory(cfg-trans/llvm-phi/3)
+add_subdirectory(cfg-trans/llvm-phi/4)
+add_subdirectory(cfg-trans/llvm-select)
+add_subdirectory(parsing/array-localvar)
+add_subdirectory(parsing/call-args)
+add_subdirectory(parsing/check-srcloc)
+add_subdirectory(parsing/gv-init)
+add_subdirectory(parsing/src-lines/1)
+add_subdirectory(parsing/check-exit-nodes)
+add_subdirectory(parsing/basic)
+add_subdirectory(parsing/stack-allocate)
+add_subdirectory(uid/internal_var)
+
+add_custom_target(verifier-passes DEPENDS
+  test-cfg-trans-bitwise-cond
+  test-cfg-trans-llvm-phi-1
+  test-cfg-trans-llvm-phi-2
+  test-cfg-trans-llvm-phi-3
+  test-cfg-trans-llvm-phi-4
+  test-cfg-trans-llvm-select
+  test-parsing-array-localvar-2
+  test-parsing-call-args
+  check-srcloc
+  test-parsing-gv-init
+  test-parsing-src-lines-1
+  test-parsing-uid-internal_var
+  test-parsing-basic
+  test-parsing-stack-allocate
+  test-parsing-exit-nodes
+)

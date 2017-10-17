@@ -1,0 +1,2022 @@
+#!/bin/bash
+
+################################################################################
+#
+# Installation script that does not require root access.
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2017 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+# 
+# This script assumes the operating system provides:
+#   bash, basename, dirname, mkdir, touch, sed, date
+#
+# Bash should provide the following builtins:
+#   cd, pwd, exit, command, [[, ((, echo, set, unset, local, read, printf,
+#   pushd, popd, return, shift
+#
+# Exit codes:
+#  0: success
+#  1: running as root
+#  2: bad argument
+#  3: assertion failed
+#  4: missing dependencies
+#  5: unable to detect version
+#  6: error while fetching a source code
+#  7: error while extracting an archive
+#  8: error while patching
+#  9: error while configuring
+# 10: error while building
+# 11: error while testing
+# 12: error while installing
+#
+################################################################################
+
+progname=$(basename "$0")
+
+# Version settings
+ikos_version="1.3"
+gcc_required_version="4.9.2"
+clang_required_version="3.4"
+apple_clang_required_version="3.4"
+gcc_install_version="7.2.0"
+gcc_gmp_install_version="6.1.0"
+gcc_mpfr_install_version="3.1.4"
+gcc_mpc_install_version="1.0.3"
+gcc_isl_install_version="0.18"
+cmake_required_version="3.4.3"
+cmake_install_version="3.9.4"
+zlib_install_version="1.2.11"
+ncurses_install_version="6.0"
+libedit_install_version="2.11"
+gmp_required_version="4.3.1"
+gmp_install_version="6.1.2"
+m4_install_version="1.4.18"
+sqlite_required_version="3.6.20"
+sqlite_install_version="3.20.1"
+boost_required_version="1.55.0"
+boost_install_version="1.65.1"
+python2_required_version="2.7.3"
+python3_required_version="3.3"
+python_install_version="2.7.14"
+llvm_required_version="4"
+llvm_install_version="4.0.1"
+
+# Default parameters
+install_dir=""
+src_dir="$(dirname "$0")/.."
+build_dir="/tmp/ikos-build"
+verbose=0
+force=0
+use_colors=1
+check=1
+if command -v nproc >/dev/null 2>&1; then
+    njobs=$(nproc)
+else
+    njobs=1
+fi
+build_type="Release"
+
+#####################
+# General functions #
+#####################
+
+function init_colors() {
+    if (( use_colors )); then
+        coff="\033[0m"
+        cbold="\033[1m"
+        cred="\033[31m"
+        cgreen="\033[32m"
+        cyellow="\033[33m"
+        cblue="\033[34m"
+        cpurple="\033[35m"
+        ccyan="\033[36m"
+        cwhite="\033[37m"
+    else
+        coff=""
+        cbold=""
+        cred=""
+        cgreen=""
+        cyellow=""
+        cblue=""
+        cpurple=""
+        ccyan=""
+        cwhite=""
+    fi
+}
+
+function usage() {
+    echo "usage: $progname [OPTION]..."
+    echo ""
+    echo "Build and install IKOS on any UNIX environment without root access."
+    echo ""
+    echo "Defaults for the options are specified in brackets."
+    echo ""
+    echo "Configuration:"
+    echo "  --prefix=PREFIX      install files in PREFIX"
+    echo "  --srcdir=SRCDIR      find the sources in SRCDIR [$src_dir]"
+    echo "  --builddir=BUILDDIR  configure for building on BUILDDIR [$build_dir]"
+    echo ""
+    echo "Optional arguments:"
+    echo "  -h, --help         display this help and exit"
+    echo "  -V, --version      display version information and exit"
+    echo "  -v, --verbose      make this script more verbose"
+    echo "  -f, --force        force"
+    echo "  --no-colors        disable colors"
+    echo "  --no-check         do not run ikos tests"
+    echo "  --jobs=N           allow N jobs at once [$njobs]"
+    echo "  --build-type=TYPE  specify the build type {Release,Debug} [$build_type]"
+}
+
+function short_help() {
+    echo "Try '$progname -h' for more information." >&2
+}
+
+function version() {
+    echo "ikos $ikos_version"
+    echo "Copyright (c) 2011-2017 United States Government as represented by the"
+    echo "Administrator of the National Aeronautics and Space Administration."
+    echo "All Rights Reserved."
+}
+
+function error() {
+    echo "$progname: error: $1" >&2
+}
+
+# Split command line arguments, i.e:
+#   -ab -> -a -b
+#   --foo=bar -> --foo bar
+#
+# Split arguments are stored in the ARGS array
+#
+# Parameters:
+#   $1,$2,$3,...,$n: arguments to split
+function explode_args() {
+    unset ARGS
+    local arg=$1 key value
+
+    while [[ $arg ]]; do
+        [[ $arg = "--" ]] && ARGS+=("$@") && break
+
+        # Short options
+        if [[ ${arg:0:1} = "-" && ${arg:1:1} != "-" ]]; then
+            ARGS+=("-${arg:1:1}")
+            (( ${#arg} > 2 )) && arg="-${arg:2}" || { shift; arg=$1; }
+        # Long options
+        elif [[ ${arg:0:2} = "--" ]]; then
+            # Split argument at '=':
+            # e.g --foo=bar -> key=--foo, value=bar
+            key=${arg%%=*}; value=${arg#*=}
+            ARGS+=("$key")
+            [[ "$key" != "$value" ]] && ARGS+=("$value")
+            shift; arg=$1
+        else
+            ARGS+=("$arg"); shift; arg=$1
+        fi
+    done
+}
+
+# Return a concatenation of strings separated by a given separator, i.e:
+#   , a b c -> a,b,c
+#
+# Parameters:
+#   $1: separator
+#   $2,$2,$4,...,$n: arguments to join
+function join() {
+    local sep=$1; shift
+    echo -n "$1"; shift
+    printf "%s" "${@/#/$sep}"
+}
+
+# Check if a command exists
+function command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Return the absolute path of the given filename
+function abs_path() {
+    local arg=${1/#\~/$HOME}
+    local dirname=$(dirname "$arg") basename=$(basename "$arg")
+
+    while [[ ! -d "$dirname" ]]; do
+        basename="$(basename "$dirname")/$basename"
+        dirname=$(dirname "$dirname")
+    done
+
+    pushd . >/dev/null
+    cd "$dirname"
+    dirname=$(pwd)
+    popd >/dev/null
+
+    if [[ "$dirname" = "/" ]]; then
+        echo -n "/$basename"
+    else
+        echo -n "$dirname/$basename"
+    fi
+}
+
+# Find a pattern within the standard input
+#
+# If found, return 0 and print the given captured group
+# Otherwise, return 1
+#
+# Parameters:
+#   $1: regular expression
+#   $2: parenthesis group number to capture
+function match() {
+    while read -r line; do
+        if [[ "$line" =~ $1 ]]; then
+            echo -n "${BASH_REMATCH[$2]}"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Return the name of all binaries in the PATH matching a regular expression
+function glob_binaries() {
+    local IFS=:
+    find $PATH \
+        -maxdepth 1 \
+        -regex ".*/$1" \
+        -exec basename {} \; 2>/dev/null | sort -u
+}
+
+########################
+# Download and extract #
+########################
+
+# Download a file from an URL.
+#
+# The file is stored under $download_dir and is named after the remote file
+function download() {
+    local url=$1 filename=$(basename "$1")
+
+    cd "$download_dir"
+    if [[ -f "$filename" ]]; then
+        progress "Using already downloaded $filename from $url"
+    else
+        progress "Downloading $url"
+
+        # Note: do not try to capture curl/wget output because it contains
+        # the progress bar
+        $download_agent "$url" || {
+            rm -f "$filename"; error "Error while fetching $filename"; exit 6;
+        }
+    fi
+}
+
+# Extract an archive and move the root directory
+#
+# Parameters:
+#   $1: path to the archive
+#   $2: destination path
+function extract() {
+    local archive_path=$1 destination_path=$2
+    local archive_filename=$(basename "$archive_path")
+    local archive_directory=$(dirname "$archive_path")
+
+    progress "Extracting $archive_filename"
+
+    cd "$archive_directory"
+    run_log_debug tar xf "$archive_filename" || {
+        error "Error while extracting $archive_filename"; exit 7;
+    }
+
+    root_directory=$archive_filename
+    for ext in .gz .xz .bz2 .tar; do
+        root_directory=${root_directory%$ext}
+    done
+
+    [[ -d "$root_directory" ]] || assert_failed "$root_directory does not exist"
+
+    rm -rf "$destination_path"
+    mv "$root_directory" "$destination_path"
+}
+
+# Download an archive from an URL and extract it at the given location
+#
+# Parameters:
+#   $1: URL
+#   $2: destination path
+function download_extract() {
+    local url=$1 destination_path=$2
+    download "$url"
+    extract "$download_dir/$(basename "$url")" "$destination_path"
+}
+
+######################
+# Version comparison #
+######################
+
+# Compare two version numbers
+#
+# Return 0 if $1 is equal to $2,
+#        1 if $1 is greater than $2 and
+#        2 if $1 is lower than $2
+function version_compare() {
+    [[ $1 == $2 ]] && return 0
+
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+
+    # fill empty fields in ver1 with zeros
+    for ((i = ${#ver1[@]}; i < ${#ver2[@]}; i++)); do
+        ver1[i]=0
+    done
+
+    for ((i = 0; i < ${#ver1[@]}; i++)); do
+        if [[ -z ${ver2[i]} ]]; then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if (( 10#${ver1[i]} > 10#${ver2[i]} )); then
+            return 1
+        fi
+        if (( 10#${ver1[i]} < 10#${ver2[i]} )); then
+            return 2
+        fi
+    done
+
+    return 0
+}
+
+# Compare two version numbers
+#
+# Return 0 iff $1 is greater or equal to $2
+function version_ge() {
+    version_compare "$1" "$2"; (( $? <= 1 ))
+}
+
+# Return 0 iif $1 major version number is $2
+function major_version_eq() {
+    [[ "$1" = "$2."* ]]
+}
+
+#####################
+# Version detection #
+#####################
+
+version_regex='[0-9]+(\.[0-9]+)*'
+
+# Parse and detect the version and compiler id of a C/C++ compiler, given the
+# command name
+#
+# Set the variable `result` to (cc_family cxx_family version)
+#
+# For example:
+#   compiler_parse_version "gcc" -> result=("gcc" "g++" "6.1.0")
+#   compiler_parse_version "clang++-3.7" -> result=("clang" clang++" "3.7.1")
+function compiler_parse_version() {
+    unset result
+    local ver
+    local cmd_regex=$(basename "$1" | sed -E 's/(^|[^\])([\(\)\.\+\-])/\1\\\2/g')
+    local version_output=$("$1" --version 2>&1)
+
+    debug "'$1 --version':\n$version_output"
+
+    ver=$(echo "$version_output" | match "^((gcc)|($cmd_regex)) \([^\)]+\) ($version_regex)( [0-9]+)?( \([^\)]+\))*$" 4)
+    (( $? == 0 )) && result=("gcc" "g++" "$ver") && return 0
+
+    ver=$(echo "$version_output" | match "^clang version ($version_regex) \([^\)]+\)( \([^\)]+\))*$" 1)
+    (( $? == 0 )) && result=("clang" "clang++" "$ver") && return 0
+
+    ver=$(echo "$version_output" | match "^((Apple LLVM)|(Apple clang)) version ($version_regex) \([^\)]+\)( \([^\)]+\))*$" 4)
+    (( $? == 0 )) && result=("apple-clang" "apple-clang++" "$ver") && return 0
+
+    return 1
+}
+
+# Check if a C/C++ compiler satisfies IKOS requirements
+#
+# Parameters:
+#   $1: family (gcc, clang, apple-clang)
+#   $2: version
+function compiler_satisfies_requirements() {
+    local family=$1 version=$2
+
+    ([[ "$family" = "gcc" || "$family" = "g++" ]] && version_ge "$version" "$gcc_required_version") ||
+        ([[ "$family" = "clang" || "$family" = "clang++" ]] && version_ge "$version" "$clang_required_version") ||
+        ([[ "$family" = "apple-clang" || "$family" = "apple-clang++" ]] && version_ge "$version" "$apple_clang_required_version")
+}
+
+# Parse and detect the version of cmake, given the command name
+function cmake_parse_version() {
+    local version_output=$("$1" --version 2>&1)
+
+    debug "'$1 --version':\n$version_output"
+
+    echo "$version_output" | match "^cmake version ($version_regex)$" 1
+}
+
+# Parse the output of gcc -v to get the installation prefix
+function gcc_install_prefix() {
+    local output=$("$1" -v 2>&1 | egrep -o -- '--prefix=([^-]|(-[^-]))+ --')
+    echo -n "${output:9:${#output}-12}"
+}
+
+function cc_compile() {
+    if (( verbose >= 1 )); then
+        run_log_debug "$CC" $CPPFLAGS $CFLAGS $LDFLAGS -xc - "$@"
+    else
+        run_log_quiet "$CC" $CPPFLAGS $CFLAGS $LDFLAGS -xc - "$@"
+    fi
+}
+
+function cxx_compile() {
+    if (( verbose >= 1 )); then
+        run_log_debug "$CXX" $CPPFLAGS $CXXFLAGS $LDFLAGS -xc++ - "$@"
+    else
+        run_log_quiet "$CXX" $CPPFLAGS $CXXFLAGS $LDFLAGS -xc++ - "$@"
+    fi
+}
+
+# Compile a simple program using zlib
+function zlib_version_compile() {
+    cc_compile -o "$tests_dir/zlib_version" -lz <<EOF
+        #include <stdio.h>
+        #include <string.h>
+        #include <assert.h>
+        #include <zlib.h>
+
+        int main() {
+            assert(strcmp(ZLIB_VERSION, zlibVersion()) == 0);
+            printf("%s", ZLIB_VERSION);
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of zlib
+function zlib_version() {
+    zlib_version_compile && "$tests_dir/zlib_version"
+}
+
+# Compile a simple program using ncurses
+function ncurses_version_compile() {
+    cc_compile -o "$tests_dir/ncurses_version" -lncurses <<EOF
+        #include <stdio.h>
+        #include <ncurses.h>
+
+        int main() {
+            printf("%s", NCURSES_VERSION);
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of ncurses
+function ncurses_version() {
+    ncurses_version_compile && "$tests_dir/ncurses_version"
+}
+
+# Compile a simple program using libedit
+function libedit_version_compile() {
+    cc_compile -o "$tests_dir/libedit_version" -ledit <<EOF
+        #include <stdio.h>
+        #include <histedit.h>
+
+        int main(int argc, char** argv) {
+            EditLine *el = NULL;
+            el = el_init(*argv, stdin, stdout, stderr);
+
+            printf("%d.%d", LIBEDIT_MAJOR, LIBEDIT_MINOR);
+            return 0;
+        }
+EOF
+}
+
+
+# Detect the version of libedit
+function libedit_version() {
+    libedit_version_compile && "$tests_dir/libedit_version"
+}
+
+# Compile a simple program using gmp
+function gmp_version_compile() {
+    cc_compile -o "$tests_dir/gmp_version" -lgmp <<EOF
+        #include <stdio.h>
+        #include <gmp.h>
+
+        int main() {
+            mpz_t n;
+            mpz_init(n);
+            mpz_clear(n);
+            printf("%d.%d.%d", __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR, __GNU_MP_VERSION_PATCHLEVEL);
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of gmp
+function gmp_version() {
+    gmp_version_compile && "$tests_dir/gmp_version"
+}
+
+# Parse and detect the version of m4, given the command name
+function m4_parse_version() {
+    local version_output=$("$1" --version 2>&1)
+
+    debug "'$1 --version':\n$version_output"
+
+    echo "$version_output" | match "^((GNU M4)|(m4 \(GNU M4\))) ($version_regex)$" 4
+}
+
+# Compile a simple program using sqlite
+function sqlite_version_compile() {
+    cc_compile -o "$tests_dir/sqlite_version" -lsqlite3 <<EOF
+        #include <stdio.h>
+        #include <string.h>
+        #include <assert.h>
+        #include <sqlite3.h>
+
+        int main() {
+            assert(strcmp(SQLITE_VERSION, sqlite3_libversion()) == 0);
+            printf("%s", sqlite3_libversion());
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of sqlite
+function sqlite_version() {
+    sqlite_version_compile && "$tests_dir/sqlite_version"
+}
+
+# Compile a simple program using boost
+function boost_version_compile() {
+    cxx_compile -o "$tests_dir/boost_version" <<EOF
+        #include <iostream>
+        #include <boost/version.hpp>
+
+        int main() {
+            std::cout << (BOOST_VERSION / 100000)
+                << "." << (BOOST_VERSION / 100 % 1000)
+                << "." << (BOOST_VERSION % 100);
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of boost
+function boost_version() {
+    boost_version_compile && "$tests_dir/boost_version"
+}
+
+# Compile a simple program using boost::system
+function boost_system_compile() {
+    cxx_compile -o "$tests_dir/boost_system" -lboost_system <<EOF
+        #include <iostream>
+        #include <boost/system/error_code.hpp>
+
+        int main() {
+            boost::system::error_code e;
+            return 0;
+        }
+EOF
+}
+
+# Check if boost::system is available
+function has_boost_system() {
+    boost_system_compile && "$tests_dir/boost_system"
+}
+
+# Compile a simple program using boost::filesystem
+function boost_filesystem_compile() {
+    cxx_compile -o "$tests_dir/boost_filesystem" -lboost_system -lboost_filesystem <<EOF
+        #include <iostream>
+        #include <boost/filesystem.hpp>
+
+        int main() {
+            boost::filesystem::path p;
+            return 0;
+        }
+EOF
+}
+
+# Check if boost::filesystem is available
+function has_boost_filesystem() {
+    boost_filesystem_compile && "$tests_dir/boost_filesystem"
+}
+
+# Compile a simple program using boost::program_options
+function boost_program_options_compile() {
+    cxx_compile -o "$tests_dir/boost_program_options" -lboost_program_options <<EOF
+        #include <iostream>
+        #include <boost/program_options.hpp>
+
+        int main() {
+            boost::program_options::options_description desc("Allowed options");
+            desc.add_options()
+                ("help", "produce help message")
+                ("compression", boost::program_options::value<int>(), "set compression level");
+            return 0;
+        }
+EOF
+}
+
+# Check if boost::program_options is available
+function has_boost_program_options() {
+    boost_program_options_compile && "$tests_dir/boost_program_options"
+}
+
+# Parse and detect the version of python, given the command name
+function python_parse_version() {
+    local version_output=$("$1" --version 2>&1)
+
+    debug "'$1 --version':\n$version_output"
+
+    echo "$version_output" | match "^Python ($version_regex)$" 1
+}
+
+# Check if a python version satisfies IKOS requirements
+function python_satisfies_requirements() {
+    local version=$1
+
+    ([[ ${version:0:1} = 2 ]] && version_ge "$version" "$python2_required_version") ||
+        ([[ ${version:0:1} = 3 ]] && version_ge "$version" "$python3_required_version")
+}
+
+# Parse and detect the version of llvm-config, given the command name
+function llvm_parse_version() {
+    local version_output=$("$1" --version 2>&1)
+
+    debug "'$1 --version':\n$version_output"
+
+    echo "$version_output" | match "^($version_regex)$" 1
+}
+
+# Parse and detect the version of ikos, given the command name
+function ikos_parse_version() {
+    local version_output=$("$1" --version 2>&1)
+
+    debug "'$1 --version':\n$version_output"
+
+    echo "$version_output" | match "^ikos ($version_regex)(\.r[0-9a-zA-Z\.]+)?$" 1
+}
+
+################
+# Main program #
+################
+
+# Parse options
+explode_args "$@"
+set -- "${ARGS[@]}"
+unset ARGS
+
+while [[ $1 ]]; do
+    case "$1" in
+        -h|--help)    usage; exit 0;;
+        -V|--version) version; exit 0;;
+        -v|--verbose) (( verbose ++ ));;
+        -f|--force)   (( force ++ ));;
+        --no-colors)  use_colors=0;;
+        --no-check)   check=0;;
+        --prefix)     shift; install_dir=$1;;
+        --srcdir)     shift; src_dir=$1;;
+        --builddir)   shift; build_dir=$1;;
+        --jobs)       shift; njobs=$1;;
+        --build-type) shift; build_type=$1;;
+        *)            error "unrecognized option: $1"; short_help; exit 2;;
+    esac
+    shift
+done
+
+# Check if running as root
+if (( ! force && UID == 0 )); then
+    error "this script should NOT run as root"
+    echo "Use --force to ignore this message." >&2
+    exit 1
+fi
+
+# Check options
+if [[ -z "$install_dir" ]]; then
+    error "missing argument --prefix"; short_help; exit 2
+elif [[ -z "$src_dir" ]]; then
+    error "missing argument --srcdir"; short_help; exit 2
+elif [[ -z "$build_dir" ]]; then
+    error "missing argument --builddir"; short_help; exit 2
+elif [[ ! "$njobs" =~ ^[1-9][0-9]*$ ]]; then
+    error "'$njobs' is not a positive number"; short_help; exit 2
+fi
+
+install_dir_orig=$install_dir
+install_dir=$(abs_path "$install_dir")
+src_dir_orig=$src_dir
+src_dir=$(abs_path "$src_dir")
+build_dir_orig=$build_dir
+build_dir=$(abs_path "$build_dir")
+download_dir_orig="$build_dir_orig/downloads"
+download_dir="$build_dir/downloads"
+tests_dir_orig="$build_dir_orig/tests"
+tests_dir="$build_dir/tests"
+log_file_orig="$build_dir_orig/bootstrap.log"
+log_file="$build_dir/bootstrap.log"
+
+# Check that src_dir contains IKOS source code
+if [[ ! -e "$src_dir" ]]; then
+    error "cannot access '$src_dir_orig': No such file or directory"; exit 2
+elif [[ ! -d "$src_dir" ]]; then
+    error "'$src_dir_orig' is not a directory"; exit 2
+elif [[ ! -f "$src_dir/CMakeLists.txt" ]]; then
+    error "'$src_dir_orig' does not contain ikos source code"; exit 2
+fi
+
+# Initialize colors
+init_colors
+
+# Create directories
+mkdir -p "$install_dir" 2>/dev/null || { error "cannot create directory '$install_dir_orig'"; exit 2; }
+mkdir -p "$build_dir" 2>/dev/null || { error "cannot create directory '$build_dir_orig'"; exit 2; }
+mkdir -p "$download_dir" 2>/dev/null || { error "cannot create directory '$download_dir_orig'"; exit 2; }
+mkdir -p "$tests_dir" 2>/dev/null || { error "cannot create directory '$tests_dir_orig'"; exit 2; }
+touch "$log_file" 2>/dev/null || { error "cannot create '$log_file_orig'"; exit 2; }
+
+######################
+# Output and logging #
+######################
+
+function strip_colors() {
+    echo -en "$1" | sed -E 's#'$(echo -en '\x1B')'\[([0-9]{1,3}((;[0-9]{1,3})*)?)?[m|K]##g'
+}
+
+function log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$1] $(strip_colors "$2")" >> "$log_file"
+}
+
+function error() {
+    echo -e "${cbold}${cred}$1${coff}" >&2
+    log error "$1"
+}
+
+function warning() {
+    echo -e "${cbold}${cyellow}==> Warning: $1${coff}"
+    log warning "$1"
+}
+
+function success() {
+    echo -e "${cbold}${cgreen}==> ${coff}${cbold}$1${coff}"
+    log success "$1"
+}
+
+function progress() {
+    echo -e "${cbold}${cblue}==> ${coff}${cbold}$1${coff}"
+    log progress "$1"
+}
+
+function info() {
+    echo -e "$1${coff}"
+    log info "$1"
+}
+
+function debug() {
+    if (( verbose >= 1 )); then
+        echo -e "$1${coff}" >&2
+    fi
+    log debug "$1"
+}
+
+function assert_failed() {
+    error "Assertion failed: $1"; exit 3;
+}
+
+function error_parse_version() {
+    error "Unable to detect the version of '$1'"; exit 5;
+}
+
+function error_patch() {
+    error "Error while patching $1. see $log_file_orig for more details."
+    exit 8
+}
+
+function error_configure() {
+    if (( verbose == 0 )); then
+        error "Error while configuring $1. see $log_file_orig for more details."
+    else
+        error "Error while configuring $1."
+    fi
+    exit 9
+}
+
+function error_make() {
+    if (( verbose == 0 )); then
+        error "Error while building $1. see $log_file_orig for more details."
+    else
+        error "Error while building $1."
+    fi
+    exit 10
+}
+
+function error_check() {
+    if (( verbose == 0 )); then
+        error "Error while testing $1. see $log_file_orig for more details."
+    else
+        error "Error while testing $1."
+    fi
+    exit 11
+}
+
+function error_install() {
+    if (( verbose == 0 )); then
+        error "Error while installing $1. see $log_file_orig for more details."
+    else
+        error "Error while installing $1."
+    fi
+    exit 12
+}
+
+# log everything, display everything
+function run_log_debug() {
+    "$@" 2>&1 | tee -a "$log_file" >&2
+    return ${PIPESTATUS[0]}
+}
+
+# log everything, only display stderr
+function run_log_verbose() {
+    { "$@" >> "$log_file" 2>&3; } 3>&1 | tee -a "$log_file" >&2
+    return ${PIPESTATUS[0]}
+}
+
+# log everything, do not display anything
+function run_log_quiet() {
+    "$@" >> "$log_file" 2>&1
+}
+
+function progress_run() {
+    progress "$*"
+    if (( verbose >= 2 )); then
+        run_log_debug "$@"
+    elif (( verbose == 1 )); then
+        run_log_verbose "$@"
+    else
+        run_log_quiet "$@"
+    fi
+}
+
+# Warning if the installation path contains a whitespace
+if [[ "$install_dir" = *\ * ]]; then
+    warning "The installation path contains a whitespace. The script might fail."
+fi
+
+################################
+# Check required dependencies  #
+################################
+
+progress "Checking required dependencies"
+
+if command_exists cc; then
+    debug "Found cc at $(command -v cc)"
+elif command_exists gcc; then
+    debug "Found gcc at $(command -v gcc)"
+elif command_exists clang; then
+    debug "Found clang at $(command -v clang)"
+else
+    error "Unable to find a C compiler"
+    exit 4
+fi
+
+if command_exists c++; then
+    debug "Found c++ at $(command -v c++)"
+elif command_exists g++; then
+    debug "Found g++ at $(command -v g++)"
+elif command_exists clang++; then
+    debug "Found clang++ at $(command -v clang++)"
+else
+    error "Unable to find a C++ compiler"
+    exit 4
+fi
+
+utils_deps=('uname' 'which' 'rm' 'mv' 'cp' 'ln' 'chmod' \
+            'cat' 'tee' 'find' 'grep' 'egrep' 'sort' \
+            'tar' 'gzip' 'gunzip' 'bzip2' 'bunzip2' 'xz' \
+            'patch' 'make' 'install' 'ar' 'ranlib')
+unset missing_deps
+
+for cmd in "${utils_deps[@]}"; do
+    if command_exists "$cmd"; then
+        debug "Found $cmd at $(command -v "$cmd")"
+    else
+        missing_deps+=("$cmd")
+    fi
+done
+
+if command_exists curl; then
+    debug "Found curl at $(command -v curl)"
+    download_agent='curl -OLfC - --progress-bar --ftp-pasv --retry 3 --retry-delay 3'
+elif command_exists wget; then
+    debug "Found wget at $(command -v wget)"
+    download_agent='wget -c -q --show-progress --tries=3 --waitretry=3'
+else
+    missing_deps+=("curl")
+fi
+
+if (( ${#missing_deps[@]} > 0 )); then
+    error "Missing required utilities: $(join ", " "${missing_deps[@]}")"
+    exit 4
+fi
+
+unset utils_deps missing_deps
+
+success "Found all required utilities"
+
+#############################
+# Compiler and Linker flags #
+#############################
+
+export CPPFLAGS
+export CFLAGS
+export CXXFLAGS
+export LDFLAGS
+export MAKEFLAGS="-j$njobs $MAKEFLAGS"
+
+######################
+# Activation scripts #
+######################
+
+# This scripts create 2 bash scripts that can be source'd to enter an environment:
+# activate-minimal defines the required environment variables to use ikos
+# activate-full defines all environment variables to use any tools built with this script
+
+unset act_min_prepend_path act_full_prepend_path
+unset act_min_prepend_manpath act_full_prepend_manpath
+unset act_min_prepend_infopath act_full_prepend_infopath
+unset act_prepend_include_path
+unset act_prepend_library_path act_prepend_dyn_library_path
+
+function min_prepend_path() {
+    PATH="$1:$PATH"
+    act_min_prepend_path+=("$1")
+    act_full_prepend_path+=("$1")
+}
+
+function full_prepend_path() {
+    PATH="$1:$PATH"
+    act_full_prepend_path+=("$1")
+}
+
+function min_prepend_manpath() {
+    export MANPATH="$1${MANPATH:+:$MANPATH}"
+    act_min_prepend_manpath+=("$1")
+    act_full_prepend_manpath+=("$1")
+}
+
+function full_prepend_manpath() {
+    export MANPATH="$1${MANPATH:+:$MANPATH}"
+    act_full_prepend_manpath+=("$1")
+}
+
+function min_prepend_infopath() {
+    export INFOPATH="$1${INFOPATH:+:$INFOPATH}"
+    act_min_prepend_infopath+=("$1")
+    act_full_prepend_infopath+=("$1")
+}
+
+function full_prepend_infopath() {
+    export INFOPATH="$1${INFOPATH:+:$INFOPATH}"
+    act_full_prepend_infopath+=("$1")
+}
+
+function prepend_include_path() {
+    export CPPFLAGS="-I$1 $CPPFLAGS"
+    act_prepend_include_path+=("$1")
+}
+
+if [[ "$(uname)" = "Darwin" ]]; then
+    function prepend_dyn_library_path() {
+        export DYLD_LIBRARY_PATH="$1${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+        act_prepend_dyn_library_path+=("$1")
+    }
+else
+    function prepend_dyn_library_path() {
+        export LD_LIBRARY_PATH="$1${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        act_prepend_dyn_library_path+=("$1")
+    }
+fi
+
+function prepend_library_path() {
+    export LDFLAGS="-L$1 $LDFLAGS"
+    act_prepend_library_path+=("$1")
+    prepend_dyn_library_path "$1"
+}
+
+function generate_env_path_line() {
+    local var_name=$1; shift
+
+    if (( $# > 0 )); then
+        echo "export ${var_name}=\"$(join ':' "$@")\${${var_name}:+:\$${var_name}}\""
+    fi
+}
+
+function generate_env_flag_line() {
+    local var_name=$1; shift
+    local flag_prefix=$1; shift
+
+    if (( $# > 0 )); then
+        local flag=()
+        for e in "$@"; do
+            flag+=("${flag_prefix}${e}")
+        done
+        echo "export ${var_name}=\"$(join ' ' "${flag[@]}") \$${var_name}\""
+    fi
+}
+
+########################
+# Check C/C++ compiler #
+########################
+
+progress "Checking for a C compiler"
+found_cc=0
+
+for cmd in "$CC" \
+           $(glob_binaries "cc[0-9\.\-]*") \
+           $(glob_binaries "gcc[0-9\.\-]*") \
+           $(glob_binaries "clang[0-9\.\-]*"); do
+    if command_exists "$cmd"; then
+        compiler_parse_version "$cmd" || error_parse_version "$cmd"
+        family=${result[0]}
+        version=${result[2]}
+
+        if compiler_satisfies_requirements "$family" "$version"; then
+            found_cc=1
+            export CC=$(command -v "$cmd")
+            success "Found $(basename "$cmd"): $family $version"
+            break
+        else
+            progress "Found $(basename "$cmd"): $family $version, version too old, skipped"
+        fi
+    fi
+done
+
+progress "Checking for a C++ compiler"
+found_cxx=0
+
+for cmd in "$CXX" \
+           $(glob_binaries "c\+\+[0-9\.\-]*") \
+           $(glob_binaries "g\+\+[0-9\.\-]*") \
+           $(glob_binaries "clang\+\+[0-9\.\-]*"); do
+    if command_exists "$cmd"; then
+        compiler_parse_version "$cmd" || error_parse_version "$cmd"
+        family=${result[1]}
+        version=${result[2]}
+
+        if compiler_satisfies_requirements "$family" "$version"; then
+            found_cxx=1
+            export CXX=$(command -v "$cmd")
+            success "Found $(basename "$cmd"): $family $version"
+            break
+        else
+            progress "Found $(basename "$cmd"): $family $version, version too old, skipped"
+        fi
+    fi
+done
+
+############################
+# Install gcc if necessary #
+############################
+
+if (( ! found_cc || ! found_cxx )); then
+    progress "Could NOT find a C/C++ compiler that supports C++14"
+
+    if [[ -x "$install_dir/gcc-$gcc_install_version/bin/gcc" ]]; then
+        progress "Using already built ${cgreen}gcc $gcc_install_version"
+    else
+        progress "Installing ${cgreen}gcc $gcc_install_version"
+
+        download_extract "ftp://gcc.gnu.org/pub/gcc/releases/gcc-$gcc_install_version/gcc-$gcc_install_version.tar.gz" \
+            "$build_dir/gcc-$gcc_install_version"
+        download_extract "ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-$gcc_gmp_install_version.tar.bz2" \
+            "$build_dir/gcc-$gcc_install_version/gmp"
+        download_extract "ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-$gcc_mpfr_install_version.tar.bz2" \
+            "$build_dir/gcc-$gcc_install_version/mpfr"
+        download_extract "ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-$gcc_mpc_install_version.tar.gz" \
+            "$build_dir/gcc-$gcc_install_version/mpc"
+        download_extract "ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-$gcc_isl_install_version.tar.bz2" \
+            "$build_dir/gcc-$gcc_install_version/isl"
+
+        cd "$build_dir/gcc-$gcc_install_version"
+        mkdir build
+        cd build
+
+        unset CC CXX
+
+        progress_run ../configure \
+            --prefix="$install_dir/gcc-$gcc_install_version" \
+            --enable-languages=c,c++ \
+            --enable-threads=posix \
+            --enable-checking=release \
+            --enable-__cxa_atexit \
+            --disable-werror \
+            --disable-multilib \
+            --with-isl || error_configure gcc
+
+        progress_run make || error_make gcc
+
+        progress_run make install || error_install gcc
+    fi
+
+    export CC="$install_dir/gcc-$gcc_install_version/bin/gcc"
+    export CXX="$install_dir/gcc-$gcc_install_version/bin/g++"
+    full_prepend_path "$install_dir/gcc-$gcc_install_version/bin"
+    full_prepend_manpath "$install_dir/gcc-$gcc_install_version/share/man"
+    full_prepend_infopath "$install_dir/gcc-$gcc_install_version/share/info"
+
+    if [[ -d "$install_dir/gcc-$gcc_install_version/lib64" ]]; then
+        lib_dir="lib64"
+    else
+        lib_dir="lib"
+    fi
+    prepend_dyn_library_path "$install_dir/gcc-$gcc_install_version/$lib_dir"
+
+    (command_exists "$CC" && compiler_parse_version "$CC" &&
+        [[ "${result[0]}" = "gcc" && "${result[2]}" = "$gcc_install_version" ]]) ||
+        assert_failed "$CC is not gcc $gcc_install_version"
+    (command_exists "$CXX" && compiler_parse_version "$CXX" &&
+        [[ "${result[1]}" = "g++" && "${result[2]}" = "$gcc_install_version" ]]) ||
+        assert_failed "$CXX is not g++ $gcc_install_version"
+
+    success "${cgreen}gcc $gcc_install_version${coff}${cbold} successfully installed"
+fi
+
+debug "CC=$CC"
+debug "CXX=$CXX"
+
+###############
+# Check cmake #
+###############
+
+progress "Checking for CMake"
+found_cmake=0
+
+if command_exists cmake; then
+    version=$(cmake_parse_version cmake) || error_parse_version cmake
+
+    if version_ge "$version" "$cmake_required_version"; then
+        found_cmake=1
+        success "Found CMake $version"
+    else
+        progress "Found CMake $version, version too old, skipped"
+    fi
+fi
+
+##############################
+# Install cmake if necessary #
+##############################
+
+if (( ! found_cmake )); then
+    progress "Could NOT find CMake >= $cmake_required_version"
+
+    if [[ -x "$install_dir/cmake-$cmake_install_version/bin/cmake" ]]; then
+        progress "Using already built ${cgreen}cmake $cmake_install_version"
+    else
+        progress "Installing ${cgreen}cmake $cmake_install_version"
+
+        download_extract "https://cmake.org/files/v${cmake_install_version%.*}/cmake-$cmake_install_version.tar.gz" \
+            "$build_dir/cmake-$cmake_install_version"
+
+        cd "$build_dir/cmake-$cmake_install_version"
+
+        progress_run ./configure \
+            --prefix="$install_dir/cmake-$cmake_install_version" \
+            --no-system-libs || error_configure cmake
+
+        progress_run make || error_make cmake
+
+        progress_run make install || error_install cmake
+    fi
+
+    full_prepend_path "$install_dir/cmake-$cmake_install_version/bin"
+
+    (command_exists cmake && version=$(cmake_parse_version cmake) &&
+        [[ "$version" = "$cmake_install_version" ]]) ||
+        assert_failed "cmake is not properly installed"
+
+    success "${cgreen}cmake $cmake_install_version${coff}${cbold} successfully installed"
+fi
+
+##############
+# Check zlib #
+##############
+
+progress "Checking for zlib"
+found_zlib=0
+
+if version=$(zlib_version); then
+    found_zlib=1
+    success "Found zlib $version"
+fi
+
+#############################
+# Install zlib if necessary #
+#############################
+
+if (( ! found_zlib )); then
+    progress "Could NOT find zlib"
+
+    if [[ -f "$install_dir/zlib-$zlib_install_version/include/zlib.h" ]]; then
+        progress "Using already built ${cgreen}zlib $zlib_install_version"
+    else
+        progress "Installing ${cgreen}zlib $zlib_install_version"
+
+        download_extract "http://zlib.net/zlib-$zlib_install_version.tar.gz" \
+            "$build_dir/zlib-$zlib_install_version"
+
+        cd "$build_dir/zlib-$zlib_install_version"
+
+        progress_run ./configure \
+            --prefix="$install_dir/zlib-$zlib_install_version" || error_configure zlib
+
+        progress_run make || error_make zlib
+
+        progress_run make install || error_install zlib
+    fi
+
+    full_prepend_manpath "$install_dir/zlib-$zlib_install_version/share/man"
+    prepend_include_path "$install_dir/zlib-$zlib_install_version/include"
+    prepend_library_path "$install_dir/zlib-$zlib_install_version/lib"
+
+    (version=$(zlib_version) && [[ "$version" = "$zlib_install_version" ]]) ||
+        assert_failed "zlib is not properly installed"
+
+    success "${cgreen}zlib $zlib_install_version${coff}${cbold} successfully installed"
+fi
+
+#################
+# Check ncurses #
+#################
+
+progress "Checking for ncurses"
+found_ncurses=0
+
+if version=$(ncurses_version); then
+    found_ncurses=1
+    success "Found ncurses $version"
+fi
+
+################################
+# Install ncurses if necessary #
+################################
+
+if (( ! found_ncurses )); then
+    progress "Could NOT find ncurses"
+
+    if [[ -f "$install_dir/ncurses-$ncurses_install_version/include/ncursesw/curses.h" ]]; then
+        progress "Using already built ${cgreen}ncurses $ncurses_install_version"
+    else
+        progress "Installing ${cgreen}ncurses $ncurses_install_version"
+
+        download_extract "https://ftp.gnu.org/gnu/ncurses/ncurses-6.0.tar.gz" \
+            "$build_dir/ncurses-$ncurses_install_version"
+
+        cd "$build_dir/ncurses-$ncurses_install_version"
+
+        cat > mklib_gen-fix-mawk.patch <<'EOF'
+--- ncurses/base/MKlib_gen.sh
++++ ncurses/base/MKlib_gen.sh
+@@ -72,7 +72,7 @@
+ # appears in gcc 5.0 and (with modification) in 5.1, making it necessary to
+ # determine if we are using gcc, and if so, what version because the proposed
+ # solution uses a nonstandard option.
+-PRG=`echo "$1" | $AWK '{ sub(/^[[:space:]]*/,""); sub(/[[:space:]].*$/, ""); print; }' || exit 0`
++PRG=`echo "$1" | $AWK '{ sub(/^[   ]*/,""); sub(/[     ].*$/, ""); print; }' || exit 0`
+ FSF=`"$PRG" --version 2>/dev/null || exit 0 | fgrep "Free Software Foundation" | head -n 1`
+ ALL=`"$PRG" -dumpversion 2>/dev/null || exit 0`
+ ONE=`echo "$ALL" | sed -e 's/\..*$//'`
+EOF
+
+        progress "Applying patch mklib_gen-fix-mawk.patch"
+        run_log_quiet patch -p0 < mklib_gen-fix-mawk.patch || error_patch ncurses
+
+        progress_run ./configure \
+            --prefix="$install_dir/ncurses-$ncurses_install_version" \
+            --disable-pc-files \
+            --enable-sigwinch \
+            --enable-symlinks \
+            --enable-widec \
+            --with-manpage-format=normal \
+            --with-shared \
+            --with-gpm=no || error_configure ncurses
+
+        progress_run make || error_make ncurses
+
+        progress_run make install || error_install ncurses
+
+        # Add symlinks
+        # This is based on ncurses formula for homebrew:
+        # https://github.com/Homebrew/homebrew-dupes/blob/master/ncurses.rb
+        cd "$install_dir/ncurses-$ncurses_install_version"
+
+        for name in form menu ncurses panel; do
+            if [[ "$(uname)" = "Darwin" ]]; then
+                ln -s "lib${name}w.${ncurses_install_version%.*}.dylib" \
+                    "lib/lib${name}.dylib"
+                ln -s "lib${name}w.${ncurses_install_version%.*}.dylib" \
+                    "lib/lib${name}.${ncurses_install_version%.*}.dylib"
+            else
+                ln -s "lib${name}w.so.${ncurses_install_version}" \
+                    "lib/lib${name}.so"
+                ln -s "lib${name}w.so.${ncurses_install_version}" \
+                    "lib/lib${name}.so.${ncurses_install_version%.*}"
+                ln -s "lib${name}w.so.${ncurses_install_version}" \
+                    "lib/lib${name}.so.${ncurses_install_version}"
+            fi
+            ln -s "lib${name}w.a" "lib/lib${name}.a"
+            ln -s "lib${name}w_g.a" "lib/lib${name}_g.a"
+        done
+
+        ln -s "libncurses++w.a" "lib/libncurses++.a"
+        ln -s "libncurses.a" "lib/libcurses.a"
+        if [[ "$(uname)" = "Darwin" ]]; then
+            ln -s "libncurses.dylib" "lib/libcurses.dylib"
+        else
+            ln -s "libncurses.so" "lib/libcurses.so"
+            ln -s "libncurses.so" "lib/libtinfo.so"
+        fi
+
+        for name in curses.h form.h ncurses.h term.h termcap.h; do
+            ln -s "ncursesw/${name}" "include/${name}"
+        done
+    fi
+
+    full_prepend_path "$install_dir/ncurses-$ncurses_install_version/bin"
+    full_prepend_manpath "$install_dir/ncurses-$ncurses_install_version/share/man"
+    prepend_include_path "$install_dir/ncurses-$ncurses_install_version/include"
+    prepend_library_path "$install_dir/ncurses-$ncurses_install_version/lib"
+
+    (version=$(ncurses_version) && [[ "$version" = "$ncurses_install_version" ]]) ||
+        assert_failed "ncurses is not properly installed"
+
+    success "${cgreen}ncurses $ncurses_install_version${coff}${cbold} successfully installed"
+fi
+
+#################
+# Check libedit #
+#################
+
+progress "Checking for libedit"
+found_libedit=0
+
+if version=$(libedit_version); then
+    found_libedit=1
+    success "Found libedit $version"
+fi
+
+################################
+# Install libedit if necessary #
+################################
+
+if (( ! found_libedit )); then
+    progress "Could NOT find libedit"
+
+    if [[ -f "$install_dir/libedit-$libedit_install_version/include/histedit.h" ]]; then
+        progress "Using already built ${cgreen}libedit $libedit_install_version"
+    else
+        progress "Installing ${cgreen}libedit $libedit_install_version"
+
+        download_extract "http://thrysoee.dk/editline/libedit-20170329-3.1.tar.gz" \
+            "$build_dir/libedit-$libedit_install_version"
+
+        cd "$build_dir/libedit-$libedit_install_version"
+
+        progress_run ./configure \
+            --prefix="$install_dir/libedit-$libedit_install_version" \
+            --disable-dependency-tracking \
+            --disable-silent-rules || error_configure libedit
+
+        progress_run make || error_make libedit
+
+        progress_run make install || error_install libedit
+    fi
+
+    full_prepend_manpath "$install_dir/libedit-$libedit_install_version/share/man"
+    prepend_include_path "$install_dir/libedit-$libedit_install_version/include"
+    prepend_library_path "$install_dir/libedit-$libedit_install_version/lib"
+
+    (version=$(libedit_version) && [[ "$version" = "$libedit_install_version" ]]) ||
+        assert_failed "libedit is not properly installed"
+
+    success "${cgreen}libedit $libedit_install_version${coff}${cbold} successfully installed"
+fi
+
+#############
+# Check gmp #
+#############
+
+progress "Checking for GMP"
+found_gmp=0
+
+if version=$(gmp_version); then
+    if version_ge "$version" "$gmp_required_version"; then
+        found_gmp=1
+        success "Found GMP $version"
+    else
+        progress "Found GMP $version, version too old, skipped"
+    fi
+fi
+
+############################
+# Install gmp if necessary #
+############################
+
+if (( ! found_gmp )); then
+    progress "Could NOT find GMP >= $gmp_required_version"
+
+    if [[ -f "$install_dir/gmp-$gmp_install_version/include/gmp.h" ]]; then
+        progress "Using already built ${cgreen}gmp $gmp_install_version"
+    else
+        ################################
+        # Check gmp build dependencies #
+        ################################
+
+        progress "Checking build dependencies for gmp: m4"
+        found_m4=0
+
+        if command_exists m4; then
+            version=$(m4_parse_version m4) || error_parse_version m4
+            success "Found m4 $version"
+            found_m4=1
+        fi
+
+        if (( ! found_m4 )); then
+            progress "Could NOT find m4"
+
+            if [[ -x "$install_dir/m4-$m4_install_version/bin/m4" ]]; then
+                progress "Using already built ${cgreen}m4 $m4_install_version"
+            else
+                progress "Installing build dependencies for gmp: ${cgreen}m4 $m4_install_version"
+
+                download_extract "https://ftp.gnu.org/gnu/m4/m4-$m4_install_version.tar.xz" \
+                    "$build_dir/m4-$m4_install_version"
+                
+                cd "$build_dir/m4-$m4_install_version"
+
+                progress_run ./configure \
+                    --prefix="$install_dir/m4-$m4_install_version" \
+                    --disable-dependency-tracking || error_configure m4
+
+                progress_run make || error_make m4
+
+                progress_run make install || error_install m4
+            fi
+
+            full_prepend_path "$install_dir/m4-$m4_install_version/bin"
+            full_prepend_manpath "$install_dir/m4-$m4_install_version/share/man"
+            full_prepend_infopath "$install_dir/m4-$m4_install_version/share/info"
+
+            (command_exists m4 && version=$(m4_parse_version m4) &&
+                [[ "$version" = "$m4_install_version" ]]) ||
+                assert_failed "m4 is not properly installed"
+
+            success "${cgreen}m4 $m4_install_version${coff}${cbold} successfully installed"
+        fi
+
+        #############
+        # Build gmp #
+        #############
+
+        progress "Installing ${cgreen}gmp $gmp_install_version"
+
+        download_extract "https://gmplib.org/download/gmp/gmp-$gmp_install_version.tar.xz" \
+            "$build_dir/gmp-$gmp_install_version"
+
+        cd "$build_dir/gmp-$gmp_install_version"
+
+        progress_run ./configure \
+            --prefix="$install_dir/gmp-$gmp_install_version" \
+            --enable-cxx || error_configure gmp
+
+        progress_run make || error_make gmp
+
+        progress_run make install || error_install gmp
+    fi
+
+    custom_gmp_root="$install_dir/gmp-$gmp_install_version"
+    full_prepend_infopath "$install_dir/gmp-$gmp_install_version/share/info"
+    prepend_include_path "$install_dir/gmp-$gmp_install_version/include"
+    prepend_library_path "$install_dir/gmp-$gmp_install_version/lib"
+
+    (version=$(gmp_version) && [[ "$version" = "$gmp_install_version" ]]) ||
+        assert_failed "gmp is not properly installed"
+
+    success "${cgreen}gmp $gmp_install_version${coff}${cbold} successfully installed"
+fi
+
+################
+# Check sqlite #
+################
+
+progress "Checking for SQLite"
+found_sqlite=0
+
+if version=$(sqlite_version); then
+    if version_ge "$version" "$sqlite_required_version"; then
+        found_sqlite=1
+        success "Found SQLite $version"
+    else
+        progress "Found SQLite $version, version too old, skipped"
+    fi
+fi
+
+###############################
+# Install sqlite if necessary #
+###############################
+
+if (( ! found_sqlite )); then
+    progress "Could NOT find SQLite >= $sqlite_required_version"
+
+    if [[ -f "$install_dir/sqlite-$sqlite_install_version/include/sqlite3.h" ]]; then
+        progress "Using already built ${cgreen}sqlite $sqlite_install_version"
+    else
+        progress "Installing ${cgreen}sqlite $sqlite_install_version"
+
+        download_extract "https://sqlite.org/2017/sqlite-autoconf-3200100.tar.gz" \
+            "$build_dir/sqlite-$sqlite_install_version"
+
+        cd "$build_dir/sqlite-$sqlite_install_version"
+
+        CPPFLAGS="-DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_MAX_VARIABLE_NUMBER=250000 $CPPFLAGS" \
+        progress_run ./configure \
+            --prefix="$install_dir/sqlite-$sqlite_install_version" \
+            --disable-dependency-tracking \
+            --enable-dynamic-extensions || error_configure sqlite
+
+        progress_run make || error_make sqlite
+
+        progress_run make install || error_install sqlite
+    fi
+
+    custom_sqlite_root="$install_dir/sqlite-$sqlite_install_version"
+    min_prepend_path "$install_dir/sqlite-$sqlite_install_version/bin"
+    min_prepend_manpath "$install_dir/sqlite-$sqlite_install_version/share/man"
+    prepend_include_path "$install_dir/sqlite-$sqlite_install_version/include"
+    prepend_library_path "$install_dir/sqlite-$sqlite_install_version/lib"
+
+    (version=$(sqlite_version) && [[ "$version" = "$sqlite_install_version" ]]) ||
+        assert_failed "sqlite is not properly installed"
+
+    success "${cgreen}sqlite $sqlite_install_version${coff}${cbold} successfully installed"
+fi
+
+###############
+# Check boost #
+###############
+
+progress "Checking for Boost"
+found_boost=0
+
+if version=$(boost_version); then
+    if version_ge "$version" "$boost_required_version"; then
+        success "Found Boost $version"
+
+        if ! has_boost_system; then
+            progress "Could NOT find boost_system"
+        elif ! has_boost_filesystem; then
+            progress "Could NOT find boost_filesystem"
+        elif ! has_boost_program_options; then
+            progress "Could NOT find boost_program_options"
+        else
+            success "Found Boost $version with libraries: system, filesystem, program_options"
+            found_boost=1
+        fi
+    else
+        progress "Found Boost $version, version too old, skipped"
+    fi
+fi
+
+##############################
+# Install boost if necessary #
+##############################
+
+if (( ! found_boost )); then
+    progress "Could NOT find Boost >= $boost_required_version with libraries: system, filesystem, program_options"
+
+    if [[ -d "$install_dir/boost-$boost_install_version/include/boost" ]]; then
+        progress "Using already built ${cgreen}boost $boost_install_version"
+    else
+        progress "Installing ${cgreen}boost $boost_install_version"
+
+        download_extract "https://downloads.sourceforge.net/project/boost/boost/$boost_install_version/boost_${boost_install_version//./_}.tar.bz2" \
+            "$build_dir/boost-$boost_install_version"
+
+        cd "$build_dir/boost-$boost_install_version"
+
+        progress_run ./bootstrap.sh \
+            --prefix="$install_dir/boost-$boost_install_version" \
+            --with-libraries=program_options \
+            --with-libraries=filesystem || error_configure boost
+
+        progress_run ./b2 || error_make boost
+
+        progress_run ./b2 install || error_install boost
+    fi
+
+    custom_boost_root="$install_dir/boost-$boost_install_version"
+    prepend_include_path "$install_dir/boost-$boost_install_version/include"
+    prepend_library_path "$install_dir/boost-$boost_install_version/lib"
+
+    (version=$(boost_version) && [[ "$version" = "$boost_install_version" ]]) ||
+        assert_failed "boost is not properly installed"
+
+    success "${cgreen}boost $boost_install_version${coff}${cbold} successfully installed"
+fi
+
+################
+# Check python #
+################
+
+progress "Checking for Python"
+found_python=0
+
+# Check the default python
+if command_exists python; then
+    version=$(python_parse_version python) || error_parse_version python
+
+    if python_satisfies_requirements "$version"; then
+        found_python=1
+        success "Found Python $version"
+    else
+        progress "Found Python $version, version too old, skipped"
+    fi
+fi
+
+# Check all available versions of python
+if (( ! found_python )); then
+    for cmd in $(glob_binaries "python[0-9\.\-][0-9\.\-]*"); do
+        if command_exists "$cmd"; then
+            version=$(python_parse_version "$cmd") || error_parse_version python
+
+            if python_satisfies_requirements "$version"; then
+                found_python=1
+                success "Found Python $version"
+
+                # Create symbolic links
+                progress "Using symbolic links to make it the default python"
+
+                if [[ ! -d "$install_dir/python-$version" ]]; then
+                    mkdir -p "$install_dir/python-$version/bin"
+                    cd "$install_dir/python-$version/bin"
+
+                    ln -s "$(command -v "$cmd")" python
+                    ln -s "$(command -v "$cmd")-config" python-config
+                fi
+
+                min_prepend_path "$install_dir/python-$version/bin"
+                break
+            else
+                progress "Found Python $version, version too old, skipped"
+            fi
+        fi
+    done
+fi
+
+###############################
+# Install python if necessary #
+###############################
+
+if (( ! found_python )); then
+    progress "Could NOT find Python >= $python2_required_version or >= $python3_required_version"
+
+    if [[ -x "$install_dir/python-$python_install_version/bin/python" ]]; then
+        progress "Using already built ${cgreen}python $python_install_version"
+    else
+        progress "Installing ${cgreen}python $python_install_version"
+
+        download_extract "https://www.python.org/ftp/python/$python_install_version/Python-$python_install_version.tar.xz" \
+            "$build_dir/python-$python_install_version"
+
+        cd "$build_dir/python-$python_install_version"
+
+        if [[ -n "$custom_sqlite_root" ]]; then
+            # We need to patch python to build _sqlite
+
+            cat > setup-fix-custom-sqlite.patch <<EOF
+--- setup.py
++++ setup.py
+@@ -1117,13 +1117,7 @@
+         # We hunt for #define SQLITE_VERSION "n.n.n"
+         # We need to find >= sqlite version 3.0.8
+         sqlite_incdir = sqlite_libdir = None
+-        sqlite_inc_paths = [ '/usr/include',
+-                             '/usr/include/sqlite',
+-                             '/usr/include/sqlite3',
+-                             '/usr/local/include',
+-                             '/usr/local/include/sqlite',
+-                             '/usr/local/include/sqlite3',
+-                           ]
++        sqlite_inc_paths = [ '$custom_sqlite_root/include' ]
+         if cross_compiling:
+             sqlite_inc_paths = []
+         MIN_SQLITE_VERSION_NUMBER = (3, 0, 8)
+EOF
+
+            progress "Applying patch setup-fix-custom-sqlite.patch"
+            run_log_quiet patch -p0 < setup-fix-custom-sqlite.patch || error_patch python
+        fi
+
+        progress_run ./configure \
+            --prefix="$install_dir/python-$python_install_version" || error_configure python
+
+        progress_run make || error_make python
+
+        progress_run make install || error_install python
+    fi
+
+    min_prepend_path "$install_dir/python-$python_install_version/bin"
+    min_prepend_manpath "$install_dir/python-$python_install_version/share/man"
+    prepend_include_path "$install_dir/python-$python_install_version/include"
+    prepend_library_path "$install_dir/python-$python_install_version/lib"
+
+    success "${cgreen}python $python_install_version${coff}${cbold} successfully installed"
+fi
+
+(command_exists python && version=$(python_parse_version python) &&
+    python_satisfies_requirements "$version") ||
+    assert_failed "python is not properly installed"
+
+##############
+# Check llvm #
+##############
+
+progress "Checking for LLVM"
+found_llvm=0
+
+# Check the default llvm
+if command_exists llvm-config; then
+    version=$(llvm_parse_version llvm-config) || error_parse_version llvm
+
+    if major_version_eq "$version" "$llvm_required_version"; then
+        found_llvm=1
+        success "Found LLVM $version"
+    else
+        progress "Found LLVM $version, skipped"
+    fi
+fi
+
+if (( ! found_llvm )); then
+    for cmd in $(glob_binaries "llvm\-config[0-9\.\-][0-9\.\-]*"); do
+        if command_exists "$cmd"; then
+            version=$(llvm_parse_version "$cmd") || error_parse_version llvm
+
+            if major_version_eq "$version" "$llvm_required_version"; then
+                found_llvm=1
+                success "Found LLVM $version"
+
+                # Create symbolic links
+                progress "Using symbolic links to make it the default llvm"
+
+                if [[ ! -d "$install_dir/llvm-$version" ]]; then
+                    mkdir -p "$install_dir/llvm-$version/bin"
+
+                    bin_dir=$("$cmd" --bindir)
+                    cd "$bin_dir"
+
+                    if [[ -f "$cmd" ]]; then # binaries are suffixed
+                        suffix=${cmd:11}
+                    elif [[ -f llvm-config ]]; then # binaries are not suffixed
+                        suffix=''
+                    else
+                        assert_failed "could not find $cmd or llvm-config in $bin_dir"
+                    fi
+
+                    for bin in clang*$suffix lli*$suffix llvm*$suffix \
+                               "FileCheck$suffix" "bugpoint$suffix" "c-index-test$suffix" \
+                               "count$suffix" "llc$suffix" "macho-dump$suffix" "not$suffix" \
+                               "obj2yaml$suffix" "opt$suffix" "pp-trace$suffix" \
+                               "scan-build$suffix" "scan-view$suffix" \
+                               "verify-uselistorder$suffix" "yaml2obj$suffix"; do
+                        if [[ -f "$bin" ]]; then
+                            ln -s "$bin_dir/$bin" "$install_dir/llvm-$version/bin"
+                        fi
+                    done
+                fi
+
+                min_prepend_path "$install_dir/llvm-$version/bin"
+                break
+            else
+                progress "Found LLVM $version, skipped"
+            fi
+        fi
+    done
+fi
+
+#############################
+# Install llvm if necessary #
+#############################
+
+if (( ! found_llvm )); then
+    progress "Could NOT find LLVM $llvm_required_version"
+
+    if [[ -x "$install_dir/llvm-$llvm_install_version/bin/llvm-config" ]]; then
+        progress "Using already built ${cgreen}llvm $llvm_install_version"
+    else
+        progress "Installing ${cgreen}llvm $llvm_install_version"
+
+        download_extract "http://llvm.org/releases/$llvm_install_version/llvm-$llvm_install_version.src.tar.xz" \
+            "$build_dir/llvm-$llvm_install_version"
+        download_extract "http://llvm.org/releases/$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
+            "$build_dir/llvm-$llvm_install_version/tools/clang"
+        download_extract "http://llvm.org/releases/$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
+            "$build_dir/llvm-$llvm_install_version/projects/compiler-rt"
+
+        cd "$build_dir/llvm-$llvm_install_version"
+
+        mkdir build
+        cd build
+
+        # Try to guess the target
+        arch=$(uname -m)
+
+        if [[ "$arch" = x86* || "$arch" = "i386" || "$arch" = "i686" ]]; then
+            llvm_targets="X86"
+        elif [[ "$arch" = arm* ]]; then
+            llvm_targets="ARM"
+        else
+            llvm_targets="all" # default to all
+        fi
+
+        cmake_extra_args=()
+
+        # If the compiler is gcc, tell clang to use the same SEARCH_PATH
+        compiler_parse_version "$CXX" || error_parse_version "$CXX"
+        if [[ "${result[1]}" = "g++" ]]; then
+            gcc_install_dir=$(gcc_install_prefix "$CXX")
+            if [[ -d "$gcc_install_dir" ]]; then
+                cmake_extra_args+=("-DGCC_INSTALL_PREFIX=$gcc_install_dir")
+            fi
+        fi
+
+        progress_run cmake \
+            -DCMAKE_INSTALL_PREFIX="$install_dir/llvm-$llvm_install_version" \
+            -DLLVM_TARGETS_TO_BUILD="$llvm_targets" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DLLVM_ENABLE_RTTI=ON \
+            -DLLVM_ENABLE_EH=ON \
+            -DLLVM_ENABLE_CXX1Y=ON \
+            "${cmake_extra_args[@]}" \
+            .. || error_configure llvm
+
+        progress_run make || error_make llvm
+
+        progress_run make install || error_install llvm
+    fi
+
+    min_prepend_path "$install_dir/llvm-$llvm_install_version/bin"
+    prepend_include_path "$install_dir/llvm-$llvm_install_version/include"
+    prepend_library_path "$install_dir/llvm-$llvm_install_version/lib"
+
+    success "${cgreen}llvm $llvm_install_version${coff}${cbold} successfully installed"
+fi
+
+(command_exists llvm-config && version=$(llvm_parse_version llvm-config) &&
+    major_version_eq "$version" "$llvm_required_version") ||
+    assert_failed "llvm is not properly installed"
+
+################
+# Install IKOS #
+################
+
+if [[ -x "$install_dir/ikos-$ikos_version/bin/ikos" ]]; then
+    progress "Using already built ${cgreen}ikos $ikos_version"
+else
+    progress "Installing ${cgreen}ikos $ikos_version"
+
+    rm -rf "$build_dir/ikos-$ikos_version"
+    mkdir -p "$build_dir/ikos-$ikos_version"
+    cd "$build_dir/ikos-$ikos_version"
+
+    cmake_extra_args=()
+    if [[ -n "$custom_gmp_root" ]]; then
+        cmake_extra_args+=("-DGMP_ROOT=$custom_gmp_root")
+    fi
+    if [[ -n "$custom_sqlite_root" ]]; then
+        cmake_extra_args+=("-DSQLITE3_ROOT=$custom_sqlite_root")
+    fi
+    if [[ -n "$custom_boost_root" ]]; then
+        cmake_extra_args+=("-DCUSTOM_BOOST_ROOT=$custom_boost_root")
+    fi
+
+    progress_run cmake \
+        -DCMAKE_INSTALL_PREFIX="$install_dir/ikos-$ikos_version" \
+        -DCMAKE_BUILD_TYPE="$build_type" \
+        "${cmake_extra_args[@]}" \
+        "$src_dir" || error_configure ikos
+
+    progress_run make || error_make ikos
+
+    progress_run make verifier-passes || error_make ikos
+
+    progress_run make install || error_install ikos
+fi
+
+min_prepend_path "$install_dir/ikos-$ikos_version/bin"
+prepend_include_path "$install_dir/ikos-$ikos_version/include"
+prepend_library_path "$install_dir/ikos-$ikos_version/lib"
+
+(command_exists ikos && version=$(ikos_parse_version ikos) &&
+    [[ "$version" = "$ikos_version" ]]) ||
+    assert_failed "ikos is not properly installed"
+
+##################
+# Run ikos tests #
+##################
+
+if (( check )); then
+    if [[ ! -d "$build_dir/ikos-$ikos_version" ]]; then
+        progress "Could NOT run ikos tests because the build directory is missing"
+    else
+        cd "$build_dir/ikos-$ikos_version"
+
+        progress_run make test || error_check ikos
+
+        success "IKOS tests passed successfully"
+    fi
+fi
+
+###################################
+# Generate the Activation scripts #
+###################################
+
+# activate-minimal
+echo '#!/bin/bash' > "$install_dir/activate-minimal"
+generate_env_path_line PATH "${act_min_prepend_path[@]}" >> "$install_dir/activate-minimal"
+generate_env_path_line MANPATH "${act_min_prepend_manpath[@]}" >> "$install_dir/activate-minimal"
+generate_env_path_line INFOPATH "${act_min_prepend_infopath[@]}" >> "$install_dir/activate-minimal"
+if [[ "$(uname)" = "Darwin" ]]; then
+    generate_env_path_line DYLD_LIBRARY_PATH "${act_prepend_dyn_library_path[@]}" >> "$install_dir/activate-minimal"
+else
+    generate_env_path_line LD_LIBRARY_PATH "${act_prepend_dyn_library_path[@]}" >> "$install_dir/activate-minimal"
+fi
+
+# activate-full
+echo '#!/bin/bash' > "$install_dir/activate-full"
+generate_env_path_line PATH "${act_full_prepend_path[@]}" >> "$install_dir/activate-full"
+generate_env_path_line MANPATH "${act_full_prepend_manpath[@]}" >> "$install_dir/activate-full"
+generate_env_path_line INFOPATH "${act_full_prepend_infopath[@]}" >> "$install_dir/activate-full"
+if [[ "$(uname)" = "Darwin" ]]; then
+    generate_env_path_line DYLD_LIBRARY_PATH "${act_prepend_dyn_library_path[@]}" >> "$install_dir/activate-full"
+else
+    generate_env_path_line LD_LIBRARY_PATH "${act_prepend_dyn_library_path[@]}" >> "$install_dir/activate-full"
+fi
+echo "export CC=\"$CC\"" >> "$install_dir/activate-full"
+echo "export CXX=\"$CXX\"" >> "$install_dir/activate-full"
+generate_env_flag_line CPPFLAGS "-I" "${act_prepend_include_path[@]}" >> "$install_dir/activate-full"
+generate_env_flag_line LDFLAGS "-L" "${act_prepend_library_path[@]}" >> "$install_dir/activate-full"
+if (( njobs > 1 )); then
+    echo "export MAKEFLAGS=\"-j$njobs \$MAKEFLAGS\"" >> "$install_dir/activate-full"
+fi
+
+###########
+# Success #
+###########
+
+if command_exists source; then
+    source_cmd="source"
+else
+    source_cmd="."
+fi
+
+success "IKOS has been successfully installed"
+info "To use ikos, first run:"
+info "$ $source_cmd $install_dir_orig/activate-minimal"
+
+if (( ! check )); then
+    info ""
+    info "To run the tests:"
+    info "$ $source_cmd $install_dir_orig/activate-full"
+    info "$ cd $build_dir_orig/ikos-$ikos_version"
+    info "$ make test"
+fi

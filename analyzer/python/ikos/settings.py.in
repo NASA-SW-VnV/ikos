@@ -1,0 +1,210 @@
+################################################################################
+#
+# Configuration file for ikos
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2017 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+import argparse
+import os
+import os.path
+import sys
+
+PACKAGE_VERSION = '@PACKAGE_VERSION@'
+
+GIT_COUNT_COMMITS = '@GIT_COUNT_COMMITS@'
+
+GIT_HEAD_HASH = '@GIT_HEAD_HASH@'
+
+BUILD_MODE = '@CMAKE_BUILD_TYPE@'
+
+BUILT_FROM_GIT = (GIT_COUNT_COMMITS and GIT_HEAD_HASH)
+
+if BUILT_FROM_GIT:
+    VERSION = '%s.r%s.%s' % (PACKAGE_VERSION, GIT_COUNT_COMMITS, GIT_HEAD_HASH)
+else:
+    VERSION = PACKAGE_VERSION
+
+PREFIX = '@CMAKE_INSTALL_PREFIX@'
+
+SRC_ROOT = '@SRC_DIR@'
+
+BIN_DIR = os.path.join(PREFIX, 'bin')
+
+INCLUDE_DIR = os.path.join(PREFIX, 'include')
+
+LIB_DIR = os.path.join(PREFIX, 'lib')
+
+LLVM_CONFIG = '@LLVM_CONFIG_EXECUTABLE@'
+
+LLVM_VERSION = '@LLVM_VERSION@'
+
+LLVM_PREFIX = '@LLVM_ROOT@'
+
+LLVM_BIN_DIR = '@LLVM_TOOLS_BINARY_DIR@'
+
+LLVM_INCLUDE_DIR = '@LLVM_INCLUDE_DIR@'
+
+LLVM_LIB_DIR = '@LLVM_LIBRARY_DIR@'
+
+ABSTRACT_DOMAIN = '@ABSTRACT_DOMAIN@'
+
+
+####################
+# Helper functions #
+####################
+
+
+def path_ext(path):
+    ''' Return the filename extension.
+
+    >>> path_ext('test.c')
+    '.c'
+    >>> path_ext('/tmp/file.my.ext')
+    '.ext'
+    '''
+    return os.path.splitext(path)[1]
+
+
+def is_executable(path):
+    return path and os.path.isfile(path) and os.access(path, os.X_OK)
+
+
+def is_shared_lib(path):
+    return path and os.path.isfile(path) and path_ext(path) in ('.dylib', '.so')
+
+
+def shared_lib(base):
+    if sys.platform.startswith('darwin'):
+        ext = '.dylib'
+    else:
+        ext = '.so'
+    return base + ext
+
+
+def clang():
+    path = os.path.join(LLVM_BIN_DIR, 'clang')
+    assert is_executable(path), 'could not find clang, see TROUBLESHOOTING.md'
+    return path
+
+
+def opt():
+    path = os.path.join(LLVM_BIN_DIR, 'opt')
+    assert is_executable(path), 'could not find opt, see TROUBLESHOOTING.md'
+    return path
+
+
+def arbos():
+    path = os.path.join(BIN_DIR, 'arbos')
+    assert is_executable(path), 'could not find arbos, see TROUBLESHOOTING.md'
+    return path
+
+
+def ikos_pp():
+    path = os.path.join(BIN_DIR, 'ikos-pp')
+    assert is_executable(path), 'could not find ikos-pp, see TROUBLESHOOTING.md'
+    return path
+
+
+def ikos_view():
+    assert False, 'could not find ikos-view, see TROUBLESHOOTING.md'
+
+
+def llvm_to_ar():
+    path = os.path.join(LIB_DIR, shared_lib('llvm-to-ar'))
+    assert is_shared_lib(path), 'could not find llvm-to-ar, see TROUBLESHOOTING.md'
+    return path
+
+
+def arbos_pass(name):
+    path = os.path.join(LIB_DIR, 'lib%s' % shared_lib(name))
+    assert is_shared_lib(path), 'could not find %s, see TROUBLESHOOTING.md' % os.path.basename(path)
+    return path
+
+
+########################
+# main for ikos-config #
+########################
+
+
+def printf(fmt, *args, **kwargs):
+    file = kwargs.pop('file', sys.stdout)
+    file.write(fmt % args if args else fmt)
+    file.flush()
+
+
+def main(argv):
+    usage = '%(prog)s [options]'
+    parser = argparse.ArgumentParser(usage=usage)
+
+    def print_action(var):
+        class action(argparse.Action):
+            def __call__(self, parser, namespace, values, option_string=None):
+                printf('%s\n', var)
+
+        return action
+
+    parser.add_argument('--version', action=print_action(VERSION), nargs=0,
+                        help='print ikos version')
+    parser.add_argument('--build-mode', action=print_action(BUILD_MODE), nargs=0,
+                        help='print build mode of ikos (e.g, Debug or Release)')
+    parser.add_argument('--prefix', action=print_action(PREFIX), nargs=0,
+                        help='print the installation prefix')
+    parser.add_argument('--src-root', action=print_action(SRC_ROOT), nargs=0,
+                        help='print the source root ikos was built from')
+    parser.add_argument('--bindir', action=print_action(BIN_DIR), nargs=0,
+                        help='directory containing ikos executables')
+    parser.add_argument('--includedir', action=print_action(INCLUDE_DIR), nargs=0,
+                        help='directory containing ikos headers')
+    parser.add_argument('--libdir', action=print_action(LIB_DIR), nargs=0,
+                        help='directory containing ikos libraries')
+    parser.add_argument('--abstract-domain', action=print_action(ABSTRACT_DOMAIN), nargs=0,
+                        help='print the numerical abstract domain')
+    parser.add_argument('--llvm-config', action=print_action(LLVM_CONFIG), nargs=0,
+                        help='print the path to llvm-config')
+    parser.add_argument('--llvm-version', action=print_action(LLVM_VERSION), nargs=0,
+                        help='print LLVM version')
+    parser.add_argument('--llvm-prefix', action=print_action(LLVM_PREFIX), nargs=0,
+                        help='print the LLVM installation prefix')
+    parser.add_argument('--llvm-bindir', action=print_action(LLVM_BIN_DIR), nargs=0,
+                        help='directory containing LLVM executables')
+    parser.add_argument('--llvm-includedir', action=print_action(LLVM_INCLUDE_DIR), nargs=0,
+                        help='directory containing LLVM headers')
+    parser.add_argument('--llvm-libdir', action=print_action(LLVM_LIB_DIR), nargs=0,
+                        help='directory containing LLVM libraries')
+
+    parser.parse_args(argv[1:])

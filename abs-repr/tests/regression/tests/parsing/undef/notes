@@ -1,0 +1,13 @@
+A local variable of type int* that is uninitialized used to be translated as follows:
+
+($def (!3 ($type ($ptr ($ty (!4)) ($realsize (#64)) ($storesize (#8))))))
+($def (!4 ($type ($int ($realsize (#32)) ($storesize (#4))))))
+($abstractvariable ($var ($name ($__v:1)) ($ty (!3))) ($debug ($srcloc ($line (#5)) ($file (!10)))))
+($load ($lhs ($var ($name ($tmp)) ($ty (!4)))) ($rhs ($var ($name ($__v:1)) ($ty (!3)))) ($debug ($srcloc ($line (#5)) ($file (!10)))))
+
+Now we want to differentiate a havoc instruction vs. an undefined constant, we tranlate an uninitialized var to undefined as provided by the frondend:
+
+($def (!3 ($type ($ptr ($ty (!4)) ($realsize (#64)) ($storesize (#8))))))
+($def (!4 ($type ($int ($realsize (#32)) ($storesize (#4))))))
+($load ($lhs ($var ($name ($tmp)) ($ty (!4)))) ($rhs ($cst ($undefined ($ty (!3))))) ($debug ($srcloc ($line (#5)) ($file (!10)))))
+
