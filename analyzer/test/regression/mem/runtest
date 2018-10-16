@@ -1,0 +1,143 @@
+#!/usr/bin/env python
+################################################################################
+# Script for testing analyses with memory level of precision.
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2018 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+import os.path
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+sys.dont_write_bytecode = True
+from libruntest import TestManager, Test, parse_args
+
+if __name__ == '__main__':
+    parse_args(description='Regression tests for analyses with memory level of precision')
+
+    t = TestManager(root=current_dir)
+    t.add(Test('test-0-safe.c', 'test-0-safe.c', 'prover', 'safe'))
+    t.add(Test('test-0-unsafe.c', 'test-0-unsafe.c', 'prover', 'error'))
+    t.add(Test('test-1-safe.c', 'test-1-safe.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('test-1-unsafe.c', 'test-1-unsafe.c', 'prover', 'error', expected='unsafe'))
+    t.add(Test('test-2-safe.c', 'test-2-safe.c', 'boa', 'safe'))
+    t.add(Test('test-2-unsafe.c', 'test-2-unsafe.c', 'boa', 'error',
+               line_checks=[(29, 'error')]))
+    t.add(Test('test-3-safe.c', 'test-3-safe.c', 'boa', 'safe'))
+    t.add(Test('test-3-unsafe.c', 'test-3-unsafe.c', 'boa', 'error',
+               line_checks=[(16, 'error')]))
+    t.add(Test('test-4-safe.c', 'test-4-safe.c', 'prover', 'safe'))
+    t.add(Test('test-5-safe.c', 'test-5-safe.c', 'prover', 'safe'))
+    t.add(Test('test-5-unsafe.c', 'test-5-unsafe.c', 'prover', 'error'))
+    t.add(Test('test-6-safe.c', 'test-6-safe.c', 'prover', 'safe'))
+    t.add(Test('test-7-safe.c', 'test-7-safe.c', 'prover', 'safe'))
+    t.add(Test('test-7-unsafe.c', 'test-7-unsafe.c', 'prover', 'error',
+               line_checks=[(17, 'ok'), (18, 'ok'), (41, 'ok'), (42, 'error')]))
+    t.add(Test('test-8-safe.c', 'test-8-safe.c', 'prover', 'safe'))
+    t.add(Test('test-9-safe.c', 'test-9-safe.c', 'prover', 'safe'))
+    t.add(Test('test-9-unsafe.c', 'test-9-unsafe.c', 'prover', 'error',
+               line_checks=[(23, 'error'), (25, 'error'), (31, 'ok')]))
+    t.add(Test('test-10-safe.c', 'test-10-safe.c', 'prover', 'safe'))
+    t.add(Test('test-10-unsafe.c', 'test-10-unsafe.c', 'prover', 'error'))
+    t.add(Test('test-11.c', 'test-11.c', 'prover', 'safe'))
+    t.add(Test('test-12.c', 'test-12.c', 'prover', 'safe'))
+    t.add(Test('test-14a.c', 'test-14a.c', 'prover', 'safe'))
+    t.add(Test('test-14b.c', 'test-14b.c', 'prover', 'safe'))
+    t.add(Test('test-14c.c', 'test-14c.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('test-15-safe.c', 'test-15-safe.c', 'prover', 'safe'))
+    t.add(Test('test-15-unsafe.c', 'test-15-unsafe.c', 'prover', 'unsafe'))
+    t.add(Test('test-16.c', 'test-16.c', 'prover', 'safe'))
+    t.add(Test('test-17.c', 'test-17.c', 'prover', 'safe'))
+    t.add(Test('test-20.c', 'test-20.c', 'prover', 'safe'))
+    t.add(Test('test-21.c', 'test-21.c', 'boa', 'safe', expected='unsafe',
+               line_checks=[(15, 'ok'),
+                            (16, 'ok'),
+                            (19, 'ok'),
+                            (20, 'ok', 'warning')]))
+    t.add(Test('test-22.c', 'test-22.c', 'prover', 'safe'))
+    t.add(Test('test-23.c', 'test-23.c', 'prover', 'safe'))
+    t.add(Test('test-24.c', 'test-24.c', 'prover', 'safe'))
+    t.add(Test('test-25.c', 'test-25.c', 'prover', 'safe'))
+    t.add(Test('test-26a-safe.c', 'test-26a-safe.c', 'prover', 'safe'))
+    t.add(Test('test-26a-unsafe.c', 'test-26a-unsafe.c', 'prover', 'unsafe',
+               line_checks=[(28, 'warning'), (29, 'warning')]))
+    t.add(Test('test-26b-safe.c', 'test-26b-safe.c', 'prover', 'safe'))
+    t.add(Test('test-26b-unsafe.c', 'test-26b-unsafe.c', 'prover', 'unsafe',
+               line_checks=[(34, 'warning'), (35, 'warning')]))
+    t.add(Test('test-26c.c', 'test-26c.c', 'prover', 'safe'))
+    t.add(Test('test-28-safe.c', 'test-28-safe.c', 'prover', 'safe', expected='unsafe',
+               line_checks=[(43, 'ok', 'warning'),
+                            (48, 'ok'),
+                            (50, 'ok'),
+                            (52, 'ok'),
+                            (53, 'ok'),
+                            (54, 'ok'),
+                            (67, 'ok')]))
+    t.add(Test('test-28-unsafe.c', 'test-28-unsafe.c', 'prover', 'error',
+               line_checks=[(28, 'ok'),
+                            (30, 'ok'),
+                            (32, 'ok'),
+                            (33, 'ok'),
+                            (34, 'error')]))
+    t.add(Test('test-29-safe.c', 'test-29-safe.c', 'prover', 'safe'))
+    t.add(Test('test-29-unsafe-1.c', 'test-29-unsafe-1.c', 'prover', 'error',
+               expected='unsafe'))
+    t.add(Test('test-29-unsafe-2.c', 'test-29-unsafe-2.c', 'prover', 'error',
+               expected='unsafe'))
+    t.add(Test('test-30-safe.c', 'test-30-safe.c (interval)',
+               'prover', 'safe', expected='unsafe',
+               line_checks=[(12, 'ok', 'warning'), (13, 'ok', 'warning')],
+               domain='interval'))
+    t.add(Test('test-30-safe.c', 'test-30-safe.c (gauge-interval-congruence)',
+               'prover', 'safe',
+               line_checks=[(12, 'ok'), (13, 'ok')],
+               domain='gauge-interval-congruence'))
+    t.add(Test('test-30-unsafe.c', 'test-30-unsafe.c (interval)',
+               'prover', 'unsafe',
+               line_checks=[(14, 'ok', 'warning'), (15, 'ok', 'warning'), (16, 'warning')],
+               domain='interval'))
+    t.add(Test('test-30-unsafe.c', 'test-30-unsafe.c (gauge-interval-congruence)',
+               'prover', 'unsafe',
+               line_checks=[(14, 'ok'), (15, 'ok'), (16, 'warning')],
+               domain='gauge-interval-congruence'))
+    t.add(Test('test-31-safe.c', 'test-31-safe.c', 'prover', 'safe'))
+    t.add(Test('mine-lctes06.c', 'mine-lctes06.c', 'prover', 'safe',
+               expected='unsafe', line_checks=[(29, 'ok'), (30, 'ok', 'warning')]))
+    t.add(Test('astree.c', 'astree.c', 'prover', 'safe',
+               expected='unsafe', line_checks=[(19, 'ok', 'warning'), (24, 'ok', 'warning')]))
+    t.run()

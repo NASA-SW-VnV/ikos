@@ -1,0 +1,151 @@
+#!/bin/bash
+################################################################################
+# Script for testing the translation from LLVM to AR on SV-COMP Benchmarks
+#
+# See https://github.com/sosy-lab/sv-benchmarks
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2018 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+
+progname=$(basename "$0")
+ikos_pp="ikos-pp"
+opt_level="basic"
+ikos_import="ikos-import"
+ikos_import_opts="-format=no"
+cc="clang"
+cflags="-c -emit-llvm -D_FORTIFY_SOURCE=0 -g -I. -Imodel"
+
+# Parse arguments
+while [[ ! -z $1 ]]
+do
+    if [[ "$1" = "-h" ]] || [[ "$1" = "-help" ]]; then
+        echo "usage: $progname [-h]"
+        echo "  [--ikos-pp IKOS-PP]"
+        echo "  [--opt-level LEVEL]"
+        echo "  [--ikos-import IKOS-IMPORT]"
+        echo "  [--allow-dbg-mismatch]"
+        echo ""
+        echo "Run ikos-import over sv-comp benchmarks"
+        exit 1
+    elif [[ "$1" = "--ikos-pp" ]]; then
+        shift
+        ikos_pp=$1
+    elif [[ "$1" = "--opt-level" ]]; then
+        shift
+        opt_level=$1
+    elif [[ "$1" = "--ikos-import" ]]; then
+        shift
+        ikos_import=$1
+    elif [[ "$1" = "--allow-dbg-mismatch" ]]; then
+        ikos_import_opts="$ikos_import_opts -allow-dbg-mismatch"
+    else
+        echo "error: $progname: unknown command line argument '$1'" >&2
+        exit 1
+    fi
+    shift
+done
+
+# Check ikos-pp
+if ! command -v "$ikos_pp" >/dev/null 2>&1; then
+    echo "error: $progname: could not find $ikos_pp" >&2
+    exit 2
+fi
+
+# Check ikos-import
+if ! command -v "$ikos_import" >/dev/null 2>&1; then
+    echo "error: $progname: could not find $ikos_import" >&2
+    exit 2
+fi
+
+# Check cc
+if ! command -v "$cc" >/dev/null 2>&1; then
+    echo "error: $progname: could not find $cc" >&2
+    exit 2
+fi
+
+# Clone sv-benchmarks
+if [[ ! -d sv-benchmarks ]]
+then
+    echo "# Cloning sv-benchmarks"
+    git clone "https://github.com/sosy-lab/sv-benchmarks.git" sv-benchmarks
+    cd sv-benchmarks
+else
+    echo "# Updating sv-benchmarks"
+    cd sv-benchmarks
+    git pull --rebase
+fi
+
+# Run the tests
+echo "# Running ikos-import over sv-comp with ikos-pp -opt=$opt_level"
+
+function test_dir {
+    local dir=$1
+
+    pushd "$dir" >/dev/null
+    echo "## $dir"
+
+    # Find architecture in Makefile
+    if grep -E "CC.Arch\s*:=\s*64" Makefile >/dev/null 2>/dev/null; then
+        arch=64
+    else
+        arch=32
+    fi
+
+    for filename in *.c
+    do
+        if [[ "$filename" = "*.cp" ]]; then
+            continue
+        fi
+
+        echo "### $PWD/$filename"
+        "$cc" $cflags -m$arch "$filename" -o "$filename.bc" >/dev/null 2>/dev/null || { continue; }
+        "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc" || { continue; }
+        "$ikos_import" $ikos_import_opts "$filename.pp.bc"
+    done
+
+    popd
+}
+
+for dir in $(find . -type d)
+do
+    if [[ "$dir" = *"/.git"* ]] || [[ "$dir" = *"/eca-rers2012"* ]] || [[ "$dir" = *"/psyco"* ]]; then
+        continue
+    fi
+
+    test_dir "$dir"
+done

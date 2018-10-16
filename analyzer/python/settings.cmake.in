@@ -8,7 +8,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2017 United States Government as represented by the
+# Copyright (c) 2017-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -40,6 +40,10 @@
 #
 ################################################################################
 
+if (POLICY CMP0025)
+  cmake_policy(SET CMP0012 NEW)
+endif()
+
 set(SRC_DIR "@CMAKE_CURRENT_SOURCE_DIR@")
 set(BIN_DIR "@CMAKE_CURRENT_BINARY_DIR@")
 set(PACKAGE_VERSION "@PACKAGE_VERSION@")
@@ -51,25 +55,50 @@ set(LLVM_ROOT "@LLVM_ROOT@")
 set(LLVM_INCLUDE_DIR "@LLVM_INCLUDE_DIR@")
 set(LLVM_TOOLS_BINARY_DIR "@LLVM_TOOLS_BINARY_DIR@")
 set(LLVM_LIBRARY_DIR "@LLVM_LIBRARY_DIR@")
-set(ABSTRACT_DOMAIN "@ABSTRACT_DOMAIN@")
+if (@APRON_FOUND@)
+  set(HAS_APRON "True")
+else()
+  set(HAS_APRON "False")
+endif()
 
-# number of commits in the current branch
-execute_process(
-  COMMAND git rev-list --count HEAD
-  WORKING_DIRECTORY "${SRC_DIR}"
-  OUTPUT_VARIABLE GIT_COUNT_COMMITS
-  ERROR_QUIET
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+if (@APPEND_GIT_VERSION@)
+  # number of commits in the current branch
+  execute_process(
+    COMMAND git rev-list --count HEAD
+    WORKING_DIRECTORY "${SRC_DIR}"
+    OUTPUT_VARIABLE GIT_COUNT_COMMITS
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
-# hash of the latest commit
-execute_process(
-  COMMAND git rev-parse --short HEAD
-  WORKING_DIRECTORY "${SRC_DIR}"
-  OUTPUT_VARIABLE GIT_HEAD_HASH
-  ERROR_QUIET
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+  # hash of the latest commit
+  execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY "${SRC_DIR}"
+    OUTPUT_VARIABLE GIT_HEAD_HASH
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # git status
+  execute_process(
+    COMMAND git status --porcelain
+    WORKING_DIRECTORY "${SRC_DIR}"
+    OUTPUT_VARIABLE GIT_HEAD_STATUS
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  if (GIT_HEAD_STATUS STREQUAL "")
+    set(GIT_HEAD_DIRTY "False")
+  else()
+    set(GIT_HEAD_DIRTY "True")
+  endif()
+else()
+  set(GIT_COUNT_COMMITS "")
+  set(GIT_HEAD_HASH "")
+  set(GIT_HEAD_DIRTY "False")
+endif()
 
 # remove to force update
 file(REMOVE "${BIN_DIR}/python/ikos/settings/__init__.py")

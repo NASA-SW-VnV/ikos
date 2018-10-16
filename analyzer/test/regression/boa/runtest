@@ -1,0 +1,206 @@
+#!/usr/bin/env python
+################################################################################
+# Script for testing the buffer overflow analysis
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2018 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+import os.path
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+sys.dont_write_bytecode = True
+from libruntest import TestManager, Test, parse_args
+
+if __name__ == '__main__':
+    parse_args(description='Regression tests for the buffer overflow analysis')
+
+    t = TestManager(root=current_dir)
+    t.add(Test('test-1.c', 'test-1.c', 'boa', 'safe'))
+    t.add(Test('test-1-unsafe.c', 'test-1-unsafe.c', 'boa', 'error',
+               line_checks=[(18, 'error')]))
+    t.add(Test('test-2.c', 'test-2.c', 'boa', 'safe'))
+    t.add(Test('test-2-unsafe.c', 'test-2-unsafe.c', 'boa', 'error',
+               line_checks=[(10, 'error')]))
+    t.add(Test('test-3.c', 'test-3.c', 'boa', 'safe'))
+    t.add(Test('test-3-unsafe.c', 'test-3-unsafe.c', 'boa', 'error',
+               line_checks=[(14, 'error'), (16, 'error')]))
+    t.add(Test('test-4.c', 'test-4.c', 'boa', 'safe'))
+    t.add(Test('test-4-unsafe-1.c', 'test-4-unsafe-1.c', 'boa', 'error',
+               line_checks=[(13, 'error')]))
+    t.add(Test('test-4-unsafe-2.c', 'test-4-unsafe-2.c', 'boa', 'error',
+               line_checks=[(15, 'error')]))
+    t.add(Test('test-5.c', 'test-5.c', 'boa', 'safe'))
+    t.add(Test('test-5-unsafe-1.c', 'test-5-unsafe-1.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(12, 'error', 'warning')]))
+    t.add(Test('test-5-unsafe-2.c', 'test-5-unsafe-2.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(12, 'error', 'warning')]))
+    t.add(Test('test-5-unsafe-3.c', 'test-5-unsafe-3.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(12, 'error', 'warning')]))
+    t.add(Test('test-5-unsafe-4.c', 'test-5-unsafe-4.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(12, 'error', 'warning')]))
+    t.add(Test('test-6.c', 'test-6.c', 'boa', 'safe'))
+    t.add(Test('test-6-unsafe.c', 'test-6-unsafe.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(20, 'error', 'warning')]))
+    t.add(Test('test-7.c', 'test-7.c', 'boa', 'safe'))
+    t.add(Test('test-7-unsafe.c', 'test-7-unsafe.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(30, 'error', 'warning')]))
+    t.add(Test('test-8.c', 'test-8.c', 'boa', 'safe'))
+    t.add(Test('test-8-unsafe.c', 'test-8-unsafe.c', 'boa', 'error',
+               line_checks=[(20, 'error')]))
+    t.add(Test('test-9a.c', 'test-9a.c', 'boa', 'safe'))
+    t.add(Test('test-9a-unsafe.c', 'test-9a-unsafe.c', 'boa', 'error',
+               line_checks=[(12, 'error')]))
+    t.add(Test('test-9b.c', 'test-9b.c', 'boa', 'safe'))
+    t.add(Test('test-9b-unsafe.c', 'test-9b-unsafe.c', 'boa', 'error',
+               line_checks=[(13, 'error')]))
+    t.add(Test('test-10.c', 'test-10.c (intraprocedural)', 'boa', 'unsafe', procedural='intra'))
+    t.add(Test('test-10.c', 'test-10.c (interprocedural)', 'boa', 'safe', procedural='inter'))
+    t.add(Test('test-10-unsafe.c', 'test-10-unsafe.c', 'boa', 'error',
+               line_checks=[(18, 'error')]))
+    t.add(Test('test-11.c', 'test-11.c (intraprocedural)', 'boa', 'unsafe', procedural='intra'))
+    t.add(Test('test-11.c', 'test-11.c (interprocedural)', 'boa', 'safe', procedural='inter'))
+    t.add(Test('test-11-unsafe.c', 'test-11-unsafe.c', 'boa', 'error',
+               line_checks=[(24, 'error')]))
+    t.add(Test('test-12-unsafe.c', 'test-12-unsafe.c', 'boa', 'error',
+               line_checks=[(39, 'error'), (52, 'error')]))
+    t.add(Test('test-13.c', 'test-13.c', 'boa', 'safe', ))
+    t.add(Test('test-14.c', 'test-14.c', 'boa', 'safe',
+               expected='unsafe', line_checks=[(9, 'ok', 'warning')]))
+    t.add(Test('test-15.c', 'test-15.c (interval)', 'boa', 'safe',
+               expected='error', line_checks=[(13, 'unreachable', 'error')],
+               domain='interval'))
+    t.add(Test('test-15.c', 'test-15.c (interval-congruence)', 'boa', 'safe',
+               line_checks=[(13, 'unreachable')],
+               domain='interval-congruence'))
+    t.add(Test('test-16.c', 'test-16.c', 'boa', 'safe'))
+    t.add(Test('test-17.c', 'test-17.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-17-simpler.c', 'test-17-simpler.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-18.c', 'test-18.c', 'boa', 'safe'))
+    t.add(Test('test-18-unsafe.c', 'test-18-unsafe.c', 'boa', 'error',
+               line_checks=[(21, 'error')]))
+    t.add(Test('test-19a.c', 'test-19a.c (interval)', 'boa', 'safe',
+               expected='unsafe',
+               domain='interval'))
+    t.add(Test('test-19a.c', 'test-19a.c (gauge-interval-congruence)', 'boa', 'safe',
+               expected='unsafe',
+               domain='gauge-interval-congruence'))
+    t.add(Test('test-19b.c', 'test-19b.c (interval)', 'boa', 'safe',
+               expected='unsafe',
+               domain='interval'))
+    t.add(Test('test-19b.c', 'test-19b.c (gauge-interval-congruence)', 'boa', 'safe',
+               domain='gauge-interval-congruence'))
+    t.add(Test('test-20.c', 'test-20.c', 'boa', 'safe', expected='unsafe',
+               line_checks=[(16, 'ok', 'warning'),
+                            (20, 'ok', 'warning'),
+                            (23, 'ok', 'warning')]))
+    t.add(Test('test-21.c', 'test-21.c', 'boa', 'safe'))
+    t.add(Test('test-22-safe.c', 'test-22-safe.c', 'boa', 'safe'))
+    t.add(Test('test-22-unsafe.c', 'test-22-unsafe.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(16, 'error', 'warning')]))
+    t.add(Test('test-23-safe.c', 'test-23-safe.c', 'boa', 'safe'))
+    t.add(Test('test-23-unsafe-1.c', 'test-23-unsafe-1.c', 'boa', 'error',
+               line_checks=[(18, 'error')]))
+    t.add(Test('test-23-unsafe-2.c', 'test-23-unsafe-2.c', 'boa', 'error',
+               line_checks=[(22, 'error')]))
+    t.add(Test('test-23-unsafe-3.c', 'test-23-unsafe-3.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(8, 'error', 'warning')]))
+    t.add(Test('test-24-safe.c', 'test-24-safe.c', 'boa', 'safe'))
+    t.add(Test('test-25.c', 'test-25.c (interval)', 'boa', 'safe'))
+    t.add(Test('test-25.c', 'test-25.c (dbm)', 'boa', 'safe', domain='dbm'))
+    t.add(Test('test-26-volatile-safe.c', 'test-26-volatile-safe.c', 'boa', 'safe'))
+    t.add(Test('test-26-volatile-unsafe.c', 'test-26-volatile-unsafe.c', 'boa', 'unsafe'))
+    t.add(Test('test-27.c', 'test-27.c', 'boa', 'safe'))
+    t.add(Test('test-27.c', 'test-27.c (no simplify upcast comparison)', 'boa', 'safe',
+               options=['--no-simplify-upcast-comparison'],
+               line_checks=[(13, 'ok'), (21, 'ok', 'warning'), (29, 'ok'), (37, 'ok', 'warning'), (45, 'ok')],
+               expected='unsafe'))
+    t.add(Test('test-27.c', 'test-27.c (no fixpoint profiles)', 'boa', 'safe',
+               options=['--no-fixpoint-profiles'],
+               line_checks=[(13, 'ok'), (21, 'ok'), (29, 'ok', 'warning'), (37, 'ok', 'warning'), (45, 'ok', 'warning')],
+               expected='unsafe'))
+    t.add(Test('test-28.c', 'test-28.c (hardware addresses)', 'boa', 'safe', options=['--hardware-addresses=0x40-0x45']))
+    t.add(Test('test-28.c', 'test-28.c (hardware addresses)', 'boa', 'error', options=['--hardware-addresses=0x41-0x42']))
+    t.add(Test('test-28.c', 'test-28.c (hardware addresses)', 'boa', 'error', options=['--hardware-addresses=0x40-0x42']))
+    t.add(Test('test-29.c', 'test-29.c (hardware addresses)', 'boa', 'unsafe', options=['--hardware-addresses=0x40-0x55']))
+    t.add(Test('test-30-use-after-free.c', 'test-30-use-after-free.c', 'boa', 'error'))
+    t.add(Test('test-31-use-after-free.c', 'test-31-use-after-free.c', 'boa', 'unsafe'))
+    t.add(Test('test-32-use-after-return.c', 'test-32-use-after-return.c', 'boa', 'error'))
+    t.add(Test('test-33.c', 'test-33.c', 'boa', 'safe'))
+    t.add(Test('test-34.c', 'test-34.c', 'boa', 'safe'))
+    t.add(Test('test-35.c', 'test-35.c', 'boa', 'safe'))
+    t.add(Test('test-36.c', 'test-36.c', 'boa', 'safe'))
+    t.add(Test('test-37.c', 'test-37.c', 'boa', 'safe'))
+    t.add(Test('test-38-argv.c', 'test-38-argv.c', 'boa', 'error', options=['--argc=4'],
+               line_checks=[(7, 'ok'), (8, 'ok'), (9, 'ok'), (10, 'error')]))
+    t.add(Test('test-39.c', 'test-39.c', 'boa', 'safe'))
+    t.add(Test('test-40.c', 'test-40.c', 'boa', 'safe'))
+    t.add(Test('test-41.c', 'test-41.c', 'boa', 'safe'))
+    t.add(Test('test-42.c', 'test-42.c', 'boa', 'safe'))
+    t.add(Test('test-43.c', 'test-43.c', 'boa', 'safe',
+               line_checks=[(19, 'unreachable'), (21, 'unreachable')]))
+    t.add(Test('test-44.c', 'test-44.c', 'boa', 'safe'))
+    t.add(Test('test-44-unsafe.c', 'test-44-unsafe.c', 'boa', 'unsafe'))
+    t.add(Test('test-45.c', 'test-45.c', 'boa', 'safe'))
+    t.add(Test('test-45-unsafe.c', 'test-45-unsafe.c', 'boa', 'error',
+               line_checks=[(7, 'ok'), (15, 'error'), (16, 'error')]))
+    t.add(Test('test-46.c', 'test-46.c', 'boa', 'safe'))
+    t.add(Test('test-46-unsafe.c', 'test-46-unsafe.c', 'boa', 'error',
+               line_checks=[(11, 'error')]))
+    t.add(Test('test-47.cpp', 'test-47.cpp', 'boa', 'safe'))
+    t.add(Test('test-47-unsafe.cpp', 'test-47-unsafe.cpp', 'boa', 'unsafe',
+               line_checks=[(25, 'warning')]))
+    t.add(Test('test-48.c', 'test-48.c', 'boa', 'safe'))
+    t.add(Test('test-48-unsafe-1.c', 'test-48-unsafe-1.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(7, 'error', 'warning')]))
+    t.add(Test('test-48-unsafe-2.c', 'test-48-unsafe-2.c', 'boa', 'error'))
+    t.add(Test('test-49.c', 'test-49.c', 'boa', 'safe'))
+    t.add(Test('test-49-unsafe-1.c', 'test-49-unsafe-1.c', 'boa', 'error'))
+    t.add(Test('test-49-unsafe-2.c', 'test-49-unsafe-2.c', 'boa', 'error',
+               expected='unsafe', line_checks=[(7, 'error', 'warning')]))
+    t.add(Test('test-50.c', 'test-50.c', 'boa', 'safe'))
+    t.add(Test('test-50-unsafe.c', 'test-50-unsafe.c', 'boa', 'error'))
+    t.add(Test('test-51.c', 'test-51.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-51-unsafe.c', 'test-51-unsafe.c', 'boa', 'unsafe',
+               line_checks=[(14, 'warning'),
+                            (18, 'warning'),
+                            (23, 'warning'),
+                            (27, 'warning')]))
+    t.add(Test('test-52.c', 'test-52.c', 'boa', 'error'))
+    t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe'))
+    t.run()

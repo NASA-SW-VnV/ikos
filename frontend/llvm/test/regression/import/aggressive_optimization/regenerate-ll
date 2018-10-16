@@ -1,0 +1,48 @@
+#!/bin/bash
+# Use this script to regenerate all the .ll files from the .c and .cpp files
+
+clang="clang"
+ikos_pp="ikos-pp"
+opt="opt"
+opt_level="aggressive"
+cflags="-c -emit-llvm -g -D_FORTIFY_SOURCE=0 -Wall"
+cxxflags="$cflags -std=c++14"
+
+set -e
+
+function run {
+    echo "#" $@
+    $@
+}
+
+for filename in *.c
+do
+    echo "[*] $filename ..."
+    filename_ll="${filename%.c}.ll"
+
+    if [[ -f "$filename_ll" ]]; then
+        echo "$filename_ll already exists, skipping"
+        continue
+    fi
+
+    run "$clang" $cflags "$filename" -o "$filename.bc"
+    run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
+    run "$opt" -S "$filename.pp.bc" -o "$filename_ll"
+done
+
+for filename in *.cpp
+do
+    echo "[*] $filename ..."
+    filename_ll="${filename%.cpp}.ll"
+
+    if [[ -f "$filename_ll" ]]; then
+        echo "$filename_ll already exists, skipping"
+        continue
+    fi
+
+    run "$clang" $cxxflags "$filename" -o "$filename.bc"
+    run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
+    run "$opt" -S "$filename.pp.bc" -o "$filename_ll"
+done
+
+rm -f *.bc

@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+################################################################################
+# Script for testing the uninitialized variable analysis
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2018 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+import os.path
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+sys.dont_write_bytecode = True
+from libruntest import TestManager, Test, parse_args
+
+if __name__ == '__main__':
+    parse_args(description='Regression tests for the uninitialized variable analysis')
+
+    t = TestManager(root=current_dir)
+    t.add(Test('test-1-safe.c', 'test-1-safe.c', 'uva', 'safe'))
+    t.add(Test('test-1-error.c', 'test-1-error.c', 'uva', 'error', expected='unsafe')),
+    t.add(Test('test-2-safe.c', 'test-2-safe.c', 'uva', 'safe'))
+    t.add(Test('test-2-error-1.c', 'test-2-error-1.c', 'uva', 'error', expected='unsafe'))
+    t.add(Test('test-2-error-2.c', 'test-2-error-2.c', 'uva', 'error', expected='safe'))
+    t.add(Test('test-3-safe.c', 'test-3-safe.c', 'uva', 'safe', expected='unsafe'))
+    t.add(Test('test-3-error.c', 'test-3-error.c', 'uva', 'error', expected='unsafe'))
+    t.add(Test('test-4-error.c', 'test-4-error.c', 'uva', 'error', expected='unsafe',
+               line_checks=[(5, 'error', 'warning'),
+                            (6, 'error', 'warning'),
+                            (11, 'error', 'warning'),
+                            (19, 'error', 'warning')]))
+    t.add(Test('test-7-safe.c', 'test-7-safe.c', 'uva', 'safe'))
+    t.add(Test('test-8-safe.c', 'test-8-safe.c', 'uva', 'safe'))
+    t.add(Test('test-8-warning.c', 'test-8-warning.c', 'uva', 'unsafe', expected='safe'))
+    t.add(Test('test-10-safe.c', 'test-10-safe.c', 'uva', 'safe'))
+    t.add(Test('test-11-safe.c', 'test-11-safe.c', 'uva', 'safe'))
+    t.add(Test('test-12-safe.c', 'test-12-safe.c', 'uva', 'safe'))
+    t.add(Test('test-13-safe.c', 'test-13-safe.c', 'uva', 'safe'))
+    t.add(Test('test-13-error.c', 'test-13-error.c', 'uva', 'error', expected='unsafe'))
+    t.add(Test('test-14-safe.c', 'test-14-safe.c', 'uva', 'safe'))
+    t.add(Test('test-15-error.c', 'test-15-error.c', 'uva', 'error',
+               line_checks=[(2, 'error')]))
+    t.add(Test('test-16-error.c', 'test-16-error.c', 'uva', 'error',
+               line_checks=[(2, 'error')]))
+    t.add(Test('test-17-error.c', 'test-17-error.c', 'uva', 'error',
+               line_checks=[(5, 'error')]))
+    t.add(Test('test-18-error.c', 'test-18-error.c', 'uva', 'error',
+               line_checks=[(5, 'error')]))
+    t.add(Test('test-19-error.c', 'test-19-error.c', 'uva', 'error',
+               line_checks=[(4, 'error')]))
+    t.add(Test('test-20-safe.c', 'test-20-safe.c', 'uva', 'safe', expected='unsafe'))
+    t.add(Test('test-20-safe.c', 'test-20-safe.c', 'uva', 'safe', opt_level='aggressive'))
+    t.add(Test('test-21-safe.cpp', 'test-21-safe.cpp', 'uva', 'safe'))
+    #t.add(Test('test-21-safe.cpp', 'test-21-safe.cpp', 'uva', 'safe', opt_level='aggressive'))
+    t.run()

@@ -6,7 +6,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2017 United States Government as represented by the
+# Copyright (c) 2011-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -40,15 +40,19 @@
 
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
+if (POLICY CMP0025)
+  cmake_policy(SET CMP0025 NEW) # recognize Apple Clang
+endif()
+
 project(ikos)
-set(PACKAGE_VERSION "1.3")
+set(PACKAGE_VERSION "2.0")
 
 #
 # Build settings
 #
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-  message (FATAL_ERROR
+  message(FATAL_ERROR
     "In-source builds are not allowed. Please clean your source tree and try again.")
 endif()
 
@@ -61,35 +65,87 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
 
-# Do not build anything when running make install
-set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-
 # Add path for custom modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Generate compile_commands.json, used by clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+
+# Options to enable sanitizers
+option(USE_ASAN "Enable Address Sanitizer" OFF)
+option(USE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
+option(USE_MSAN "Enable Memory Sanitizer" OFF)
+option(USE_TSAN "Enable Thread Sanitizer" OFF)
+
+if (USE_ASAN)
+  message(STATUS "Using Address Sanitizer, expect slow down in the analysis.")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize-address-use-after-scope")
+endif()
+
+if (USE_UBSAN)
+  message(STATUS "Using Undefined Behavior Sanitizer, expect slow down in the analysis.")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined,integer")
+endif()
+
+if (USE_MSAN)
+  message(STATUS "Using Memory Sanitizer, expect slow down in the analysis.")
+  message(WARNING "Memory Sanitizer is supported on a few platforms only, see clang documentation for more details")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory")
+endif()
+
+if (USE_TSAN)
+  message(STATUS "Using Thread Sanitizer, expect slow down in the analysis.")
+  message(WARNING "Thread Sanitizer is supported on a few platforms only, see clang documentation for more details")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
+endif()
+
+if ((USE_ASAN AND USE_MSAN) OR (USE_ASAN AND USE_TSAN) OR (USE_MSAN AND USE_TSAN))
+  message(FATAL_ERROR "Cannot use more than one of Address Sanitizer, Undefined Behavior Sanitizer and Thread Sanitizer")
+endif()
+
+if (USE_ASAN OR USE_UBSAN OR USE_MSAN OR USE_TSAN)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+
+  if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    message(FATAL_ERROR "Clang is required to use sanitizers.")
+  endif()
+endif()
+
 # Enable tests
-include(CTest)
 enable_testing()
 
-# Add abstract-representation
-add_subdirectory(abs-repr)
-
-set(ARBOS_FOUND "ON")
-set(ARBOS_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/abs-repr/include")
-set(ARBOS_LIB arbos-api)
-set(ARBOS_BIN "")
-
-# LLVM frontend
-add_subdirectory(frontends/llvm)
-
-# IKOS core
+# Add ikos core
+message(STATUS "Including core")
 add_subdirectory(core)
 
-set(IKOS_FOUND "ON")
-set(IKOS_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/core/include")
+set(CORE_FOUND TRUE)
+set(CORE_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/core/include")
 
-# Analyzer
+# Add abstract representation
+message(STATUS "Including ar")
+add_subdirectory(ar)
+
+set(AR_FOUND TRUE)
+set(AR_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/ar/include")
+set(AR_LIB ikos-ar)
+
+# Add llvm frontend
+message(STATUS "Including frontend/llvm")
+add_subdirectory(frontend/llvm)
+
+set(FRONTEND_LLVM_FOUND TRUE)
+set(FRONTEND_LLVM_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/frontend/llvm/include")
+set(FRONTEND_LLVM_TO_AR_LIB ikos-llvm-to-ar)
+set(FRONTEND_LLVM_IKOS_PP_BIN "$<TARGET_FILE:ikos-pp>")
+
+# Add analyzer
+message(STATUS "Including analyzer")
 add_subdirectory(analyzer)
 
+# Tests
+add_custom_target(check
+  COMMAND ${CMAKE_CTEST_COMMAND}
+  DEPENDS build-core-tests build-frontend-llvm-tests build-analyzer-tests)
+
 # Doxygen
-add_custom_target(docs DEPENDS doxygen-arbos doxygen-ikos doxygen-analyzer)
+add_custom_target(doc DEPENDS doxygen-ar doxygen-core doxygen-analyzer)

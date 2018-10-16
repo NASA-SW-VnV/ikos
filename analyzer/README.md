@@ -1,24 +1,17 @@
-ANALYZER
-========
+IKOS Analyzer
+=============
 
 This folder contains the implementation of the analyzer.
 
 Introduction
 ------------
 
-The IKOS analyzer (previously called **IkosCC**) is an abstract interpretation-based static analyzer that aims at proving absence of certain kind of runtime errors in C and C++ programs:
+The IKOS Analyzer is an abstract interpretation-based static analyzer that aims at proving the absence of runtime errors in C and C++ programs. See [Checks](#checks) for the full list of available checks.
 
-* **boa**: buffer overflow (out-of-bound array indexing)
-* **dbz**: integer division by zero
-* **nullity**: null pointer dereference
-* **uva**: read of uninitialized variables
-* **upa**: unaligned pointer dereference
-* **prover**: violation of user-defined properties to prove additional runtime properties (similar to C `assert`)
+Installation
+------------
 
-Build and Install
------------------
-
-We really recommend to build the analyzer from the root directory of the distribution, but it is still possible to build all components (arbos, the llvm frontend and the analyzer) independently. To do so, first follow the instructions in [abs-repr/README.md](../abs-repr/README.md), [frontends/llvm/README.md](../frontends/llvm/README.md) and [core/README.md](../core/README.md).
+IKOS Analyzer can be installed independently from the other components, but we recommend to build the analyzer from the root directory. To do so, follow the instructions in the root [README.md](../README.md).
 
 ### Dependencies
 
@@ -30,37 +23,46 @@ To build and run the analyzer, you will need the following dependencies:
 * Python 2 >= 2.7.3 or Python 3 >= 3.3
 * SQLite >= 3.6.20
 * LLVM and Clang 4.0.x
+* IKOS Core
+* IKOS AR
+* IKOS LLVM Frontend
 * A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
 
-Note: You will need CMake >= 3.4.3 if you build LLVM from source
+### Build and Install
 
-Most of them can be installed using your package manager.
-
-Please check the root [README.md](../README.md#dependencies) to find more instructions.
-
-### Build and Install the analyzer
-
-Once you have installed all other components, run the following commands in the `analyzer` directory:
+To build and install the analyzer, run the following commands in the `analyzer` directory:
 
 ```
 $ mkdir build
 $ cd build
 $ cmake \
-    -DCMAKE_INSTALL_PREFIX=/path/to/analyzer-installation-directory \
-    -DIKOS_ROOT=/path/to/ikos-installation-directory \
-    -DARBOS_ROOT=/path/to/arbos-installation-directory \
+    -DCMAKE_INSTALL_PREFIX=/path/to/analyzer-install-directory \
+    -DLLVM_CONFIG_EXECUTABLE=/path/to/llvm/bin/llvm-config \
+    -DCORE_ROOT=/path/to/core-install-directory \
+    -DAR_ROOT=/path/to/ar-install-directory \
+    -DFRONTEND_LLVM_ROOT=/path/to/frontend-llvm-install-directory \
     ..
 $ make
 $ make install
 ```
 
-### Running the tests
+### Tests
 
-To run the tests, first build and install ikos. Then, run the following commands under the `build` directory:
+To build and run the tests, simply type:
 
 ```
-$ PATH=/path/to/ikos-installation/bin:$PATH
-$ make test
+$ make check
+```
+
+### Documentation
+
+To build the documentation, you will need [Doxygen](http://www.doxygen.org).
+
+Then, simply type:
+
+```
+$ make doc
+$ open doc/html/index.html
 ```
 
 How to run IKOS
@@ -81,55 +83,34 @@ Suppose we want to analyze the following C program in a file, called *loop.c*:
 10: }
 ```
 
-Using the following commands, you can run IKOS to detect buffer overflow defects directly against the C program:
+To analyze this program with IKOS, simply run:
 
 ```
-$ PATH=/path/to/ikos-installation/bin:$PATH
-$ ikos loop.c --export
+$ ikos loop.c
 ```
 
-Then you shall see the following output and that IKOS reports two occurrences of buffer overflow at line 8 and 9.
+You shall see the following output. IKOS reports two occurrences of buffer overflow at line 8 and 9.
 
 ```
-dlopen successful on /path/to/ikos-install-directory/lib/libpointer-shift-opt.dylib
-Loaded ARBOS pass: ps-opt - Optimize pointer shift statements
-dlopen successful on /path/to/ikos-install-directory/lib/libbranching-opt.dylib
-Loaded ARBOS pass: branching-opt - Optimize the Control Flow Graph
-dlopen successful on /path/to/ikos-install-directory/lib/libinline-init-gv.dylib
-Loaded ARBOS pass: inline-init-gv - Inline initialization of global variables in main
-dlopen successful on /path/to/ikos-install-directory/lib/libunify-exit-nodes.dylib
-Loaded ARBOS pass: unify-exit-nodes - Unify exit nodes
-dlopen successful on /path/to/ikos-install-directory/lib/libanalyzer.dylib
-Loaded ARBOS pass: analyzer - Analyzer pass
-5 pass(es) registered.
-Executing pass - ps-opt Optimize pointer shift statements
-Executing pass - branching-opt Optimize the Control Flow Graph
-Executing pass - inline-init-gv Inline initialization of global variables in main
-Executing pass - unify-exit-nodes Unify exit nodes
-Executing pass - analyzer Analyzer pass
-Running liveness variable analysis ...
-Running function pointer analysis ...
-** Generating pointer constraints ...
-** Solving pointer constraints ...
-Running pointer analysis ...
-** Computing intra-procedural numerical invariants ...
-** Generating pointer constraints ...
-** Solving pointer constraints ...
-Running value analysis ...
-*** Analyzing entry point: main
-*** Analyzing function: __ikos_init_globals
-*** Writing results for entry point: main
+[*] Compiling loop.c
+[*] Running ikos preprocessor
+[*] Running ikos analyzer
+[*] Translating LLVM bitcode to AR
+[*] Running liveness analysis
+[*] Running fixpoint profile analysis
+[*] Running interprocedural value analysis
+[*] Analyzing entry point: main
+[*] Checking properties and writing results for entry point: main
 
 # Time stats:
-arbos     : 0.117 sec
-clang     : 0.023 sec
-ikos-pp   : 0.006 sec
-llvm-to-ar: 0.017 sec
+clang        : 0.037 sec
+ikos-analyzer: 0.023 sec
+ikos-pp      : 0.007 sec
 
 # Summary:
-Total number of checks                : 30
+Total number of checks                : 7
 Total number of unreachable checks    : 0
-Total number of safe checks           : 28
+Total number of safe checks           : 5
 Total number of definite unsafe checks: 2
 Total number of warnings              : 0
 
@@ -137,75 +118,37 @@ The program is definitely UNSAFE
 
 # Results
 loop.c: In function 'main':
-loop.c:8:10: error: buffer overflow, trying to access index 10
+loop.c:8:10: error: buffer overflow, trying to access index 10 of global variable 'a' of 10 elements
     a[i] = i;
          ^
 loop.c: In function 'main':
-loop.c:9:18: error: buffer overflow, trying to access index 10
+loop.c:9:18: error: buffer overflow, trying to access index 10 of global variable 'a' of 10 elements
     printf("%i", a[i]);
                  ^
 ```
 
-The ikos command takes a source file (`.c`, `.cpp`) or a LLVM bitcode file (`.bc`) as input, analyzes it to find undefined behaviors (such as buffer overflows), creates a result database `output.db` in the current working directory, prints a summary and exits.
+The `ikos` command takes a source file (`.c`, `.cpp`) or a LLVM bitcode file (`.bc`) as input, analyzes it to find runtime errors (also called undefined behaviors), creates a result database `output.db` in the current working directory and prints a report.
 
-To see the analysis report within your terminal, you shall use the `--export` option. This argument generates a report using the result database, and prints it in a specific format (by default, a gcc-style format).
+In the report, each line has one of the following status:
 
-You can either provide the `--export` option directly in the ikos command, or as a second step using the ikos-render command, taking the result database:
-
-```
-$ ikos-render output.db --export
-```
-
-To analyze a large program, you shall run the `ikos` command first to create the result database `output.db` and then generate a report using the `ikos-render` command. This way, you can generate reports in different formats and adjust the verbosity to your needs, without running the analysis again. See below to learn more about export options.
-
-### Export Formats
-
-This section describes the different report formats.
-
-#### GCC Format
-
-By default, the `--export` option generates a report in a gcc-style format, convenient for a terminal.
-
-The report is composed of a list of statement reports. Here is an example of a statement report:
-
-```
-test-23-safe.c: In function 'foo':
-test-23-safe.c:8:5: safe: safe statement
-    a[i] = 'A';
-    ^
-test-23-safe.c:8:5: note: called from:
-test-23-safe.c:19:13: function 'f'
-  char* A = foo(str, 10);
-            ^
-test-23-safe.c:8:5: note: called from:
-test-23-safe.c:23:13: function 'g'
-  char* C = foo(B, 10);
-            ^
-```
-
-This is the statement report for line 8, column 5 of [test-23-safe.c](tests/regression/boa/test-23-safe.c). Each statement report has one of the following status:
-
-* **safe**: the statement is safe (free of undefined behavior);
+* **safe**: the statement is proven safe;
 * **error**: the statement always results into an error;
-* **warning** may mean two things:
-   1. the operation results into an error for some executions, or
-   2. the static analyzer did not have enough information to conclude, because either the program does not provide enough information (check dependent on the value of an external input for example) or the static analysis algorithms are not powerful enough;
 * **unreachable**: the statement is never executed (dead code);
-* **note**: an additional notice from the analysis.
+* **warning** may mean three things:
+   1. the statement results into an error for some executions, or
+   2. the static analyzer did not have enough information to conclude (check dependent on an external input, for instance), or
+   3. the static analyzer was not powerful enough to prove the absence of errors;
 
-Each statement report is valid for some calling contexts. A calling context is a list of function calls that leads to a specific function. In the example above, the statement `a[i] = 'A';` is safe whether the function `foo` has been called from `f`, line 19 or from `g`, line 23. If the report doesn't show the calling contexts, that means the report is valid for all possible calling contexts.
+By default, ikos shows warnings and errors directly in your terminal, like a compiler would do.
 
-#### JSON Format
+If the analysis report is too big, you shall use:
+* `ikos-report output.db` to examine the report in your terminal
+* `ikos-view output.db` to examine the report in a web interface
 
-You can export the report in JSON, using the option `--export-format=json`.
+Running IKOS on a whole C/C++ project
+-------------------------------------
 
-See [docs/FORMAT_JSON.md](docs/FORMAT_JSON.md) for more details.
-
-### Running IKOS on a whole C/C++ project
-
-To run ikos on a large project, you will first need to compile the program into LLVM bitcode (`.bc`). The LLVM bitcode is a generic assembly language that can be used as an intermediate representation for any compiled language.
-
-#### Compiling your project into a single .bc file
+To run IKOS on a large project, you will first need to compile the program into LLVM bitcode (`.bc`). The LLVM bitcode is a generic assembly language that can be used as an intermediate representation for most compiled language.
 
 The easiest way to compile your project into a `.bc` file is to use the tool **Whole Program LLVM**: https://github.com/travitch/whole-program-llvm
 
@@ -230,7 +173,7 @@ $ CC=wllvm CXX=wllvm++ ./configure
 $ make
 ```
 
-Once everything is built, you can extract the LLVM bitcode file from a binary using the extract-bc command:
+Once everything is built, you can extract the LLVM bitcode file from a binary using the `extract-bc` command:
 
 ```
 $ extract-bc prog
@@ -239,307 +182,397 @@ $ extract-bc prog
 It will produce the LLVM bitcode file `prog.bc`. You can now analyze it using ikos:
 
 ```
-$ ikos --ikos-pp prog.bc
+$ ikos prog.bc
 ```
 
-#### Using ikos-pp
-
-Note that for large programs, we recommend to use the option `--ikos-pp`:
-
-```
-$ ikos --ikos-pp prog.bc
-```
-
-The option `--ikos-pp` runs IKOS-PP, a preprocessor of LLVM bitcode that facilitates the task of static analysis. IKOS-PP performs a set of LLVM bitcode transformations that can improve both the precision of the subsequent analyses as well as performance. Unfortunately, it might also hide errors in your code (undefined behavior) because of optimizations.
-
-### Analyses Options
+Analysis Options
+----------------
 
 This section describes the most relevant options of the analyzer.
 
-#### Type of analyses
+### Checks
 
-By default, ikos runs a default set of analyses: boa, dbz, nullity and prover. If you want to run specific analyses, use the `-a` parameter:
+The list of available checks are:
 
-```
-$ ikos -a boa -a nullity --export test.c
-```
+* **buffer overflow analysis**, `-a=boa`: checks for buffer overflows and out-of-bound array accesses.
+* **division by zero analysis**, `-a=dbz`: checks for integer divisions by zero.
+* **null pointer analysis**, `-a=nullity`: checks for null pointer dereferences.
+* **assertion prover**, `-a=prover`: prove user-defined properties, using `__ikos_assert(condition)`.
+* **unaligned pointer analysis**, `-a=upav`: checks for unaligned pointer dereferences.
+* **uninitialized variable analysis**, `-a=uva`: checks for read of uninitialized variables.
+* **signed integer overflow analysis**, `-a=sio`: checks for signed integer overflows.
+* **unsigned integer overflow analysis**, `-a=uio`: checks for unsigned integer overflows.
+* **shift count analysis**, `-a=shc`: checks for invalid shifts, where the amount shifted is greater or equal to the bit-width of the left operand, or less than zero.
+* **pointer overflow analysis**, `-a=poa`: checks for pointer arithmetic overflows.
+* **pointer comparison analysis**, `-a=pcmp`: checks for pointer comparisons between pointers referring to different objects.
+* **soundness analysis**, `-a=sound`: checks for instructions that could make the analysis unsound, i.e miss bugs.
+* **function call analysis**, `-a=fca`: checks for function calls through function pointers of the wrong type.
+* **dead code analysis**, `-a=dca`: checks for unreachable statements.
+* **double free analysis**, `-a=dfa`: checks for double free, invalid free, use after free and use after return.
 
-The list of available analyses is:
+By default, all the checks are enabled except:
 
-* **Buffer Overflow Analysis (boa)**: checks for out-of-bound array accesses
-* **Division By Zero (dbz)**: checks for integer divisions by zero
-* **Null Pointer Analysis (nullity)**: checks for null pointer dereferences
-* **Uninitialized Variable Analysis (uva)**: checks for read of uninitialized variables
-* **Unaligned Pointer Analysis (upa)**: checks for unaligned pointer dereferences
-* **Assertion Prover (prover)**: Prove user-defined properties, using `__ikos_assert(condition)`
+* **unaligned pointer analysis**, because it needs a congruence domain to generate meaningful results. See [Numerical abstract domains](#numerical-abstract-domains).
+* **uninitialized variable analysis**, because it currently generates a lot of false positives.
+* **unsigned integer overflow analysis**, because it is not an undefined behavior according to the C standard.
+* **pointer overflow analysis**, because it is redundant with the buffer overflow analysis.
 
-Notes:
-
-* **uva** is disabled by default because this analysis currently generates a lot of false positives. It will be revisited in the future.
-* **upa** needs a congruence domain to generate meaningful results. See [Numerical abstract domains](#numerical-abstract-domains) and consider using the `INTERVAL_CONGRUENCE` domain.
-
-#### Entry points
-
-By default, ikos assumes the entry point of the program is `main`. You can specify a list of entry points using the `-e` parameter:
-
-```
-$ ikos -e f -e g test.c
-```
-
-#### ikos-pp
-
-The option `--ikos-pp` runs IKOS-PP, a preprocessor of LLVM bitcode that facilitates the task of static analysis. IKOS-PP performs a set of LLVM bitcode transformations that can improve both the precision of the subsequent analyses as well as performance.
-
-#### Inter-procedural vs Intra-procedural
-
-An **inter-procedural** analysis analyzes a function considering its call stack while an **intra-procedural** analysis ignores it. The former produces more precise results than the latter but it is often much more expensive. Another way of saying the same is that an inter-procedural analysis will consider only **valid** paths. A path is valid if it respects the fact that when a procedure finishes it returns to the site of the most recent call.
-
-IKOS implements inter-procedural analysis by inlining function calls. All functions are inlined except:
-
-* recursive functions
-* variable argument list calls
-
-IKOS uses an inter-procedural analysis by default. Provide `--intra` if you want to run an intra-procedural analysis.
-
-#### Static inlining, Dynamic Inlining, Summaries
-
-By default, ikos uses **dynamic inlining** rather than static inlining or summaries.
-
-* **dynamic inlining**: the analysis exploring a call site by recursively analyzing the callee function
-* **static inlining**: the frontend is responsible for inlining all function calls (this is not always possible)
-* **summaries**: each function is analyzed independently with a relational domain, to build a summary. Then, a top-down analysis is performed, using these summaries and propagating the calling contexts.
-
-Tu use static inlining, use the parameter `--inline-all`. To use function summarization, use `--summaries`.
-
-#### Numerical abstract domains
-
-IKOS relies on a **value analysis** that is parametric on the numerical domain used ultimately to model each program variable. Currently, the ikos analyzer only models integer and pointer variables. Floating point variables are safely ignored.
-
-The current numerical domains are:
-
-* **intervals**: expresses relationships of the form x <= k where x is a variable a k is a (possible negative) constant. For instance, we can express that the variable x is between -10 and 23 with the two constraints x <= 23 and -x <= -10.
-
-* **intervals** with **congruences**: expresses interval relationships as well as congruences relationships. A congruence relationship maps a variable to a set of values aZ + b (where a is positive integer and b is an integer). The expression aZ + b means all integers that are congruent to b modulo a. That is, { x | x \in Z, x = b (mod a) }.
-
-    Recall that n = m (mod c) means that n is congruent to m modulo c. Informally, n
-    and m have the same remainder when divided by c. For instance,
-
-    * the set of even numbers is {...,-4,-2,0,2,4,...} and is represented
-       by 2Z + 0 (i.e., {x | x \in Z, x = 0 (mod 2)})
-
-    * the set of odd numbers is {...,-3,-1,1,3,5,...} is represented
-       by 2Z + 1 (i.e., {x | x \in Z, x = 1 (mod 2)})
-
-* **dbm**: expresses relationships between two variables x - y <= k where x and y are positive variables and k is a (possible negative) constant. This domain can also represent equalities (e.g., x = y iff x - y <= 0 and y - x <= 0)
-
-* **dbm** with **variable packing**: expresses relationships between two variables x - y <= k. That domain uses a variable packing algorithm to optimize the performance and should offer almost the same precision as the simple `dbm` abstract domain.
-
-* **octagons**: expresses relationships between two variables x - y <= k where x and y are (possible negative) variables and k is a (possible negative) constant.
-
-Abstract domains such as `intervals` and `congruences` are called **non-relational** while `dbm` and `octagons` are called (weakly) **relational** domains.
-
-The abstract domain is a compile-time option for IKOS. You shall provide the option `-DABSTRACT_DOMAIN=` while running cmake. For instance:
+If you want to run specific checks, use the `-a` parameter:
 
 ```
-$ cmake -DCMAKE_INSTALL_PREFIX=/path/to/ikos-installation-directory -DABSTRACT_DOMAIN=DBM ...
+$ ikos -a=boa,nullity test.c
 ```
 
-And then run make and make install, as usual.
-
-Available choices are:
-* `INTERVAL`: interval domain, [CC77](https://www.di.ens.fr/~cousot/COUSOTpapers/publications.www/CousotCousot-POPL-77-ACM-p238--252-1977.pdf)
-* `CONGRUENCE`: congruence domain, [Gra89](http://www.tandfonline.com/doi/abs/10.1080/00207168908803778)
-* `INTERVAL_CONGRUENCE`: reduced product of `INTERVAL` and `CONGRUENCE`
-* `OCTAGON`: octagon domain, [AST01](https://www-apr.lip6.fr/~mine/publi/article-mine-ast01.pdf)
-* `DBM`: domain based on difference-bound matrices, [PADO01](https://www-apr.lip6.fr/~mine/publi/article-mine-padoII.pdf)
-* `VAR_PACKING_DBM`: difference-bound matrices with variable packing, [VMCAI16](https://seahorn.github.io/papers/vmcai16.pdf)
-* `VAR_PACKING_DBM_CONGRUENCE`: reduced product of `VAR_PACKING_DBM` and `CONGRUENCE`
-* `GAUGE`: gauge domain, [CAV12](https://ti.arc.nasa.gov/publications/4767/download/)
-* `GAUGE_INTERVAL_CONGRUENCE`: reduced product of `GAUGE`, `INTERVAL` and `CONGRUENCE`
-
-##### Using APRON
-
-[APRON](http://apron.cri.ensmp.fr/library/) is a C library for static analysis using Abstract Interpretation. It implements several complex abstract domains, such as the Polyhedra domain.
-
-IKOS provides a wrapper for APRON, allowing you to use any APRON domain for the analysis.
-
-To use APRON, first download, build and install it. Consider using the svn trunk. You will also need to build APRON with [Parma Polyhedra Library](http://bugseng.com/products/ppl/) enabled. Set `HAS_PPL = 1` and define `PPL_PREFIX` in your `Makefile.config`
-
-Now, to use APRON, just provide the option `-DAPRON_ROOT=/path/to/apron-install`, and specify the abstract domain you want to use with `-DABSTRACT_DOMAIN`. For instance:
+Note that you can use the wildcard character `*`, `+` and `-`:
 
 ```
-cmake -DCMAKE_INSTALL_PREFIX=/path/to/ikos-install \
-    -DAPRON_ROOT=/path/to/apron-install \
-    -DABSTRACT_DOMAIN=APRON_PPL_POLYHEDRA \
-    ..
+$ ikos -a='*,-sio' test.c
 ```
 
-Available choices are:
-* [APRON_INTERVAL](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_21.html#SEC54)
-* [APRON_OCTAGON](http://apron.cri.ensmp.fr/library/0.9.10/apron/oct_doc.html)
-* [APRON_POLKA_POLYHEDRA](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_25.html#SEC58)
-* [APRON_POLKA_LINEAR_EQUALITIES](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_25.html#SEC58)
-* [APRON_PPL_POLYHEDRA](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_29.html#SEC65)
-* [APRON_PPL_LINEAR_CONGRUENCES](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_29.html#SEC65)
-* [APRON_PKGRID_POLYHEDRA_LIN_CONGRUENCES](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_33.html#SEC69)
+In this example, all the checks are enabled except signed integer overflow checks.
 
-#### Degree of precision
+### Numerical abstract domains
 
-Each analysis can be executed using one of the following levels of precision, presented from the coarsest (and cheaper) to the most precise (and most expensive):
+IKOS is based on the theory of [Abstract Interpretation](https://www.di.ens.fr/~cousot/AI/IntroAbsInt.html). The analysis uses a numerical abstract domain internally to model integer variables.
 
-* **reg**: models only integer scalars.
-* **ptr**: level `reg` and it models pointer addresses (but not
-contents).
-* **mem**: level `ptr` and it models pointer contents.
+The list of available numerical abstract domains are:
 
-By default, ikos uses the precision `mem`. Provide `-p {reg,ptr,mem}` if you want to use another level of precision.
+* `-d=interval`: The interval domain, see [CC77](https://www.di.ens.fr/~cousot/COUSOTpapers/publications.www/CousotCousot-POPL-77-ACM-p238--252-1977.pdf).
+* `-d=congruence`: The congruence domain, see [Gra89](http://www.tandfonline.com/doi/abs/10.1080/00207168908803778).
+* `-d=interval-congruence`: The reduced product of interval and congruence.
+* `-d=octagon`: The octagon domain, see [AST01](https://www-apr.lip6.fr/~mine/publi/article-mine-ast01.pdf).
+* `-d=dbm`: The Difference-Bound Matrices domain, see [PADO01](https://www-apr.lip6.fr/~mine/publi/article-mine-padoII.pdf).
+* `-d=var-pack-dbm`: The Difference-Bound Matrices domain with variable packing, see [VMCAI16](https://seahorn.github.io/papers/vmcai16.pdf).
+* `-d=var-pack-dbm-congruence`: The reduced product of DBM with variable packing and congruence.
+* `-d=gauge`: The gauge domain, see [CAV12](https://ti.arc.nasa.gov/publications/4767/download/).
+* `-d=gauge-interval-congruence`: The reduced product of gauge, interval and congruence.
+* `-d=apron-interval`: The APRON interval domain, see [Box](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_21.html#SEC54).
+* `-d=apron-octagon`: The APRON octagon domain, see [Oct](http://apron.cri.ensmp.fr/library/0.9.10/apron/oct_doc.html).
+* `-d=apron-polka-polyhedra`: The APRON polka polyhedra domain, see [NewPolka](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_25.html#SEC58).
+* `-d=apron-polka-linear-equalities`: The APRON polka linear equalities domain, see [NewPolka](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_25.html#SEC58).
+* `-d=apron-ppl-polyhedra`: The APRON PPL polyhedra domain, see [PPL](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_29.html#SEC65).
+* `-d=apron-ppl-linear-congruences`: The APRON PPL linear congruences domain, see [PPL](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_29.html#SEC65).
+* `-d=apron-pkgrid-polyhedra-lin-cong`: The APRON Pkgrid polyhedra and linear congruences domain, see [Pkgrid](http://apron.cri.ensmp.fr/library/0.9.10/apron/apron_33.html#SEC69).
+* `-d=var-pack-apron-octagon`: The APRON octagon domain with variable packing.
+* `-d=var-pack-apron-polka-polyhedra`: The APRON Polka polyhedra domain with variable packing.
+* `-d=var-pack-apron-polka-linear-equalities`: The APRON Polka linear equalities domain with variable packing.
+* `-d=var-pack-apron-ppl-polyhedra`: The APRON PPL polyhedra domain with variable packing.
+* `-d=var-pack-apron-ppl-linear-congruences`: The APRON PPL linear congruences domain with variable packing.
+* `-d=var-pack-apron-pkgrid-polyhedra-lin-cong`: The APRON Pkgrid polyhedra and linear congruences domain with variable packing.
 
-#### Other analysis options
+By default, IKOS uses the fastest and least precise numerical domain, the **interval** domain. If you want to run the analysis with a specific domain, use the `-d` parameter:
 
-* `--show-raw-checks`: print the content of the result database;
-* `--no-liveness`: disable the liveness analysis pass;
-* `--no-pointer`: disable the pointer analysis pass;
-* `--dot-cfg`: print ARBOS CFG to a .dot file (very useful for debugging);
-* `--ikosview`: show analysis results using the ikosview GUI (note that ikosview is currently not open source).
+```
+$ ikos -d=var-pack-dbm test.c
+```
+
+For most users, we recommend to analyze your project with the fastest and least precise domain (i.e, interval) first, and then try slower but more precise domains until the analysis is too long for you. This is the best way to reach a low rate of false positives (i.e, warnings).
+
+Here is a list of numerical domains, sorted from the fastest and least precise to the slowest and most precise:
+
+* `-d=interval`
+* `-d=gauge-interval-congruence`
+* `-d=var-pack-dbm`
+* `-d=var-pack-apron-octagon`
+* `-d=var-pack-apron-ppl-polyhedra`
+* `-d=dbm`
+* `-d=apron-octagon`
+* `-d=apron-ppl-polyhedra`
+
+You should consider running different analyses in this specific order.
+
+Please also note that:
+* Floating point variables are safely ignored.
+* The `octagon` domain is buggy. Consider using `apron-octagon` instead.
+* In order to use the **APRON** abstract domain, you need to build IKOS with APRON first. See [APRON Support](#apron-support).
+
+### Entry points
+
+By default, IKOS assumes the entry point of the program is `main`. You can specify a list of entry points using the `--entry-points` parameter:
+
+```
+$ ikos --entry-points=foo,bar test.c
+```
+
+### Optimization level
+
+The parameter `--opt` allows you to set the optimization level. Performing a set of LLVM transformations can improve both the precision of the subsequent analysis as well as the performance.
+
+Unfortunately, it might also hide errors in your code. By default, optimizations are disabled.
+
+### Inter-procedural vs Intra-procedural
+
+An **inter-procedural** analysis analyzes a function considering its call stack while an **intra-procedural** analysis ignores it. The former produces more precise results than the latter but it is often much more expensive.
+
+By default, IKOS performs an inter-procedural analysis. Use `--proc=intra` to perform an intra-procedural analysis.
+
+### Degree of precision
+
+Each analysis can be executed using one of the following levels of precision, presented from the coarsest (and cheapest) to the most precise (and most expensive):
+
+* **reg**: models only integers.
+* **ptr**: models integers and pointers.
+* **mem**: models integers, pointers and memory contents.
+
+By default, IKOS uses the precision `mem`. Provide `--prec {reg,ptr,mem}` if you want to use another level of precision.
+
+### Hardware addresses
+
+In C code for embedded systems, it is usual to read or write at specific addresses to communicate with the hardware. By default, IKOS treats memory accesses at specific addresses as errors.
+
+You can provide the `--hardware-addresses` parameter to specify a range of valid memory addresses:
+
+```
+$ ikos --hardware-addresses=0x20-0x40 project.bc
+```
+
+During the analysis, IKOS will assume that memory accesses in the range `[0x20, 0x40]` (in bytes, inclusive) are safe.
+
+### Other analysis options
+
+* `--globals-init`: use the given strategy for initialization of global variables.
+* `--no-init-globals`: disable global variable initialization for the given entry points.
+* `--no-liveness`: disable the liveness analysis.
+* `--no-pointer`: disable the pointer analysis.
+* `--no-fixpoint-profiles`: disable the detection of widening hints.
+* `--argc`: specify the value of `argc` for the analysis.
+* `--no-libc`: do not use libc intrinsics. Useful for bare metal programming.
 
 See `ikos --help` for more information.
 
-### Export Options
+Report Options
+--------------
 
-This section describes the options of the export feature.
+This section describes the most relevant report options supported by `ikos` and `ikos-report`.
 
-#### Export format
+### Format
 
-You can chose the output format using the `--export-format` option. Available values are:
+You can specify the format of the report using the `--format` (or `-f`) parameter.
 
+Available formats are:
+
+* **text**: Text format, convenient for the terminal;
 * **csv**: CSV format, convenient for spreadsheet import;
-* **gcc**: a gcc-style format, convenient for the terminal;
 * **json**: JSON format, convenient for developers.
+* **web**: Web interface, using ikos-view.
+* **no**: Disable the report.
 
-#### Export file
+By default, if the report is small, it will be printed out using the text format.
 
-By default, the report is generated on the standard output. You can write it into a file using `--export-file=/path/to/report`
+We recommend to use [ikos-view](#ikos-view) to examine reports of large projects.
 
-#### Export level
+### File
 
-The `--export-level` option allows you to filter unwanted reports. It will ignore all reports that have a status less critical that the one provided.
+By default, the report is generated on the standard output. You can write it into a file using `--report-file=/path/to/report`
 
-Possible values are: all = safe < note < warning < error.
+### Status Filter
 
-By default, the export level is `warning`, thus you only get warnings and errors. If you want all reports, use `--export-level=all`.
+Use `--status-filter` to filter unwanted checks.
 
-#### Export verbosity
+Possible values are: **error**, **warning**, **safe**, **unreachable**.
 
-Use `--export-verbosity [1-4]` to specify the verbosity you want. A verbosity of one will give you very short messages, where a verbosity of 4 will provide you all information the analyzer has.
+Note that you can use the wildcard character `*`, `+` and `-`.
 
-Note: It has no effect for the JSON format.
+### Analysis Filter
 
-#### Other export options
+Use `--analyses-filter` to filter unwanted checks.
 
-* `--export-no-unreachable`: ignore unreachable reports;
-* `--export-demangle`: demangle C++ symbols (JSON format only).
+Possible values are described in [Checks](#checks).
 
-See `ikos-render --help` for more information.
-
-Documentation
--------------
-
-To generate API documentation using Doxygen, run the following command in the `build` directory:
+Note that you can use the wildcard character `*`, `+` and `-`. For instance:
 
 ```
-make docs
+$ ikos-report --analyses-filter='*,-boa' output.db
+```
+
+This will generate a report with all the checks, except buffer overflows.
+
+### Verbosity
+
+Use `--report-verbosity [1-4]` to specify the verbosity. A verbosity of one will give you very short messages, where a verbosity of 4 will provide you with all the information the analyzer has.
+
+#### Other report options
+
+See `ikos-report --help` for more information.
+
+APRON Support
+-------------
+
+[APRON](http://apron.cri.ensmp.fr/library/) is a C library for static analysis using Abstract Interpretation. It implements several complex abstract domains, such as the Polyhedra domain.
+
+IKOS provides a wrapper for APRON, allowing you to use any APRON abstract domain in the analyzer.
+
+To use APRON, first download, build and install it. Consider using the svn trunk. You will also need to build APRON with [Parma Polyhedra Library](http://bugseng.com/products/ppl/) enabled. Set `HAS_PPL = 1` and define `PPL_PREFIX` in your `Makefile.config`
+
+Now, to build IKOS with APRON support, just provide the option `-DAPRON_ROOT=/path/to/apron-install` when running cmake. For instance:
+
+```
+cmake \
+    -DCMAKE_INSTALL_PREFIX=/path/to/ikos-install \
+    -DAPRON_ROOT=/path/to/apron-install \
+    ..
+```
+
+See [Numerical abstract domains](#numerical-abstract-domains) for the list of numerical abstract domains.
+
+IKOS-VIEW
+---------
+
+ikos-view provides a web interface to examine IKOS results. It is available directly in the analyzer.
+
+The web interface shows the source code with syntax highlighting, and allows you to filter the warnings by checks.
+
+To use ikos-view, first run the analyzer on your project to generate a result database `output.db`, then simply run:
+
+```
+$ ikos-view output.db
+```
+
+It will start a web server. You can then launch your favorite web browser and visit [http://localhost:8080](http://localhost:8080)
+
+Note that if you want syntax highlighting, you will need to install [Pygments](http://pygments.org):
+
+```
+$ pip install --user pygments
 ```
 
 Overview of the source code
 ---------------------------
 
-This folder contains the core of all the analyses which are implemented as an ARBOS plugin in [src/ar-passes/analyzer.cpp](src/ar-passes/analyzer.cpp).
+The following illustrates the directory structure of this folder:
 
-Important considerations:
+```
+.
+├── doc
+│   └── doxygen
+│       └── latex
+├── include
+│   └── ikos
+│       └── analyzer
+│           ├── analysis
+│           │   ├── execution_engine
+│           │   ├── pointer
+│           │   └── value
+│           ├── checker
+│           ├── database
+│           │   └── table
+│           ├── json
+│           ├── support
+│           └── util
+├── python
+│   └── ikos
+│       └── view
+│           ├── static
+│           │   ├── css
+│           │   └── js
+│           └── template
+├── script
+├── src
+│   ├── analysis
+│   │   ├── pointer
+│   │   └── value
+│   │       └── machine_int_domain
+│   ├── checker
+│   ├── database
+│   │   └── table
+│   ├── json
+│   └── util
+└── test
+    └── regression
+```
 
-* All the analyses take ARBOS CFGs (as defined in [include/analyzer/ar-wrapper/cfg.hpp](include/analyzer/ar-wrapper/cfg.hpp)).
-* All the analyses should manipulate ARBOS AR only via namespace `ar` in [include/analyzer/ar-wrapper/wrapper.hpp](include/analyzer/ar-wrapper/wrapper.hpp).
+#### doc/
 
-#### docs/
-
-* [docs/FORMAT_JSON.md](docs/FORMAT_JSON.md) documents the JSON format
-* [docs/doxygen](docs/doxygen) contains Doxygen files.
+Contains Doxygen files.
 
 #### include/
 
-* [include/analyzer/config.hpp](include/analyzer/config.hpp): types declaration for numerical abstract domains
+* [include/ikos/analyzer/intrinsic.h](include/ikos/analyzer/intrinsic.h) contains definition of IKOS intrinsics that can be used in analyzed source code.
 
-##### include/analyzer/analysis
+##### include/ikos/analyzer/analysis
 
-* [include/analyzer/analysis/common.hpp](include/analyzer/analysis/common.hpp): common types and declarations for all the analyses.
+* [include/ikos/analyzer/analysis/call_context.hpp](include/ikos/analyzer/analysis/call_context.hpp) contains definition of a call context and the call context factory.
 
-* [include/analyzer/analysis/context.hpp](include/analyzer/analysis/context.hpp): class to propagate the global state of the analyses.
+* [include/ikos/analyzer/analysis/context.hpp](include/ikos/analyzer/analysis/context.hpp) contains definition of the global context of the analyzer.
 
-* [include/analyzer/analysis/variable_name.hpp](include/analyzer/analysis/variable_name.hpp): defines the different variable names (local, global, etc), and the variable name factory.
+* [include/ikos/analyzer/analysis/literal.hpp](include/ikos/analyzer/analysis/literal.hpp) contains definition of the literal factory. It converts an AR operand to an AR-independent format.
 
-* [include/analyzer/analysis/liveness.hpp](include/analyzer/analysis/liveness.hpp): computes the set of live variables for an ARBOS CFG. This can be used optionally by the analysis to remove dead variables from the fixpoint computation.
+* [include/ikos/analyzer/analysis/liveness.hpp](include/ikos/analyzer/analysis/liveness.hpp) contains definition of the liveness analysis. It computes the set of live and dead variables for all functions.
 
-* [include/analyzer/analysis/pointer.hpp](include/analyzer/analysis/pointer.hpp): computes for each pointer variable in the ARBOS CFG the set of memory locations to which it may point-to. This is used as a pre-step for improving the precision of the other analyses.
+* [include/ikos/analyzer/analysis/memory_location.hpp](include/ikos/analyzer/analysis/memory_location.hpp) contains definition of symbolic memory locations (global, stack, heap-allocated, etc), and the memory location factory.
 
-* [include/analyzer/analysis/sym_exec_api.hpp](include/analyzer/analysis/sym_exec_api.hpp):
-   * API `sym_exec` to perform the abstract transfer function to each ARBOS AR instruction.
-   * API `sym_exec_call` to analyze call sites. Each implementation of this API should target different inter-procedural strategies (e.g., context-insensitive, inlining, summary-based, etc).
-   * default implementation `context_insensitive_sym_exec_call` for context-insensitive analysis.
+* [include/ikos/analyzer/analysis/option.hpp](include/ikos/analyzer/analysis/option.hpp) contains definition of analysis options.
 
-* [include/analyzer/analysis/num_sym_exec.hpp](include/analyzer/analysis/num_sym_exec.hpp): this file defines class `num_sym_exec` (inherits from `sym_exec`) and it is a very important class since most analyses rely on it to perform the abstract transfer function.  This class executes each ARBOS instruction using the API of a value analysis. The class is parametric in the value analysis. An implementation of a value analysis is in [core/include/ikos/domains/value_domain.hpp](../core/include/ikos/domains/value_domain.hpp). The value analysis can be a simple numerical abstract domain so only integer scalars can be modelled or it can be a more sophisticated domain keeping track of pointer offsets and memory contents. The level of precision is chosen by the user.
+* [include/ikos/analyzer/analysis/variable.hpp](include/ikos/analyzer/analysis/variable.hpp) contains definition of variables (local, global, etc), and the variable factory.
 
-* [include/analyzer/analysis/inliner.hpp](include/analyzer/analysis/inliner.hpp): derives from `sym_exec_call` and implements the inlining strategy.
+##### include/ikos/analyzer/analysis/execution_engine
 
-##### include/analyzer/ar-wrapper
+* [include/ikos/analyzer/analysis/execution_engine/context_insensitive.hpp](include/ikos/analyzer/analysis/execution_engine/context_insensitive.hpp) contains definition of `ContextInsensitiveCallExecutionEngine`, a call execution engine for context-insensitive analyses.
 
-This folder contains API's to access and transform `arbos` AR.
+* [include/ikos/analyzer/analysis/execution_engine/engine.hpp](include/ikos/analyzer/analysis/execution_engine/engine.hpp) contains definition of base classes for execution engines. It defines an API to execute AR statements.
 
-* [include/analyzer/ar-wrapper/cfg.hpp](include/analyzer/ar-wrapper/cfg.hpp): build a CFG from an ARBOS function. The CFG provides an API which is compatible with the IKOS fixpoint algorithms but each basic block still contains AR statements. The ARBOS CFG is also augmented with useful information for dataflow analyses such as the set of used and defined variables.
+* [include/ikos/analyzer/analysis/execution_engine/inliner.hpp](include/ikos/analyzer/analysis/execution_engine/inliner.hpp) contains definition of `InlineCallExecutionEngine`, a call execution engine performing dynamic inlining.
 
-* [include/analyzer/ar-wrapper/literal.hpp](include/analyzer/ar-wrapper/literal.hpp): class that converts an Arbos operand to an ARBOS-independent format.
+* [include/ikos/analyzer/analysis/execution_engine/numerical.hpp](include/ikos/analyzer/analysis/execution_engine/numerical.hpp) contains definition of `NumericalExecutionEngine`, the main execution engine of the analyzer. It executes AR statements on an abstract domain.
 
-* [include/analyzer/ar-wrapper/wrapper.hpp](include/analyzer/ar-wrapper/wrapper.hpp): implements an adaptor (namespace `ar`) for accessing to ARBOS AR. The purpose is to establish a layer of separation between ARBOS AR and all the analyses in [include/analyzer/analysis](include/analyzer/analysis).
+##### include/ikos/analyzer/analysis/pointer
 
-* [include/analyzer/ar-wrapper/transformations.hpp](include/analyzer/ar-wrapper/transformations.hpp): implements an adaptor (namespace `transformations`) for modifying ARBOS AR with similar motivation than
-above.
+* [include/ikos/analyzer/analysis/pointer/constraint.hpp](include/ikos/analyzer/analysis/pointer/constraint.hpp) contains definition of `PointerConstraintsGenerator`, a generator of pointer constraints given an AR function or global variable.
 
-##### include/analyzer/checkers
+* [include/ikos/analyzer/analysis/pointer/function.hpp](include/ikos/analyzer/analysis/pointer/function.hpp) contains definition of a function pointer analysis.
 
-This folder contains classes that check for properties on the code (out-of-bound accesses, divisions by zero, etc), given the result of an analysis.
+* [include/ikos/analyzer/analysis/pointer/pointer.hpp](include/ikos/analyzer/analysis/pointer/pointer.hpp) contains definition of a pointer analysis.
 
-##### include/analyzer/ikos-wrapper
+##### include/ikos/analyzer/analysis/value
 
-* [include/analyzer/ikos-wrapper/iterators](include/analyzer/ikos-wrapper/iterators): wrapper to the IKOS fixpoints. It provides:
-   * forward abstract interpreter
-   * backward abstract interpreter
-  The backward abstract interpreter is limited to dataflow analyses, otherwise although sound it will be too imprecise.
+* [include/ikos/analyzer/analysis/value/abstract_domain.hpp](include/ikos/analyzer/analysis/value/abstract_domain.hpp) contains definition the abstract domain used during the value analysis.
 
-##### include/analyzer/domains
+* [include/ikos/analyzer/analysis/value/interprocedural.hpp](include/ikos/analyzer/analysis/value/interprocedural.hpp) contains definition the interprocedural value analysis.
 
-This folder contains analysis-specific abstract domains not available in ikos core library.
+* [include/ikos/analyzer/analysis/value/intraprocedural.hpp](include/ikos/analyzer/analysis/value/intraprocedural.hpp) contains definition the intraprocedural value analysis.
 
-##### include/analyzer/utils
+* [include/ikos/analyzer/analysis/value/machine_int_domain.hpp](include/ikos/analyzer/analysis/value/machine_int_domain.hpp) contains definition the machine integer abstract domain used during the value analysis.
 
-Common utilities for the analyses.
+##### include/ikos/analyzer/checker
 
-##### include/analyzer/examples
+Contains definition of the different checks on the code (buffer overflow, division by zero, etc.), given the result of an analysis.
 
-* [include/analyzer/examples/muaz.hpp](include/analyzer/examples/muaz.hpp): a micro language for semantic modelling of arrays and integer numbers.
+##### include/ikos/analyzer/database/table
 
-#### scripts
+Contains definition of the different output database tables.
 
-* [scripts/ikos](scripts/ikos): ikos analyzer python script
+##### include/ikos/analyzer/json
 
-#### python
+Contains definition of a JSON library.
 
-* [python/ikos](python/ikos): ikos python module
+##### include/ikos/analyzer/support
 
-#### src/ar-passes
+Contains various helpers, e.g, assertions.
 
-* [src/ar-passes/analyzer.cpp](src/ar-passes/analyzer.cpp): Analyzer ARBOS pass. This is the entry point for all analyses.
+##### include/ikos/analyzer/util
 
-* [src/ar-passes/ar_to_dot.cpp](src/ar-passes/ar_to_dot.cpp): ARBOS pass that translates AR code into dot format
+Contains definition of utilities for the analyzer, e.g, logging, colors, timers, etc.
 
-* [src/ar-passes/inline_init_gv.cpp](src/ar-passes/inline_init_gv.cpp): Inline initialization of global variables to the main function.
+#### python/
 
-* [src/ar-passes/pointer_shift_opt.cpp](src/ar-passes/pointer_shift_opt.cpp): Remove redundant arithmetic statements produced by the translation of LLVM getElementPtr instructions to ARBOS pointer shifts.
+* [python/ikos/analyzer.py](python/ikos/analyzer.py) contains implementation of the `ikos` command line tool.
+
+* [python/ikos/report.py](python/ikos/report.py) contains implementation of the `ikos-report` command line tool.
+
+* [python/ikos/settings.py.in](python/ikos/settings.py.in) contains implementation of the `ikos-config` command line tool.
+
+* [python/ikos/view.py](python/ikos/view.py) contains implementation of the `ikos-view` command line tool.
+
+##### python/ikos/analyzer/view
+
+Contains the web resources for ikos-view. It includes HTML, CSS and JS code.
+
+#### script
+
+Contains python entry points for the command line tools.
+
+#### src/
+
+Contains implementation files, following the structure of `include/ikos/analyzer`.
+
+* [src/ikos_analyzer.cpp](src/ikos_analyzer.cpp) contains the implementation of `ikos-analyzer`. This is the entry point for all analyses.

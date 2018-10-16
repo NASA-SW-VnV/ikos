@@ -1,6 +1,6 @@
-################################################################################
+###############################################################################
 #
-# Add colors.
+# Color utilities
 #
 # Author: Maxime Arthaud
 #
@@ -8,7 +8,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2017 United States Government as represented by the
+# Copyright (c) 2011-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -38,7 +38,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-################################################################################
+###############################################################################
 import os
 import sys
 
@@ -47,12 +47,26 @@ import sys
 ENABLE = True
 
 # available colors
-COLORS = {'grey': 0, 'red': 1, 'green': 2, 'yellow': 3, 'blue': 4,
-          'magenta': 5, 'cyan': 6, 'white': 7}
+COLORS = {
+    'grey': 0,
+    'red': 1,
+    'green': 2,
+    'yellow': 3,
+    'blue': 4,
+    'magenta': 5,
+    'cyan': 6,
+    'white': 7,
+}
 
 # available attributes
-ATTRIBUTES = {'bold': 1, 'dark': 2, 'underline': 4, 'blink': 5,
-              'reverse': 7, 'concealed': 8}
+ATTRIBUTES = {
+    'bold': 1,
+    'dark': 2,
+    'underline': 4,
+    'blink': 5,
+    'reverse': 7,
+    'concealed': 8
+}
 
 
 def setup(color, file=sys.stdout):
@@ -101,5 +115,8 @@ def bold(s):
 
 
 for color in COLORS:
-    globals()[color] = lambda s, color=color: colorize(s, color)
-    globals()['%s_bold' % color] = lambda s, color=color: colorize(s, color, attrs=['bold'])
+    globals()[color] = (lambda s, color=color: colorize(s, color))
+    globals()['bold_%s' % color] = (lambda s, color=color:
+                                    colorize(s, color, attrs=['bold']))
+    globals()['on_%s' % color] = (lambda s, color=color:
+                                  colorize(s, on_color=color))

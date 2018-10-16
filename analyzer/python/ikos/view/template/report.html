@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <link rel='stylesheet' href='/static/css/ikos_theme.css'>
+    <script src='/static/js/ikos_report.js'></script>
+    <!-- VanillaJS import -->
+
+    <style>{pygments_css}</style>
+    <title>IKOS-VIEW  / {filepath}</title>
+  </head>
+  <body>
+
+    <!-- page header -->
+    <header>
+      <h3>
+        <a href='/'>IKOS-VIEW</a> &gt; {filepath}
+      </h3>
+      <nav>
+        <a href='/'>Homepage</a>
+        <a href='/settings'>Settings</a>
+      </nav>
+    </header>
+
+    <!-- page container -->
+    <div id='page_container' class='content-report'>
+
+      <!-- sidebar -->
+      <div id='page_sidebar'>
+
+        <!-- check kinds list -->
+        <div class='sidebar_item'>
+          <h5>Filter by Kind</h5>
+          <ul id='check_kinds_list'>
+          </ul>
+        </div>
+
+        <!-- check status list -->
+        <div class='sidebar_item'>
+          <h5>Filter by Status</h5>
+          <ul id='check_status_list'>
+            <li>
+              <label>
+                <input type='checkbox' value='0' class='checkbox_status'>
+                &#9745; Ok
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type='checkbox' checked='checked' value='1' class='checkbox_status'>
+                &#9888; Warning
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type='checkbox' checked='checked' value='2' class='checkbox_status'>
+                &#9940; Error
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type='checkbox' checked='checked' value='3' class='checkbox_status'>
+                &#9762; Dead Code
+              </label>
+            </li>
+          </ul>
+        </div>
+
+        <!-- navigator -->
+        <div class='sidebar_item'>
+          <h5>Navigate</h5>
+          <span id='navigator-error' class='navigator-container'>
+            <h6>Errors:</h6>
+            <button id='nav_error_prev'>&larr;</button>
+            <button id='nav_error_next'>&rarr;</button>
+          </span>
+          <span id='navigator-warning' class='navigator-container'>
+            <h6>Warnings:</h6>
+            <button id='nav_warning_prev'>&larr;</button>
+            <button id='nav_warning_next'>&rarr;</button>
+          </span>
+          <span id='navigator-deadcode' class='navigator-container'>
+            <h6>Dead Codes:</h6>
+            <button id='nav_deadcode_prev'>&larr;</button>
+            <button id='nav_deadcode_next'>&rarr;</button>
+          </span>
+          <br>
+          <br>
+          <span class='navigator-container'>
+            <small><button id='nav_reset'>reset</button></small>
+          </span>
+        </div>
+      </div>
+
+      <!-- page content -->
+      <div class='page_content' id='page_content_report'>
+      {code}
+      </div>
+    </div>
+
+    <!-- modal -->
+    <div id='modal' class='hidden'>
+      <div id='modal_body'>
+        <div id='modal_header'>
+          <h5>Call contexts</h5>
+          <a href='javascript:' class='modal_close'>&times;</a>
+        </div>
+        <pre id='modal_call_context_content'></pre>
+      </div>
+    </div>
+
+    <!-- template for checks -->
+    <span id='template_check' class='hidden'>
+      <pre class='message'></pre>
+      <a href='javascript:' class='call_contexts_toggle'>&telrec;</a>
+    </span>
+
+    <script>
+var check_kinds = {check_kinds};
+var check_kinds_filter = {check_kinds_filter};
+var functions = {functions};
+var call_contexts = {call_contexts};
+var checks = {checks};
+var template_check = document.getElementById('template_check');
+    </script>
+  </body>
+</html>

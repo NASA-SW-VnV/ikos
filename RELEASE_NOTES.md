@@ -1,3 +1,99 @@
+IKOS version 2.0 release notes
+==============================
+
+Release date
+------------
+
+October 2018
+
+List of changes
+---------------
+
+### IKOS Core changes
+
+* Updated the directory structure:
+   - Renamed `algorithms` to `adt`;
+   - Renamed `iterator` to `fixpoint`;
+   - Added subdirectories under `domain` and `value` for each group of domains;
+   - Added a `legacy` folder with unmaintained code. It will be removed in the future.
+* Improved abstract domain interfaces using CRTP. Removed all the abstract domain traits.
+* Added generic traits:
+   - `DumpableTraits` to dump an object on a stream, for debugging purpose;
+   - `IndexableTraits` to get a unique index representing an object;
+   - `GraphTraits` to traverse a graph. It replaces the previous control flow graph API.
+* Added a faster implementation of Patricia trees.
+* Added machine integer abstract domains.
+* Added unit tests using Boost.Test.
+* Implemented a new pointer constraints system solver, previously called `pta`.
+* Implemented `machine_int::PolymorphicDomain`, a machine integer abstract domain using runtime polymorphism that allows to use different abstract domains at runtime.
+* Implemented `machine_int::NumericDomainAdapter`, a machine integer abstract domain wrapping a numeric abstract domain.
+* Added abstract domain operators to perform widening with a threshold.
+* Added a flow-sensitive context-sensitive pointer analysis in `ValueDomain`.
+
+### Analyzer changes
+
+* Moved most of the implementation from the header files into the `src` directory.
+* Remove the `--ikos-pp` option. It is recommended not to use optimizations.
+* Added the `--domain` option, to choose the numerical abstract domain at runtime.
+* Added the `--hardware-addresses` option, for software using Direct Memory Access (DMA).
+* Added the `--argc` option, to specify the value of `argc` during the analysis.
+* Added support for global variable dynamic initialization.
+* Added support for the `volatile` keyword.
+* Fix exception propagation analysis for C++.
+* Added `ikos/analyzer/intrinsic.h`, a header file with IKOS intrinsics.
+* Improved database writes by creating a new transaction every 8192 queries.
+* Updated the output database schema to store more information about the source code.
+* Improved the uninitialized variable analysis.
+* Added a pass to find widening hints.
+* Improved warning and error messages using LLVM debug information.
+* Implemented several checks:
+   - signed and unsigned integer overflow (sio, uio);
+   - invalid shift count (shc);
+   - pointer overflow (poa);
+   - invalid pointer comparison (pcmp);
+   - invalid function call (fca);
+   - dead code (dca);
+   - double free and lifetime analysis (dfa);
+   - unsound analysis (sound).
+
+### AR changes
+
+* Implemented a new Abstract Representation, based on the design of LLVM. The main changes are:
+   - Improved memory management using clear ownership. The context owns types, a bundle owns functions, etc;
+   - Added `isa<>`, `cast<>` and `dyn_cast<>` utilities, à la LLVM;
+   - Added integer signedness information in the type system;
+   - Added overflow and wrapping behaviours for integer operations;
+   - Added visitors for statements and values;
+   - Added intrinsics functions;
+   - Added support for the `volatile` attribute;
+   - Added traceability utilities, allowing to attach debug information to an AR object.
+* Added a static type checker.
+* Removed the branching-opt pass and added the simplify-cfg pass, a simpler version.
+* Added the simplify upcast comparison pass.
+
+### LLVM frontend changes
+
+* Added 3 different optimization levels in ikos-pp (none, basic and aggressive)
+* Implemented a new translation from LLVM to Abstract Representation (AR). The main changes are:
+   - In memory translation instead of writing into a file;
+   - Attach LLVM debug information to AR;
+   - Recover integer signedness information from debug information and several heuristics.
+* Added the ikos-import tool. It translates LLVM bitcode into AR, useful for debugging.
+* Added regression tests for the new translation from LLVM to AR.
+
+### CMake changes
+
+* Add a target `check` that builds and runs all the tests.
+
+### Ikos-View changes
+
+* Added ikos-view, a web interface to examine IKOS results.
+
+### Overall changes
+
+* Updated the naming convention.
+
+
 IKOS version 1.3 release notes
 ==============================
 

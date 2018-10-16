@@ -45,10 +45,6 @@ IKOS is expecting clang to be in the LLVM binary directory, i.e. in the director
 
 If clang is installed in another directory, you can hard-code its path in settings.py under `/path/to/ikos-install/lib/python*/site-packages/ikos/settings/__init__.py`
 
-### "Could not find ikos-view" while running ikos
-
-ikos-view is currently not open source, sorry.
-
 Analysis issues
 ---------------
 
@@ -69,10 +65,6 @@ Source code fortification aims at making your source code more robust. It replac
 
 The Buffer Overflow Analysis (BOA) in IKOS handles `__memset_chk()`, `__memcpy_chk()` and `__memmove_chk()` as unknown library functions, and won't report any warning. Consider using `-D_FORTIFY_SOURCE=0` when you compile your source code to LLVM bitcode manually.
 
-### Handling Global Variables
-
-Prior to performing any analysis, the initialization code of the global variables in the AR program model are inlined in function `main()` if available. This transformation of the AR program model is implemented as an AR pass located at `analyzer/src/ar-passes/inline-init-gv.cpp`.
-
 ### Octagon Abstract Domain
 
-The octagon abstract domain has some implementation issues. Do not use it.
+The octagon abstract domain has some implementation issues. Try using APRON octagon domain instead.

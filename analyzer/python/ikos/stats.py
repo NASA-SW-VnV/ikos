@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 #
 # Simple statistics module
 #
@@ -10,7 +10,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2017 United States Government as represented by the
+# Copyright (c) 2011-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -40,7 +40,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-################################################################################
+###############################################################################
 import time
 
 

@@ -1,0 +1,94 @@
+#!/bin/bash
+################################################################################
+# Script for testing the RemoveUnreachableBlocksPass
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2018 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+
+progname=$(basename "$0")
+pass="remove-unreachable-blocks"
+ikos_pp="ikos-pp"
+file_check="FileCheck"
+
+# Parse arguments
+while [[ ! -z $1 ]]
+do
+    if [[ "$1" = "-h" ]] || [[ "$1" = "-help" ]]; then
+        echo "usage: $progname [-h] [--ikos-pp IKOS-PP] [--file-check FILE-CHECK]"
+        echo ""
+        echo "Run regression tests for pass $pass"
+        exit 1
+    elif [[ "$1" = "--ikos-pp" ]]; then
+        shift
+        ikos_pp=$1
+    elif [[ "$1" = "--file-check" ]]; then
+        shift
+        file_check=$1
+    else
+        echo "error: $progname: unknown command line argument '$1'" >&2
+        exit 1
+    fi
+    shift
+done
+
+# Check ikos-pp
+if ! command -v "$ikos_pp" >/dev/null 2>&1; then
+    echo "error: $progname: could not find $ikos_pp" >&2
+    exit 2
+fi
+
+# Check FileCheck
+if ! command -v "$file_check" >/dev/null 2>&1; then
+    echo "error: $progname: could not find $file_check" >&2
+    exit 2
+fi
+
+# Run the tests
+echo "# Running regression tests for pass $pass"
+
+for filename in *.ll
+do
+    echo -en "$filename ... \r"
+    "$ikos_pp" -opt=custom -$pass -S "$filename" \
+        | "$file_check" "$filename" \
+        || { echo "Test Failed"; exit 1; }
+    echo "$filename ... Passed"
+done
+
+echo "All tests passed successfully."
+exit 0

@@ -1,0 +1,20 @@
+Checks: '*,-readability-else-after-return,-readability-named-parameter,-readability-redundant-declaration,-modernize-use-default-member-init,-performance-noexcept-move-constructor,-cppcoreguidelines-pro-type-union-access,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-owning-memory,-hicpp-vararg,-hicpp-noexcept-move,-cert-err58-cpp,-google-runtime-references,-google-runtime-int,-llvm-header-guard,-fuchsia-overloaded-operator,-fuchsia-default-arguments'
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,         value: lower_case }
+  - { key: readability-identifier-naming.TypeAliasCase,         value: CamelCase  }
+  - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase  }
+  - { key: readability-identifier-naming.TypedefCase,           value: CamelCase  }
+  - { key: readability-identifier-naming.ClassCase,             value: CamelCase  }
+  - { key: readability-identifier-naming.StructCase,            value: CamelCase  }
+  - { key: readability-identifier-naming.EnumCase,              value: CamelCase  }
+  - { key: readability-identifier-naming.UnionCase,             value: CamelCase  }
+  - { key: readability-identifier-naming.MemberCase,            value: lower_case }
+  - { key: readability-identifier-naming.PrivateMemberPrefix,   value: _          }
+  - { key: readability-identifier-naming.ProtectedMemberPrefix, value: _          }
+  - { key: readability-identifier-naming.FunctionCase,          value: lower_case }
+  - { key: readability-identifier-naming.MethodCase,            value: lower_case }
+  - { key: readability-identifier-naming.VariableCase,          value: lower_case }
+  - { key: readability-identifier-naming.GlobalConstantCase,    value: CamelCase  }
+  - { key: readability-identifier-naming.StaticVariableCase,    value: CamelCase  }
+  - { key: readability-identifier-naming.GlobalVariableCase,    value: CamelCase  }
+  - { key: modernize-use-default-member-init.UseAssignment,     value: 1          }

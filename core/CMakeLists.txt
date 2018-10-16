@@ -6,7 +6,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2017 United States Government as represented by the
+# Copyright (c) 2011-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -47,7 +47,7 @@ project(ikos-core)
 #
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-  message (FATAL_ERROR
+  message(FATAL_ERROR
     "In-source builds are not allowed. Please clean your source tree and try again.")
 endif()
 
@@ -60,6 +60,80 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
 
+#
+# CMake utils
+#
+
+include(CheckCXXCompilerFlag)
+
+macro(add_cxx_flag policy name flag)
+  check_cxx_compiler_flag(${flag} "CXX_SUPPORTS_${name}")
+  if (CXX_SUPPORTS_${name})
+    add_definitions(${flag})
+  elseif (NOT (${policy} STREQUAL "OPTIONAL"))
+    message(FATAL_ERROR "${flag} flag is not supported by ${CMAKE_CXX_COMPILER}")
+  endif()
+endmacro()
+
+#
+# CMake policies
+#
+
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
+#
+# Dependency checks
+#
+
+# Add path for custom modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
+
+set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation.")
+if (CUSTOM_BOOST_ROOT)
+  set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
+  set(Boost_NO_SYSTEM_PATHS TRUE)
+endif()
+
+find_package(Boost 1.55.0 REQUIRED
+             COMPONENTS unit_test_framework)
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+
+find_package(GMP REQUIRED)
+include_directories(SYSTEM ${GMP_INCLUDE_DIR})
+include_directories(SYSTEM ${GMPXX_INCLUDE_DIR})
+
+find_package(APRON)
+if (APRON_FOUND)
+  include_directories(SYSTEM ${APRON_INCLUDE_DIR})
+endif()
+
+#
+# Compiler flags
+#
+
+add_cxx_flag(REQUIRED "CXX14" "-std=c++1y")
+add_cxx_flag(REQUIRED "FVISIBILITY_INLINES_HIDDEN" "-fvisibility-inlines-hidden")
+add_cxx_flag(REQUIRED "WALL" "-Wall")
+add_cxx_flag(REQUIRED "WEXTRA" "-Wextra")
+add_cxx_flag(OPTIONAL "WEVERYTHING" "-Weverything")
+add_cxx_flag(OPTIONAL "WNO_SWITCH_ENUM" "-Wno-switch-enum")
+add_cxx_flag(OPTIONAL "WNO_PADDED" "-Wno-padded")
+add_cxx_flag(OPTIONAL "WNO_CXX98_COMPAT" "-Wno-c++98-compat")
+add_cxx_flag(OPTIONAL "WNO_CXX98_COMPAT_PEDANTIC" "-Wno-c++98-compat-pedantic")
+add_cxx_flag(OPTIONAL "WNO_C99_EXTENSIONS" "-Wno-c99-extensions")
+add_cxx_flag(OPTIONAL "WNO_COVERED_SWITCH_DEFAULT" "-Wno-covered-switch-default")
+add_cxx_flag(OPTIONAL "WNO_EXIT_TIME_DESTRUCTORS" "-Wno-exit-time-destructors")
+add_cxx_flag(OPTIONAL "WNO_GLOBAL_CONSTRUCTORS" "-Wno-global-constructors")
+add_cxx_flag(OPTIONAL "WNO_WEAK_VTABLES" "-Wno-weak-vtables")
+
+#
+# Targets
+#
+
+include_directories(include)
+
 # install headers
 install(DIRECTORY include/
   DESTINATION include
@@ -68,24 +142,35 @@ install(DIRECTORY include/
 )
 
 #
+# Unit tests
+#
+
+enable_testing()
+add_custom_target(build-core-tests)
+add_subdirectory(test/unit EXCLUDE_FROM_ALL)
+
+#
 # Doxygen
 #
 
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-  configure_file(docs/doxygen/Doxyfile.in docs/Doxyfile @ONLY)
-  add_custom_target(doxygen-ikos
-    ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/docs/Doxyfile"
+  configure_file(doc/doxygen/Doxyfile.in doc/Doxyfile @ONLY)
+  add_custom_target(doxygen-core
+    ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    COMMENT "Generating IKOS API documentation with Doxygen" VERBATIM
+    COMMENT "Generating IKOS CORE API documentation with Doxygen" VERBATIM
   )
-  install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/docs/html" DESTINATION docs/ikos OPTIONAL)
+  install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/html" DESTINATION doc/ikos OPTIONAL)
 endif()
 
 #
-# If it's the top level CMakeLists.txt, we add some aliases
+# If it's the top level CMakeLists.txt, Add some aliases
 #
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  add_custom_target(docs DEPENDS doxygen-ikos)
+  add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND}
+    DEPENDS build-core-tests)
+  add_custom_target(doc DEPENDS doxygen-core)
 endif()

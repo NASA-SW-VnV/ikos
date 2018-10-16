@@ -6,7 +6,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2017 United States Government as represented by the
+# Copyright (c) 2011-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -47,7 +47,7 @@ project(ikos-analyzer)
 #
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
-  message (FATAL_ERROR
+  message(FATAL_ERROR
     "In-source builds are not allowed. Please clean your source tree and try again.")
 endif()
 
@@ -61,38 +61,27 @@ endif()
 message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
 
 #
-# CMake policy
-#
-
-# Use @rpath on Mac OS X (requires MAC OS X >= 10.5)
-if (POLICY CMP0042)
-  cmake_policy(SET CMP0042 NEW)
-else ()
-  set(CMAKE_MACOSX_RPATH ON)
-endif()
-
-# For add_cxx_flag
-if (POLICY CMP0054)
-  cmake_policy(SET CMP0054 OLD)
-endif()
-
-# Do not build anything when running make install
-set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
-
-#
 # CMake utils
 #
 
 include(CheckCXXCompilerFlag)
 
-macro(add_cxx_flag flag name)
-  CHECK_CXX_COMPILER_FLAG(${flag} "CXX-SUPPORTS-${name}")
-  if("CXX-SUPPORTS-${name}")
+macro(add_cxx_flag policy name flag)
+  check_cxx_compiler_flag(${flag} "CXX_SUPPORTS_${name}")
+  if (CXX_SUPPORTS_${name})
     add_definitions(${flag})
-  else()
+  elseif (NOT (${policy} STREQUAL "OPTIONAL"))
     message(FATAL_ERROR "${flag} flag is not supported by ${CMAKE_CXX_COMPILER}")
   endif()
 endmacro()
+
+#
+# CMake policies
+#
+
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 #
 # Dependency checks
@@ -104,19 +93,25 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake
 set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation.")
 if (CUSTOM_BOOST_ROOT)
   set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
-  set(Boost_NO_SYSTEM_PATHS "ON")
+  set(Boost_NO_SYSTEM_PATHS TRUE)
 endif()
 
 find_package(Boost 1.55.0 REQUIRED
              COMPONENTS filesystem system)
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 find_package(GMP REQUIRED)
-include_directories(${GMP_INCLUDE_DIR})
-include_directories(${GMPXX_INCLUDE_DIR})
+include_directories(SYSTEM ${GMP_INCLUDE_DIR})
+include_directories(SYSTEM ${GMPXX_INCLUDE_DIR})
 
 find_package(SQLITE3 REQUIRED)
-include_directories(${SQLITE3_INCLUDE_DIR})
+include_directories(SYSTEM ${SQLITE3_INCLUDE_DIR})
+
+find_package(APRON)
+if (APRON_FOUND)
+  include_directories(SYSTEM ${APRON_INCLUDE_DIR})
+  add_definitions("-DHAS_APRON")
+endif()
 
 find_package(PythonInterp REQUIRED)
 
@@ -125,49 +120,56 @@ if (NOT RT_FOUND)
   set(RT_LIB "")
 endif()
 
+find_package(Core REQUIRED)
+include_directories(${CORE_INCLUDE_DIR})
+
+find_package(AR REQUIRED)
+include_directories(${AR_INCLUDE_DIR})
+
+find_package(FrontendLLVM REQUIRED)
+include_directories(${FRONTEND_LLVM_INCLUDE_DIR})
+
 find_package(LLVM REQUIRED)
 
 if ((LLVM_VERSION VERSION_LESS "4.0") OR (NOT (LLVM_VERSION VERSION_LESS "5.0")))
   message(FATAL_ERROR "LLVM 4 is required.")
 endif()
 
-find_package(IKOS REQUIRED)
-include_directories(${IKOS_INCLUDE_DIR})
+set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")
+set(LLVM_LIBRARY_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib")
+set(LLVM_INSTALL_TOOLCHAIN_ONLY TRUE) # call install() by ourselves
+set(LLVM_REQUIRES_RTTI TRUE)
+set(LLVM_REQUIRES_EH TRUE)
 
-find_package(ARBOS REQUIRED)
-include_directories(${ARBOS_INCLUDE_DIR})
+include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
+add_definitions(${LLVM_DEFINITIONS})
+
+# incorporate the cmake features provided by LLVM
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LLVM_CMAKE_DIR})
+
+include(LLVMConfig)
+include(HandleLLVMOptions)
+include(AddLLVM)
 
 #
 # Compiler flags
 #
 
-add_cxx_flag("-std=c++1y" "CXX14")
-add_cxx_flag("-Wall" "WALL")
-# warning flags from -Wextra
-add_cxx_flag("-Wempty-body" "WEMPTY_BODY")
-add_cxx_flag("-Wmissing-field-initializers" "WMISSING_FIELD_INITIALIZERS")
-add_cxx_flag("-Wsign-compare" "WSIGN_COMPARE")
-add_cxx_flag("-Wtype-limits" "WTYPE_LIMITS")
-add_cxx_flag("-Wuninitialized" "WUNINITIALIZED")
-add_definitions("-DBOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS")
-
-#
-# Analysis options
-#
-
-# Choose the numerical abstract domain for the analysis
-# Available choices: INTERVAL, CONGRUENCE, INTERVAL_CONGRUENCE, OCTAGON, DBM,
-# VAR_PACKING_DBM, VAR_PACKING_DBM_CONGRUENCE, GAUGE, GAUGE_INTERVAL_CONGRUENCE,
-# APRON_INTERVAL, APRON_OCTAGON, APRON_POLKA_POLYHEDRA,
-# APRON_POLKA_LINEAR_EQUALITIES, APRON_PPL_POLYHEDRA,
-# APRON_PPL_LINEAR_CONGRUENCES, APRON_PKGRID_POLYHEDRA_LIN_CONGRUENCES
-set(ABSTRACT_DOMAIN "INTERVAL" CACHE STRING "Numerical abstract domain used by the analysis.")
-add_definitions("-D${ABSTRACT_DOMAIN}_DOMAIN")
-
-if (ABSTRACT_DOMAIN MATCHES "^APRON_")
-  find_package(APRON REQUIRED)
-  include_directories(${APRON_INCLUDE_DIR})
-endif()
+add_cxx_flag(REQUIRED "CXX14" "-std=c++1y")
+add_cxx_flag(REQUIRED "FVISIBILITY_INLINES_HIDDEN" "-fvisibility-inlines-hidden")
+add_cxx_flag(REQUIRED "WALL" "-Wall")
+add_cxx_flag(REQUIRED "WEXTRA" "-Wextra")
+add_cxx_flag(OPTIONAL "WEVERYTHING" "-Weverything")
+add_cxx_flag(OPTIONAL "WNO_SWITCH_ENUM" "-Wno-switch-enum")
+add_cxx_flag(OPTIONAL "WNO_PADDED" "-Wno-padded")
+add_cxx_flag(OPTIONAL "WNO_CXX98_COMPAT" "-Wno-c++98-compat")
+add_cxx_flag(OPTIONAL "WNO_CXX98_COMPAT_PEDANTIC" "-Wno-c++98-compat-pedantic")
+add_cxx_flag(OPTIONAL "WNO_C99_EXTENSIONS" "-Wno-c99-extensions")
+add_cxx_flag(OPTIONAL "WNO_COVERED_SWITCH_DEFAULT" "-Wno-covered-switch-default")
+add_cxx_flag(OPTIONAL "WNO_EXIT_TIME_DESTRUCTORS" "-Wno-exit-time-destructors")
+add_cxx_flag(OPTIONAL "WNO_GLOBAL_CONSTRUCTORS" "-Wno-global-constructors")
+add_cxx_flag(OPTIONAL "WNO_WEAK_VTABLES" "-Wno-weak-vtables")
+add_cxx_flag(OPTIONAL "WNO_UNUSED_LOCAL_TYPEDEFS" "-Wno-unused-local-typedefs")
 
 #
 # Targets
@@ -175,133 +177,206 @@ endif()
 
 include_directories(include)
 
-# arbos optimization passes
-add_library(ar-to-dot SHARED src/ar-passes/ar_to_dot.cpp)
-target_link_libraries(ar-to-dot ${ARBOS_LIB} ${Boost_LIBRARIES})
-install(TARGETS ar-to-dot DESTINATION lib OPTIONAL)
+# install intrinsic.h
+install(FILES include/ikos/analyzer/intrinsic.h
+  DESTINATION include/ikos/analyzer)
 
-add_library(inline-init-gv SHARED src/ar-passes/inline_init_gv.cpp)
-target_link_libraries(inline-init-gv ${ARBOS_LIB} ${Boost_LIBRARIES})
-install(TARGETS inline-init-gv DESTINATION lib OPTIONAL)
-
-add_library(pointer-shift-opt SHARED src/ar-passes/pointer_shift_opt.cpp)
-target_link_libraries(pointer-shift-opt ${ARBOS_LIB} ${Boost_LIBRARIES})
-install(TARGETS pointer-shift-opt DESTINATION lib OPTIONAL)
-
-add_library(add-loop-counters SHARED src/ar-passes/add_loop_counters.cpp)
-target_link_libraries(add-loop-counters ${ARBOS_LIB} ${Boost_LIBRARIES})
-install(TARGETS add-loop-counters DESTINATION lib OPTIONAL)
-
-add_library(branching-opt SHARED src/ar-passes/branching_opt.cpp)
-target_link_libraries(branching-opt ${ARBOS_LIB} ${Boost_LIBRARIES})
-install(TARGETS branching-opt DESTINATION lib OPTIONAL)
-
-add_library(unify-exit-nodes SHARED src/ar-passes/unify_exit_nodes.cpp)
-target_link_libraries(unify-exit-nodes ${ARBOS_LIB} ${Boost_LIBRARIES})
-install(TARGETS unify-exit-nodes DESTINATION lib OPTIONAL)
-
-# analysis passes
-add_library(analyzer SHARED src/ar-passes/analyzer.cpp)
-target_link_libraries(analyzer ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
+# ikos-analyzer binary
+add_executable(ikos-analyzer
+  src/ikos_analyzer.cpp
+  src/analysis/call_context.cpp
+  src/analysis/fixpoint_profile.cpp
+  src/analysis/hardware_addresses.cpp
+  src/analysis/literal.cpp
+  src/analysis/liveness.cpp
+  src/analysis/memory_location.cpp
+  src/analysis/option.cpp
+  src/analysis/pointer/constraint.cpp
+  src/analysis/pointer/function.cpp
+  src/analysis/pointer/pointer.cpp
+  src/analysis/pointer/value.cpp
+  src/analysis/value/interprocedural.cpp
+  src/analysis/value/intraprocedural.cpp
+  src/analysis/value/machine_int_domain/apron_interval.cpp
+  src/analysis/value/machine_int_domain/apron_octagon.cpp
+  src/analysis/value/machine_int_domain/apron_pkgrid_polyhedra_lin_cong.cpp
+  src/analysis/value/machine_int_domain/apron_polka_linear_equalities.cpp
+  src/analysis/value/machine_int_domain/apron_polka_polyhedra.cpp
+  src/analysis/value/machine_int_domain/apron_ppl_linear_congruences.cpp
+  src/analysis/value/machine_int_domain/apron_ppl_polyhedra.cpp
+  src/analysis/value/machine_int_domain/congruence.cpp
+  src/analysis/value/machine_int_domain/dbm.cpp
+  src/analysis/value/machine_int_domain/gauge.cpp
+  src/analysis/value/machine_int_domain/gauge_interval_congruence.cpp
+  src/analysis/value/machine_int_domain/interval.cpp
+  src/analysis/value/machine_int_domain/interval_congruence.cpp
+  src/analysis/value/machine_int_domain/octagon.cpp
+  src/analysis/value/machine_int_domain/var_pack_apron_octagon.cpp
+  src/analysis/value/machine_int_domain/var_pack_apron_pkgrid_polyhedra_lin_cong.cpp
+  src/analysis/value/machine_int_domain/var_pack_apron_polka_linear_equalities.cpp
+  src/analysis/value/machine_int_domain/var_pack_apron_polka_polyhedra.cpp
+  src/analysis/value/machine_int_domain/var_pack_apron_ppl_linear_congruences.cpp
+  src/analysis/value/machine_int_domain/var_pack_apron_ppl_polyhedra.cpp
+  src/analysis/value/machine_int_domain/var_pack_dbm.cpp
+  src/analysis/value/machine_int_domain/var_pack_dbm_congruence.cpp
+  src/analysis/variable.cpp
+  src/checker/assert_prover.cpp
+  src/checker/buffer_overflow.cpp
+  src/checker/checker.cpp
+  src/checker/dead_code.cpp
+  src/checker/division_by_zero.cpp
+  src/checker/double_free.cpp
+  src/checker/function_call.cpp
+  src/checker/int_overflow_base.cpp
+  src/checker/null_dereference.cpp
+  src/checker/pointer_alignment.cpp
+  src/checker/pointer_compare.cpp
+  src/checker/pointer_overflow.cpp
+  src/checker/shift_count.cpp
+  src/checker/signed_int_overflow.cpp
+  src/checker/soundness.cpp
+  src/checker/uninitialized_variable.cpp
+  src/checker/unsigned_int_overflow.cpp
+  src/database/output.cpp
+  src/database/sqlite.cpp
+  src/database/table.cpp
+  src/database/table/call_contexts.cpp
+  src/database/table/checks.cpp
+  src/database/table/files.cpp
+  src/database/table/functions.cpp
+  src/database/table/memory_locations.cpp
+  src/database/table/operands.cpp
+  src/database/table/settings.cpp
+  src/database/table/statements.cpp
+  src/database/table/times.cpp
+  src/exception.cpp
+  src/json/json.cpp
+  src/util/color.cpp
+  src/util/log.cpp
+  src/util/source_location.cpp
+  src/util/timer.cpp
+)
+llvm_map_components_to_libnames(IKOS_ANALYZER_LLVM_LIBS ipo)
+target_link_libraries(ikos-analyzer
+  ${FRONTEND_LLVM_TO_AR_LIB}
+  ${IKOS_ANALYZER_LLVM_LIBS}
+  ${SQLITE3_LIB}
+  ${Boost_LIBRARIES}
+  ${GMP_LIB}
+  ${GMPXX_LIB}
+  ${AR_LIB})
 if (APRON_FOUND)
-  target_link_libraries(analyzer ${APRON_LIBRARIES})
+  target_link_libraries(ikos-analyzer ${APRON_LIBRARIES})
 endif()
-install(TARGETS analyzer DESTINATION lib OPTIONAL)
+install(TARGETS ikos-analyzer RUNTIME DESTINATION bin)
 
-add_library(cpa SHARED EXCLUDE_FROM_ALL src/ar-passes/cpa.cpp)
-target_link_libraries(cpa ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
-#install(TARGETS cpa DESTINATION lib OPTIONAL)
+# python wrapper
+option(APPEND_GIT_VERSION "Append the current git commit to the version number." OFF)
+option(FORCE_UPDATE_VERSION "Force the update of the version on every build" OFF)
 
-add_library(reaching SHARED EXCLUDE_FROM_ALL src/ar-passes/reaching.cpp)
-target_link_libraries(reaching ${ARBOS_LIB} ${GMPXX_LIB} ${GMP_LIB} ${SQLITE3_LIB} ${Boost_LIBRARIES})
-#install(TARGETS reaching DESTINATION lib OPTIONAL)
-
-# settings.py
+# settings/__init__.py
 configure_file(python/settings.cmake.in python/settings.cmake @ONLY)
 
-add_custom_command(
-  OUTPUT
-    "${CMAKE_CURRENT_BINARY_DIR}/python/ikos/settings/__init__.py"
-    "[force-rebuild]" # missing file to force rebuild
-  COMMAND
-    ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/python/settings.cmake"
-  DEPENDS
-    "${CMAKE_CURRENT_BINARY_DIR}/python/settings.cmake"
-    "${CMAKE_CURRENT_SOURCE_DIR}/python/ikos/settings.py.in"
-  VERBATIM)
+if (NOT FORCE_UPDATE_VERSION)
+  add_custom_command(
+    OUTPUT
+      "python/ikos/settings/__init__.py"
+    COMMAND
+      ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/python/settings.cmake"
+    DEPENDS
+      "${CMAKE_CURRENT_BINARY_DIR}/python/settings.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/python/ikos/settings.py.in"
+    VERBATIM)
+else()
+  add_custom_command(
+    OUTPUT
+      "python/ikos/settings/__init__.py"
+      "[update-version]" # missing file to force rebuild
+    COMMAND
+      ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/python/settings.cmake"
+    DEPENDS
+      "${CMAKE_CURRENT_BINARY_DIR}/python/settings.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/python/ikos/settings.py.in"
+    VERBATIM)
+endif()
 
-# python module
+# setup.py
 configure_file(python/setup.py.in python/setup.py @ONLY)
 
 file(GLOB PYTHON_FILES python/ikos/*.py)
 
+# python module
 add_custom_command(
   OUTPUT
-    python/build/lib/ikos/__init__.py
+    "python/build/lib/ikos/__init__.py"
   COMMAND
     ${PYTHON_EXECUTABLE} setup.py -q build
+      --build-base=build
+      --build-purelib=build/lib
+  COMMAND
+    ${CMAKE_COMMAND} -E touch "build/lib/ikos/__init__.py" # udpate timestamp
   WORKING_DIRECTORY
     "${CMAKE_CURRENT_BINARY_DIR}/python"
   DEPENDS
     "${CMAKE_CURRENT_BINARY_DIR}/python/setup.py"
     "${CMAKE_CURRENT_BINARY_DIR}/python/ikos/settings/__init__.py"
-    "[force-rebuild]" # missing file to force rebuild
     ${PYTHON_FILES}
 )
-add_custom_target(python_module ALL
-  DEPENDS python/build/lib/ikos/__init__.py
+add_custom_target(ikos-python ALL
+  DEPENDS "python/build/lib/ikos/__init__.py"
 )
 
 install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install
                                 \"--prefix=${CMAKE_INSTALL_PREFIX}\"
+                                \"--root=\$ENV{DESTDIR}/\"
                               WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/python\")")
 
+# python web resources
+install(DIRECTORY python/ikos/view DESTINATION share/ikos)
+
 # python scripts
-configure_file(scripts/ikos.py.in scripts/ikos @ONLY)
-install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/scripts/ikos" DESTINATION bin OPTIONAL)
+configure_file(script/ikos.py.in script/ikos @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos" DESTINATION bin)
 
-configure_file(scripts/ikos-render.py.in scripts/ikos-render @ONLY)
-install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/scripts/ikos-render" DESTINATION bin OPTIONAL)
+configure_file(script/ikos-config.py.in script/ikos-config @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-config" DESTINATION bin)
 
-configure_file(scripts/ikos-config.py.in scripts/ikos-config @ONLY)
-install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/scripts/ikos-config" DESTINATION bin OPTIONAL)
+configure_file(script/ikos-report.py.in script/ikos-report @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-report" DESTINATION bin)
+
+configure_file(script/ikos-view.py.in script/ikos-view @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-view" DESTINATION bin)
 
 #
 # Regression tests
 #
 
-include(CTest)
 enable_testing()
-
-add_test(boa "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/boa/regrtest.py")
-add_test(dbz "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/dbz/regrtest.py")
-add_test(mem "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/mem/regrtest.py")
-add_test(null "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/null/regrtest.py")
-add_test(prover "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/prover/regrtest.py")
-add_test(uva "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/uva/regrtest.py")
-if (ABSTRACT_DOMAIN MATCHES "CONGRUENCE")
-  add_test(upa "${CMAKE_CURRENT_SOURCE_DIR}/tests/regression/upa/regrtest.py")
-endif()
+add_custom_target(build-analyzer-tests)
+add_subdirectory(test/regression EXCLUDE_FROM_ALL)
 
 #
 # Doxygen
 #
 
-find_package (Doxygen)
+find_package(Doxygen)
 if (DOXYGEN_FOUND)
-  configure_file(docs/doxygen/Doxyfile.in docs/Doxyfile @ONLY)
+  configure_file(doc/doxygen/Doxyfile.in doc/Doxyfile @ONLY)
   add_custom_target(doxygen-analyzer
-    ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/docs/Doxyfile"
+    ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    COMMENT "Generating Analyzer API documentation with Doxygen" VERBATIM
+    COMMENT "Generating IKOS Analyzer API documentation with Doxygen" VERBATIM
   )
-  install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/docs/html" DESTINATION docs/analyzer OPTIONAL)
-endif ()
+  install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doc/html" DESTINATION doc/analyzer OPTIONAL)
+endif()
 
 #
-# If it's the top level CMakeLists.txt, we add some aliases
+# If it's the top level CMakeLists.txt, Add some aliases
 #
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  add_custom_target(docs DEPENDS doxygen-analyzer)
+  add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND}
+    DEPENDS build-analyzer-tests)
+  add_custom_target(doc DEPENDS doxygen-analyzer)
 endif()

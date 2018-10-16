@@ -1,0 +1,219 @@
+#!/bin/bash
+################################################################################
+# Script for testing IKOS installation on different platforms
+#
+# These tests require Docker.
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2018 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+################################################################################
+
+progname=$(basename "$0")
+root=$(dirname "$0")
+
+# Colors
+c0="\033[0m"
+cbold="\033[1m"
+cred="\033[31m"
+cgreen="\033[32m"
+cyellow="\033[33m"
+cblue="\033[34m"
+cwhite="\033[37m"
+
+function error() {
+    echo -e "${cbold}${cred}==> ${cwhite}$1${c0}" >&2
+}
+
+function warning() {
+    echo -e "${cbold}${cyellow}==> ${cwhite}$1${c0}" >&2
+}
+
+function success() {
+    echo -e "${cbold}${cgreen}==> ${cwhite}$1${c0}"
+}
+
+function msg() {
+    echo -e "${cbold}${cblue}==> ${cwhite}$1${c0}"
+}
+
+# Split command line arguments, i.e:
+#   -ab -> -a -b
+#   --foo=bar -> --foo bar
+#
+# Split arguments are stored in the ARGS array
+#
+# Parameters:
+#   $1,$2,$3,...,$n: arguments to split
+function explode_args() {
+    unset ARGS
+    local arg=$1 key value
+
+    while [[ $arg ]]; do
+        [[ $arg = "--" ]] && ARGS+=("$@") && break
+
+        # Short options
+        if [[ ${arg:0:1} = "-" && ${arg:1:1} != "-" ]]; then
+            ARGS+=("-${arg:1:1}")
+            (( ${#arg} > 2 )) && arg="-${arg:2}" || { shift; arg=$1; }
+        # Long options
+        elif [[ ${arg:0:2} = "--" ]]; then
+            # Split argument at '=':
+            # e.g --foo=bar -> key=--foo, value=bar
+            key=${arg%%=*}; value=${arg#*=}
+            ARGS+=("$key")
+            [[ "$key" != "$value" ]] && ARGS+=("$value")
+            shift; arg=$1
+        else
+            ARGS+=("$arg"); shift; arg=$1
+        fi
+    done
+}
+
+function usage() {
+    echo "usage: $progname [-h] [--all] [OS ...]"
+    echo ""
+    echo "Try to build ikos and launch the tests on different operating systems"
+    echo ""
+    echo "positinal arguments:"
+    echo "  OS  A list of operating systems"
+    echo ""
+    echo "optional arguments:"
+    echo "  -h, --help         show this help message and exit"
+    echo "  -a, --all          run the tests over all available operating systems"
+    echo "  --jobs=N           allow N jobs at once [$njobs]"
+    echo "  --build-type=TYPE  specify the build type {Release,Debug} [$build_type]"
+}
+
+# Default arguments
+cmd=""
+njobs=2
+build_type="Release"
+
+# Parse arguments
+explode_args "$@"
+set -- "${ARGS[@]}"
+unset ARGS
+declare -a args
+
+while [[ $1 ]]; do
+    case "$1" in
+        -h|--help)    cmd="help";;
+        -a|--all)     cmd="all";;
+        --jobs)       shift; njobs=$1;;
+        --build-type) shift; build_type=$1;;
+        *)            args+=("$1");;
+    esac
+    shift
+done
+
+if [[ $cmd = "help" ]]; then
+    usage
+    exit 0
+fi
+
+if [[ $cmd = "all" ]]; then
+    # List of dockerfiles to try
+    # Note that it does not include Red Hat Enterprise Linux because it needs a license
+    args=("debian-8" "debian-9" \
+          "ubuntu-14.04" "ubuntu-16.04" "ubuntu-18.04" \
+          "archlinux" \
+          "centos-6" "centos-7" \
+          "fedora-27" "fedora-28")
+fi
+
+if (( ${#args[@]} == 0 )); then
+    echo "$progname: error: too few arguments" >&2
+    exit 2
+fi
+
+# Check that docker is available
+docker info >/dev/null || { exit 1; }
+
+cd "$root"
+root=$(pwd)
+
+# Check that we can find all the Dockerfiles
+for os in "${args[@]}"; do
+    if [[ ! -f "$os/Dockerfile" ]]; then
+        echo "$progname: error: could not find the Dockerfile for $os"
+        exit 3
+    fi
+done
+
+# go into ikos root directory
+cd ../..
+
+declare -a results
+declare -a logfiles
+
+for os in "${args[@]}"; do
+    msg "Running tests on ${cgreen}${os}${cwhite}"
+
+    logfile="logs/${os}-$(date +'%Y-%m-%d-%H:%M:%S')"
+    logfiles+=("$logfile")
+    rm -f "$root/$logfile"
+
+    docker build \
+        -t "ikos-$os" \
+        -f "$root/$os/Dockerfile" \
+        --build-arg "njobs=$njobs" \
+        --build-arg "build_type=$build_type" \
+        --force-rm \
+        --no-cache \
+        . 2>&1 | tee "$root/$logfile"
+
+    ret=${PIPESTATUS[0]}
+    results+=("$ret")
+    if (( $ret == 0 )); then
+        success "${cgreen}Passed${cwhite} successfully"
+        docker rmi "ikos-$os" >/dev/null
+    else
+        error "${cred}Failed${cwhite}. see $logfile"
+    fi
+done
+
+if (( ${#args[@]} > 1 )); then
+    msg "Summary:"
+
+    for ((i = 0; i < ${#args[@]}; i++)); do
+        if (( ${results[$i]} == 0 )); then
+            success "${args[$i]}: ${cgreen}Passed${cwhite}"
+        else
+            error "${args[$i]}: ${cred}Failed${cwhite}. see ${logfiles[$i]}"
+        fi
+    done
+fi

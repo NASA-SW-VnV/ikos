@@ -1,6 +1,6 @@
-################################################################################
+###############################################################################
 #
-# Handle ikos toolchain, from clang to the output database.
+# Handle ikos toolchain: running clang, ikos-pp and ikos-analyzer.
 #
 # Author: Maxime Arthaud
 #
@@ -8,7 +8,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2017 United States Government as represented by the
+# Copyright (c) 2011-2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -38,7 +38,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-################################################################################
+###############################################################################
 import argparse
 import atexit
 import datetime
@@ -55,234 +55,407 @@ import sys
 import tempfile
 import threading
 
+from ikos import args
 from ikos import colors
-from ikos import render
-from ikos import stats
+from ikos import log
+from ikos import report
 from ikos import settings
-
-analyses = {
-    'boa': 'Buffer overflow analysis',
-    'dbz': 'Division by zero analysis',
-    'upa': 'Unaligned pointer analysis',
-    'uva': 'Uninitialized variables analysis',
-    'nullity': 'Null dereference analysis',
-    'prover': 'Assertion prover',
-}
-
-default_analyses = ('boa', 'dbz', 'nullity', 'prover')
+from ikos import stats
+from ikos.log import printf
 
 
-def parse_opt(argv):
+def parse_arguments(argv):
     usage = '%(prog)s [options] file[.c|.cpp|.bc]'
-    parser = argparse.ArgumentParser(usage=usage)
+    description = 'ikos static analyzer'
+    formatter_class = argparse.RawTextHelpFormatter
+    parser = argparse.ArgumentParser(usage=usage,
+                                     description=description,
+                                     formatter_class=formatter_class)
 
-    parser.add_argument('-a', '--analysis', dest='analyses',
-                        help='Type of analysis (default: boa, dbz, nullity, prover)',
-                        action='append',
-                        choices=analyses.keys())
-    parser.add_argument('-e', '--entry-points', dest='entry_points',
-                        help='The entry point(s) of the program (default: main)',
-                        action='append')
-    parser.add_argument('--entry-init-gv', dest='entry_points_init_gv',
-                        help='Initialize global variables for the given entry points (default: main)',
-                        action='append')
-    parser.add_argument('--ikos-pp', dest='ikos_pp',
-                        help='Enable all preprocessing optimizations',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--inline-all', dest='inline',
-                        help='Front-end inline all functions',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--intra', dest='intraprocedural',
-                        help='Run an intraprocedural analysis instead of an interprocedural analysis',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--no-liveness', dest='no_liveness',
-                        help='Disable the liveness analysis',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--no-pointer', dest='no_pointer',
-                        help='Disable the pointer analysis',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('-p', '--precision-level', dest='precision_level',
-                        help='The precision level (reg, ptr, mem) (default: mem)',
-                        default='mem',
-                        choices=('reg', 'ptr', 'mem'))
-    parser.add_argument('--gv-zero-init', dest='gv_zero_initializers',
-                        help='Do not ignore zero initialization of global variables',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--gv-init-all', dest='gv_init_all',
-                        help='Initialize all global variables (default: initialize scalars and pointers)',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--gv-init-scalars-only', dest='gv_init_scalars_only',
-                        help='Initialize scalar global variables only',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--gv-init-pointers-only', dest='gv_init_pointers_only',
-                        help='Initialize pointer global variables only',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--summaries', dest='use_summaries',
-                        help='Use function summarization',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--pointer-summaries', dest='use_pointer_summaries',
-                        help='Use function summarization for the pointer analysis',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--disable-arbos-opt', dest='arbos_optimize',
-                        help='Disable arbos optimizations',
-                        action='store_false',
-                        default=True)
-    parser.add_argument('--disable-cfg-opt', dest='arbos_optimize_cfg',
-                        help='Disable arbos control flow graph optimizations',
-                        action='store_false',
-                        default=True)
-    parser.add_argument('--verify-bitcode', dest='verify',
-                        help='Verify LLVM bitcode is well formed',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('-d', '--dot-cfg', dest='dot_cfg',
-                        help="Print CFG of all functions to 'dot' file",
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--save-temps', dest='save_temps',
-                        help='Do not delete temporary files',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--temp-dir', dest='temp_dir', metavar='DIR',
-                        help='Temporary directory',
-                        default=None)
-    parser.add_argument('-o', '--db', '--output-db', dest='output_db', metavar='FILE',
-                        help='The output database file',
+    # Positional arguments
+    parser.add_argument('file',
+                        metavar='file[.c|.cpp|.bc]',
+                        help='File to analyze')
+
+    # Optional arguments
+    parser.add_argument('-o', '--output-db',
+                        dest='output_db',
+                        metavar='<file>',
+                        help='Output database file (default: output.db)',
                         default='output.db')
-    parser.add_argument('--rm-db', dest='remove_db',
-                        help='Remove the output database file after use',
+    parser.add_argument('-v',
+                        dest='verbosity',
+                        help='Increase verbosity',
+                        action='count',
+                        default=1)
+    parser.add_argument('-q',
+                        dest='verbosity',
+                        help='Be quiet',
+                        action='store_const',
+                        const=0)
+    parser.add_argument('--version',
+                        action=args.VersionAction,
+                        nargs=0,
+                        help='Show ikos version')
+
+    # Analysis options
+    analysis = parser.add_argument_group('Analysis Options')
+    analysis.add_argument('-a', '--analyses',
+                          dest='analyses',
+                          metavar='',
+                          help=args.help('Available analyses:',
+                                         args.analyses,
+                                         args.default_analyses),
+                          action='append')
+    analysis.add_argument('-d', '--domain',
+                          dest='domain',
+                          metavar='',
+                          help=args.help('Available abstract domains:',
+                                         args.domains,
+                                         args.default_domain),
+                          choices=args.choices(args.domains),
+                          default=args.default_domain)
+    analysis.add_argument('--entry-points',
+                          dest='entry_points',
+                          metavar='<function>',
+                          help='List of program entry points (default: main)',
+                          action='append')
+    analysis.add_argument('--globals-init',
+                          dest='globals_init',
+                          metavar='',
+                          help=args.help(
+                              'Policy of initialization for global variables:',
+                              args.globals_init_policies,
+                              args.default_globals_init_policy),
+                          choices=args.choices(args.globals_init_policies),
+                          default=args.default_globals_init_policy)
+    analysis.add_argument('--no-init-globals',
+                          dest='no_init_globals',
+                          metavar='<function>',
+                          help='Do not initialize global variables for the '
+                               'given entry points',
+                          action='append')
+    analysis.add_argument('--no-liveness',
+                          dest='no_liveness',
+                          help='Disable the liveness analysis',
+                          action='store_true',
+                          default=False)
+    analysis.add_argument('--no-pointer',
+                          dest='no_pointer',
+                          help='Disable the pointer analysis',
+                          action='store_true',
+                          default=False)
+    analysis.add_argument('--no-fixpoint-profiles',
+                          dest='no_fixpoint_profiles',
+                          help='Disable the fixpoint profiles analysis',
+                          action='store_true',
+                          default=False)
+    analysis.add_argument('--prec',
+                          dest='precision_level',
+                          metavar='',
+                          help=args.help('Precision level:',
+                                         args.precision_levels,
+                                         args.default_precision_level),
+                          choices=args.choices(args.precision_levels),
+                          default=args.default_precision_level)
+    analysis.add_argument('--proc',
+                          dest='procedural',
+                          metavar='',
+                          help=args.help('Procedural:',
+                                         args.proceduralities,
+                                         args.default_procedurality),
+                          choices=args.choices(args.proceduralities),
+                          default=args.default_procedurality)
+    analysis.add_argument('--hardware-addresses',
+                          dest='hardware_addresses',
+                          metavar='',
+                          action='append',
+                          help='Specify ranges (x-y) of hardware addresses'
+                               ', separated by a comma')
+    analysis.add_argument('--hardware-addresses-file',
+                          dest='hardware_addresses_file',
+                          metavar='',
+                          help='Specify ranges (x-y) of hardware addresses'
+                               ' from a file (one range per line)')
+    analysis.add_argument('--argc',
+                          dest='argc',
+                          metavar='',
+                          help='Specify a value for argc',
+                          type=int)
+
+    # Preprocessing options
+    preprocess = parser.add_argument_group('Preprocessing Options')
+    preprocess.add_argument('--opt',
+                            dest='opt_level',
+                            metavar='',
+                            help=args.help('Optimization level:',
+                                           args.opt_levels,
+                                           args.default_opt_level),
+                            choices=args.choices(args.opt_levels),
+                            default=args.default_opt_level)
+    preprocess.add_argument('--inline-all',
+                            dest='inline_all',
+                            help='Front-end inline all functions',
+                            action='store_true',
+                            default=False)
+    preprocess.add_argument('--disable-bc-verify',
+                            dest='disable_bc_verify',
+                            help='Do not run the LLVM bitcode verifier',
+                            action='store_true',
+                            default=False)
+
+    # Import options
+    imports = parser.add_argument_group('Import Options')
+    imports.add_argument('--no-libc',
+                         dest='no_libc',
+                         help='Do not use libc intrinsics '
+                              '(malloc, free, etc.)',
+                         action='store_true',
+                         default=False)
+    imports.add_argument('--no-libcpp',
+                         dest='no_libcpp',
+                         help='Do not use libcpp intrinsics '
+                              '(__cxa_throw, etc.)',
+                         action='store_true',
+                         default=False)
+    imports.add_argument('--no-libikos',
+                         dest='no_libikos',
+                         help='Do not use ikos intrinsics '
+                              '(__ikos_assert, etc.)',
+                         action='store_true',
+                         default=False)
+
+    # AR passes options
+    passes = parser.add_argument_group('AR Passes Options')
+    passes.add_argument('--disable-type-check',
+                        dest='disable_type_check',
+                        help='Do not run the AR type checker',
                         action='store_true',
                         default=False)
-    parser.add_argument('--colors', dest='colors',
-                        help='Enable colors (default: auto)',
-                        default='auto',
-                        choices=('off', 'on', 'no', 'yes', 'auto'))
-    parser.add_argument('--display-invariants', dest='display_invariants',
-                        help='Display invariants (default: off)',
-                        default='off',
-                        choices=('all', 'fail', 'off'))
-    parser.add_argument('--display-checks', dest='display_checks',
-                        help='Display checks (default: off)',
-                        default='off',
-                        choices=('all', 'fail', 'off'))
-    parser.add_argument('--display-times', dest='display_timing_results',
-                        help='Display timing results (default: short)',
-                        default='short',
-                        choices=('off', 'short', 'full'))
-    parser.add_argument('--display-summary', dest='display_summary',
-                        help='Display the analysis summary (default: full)',
-                        default='full',
-                        choices=('off', 'short', 'full'))
-    parser.add_argument('--show-raw-checks', dest='show_raw_checks',
-                        help='Print analysis raw checks',
+    passes.add_argument('--no-simplify-cfg',
+                        dest='no_simplify_cfg',
+                        help='Do not run the simplify-cfg pass',
                         action='store_true',
                         default=False)
-    parser.add_argument('--export', dest='export',
-                        help='Export analysis results into a specific format',
+    passes.add_argument('--no-simplify-upcast-comparison',
+                        dest='no_simplify_upcast_comparison',
+                        help='Do not run the simplify-upcast-comparison pass',
                         action='store_true',
                         default=False)
-    parser.add_argument('--export-format', dest='export_format',
-                        help='Export format (default: gcc)',
-                        default='gcc',
-                        choices=render.formats.keys())
-    parser.add_argument('--export-file', dest='export_file', metavar='FILE',
-                        help='Export into a file (default: stdout)',
+
+    # Debug options
+    debug = parser.add_argument_group('Debug Options')
+    debug.add_argument('--display-llvm',
+                       dest='display_llvm',
+                       help='Display the LLVM bitcode as text',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--display-ar',
+                       dest='display_ar',
+                       help='Display the Abstract Representation as text',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--display-liveness',
+                       dest='display_liveness',
+                       help='Display liveness analysis results',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--display-function-pointer',
+                       dest='display_function_pointer',
+                       help='Display function pointer analysis results',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--display-pointer',
+                       dest='display_pointer',
+                       help='Display pointer analysis results',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--display-fixpoint-profiles',
+                       dest='display_fixpoint_profiles',
+                       help='Display fixpoint profiles analysis results',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--display-checks',
+                       dest='display_checks',
+                       metavar='',
+                       help=args.help('Display checks:',
+                                      args.display_checks_choices,
+                                      'no'),
+                       choices=args.choices(args.display_checks_choices),
+                       default='no')
+    debug.add_argument('--display-inv',
+                       dest='display_inv',
+                       metavar='',
+                       help=args.help('Display computed invariants:',
+                                      args.display_inv_choices,
+                                      'no'),
+                       choices=args.choices(args.display_inv_choices),
+                       default='no')
+    debug.add_argument('--display-raw-checks',
+                       dest='display_raw_checks',
+                       help='Display analysis raw checks',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--generate-dot',
+                       dest='generate_dot',
+                       help='Generate a .dot file for each function',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--generate-dot-dir',
+                       dest='generate_dot_dir',
+                       metavar='<directory>',
+                       help='Output directory for .dot files',
+                       default=None)
+    debug.add_argument('--save-temps',
+                       dest='save_temps',
+                       help='Do not delete temporary files',
+                       action='store_true',
+                       default=False)
+    debug.add_argument('--temp-dir',
+                       dest='temp_dir',
+                       metavar='<directory>',
+                       help='Temporary directory',
+                       default=None)
+
+    # Misc.
+    misc = parser.add_argument_group('Miscellaneous')
+    misc.add_argument('--rm-db',
+                      dest='remove_db',
+                      help='Remove the output database file after use',
+                      action='store_true',
+                      default=False)
+    misc.add_argument('--color',
+                      dest='color',
+                      metavar='',
+                      help=args.help('Enable terminal colors:',
+                                     args.color_choices,
+                                     args.default_color),
+                      choices=args.choices(args.color_choices),
+                      default=args.default_color)
+    misc.add_argument('--log',
+                      dest='log_level',
+                      metavar='',
+                      help=args.help('Log level:',
+                                     args.log_levels,
+                                     args.default_log_level),
+                      choices=args.choices(args.log_levels),
+                      default=None)
+
+    # Report options
+    report = parser.add_argument_group('Report Options')
+    report.add_argument('--display-times',
+                        dest='display_times',
+                        metavar='',
+                        help=args.help('Display timing results',
+                                       args.display_times_choices,
+                                       'short'),
+                        choices=args.choices(args.display_times_choices),
+                        default='short')
+    report.add_argument('--display-summary',
+                        dest='display_summary',
+                        metavar='',
+                        help=args.help('Display the analysis summary',
+                                       args.display_summary_choices,
+                                       'full'),
+                        choices=args.choices(args.display_summary_choices),
+                        default='full')
+    report.add_argument('-f', '--format',
+                        dest='format',
+                        metavar='',
+                        help=args.help('Available report formats:',
+                                       args.report_formats,
+                                       'auto'),
+                        choices=args.choices(args.report_formats),
+                        default='auto')
+    report.add_argument('--report-file',
+                        dest='report_file',
+                        metavar='<file>',
+                        help='Write the report into a file (default: stdout)',
                         default=sys.stdout,
                         type=argparse.FileType('w'))
-    parser.add_argument('--export-level', dest='export_level',
-                        help='Export level (default: warning)',
-                        default='warning',
-                        choices=('all', 'safe', 'note', 'warning', 'error'))
-    parser.add_argument('--export-no-unreachable', dest='export_no_unreachable',
-                        help='Do not export unreachable statements',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--export-demangle', dest='export_demangle',
-                        help='Demangle C++ symbols during export',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--export-verbosity', dest='export_verbosity', metavar='[1-4]',
-                        help='Export verbosity (default: 2)',
-                        default=2,
+    report.add_argument('--status-filter',
+                        dest='status_filter',
+                        metavar='',
+                        help=args.help('Available status filters:',
+                                       args.status_filters,
+                                       args.default_status_filter),
+                        action='append')
+    report.add_argument('--report-verbosity',
+                        dest='report_verbosity',
+                        metavar='[1-4]',
+                        help='Report verbosity (default: 1)',
+                        default=None,
                         type=int)
-    parser.add_argument('-i', '--ikosview', dest='ikosview',
-                        help='Show analysis results using ikosview GUI',
-                        action='store_true',
-                        default=False)
-    parser.add_argument('--cpu', type=int, dest='cpu',
-                        help='CPU time limit (seconds)', default=-1)
-    parser.add_argument('--mem', type=int, dest='mem',
-                        help='MEM limit (MB)', default=-1)
 
-    # version argument
-    class VersionAction(argparse.Action):
-        def __call__(self, parser, namespace, values, option_string=None):
-            printf('ikos %s\n', settings.VERSION)
-            printf('Copyright (c) 2011-2017 United States Government as represented by the\n')
-            printf('Administrator of the National Aeronautics and Space Administration.\n')
-            printf('All Rights Reserved.\n')
-            parser.exit()
-
-    parser.add_argument('--version', action=VersionAction, nargs=0,
-                        help='show ikos version')
-
-    # for debugging
-    parser.add_argument('--print-command', dest='print_command',
-                        help=argparse.SUPPRESS,
-                        action='store_true',
-                        default=False)
-
-    # positional argument
-    parser.add_argument('file', metavar='file[.c|.cpp|.bc]',
-                        help='The file to analyze')
+    # Resource options
+    resource = parser.add_argument_group('Resources Options')
+    resource.add_argument('--cpu',
+                          dest='cpu',
+                          type=int,
+                          help='CPU time limit (seconds)',
+                          default=-1)
+    resource.add_argument('--mem',
+                          dest='mem',
+                          type=int,
+                          help='MEM limit (MB)',
+                          default=-1)
 
     opt = parser.parse_args(argv)
 
-    if not opt.analyses:
-        opt.analyses = default_analyses
+    # parse --analyses
+    opt.analyses = args.parse_argument(parser,
+                                       'analyses',
+                                       choices=args.analyses,
+                                       groups=None,
+                                       default=args.default_analyses,
+                                       value=opt.analyses)
 
     # by default, the entry point is main
     if not opt.entry_points:
         opt.entry_points = ('main',)
-        opt.entry_points_init_gv = ('main',)
 
-    # post process for global variable initialization
-    if opt.gv_init_all:
-        opt.gv_init = 'all'
-    else:
-        assert not(opt.gv_init_scalars_only and opt.gv_init_pointers_only), \
-            'options --gv-init-scalars-only and --gv-init-pointers-only are mutually exclusive'
-        if opt.gv_init_scalars_only:
-            opt.gv_init = ['scalars']
-        elif opt.gv_init_pointers_only:
-            opt.gv_init = ['pointers']
+    # verbosity changes the log level, if --log is not specified
+    if opt.log_level is None:
+        if opt.verbosity <= 0:
+            opt.log_level = 'error'
+        elif opt.verbosity == 1:
+            opt.log_level = 'info'
+        elif opt.verbosity == 2:
+            opt.log_level = 'debug'
         else:
-            opt.gv_init = ['scalars', 'pointers']
+            opt.log_level = 'all'
+
+    # default value for generate-dot-dir
+    if opt.generate_dot and not opt.generate_dot_dir:
+        if opt.temp_dir and opt.save_temps:
+            opt.generate_dot_dir = opt.temp_dir
+        else:
+            opt.generate_dot_dir = '.'
+
+    # parse --status-filter
+    opt.status_filter = args.parse_argument(parser,
+                                            'status-filter',
+                                            choices=args.status_filters,
+                                            groups=None,
+                                            default=args.default_status_filter,
+                                            value=opt.status_filter)
+
+    # verbosity changes the report verbosity level,
+    # if --report-verbosity is not specified
+    if opt.report_verbosity is None:
+        opt.report_verbosity = max(opt.verbosity, 1)
 
     return opt
-
-
-def printf(fmt, *args, **kwargs):
-    file = kwargs.pop('file', sys.stdout)
-    file.write(fmt % args if args else fmt)
-    file.flush()
 
 
 if hasattr(shlex, 'quote'):
     sh_quote = shlex.quote
 else:
     sh_quote = pipes.quote
+
+
+def command_string(cmd):
+    return ' '.join(map(sh_quote, cmd))
 
 
 def path_ext(path):
@@ -296,21 +469,34 @@ def path_ext(path):
     return os.path.splitext(path)[1]
 
 
-def create_work_dir(wd=None, save=False):
+def create_working_directory(wd=None, save=False):
     ''' Create a temporary working directory '''
-    if wd is None:
+    if not wd:
         wd = tempfile.mkdtemp(prefix='ikos-')
+
+    if not os.path.exists(wd):
+        try:
+            os.makedirs(wd)
+        except OSError as e:
+            printf('error: %s: %s\n', wd, e.strerror, file=sys.stderr)
+            sys.exit(1)
+
+    if not os.path.isdir(wd):
+        printf('error: %s: Not a directory\n', wd, file=sys.stderr)
+        sys.exit(1)
 
     if not save:
         atexit.register(shutil.rmtree, path=wd)
     else:
-        printf('Temporary files will be kept in directory: %s\n', wd)
+        log.info('Temporary files will be kept in directory: %s' % wd)
 
     return wd
 
 
 def namer(path, ext, wd):
-    ''' Return the path to a file with the given extension, in the working directory.
+    '''
+    Return the path to a file with the given extension,
+    in the given working directory.
 
     >>> namer('/home/me/test.c', '.bc', '/tmp/ikos-xxx')
     '/tmp/ikos-xxx/test.bc'
@@ -326,9 +512,16 @@ def namer(path, ext, wd):
 
 def clang(bc_path, cpp_path, colors=True):
     cmd = [settings.clang(),
-           '-emit-llvm', '-c',
-           '-g', '-D_FORTIFY_SOURCE=0', '-Wall',
-           cpp_path, '-o', bc_path]
+           '-c',
+           '-emit-llvm',
+           '-g',
+           '-D_FORTIFY_SOURCE=0',
+           '-Wall',
+           cpp_path,
+           '-o', bc_path]
+
+    # For #include <ikos/analyzer/intrinsic.hpp>
+    cmd += ['-isystem', settings.INCLUDE_DIR]
 
     if colors:
         cmd.append('-fcolor-diagnostics')
@@ -336,174 +529,173 @@ def clang(bc_path, cpp_path, colors=True):
         cmd.append('-fno-color-diagnostics')
 
     if cpp_path.endswith('.cpp'):
-        cmd.append('-std=c++14') # available because clang >= 4.0
+        cmd.append('-std=c++14')  # available because clang >= 4.0
 
+    log.info('Compiling %s' % cpp_path)
+    log.debug('Running %s' % command_string(cmd))
     subprocess.check_call(cmd)
 
 
-def ikos_pp(pp_path, bc_path, entry_points, full, inline, verify):
-    cmd = [settings.ikos_pp()]
+def ikos_pp(pp_path, bc_path, entry_points, opt_level, inline_all, verify):
+    cmd = [settings.ikos_pp(),
+           '-opt=%s' % opt_level,
+           '-entry-points=%s' % ','.join(entry_points)]
 
-    if entry_points:
-        cmd += ['-entry-points', ','.join(entry_points)]
+    if inline_all:
+        cmd.append('-inline-all')
 
-    if full:
-        cmd.append('-ikospp-level=full')
-    else:
-        cmd.append('-ikospp-level=simple')
-
-    if inline:
-        cmd.append('-ikospp-inline-all')
-
-    if verify:
-        cmd.append('-ikospp-verify')
+    if not verify:
+        cmd.append('-disable-verify')
 
     cmd += [bc_path, '-o', pp_path]
+
+    log.info('Running ikos preprocessor')
+    log.debug('Running %s' % command_string(cmd))
     subprocess.check_call(cmd)
 
 
-def llvm_to_ar(ar_path, pp_path, translate_zero_initializers=False):
-    cmd = [settings.opt(), '-load', settings.llvm_to_ar(), '-arbos', '-disable-output']
-
-    if translate_zero_initializers:
-        cmd.append('-enable-gvinit')
-
-    with open(pp_path, 'rb') as pp_file:
-        with open(ar_path, 'wb') as ar_file:
-            subprocess.check_call(cmd, stdin=pp_file, stdout=ar_file)
+def display_llvm(pp_path):
+    log.info('Printing LLVM')
+    cmd = [settings.opt(), '-S', pp_path]
+    subprocess.check_call(cmd)
 
 
-class ArbosError(Exception):
+class AnalyzerError(Exception):
     def __init__(self, message, cmd, returncode):
-        super(ArbosError, self).__init__(message)
+        super(AnalyzerError, self).__init__(message)
         self.cmd = cmd
         self.returncode = returncode
 
 
-def arbos(ar_path, db_path,
-          analyses, entry_points=None, entry_points_init_gv=None,
-          arbos_optimize=True, arbos_optimize_cfg=True, dot_cfg=False,
-          add_loop_counters=False, interprocedural=True, prec_level='mem',
-          liveness=True, pointer=True,
-          gv_init=('scalars', 'pointers'),
-          summaries=False, pointer_summaries=False,
-          display_invariants='off', display_checks='off',
-          mem=-1, cpu=-1,
-          print_command=False):
-    # list of arbos passes
-    passes = []
+def ikos_analyzer(db_path, pp_path, opt):
+    # Fix huge slow down when ikos-analyzer uses DROP TABLE on an existing db
+    if os.path.isfile(db_path):
+        os.remove(db_path)
 
-    if arbos_optimize:
-        passes.append(('pointer-shift-opt', 'ps-opt'))
+    cmd = [settings.ikos_analyzer()]
 
-        if add_loop_counters:
-            passes.append(('add-loop-counters', 'add-loop-counters'))
+    # analysis options
+    cmd += ['-a=%s' % ','.join(opt.analyses),
+            '-d=%s' % opt.domain,
+            '-entry-points=%s' % ','.join(opt.entry_points),
+            '-globals-init=%s' % opt.globals_init,
+            '-prec=%s' % opt.precision_level,
+            '-proc=%s' % opt.procedural]
 
-        if arbos_optimize_cfg:
-            passes.append(('branching-opt', 'branching-opt'))
+    if opt.no_init_globals:
+        cmd.append('-no-init-globals=%s' % ','.join(opt.no_init_globals))
+    if opt.no_liveness:
+        cmd.append('-no-liveness')
+    if opt.no_pointer:
+        cmd.append('-no-pointer')
+    if opt.no_fixpoint_profiles:
+        cmd.append('-no-fixpoint-profiles')
+    if opt.hardware_addresses:
+        cmd.append('-hardware-addresses=%s' % ','.join(opt.hardware_addresses))
+    if opt.hardware_addresses_file:
+        cmd.append('-hardware-addresses-file=%s' % opt.hardware_addresses_file)
+    if opt.argc is not None:
+        cmd.append('-argc=%d' % opt.argc)
 
-        if entry_points_init_gv:
-            passes.append(('inline-init-gv', 'inline-init-gv'))
+    # import options
+    if opt.no_libc:
+        cmd.append('-no-libc')
+    if opt.no_libcpp:
+        cmd.append('-no-libcpp')
+    if opt.no_libikos:
+        cmd.append('-no-libikos')
 
-    passes.append(('unify-exit-nodes', 'unify-exit-nodes'))
+    # add -allow-dbg-mismatch if necessary
+    if opt.opt_level == 'aggressive':
+        cmd.append('-allow-dbg-mismatch')
 
-    if dot_cfg:
-        passes.append(('ar-to-dot', 'cfg-dot'))
+    # AR passes options
+    if opt.disable_type_check:
+        cmd.append('-disable-type-check')
+    if opt.no_simplify_cfg:
+        cmd.append('-no-simplify-cfg')
+    if opt.no_simplify_upcast_comparison:
+        cmd.append('-no-simplify-upcast-comparison')
+    if 'gauge' in opt.domain:
+        cmd.append('-add-loop-counters')
 
-    passes.append(('analyzer', 'analyzer'))
+    # debug options
+    cmd += ['-display-checks=%s' % opt.display_checks,
+            '-display-inv=%s' % opt.display_inv]
 
-    loads = []
-    pass_names = []
-    options = []
+    if opt.display_ar:
+        cmd.append('-display-ar')
+    if opt.display_liveness:
+        cmd.append('-display-liveness')
+    if opt.display_function_pointer:
+        cmd.append('-display-function-pointer')
+    if opt.display_pointer:
+        cmd.append('-display-pointer')
+    if opt.display_fixpoint_profiles:
+        cmd.append('-display-fixpoint-profiles')
+    if opt.generate_dot:
+        cmd += ['-generate-dot', '-generate-dot-dir', opt.generate_dot_dir]
 
-    # build arbos parameters
-    for lib_name, pass_name in passes:
-        lib_path = settings.arbos_pass(lib_name)
-        loads.append('-load=%s' % lib_path)
-        pass_names.append('-%s' % pass_name)
+    # add -name-values if necessary
+    if (opt.display_checks in ('all', 'fail') or
+            opt.display_inv in ('all', 'fail') or
+            opt.display_liveness or
+            opt.display_fixpoint_profiles or
+            opt.display_function_pointer or
+            opt.display_pointer or
+            opt.display_raw_checks):
+        cmd.append('-name-values')
 
-    # libinline-init-gv options
-    if entry_points_init_gv:
-        for entry_point in entry_points_init_gv:
-            options += ['--init-globals', entry_point]
-        if arbos_optimize and gv_init != 'all':
-            for init in gv_init:
-                options.append('--only-%s' % init)
+    # misc. options
+    cmd += ['-color=%s' % opt.color,
+            '-log=%s' % opt.log_level]
 
-    # libanalyzer options
-    for analysis in analyses:
-        options += ['--analysis', analysis]
-
-    if entry_points:
-        for entry_point in entry_points:
-            options += ['--entry-points', entry_point]
-
-    if not interprocedural:
-        options.append('--intra')
-    if not liveness:
-        options.append('--no-liveness')
-    if not pointer:
-        options.append('--no-pointer')
-
-    options += ['--precision-level', prec_level]
-
-    if summaries:
-        options.append('--summaries')
-    if pointer_summaries:
-        options.append('--pointer-summaries')
-
-    options += [
-        '--display-invariants', display_invariants,
-        '--display-checks', display_checks,
-        '--output-db', db_path
-    ]
-
-    cmd = [settings.arbos()] + loads + pass_names + options
-
-    if print_command:
-        printf(' '.join(map(sh_quote, cmd)) + '\n')
-        return passes
+    # input/output
+    cmd += [pp_path, '-o', db_path]
 
     # set resource limit
     def set_limits():
-        if mem > 0:
-            mem_bytes = mem * 1024 * 1024
+        if opt.mem > 0:
+            mem_bytes = opt.mem * 1024 * 1024
             resource.setrlimit(resource.RLIMIT_AS, [mem_bytes, mem_bytes])
 
     # called after timeout
     def kill(p):
         try:
-            printf('TIMEOUT\n')
+            log.error('Timeout')
             p.terminate()
             p.kill()
             p.wait()
         except OSError:
             pass
 
-    p = subprocess.Popen(cmd, stdin=open(ar_path), preexec_fn=set_limits)
-    timer = threading.Timer(cpu, kill, [p])
+    log.info('Running ikos analyzer')
+    log.debug('Running %s' % command_string(cmd))
+    p = subprocess.Popen(cmd, preexec_fn=set_limits)
+    timer = threading.Timer(opt.cpu, kill, [p])
 
-    if cpu > 0:
+    if opt.cpu > 0:
         timer.start()
 
     try:
-        pid, returnstatus, ru_child = os.wait4(p.pid, 0)
+        pid, return_status, ru_child = os.wait4(p.pid, 0)
     finally:
         # kill the timer if the process has terminated already
         if timer.isAlive():
             timer.cancel()
 
     # if it did not terminate properly, propagate this error code
-    if os.WIFEXITED(returnstatus) and os.WEXITSTATUS(returnstatus) != 0:
-        raise ArbosError('some run-time error occured', cmd, os.WEXITSTATUS(returnstatus))
+    if os.WIFEXITED(return_status) and os.WEXITSTATUS(return_status) != 0:
+        exit_status = os.WEXITSTATUS(return_status)
+        raise AnalyzerError('a run-time error occured', cmd, exit_status)
 
-    if os.WIFSIGNALED(returnstatus):
-        raise ArbosError('exited with signal %d' % os.WTERMSIG(returnstatus), cmd, os.WTERMSIG(returnstatus))
+    if os.WIFSIGNALED(return_status):
+        signal = os.WTERMSIG(return_status)
+        raise AnalyzerError('exited with signal %d' % signal, cmd, signal)
 
-    if os.WIFSTOPPED(returnstatus):
-        raise ArbosError('exited with signal %d' % os.WSTOPSIG(returnstatus), cmd, os.WSTOPSIG(returnstatus))
-
-    return passes
+    if os.WIFSTOPPED(return_status):
+        signal = os.WSTOPSIG(return_status)
+        raise AnalyzerError('exited with signal %d' % signal, cmd, signal)
 
 
 def save_settings(db, rows):
@@ -513,8 +705,10 @@ def save_settings(db, rows):
     db.commit()
 
 
-def ikos_view(db_path, interprocedural):
-    settings.ikos_view()
+def ikos_view(opt, db):
+    from ikos import view
+    v = view.View(db)
+    v.serve()
 
 
 #################
@@ -530,14 +724,22 @@ def main(argv):
     os.setpgrp()
 
     # parse arguments
-    opt = parse_opt(argv[1:])
+    opt = parse_arguments(argv[1:])
 
-    # setup colors
-    colors.setup(opt.colors)
+    # setup colors and logging
+    colors.setup(opt.color, file=log.out)
+    log.setup(opt.log_level)
+
+    if opt.domain.startswith('apron-') and not settings.HAS_APRON:
+        printf('%s: error: cannot use apron abstract domains.\n'
+               'ikos was compiled without apron support, '
+               'see analyzer/README.md\n',
+               progname, file=sys.stderr)
+        sys.exit(1)
 
     try:
         # create working directory
-        wd = create_work_dir(opt.temp_dir, opt.save_temps)
+        wd = create_working_directory(opt.temp_dir, opt.save_temps)
 
         input_path = opt.file
 
@@ -549,53 +751,40 @@ def main(argv):
                 with stats.timer('clang'):
                     clang(bc_path, input_path, colors.ENABLE)
             except subprocess.CalledProcessError as e:
-                printf('%s: error while compiling %s, abort.\n', progname, input_path, file=sys.stderr)
+                printf('%s: error while compiling %s, abort.\n',
+                       progname, input_path, file=sys.stderr)
                 sys.exit(e.returncode)
 
             input_path = bc_path
 
         if path_ext(input_path) != '.bc':
-            printf('%s: error: unexpected file extension.\n', progname, file=sys.stderr)
+            printf('%s: error: unexpected file extension.\n',
+                   progname, file=sys.stderr)
             sys.exit(1)
 
-        # preprocess bitcode
+        # ikos-pp: preprocess llvm bitcode
         pp_path = namer(opt.file, '.pp.bc', wd)
         try:
             with stats.timer('ikos-pp'):
-                ikos_pp(pp_path, input_path, opt.entry_points, opt.ikos_pp, opt.inline, opt.verify)
+                ikos_pp(pp_path, input_path,
+                        opt.entry_points, opt.opt_level,
+                        opt.inline_all, not opt.disable_bc_verify)
         except subprocess.CalledProcessError as e:
-            printf('%s: error while preprocessing llvm bitcode, abort.\n', progname, file=sys.stderr)
+            printf('%s: error while preprocessing llvm bitcode, abort.\n',
+                   progname, file=sys.stderr)
             sys.exit(e.returncode)
 
-        # translate bitcode to arbos ar
-        ar_path = namer(opt.file, '.ar', wd)
-        try:
-            with stats.timer('llvm-to-ar'):
-                llvm_to_ar(ar_path, pp_path, opt.gv_zero_initializers)
-        except subprocess.CalledProcessError as e:
-            printf('%s: error while running llvm-to-ar, abort.\n', progname, file=sys.stderr)
-            sys.exit(e.returncode)
+        # display the llvm bitcode, if requested
+        if opt.display_llvm:
+            display_llvm(pp_path)
 
-        # arbos (libanalyzer)
+        # ikos-analyzer: analyze llvm bitcode
         try:
-            with stats.timer('arbos'):
-                passes = arbos(ar_path, opt.output_db,
-                               opt.analyses, opt.entry_points, opt.entry_points_init_gv,
-                               opt.arbos_optimize, opt.arbos_optimize_cfg, opt.dot_cfg,
-                               settings.ABSTRACT_DOMAIN.startswith('GAUGE'),
-                               not opt.intraprocedural, opt.precision_level,
-                               not opt.no_liveness, not opt.no_pointer,
-                               opt.gv_init,
-                               opt.use_summaries, opt.use_pointer_summaries,
-                               opt.display_invariants, opt.display_checks,
-                               opt.mem, opt.cpu,
-                               opt.print_command)
-        except ArbosError as e:
+            with stats.timer('ikos-analyzer'):
+                ikos_analyzer(opt.output_db, pp_path, opt)
+        except AnalyzerError as e:
             printf('%s: error: %s\n', progname, e, file=sys.stderr)
             sys.exit(e.returncode)
-
-        if opt.print_command:
-            return
 
         # open output database
         db = sqlite3.connect(opt.output_db)
@@ -608,21 +797,20 @@ def main(argv):
             ('version', settings.VERSION),
             ('start-date', start_date.isoformat(' ')),
             ('end-date', datetime.datetime.now().isoformat(' ')),
-            ('entry-points-init-gv', json.dumps(opt.entry_points_init_gv)),
             ('working-directory', wd),
             ('input', opt.file),
             ('bc-file', input_path),
             ('pp-bc-file', pp_path),
-            ('ar-file', ar_path),
             ('clang', settings.clang()),
-            ('opt', settings.opt()),
-            ('arbos', settings.arbos()),
-            ('llvm-to-ar', settings.llvm_to_ar()),
             ('ikos-pp', settings.ikos_pp()),
-            ('ikos-pp-level', 'full' if opt.ikos_pp else 'simple'),
-            ('ikos-pp-inline-all', json.dumps(opt.inline)),
-            ('global-variables-init', json.dumps(opt.gv_init)),
-            ('arbos-passes', json.dumps(passes)),
+            ('opt-level', opt.opt_level),
+            ('inline-all', json.dumps(opt.inline_all)),
+            ('use-libc-intrinsics', json.dumps(not opt.no_libc)),
+            ('use-libcpp-intrinsics', json.dumps(not opt.no_libcpp)),
+            ('use-libikos-intrinsics', json.dumps(not opt.no_libikos)),
+            ('use-simplify-cfg', json.dumps(not opt.no_simplify_cfg)),
+            ('use-simplify-upcast-comparison',
+             json.dumps(not opt.no_simplify_upcast_comparison)),
         ]
         if opt.cpu > 0:
             settings_rows.append(('cpu-limit', opt.cpu))
@@ -630,42 +818,57 @@ def main(argv):
             settings_rows.append(('mem-limit', opt.mem))
         save_settings(db, settings_rows)
 
+        first = (log.LEVEL >= log.ERROR)
+
         # display timing results
-        if opt.display_timing_results != 'off':
-            printf('\n')
-            render.print_timing_results(db, opt.display_timing_results == 'full')
+        if opt.display_times != 'no':
+            if not first:
+                printf('\n')
+            report.print_timing_results(db, opt.display_times == 'full')
+            first = False
 
         # display summary
-        if opt.display_summary != 'off':
-            printf('\n')
-            render.print_summary(db, opt.display_summary == 'full')
+        if opt.display_summary != 'no':
+            if not first:
+                printf('\n')
+            report.print_summary(db, opt.display_summary == 'full')
+            first = False
 
         # display raw checks
-        if opt.show_raw_checks:
-            printf('\n')
-            render.print_raw_checks(db, not opt.intraprocedural)
-
-        # export
-        if opt.export:
-            if opt.export_file is sys.stdout:
+        if opt.display_raw_checks:
+            if not first:
                 printf('\n')
+            report.print_raw_checks(db, opt.procedural == 'inter')
+            first = False
+
+        # start ikos-view
+        if opt.format == 'web':
+            ikos_view(opt, db)
+            return
+
+        # report
+        if opt.format != 'no':
+            if opt.report_file is sys.stdout:
+                if not first:
+                    printf('\n')
                 printf(colors.bold('# Results') + '\n')
+                first = False
 
-            # setup colors again (in case opt.colors = 'auto')
-            colors.setup(opt.colors, file=opt.export_file)
+            # setup colors again (in case opt.color = 'auto')
+            colors.setup(opt.color, file=opt.report_file)
 
-            # export format
-            formatter_class = render.formats[opt.export_format]
-            formatter = formatter_class(opt.export_file, opt.export_verbosity, opt.export_demangle)
+            # generate report
+            rep = report.generate_report(db,
+                                         status_filter=opt.status_filter,
+                                         analyses_filter=None)
 
-            render.export(db, formatter, opt.export_level, not opt.export_no_unreachable)
+            # format report
+            formatter_class = report.formats[opt.format]
+            formatter = formatter_class(opt.report_file, opt.report_verbosity)
+            formatter.format(rep)
 
         # close database
         db.close()
-
-        # ikos view
-        if opt.ikosview:
-            ikos_view(opt.output_db, not opt.intraprocedural)
 
         if opt.remove_db:
             os.remove(opt.output_db)
