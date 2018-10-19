@@ -76,6 +76,14 @@ macro(add_cxx_flag policy name flag)
 endmacro()
 
 #
+# CMake policies
+#
+
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
+#
 # Dependency checks
 #
 
