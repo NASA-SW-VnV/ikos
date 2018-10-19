@@ -87,7 +87,7 @@ inline InvPtr inv_ptr(ap_abstract0_t* inv) {
 
 /// \returns the size of a ap_abstract0_t
 inline std::size_t dims(ap_abstract0_t* inv) {
-  return _ap_abstract0_dimension(inv).intdim;
+  return ap_abstract0_dimension(ap_abstract0_manager(inv), inv).intdim;
 }
 
 /// \brief Add some dimensions to a ap_abstract0_t

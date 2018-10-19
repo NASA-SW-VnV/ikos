@@ -755,14 +755,16 @@ BOOST_AUTO_TEST_CASE(refine) {
   inv.set_to_top();
   inv.refine(x, Interval(Bound(2), Bound(9)));
   inv.refine(x, Congruence(ZNumber(3), ZNumber(1)));
-  BOOST_CHECK(inv.to_interval(x) == Interval(Bound(4), Bound(7)));
+  // Apron Pkgrid Polyhedra Lin Congruences cannot infer 4 <= x <= 7
+  BOOST_CHECK(inv.to_interval(x) == Interval(Bound(2), Bound(9)));
 
   inv.set_to_top();
   inv.refine(x, Interval(Bound(2), Bound(9)));
   inv.refine(x,
              IntervalCongruence(Interval(Bound(1), Bound(7)),
                                 Congruence(ZNumber(3), ZNumber(1))));
-  BOOST_CHECK(inv.to_interval(x) == Interval(Bound(4), Bound(7)));
+  // Apron Pkgrid Polyhedra Lin Congruences cannot infer 4 <= x <= 7
+  BOOST_CHECK(inv.to_interval(x) == Interval(Bound(2), Bound(7)));
 }
 
 BOOST_AUTO_TEST_CASE(forget) {
