@@ -1,7 +1,7 @@
-Install IKOS dependencies on Archlinux
-======================================
+Install IKOS on Archlinux
+=========================
 
-Here are the steps to install the required dependencies of IKOS on **[Archlinux](https://www.archlinux.org/)**.
+Here are the steps to install IKOS on **[Archlinux](https://www.archlinux.org/)** using **[AUR](https://aur.archlinux.org/)** (Archlinux User Repositories).
 
 First, make sure your system is up-to-date:
 
@@ -9,20 +9,29 @@ First, make sure your system is up-to-date:
 $ sudo pacman -Syu
 ```
 
-Now, install the following packages:
+Now, install IKOS using your favorite **AUR** helper:
 
 ```
-$ sudo pacman -S base-devel cmake gmp boost boost-libs python sqlite libedit
+$ yay -S ikos
 ```
 
-You will need to install LLVM 4 via **[AUR](https://aur.archlinux.org/)** (Archlinux User Repositories).
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../README.md#how-to-run-ikos) in README.md
 
-First, install **yay**, a tool to install packages from **AUR**: https://github.com/jguer/yay
+Build IKOS from source on Archlinux
+===================================
 
-Then, install LLVM 4 using:
+Here are the steps to install the required dependencies to build IKOS from source on **[Archlinux](https://www.archlinux.org/)** using **[AUR](https://aur.archlinux.org/)** (Archlinux User Repositories).
+
+First, make sure your system is up-to-date:
 
 ```
-$ yay -S llvm40 clang40
+$ sudo pacman -Syu
+```
+
+Now, install the following packages using your favorite **AUR** helper:
+
+```
+$ yay -S -S base-devel cmake gmp boost boost-libs python sqlite libedit llvm40 clang40
 ```
 
 Note that this may take some time.
