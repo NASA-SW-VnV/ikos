@@ -1,20 +1,46 @@
-Install IKOS dependencies on Mac OS X
-=====================================
+Install IKOS on Mac OS X
+========================
 
-Here are the steps to install the required dependencies of IKOS on **[MAC OS X](https://www.apple.com/macos/high-sierra/)** using **[Homebrew](https://brew.sh/)**.
+Here are the steps to install IKOS on **[MAC OS X](https://www.apple.com/macos/high-sierra/)** using **[Homebrew](https://brew.sh/)**.
 
-First, install **Homebrew** by following the instructions at http://brew.sh/
-
-Once you have **Homebrew**, install the following packages:
+First, make sure your system is up-to-date:
 
 ```
-$ brew install cmake gmp sqlite boost llvm@4
+$ brew upgrade
 ```
 
-Now, add the LLVM directory to your `PATH` (consider adding this in your `.bashrc`):
+Now, install IKOS:
 
 ```
-$ PATH="$(brew --prefix)/opt/llvm@4/bin:$PATH"
+$ brew install nasa-sw-vnv/core/ikos
+```
+
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../README.md#how-to-run-ikos) in README.md
+
+Build IKOS from source on Mac OS X
+==================================
+
+Here are the steps to install the required dependencies to build IKOS from source on **[MAC OS X](https://www.apple.com/macos/high-sierra/)** using **[Homebrew](https://brew.sh/)**.
+
+First, make sure your system is up-to-date:
+
+```
+$ brew upgrade
+```
+
+Now, install the following packages:
+
+```
+$ brew install cmake gmp boost llvm@4
+```
+
+When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
+
+```
+cmake \
+    -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
+    -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm@4/bin/llvm-config" \
+    ..
 ```
 
 You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md
