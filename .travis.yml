@@ -1,0 +1,44 @@
+language: cpp
+os:
+  - linux
+  - osx
+addons:
+  apt:
+    update: true
+    sources:
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-trusty-4.0
+    packages:
+    - cmake
+    - libgmp-dev
+    - libsqlite3-dev
+    - libz-dev
+    - libedit-dev
+    - libboost1.55-dev
+    - libboost-filesystem1.55-dev
+    - libboost-test1.55-dev
+    - gcc-8
+    - g++-8
+    - llvm-4.0
+    - llvm-4.0-dev
+    - clang-4.0
+  homebrew:
+    update: true
+    taps: nasa-sw-vnv/core
+    packages:
+    - cmake
+    - gmp
+    - boost
+    - llvm@4
+    - apron
+script:
+  - mkdir build
+  - cd build
+  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_C_COMPILER="gcc-8" -DCMAKE_CXX_COMPILER="g++-8" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-4.0/bin/llvm-config" ..; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/local/opt/llvm@4/bin/llvm-config" ..; fi
+  - make
+  - make install
+  - make check
+env:
+  global:
+    - MAKEFLAGS="-j2"
