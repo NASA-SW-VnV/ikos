@@ -20,8 +20,8 @@ Then, run the following commands:
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
-    libboost-dev libboost-filesystem-dev libboost-test-dev gcc g++ \
+$ sudo apt-get install gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
+    libboost-test-dev python python-pygments libsqlite3-dev libz-dev libedit-dev \
     llvm-4.0 llvm-4.0-dev clang-4.0
 ```
 

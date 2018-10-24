@@ -14,7 +14,7 @@ $ sudo yum update
 Install the following packages using yum:
 
 ```
-$ sudo yum install patch bzip2 xz zlib-devel libedit-devel sqlite-devel gmp-devel make
+$ sudo yum install patch bzip2 xz zlib-devel libedit-devel make gmp-devel sqlite-devel
 ```
 
 We will use [CentOS Sofware Collections (CSL)](https://wiki.centos.org/AdditionalResources/Repositories/SCL) to get a more recent version of gcc and python. Enable the CSL by running:

@@ -16,8 +16,8 @@ $ sudo yum update
 Now, install the following packages using yum:
 
 ```
-$ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel sqlite-devel \
-    gmp-devel gcc gcc-c++ make
+$ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
+    gcc gcc-c++ make gmp-devel sqlite-devel
 ```
 
 In the next step, we will use the bootstrap script to build and install gcc, cmake, boost, python, llvm and IKOS.

@@ -9,16 +9,18 @@ addons:
     - ubuntu-toolchain-r-test
     - llvm-toolchain-trusty-4.0
     packages:
+    - gcc-8
+    - g++-8
     - cmake
     - libgmp-dev
-    - libsqlite3-dev
-    - libz-dev
-    - libedit-dev
     - libboost1.55-dev
     - libboost-filesystem1.55-dev
     - libboost-test1.55-dev
-    - gcc-8
-    - g++-8
+    - python
+    - python-pygments
+    - libsqlite3-dev
+    - libz-dev
+    - libedit-dev
     - llvm-4.0
     - llvm-4.0-dev
     - clang-4.0

@@ -30,10 +30,9 @@ RUN add-apt-repository -y "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty
 RUN apt-get update
 
 # Install all dependencies
-RUN apt-get install -y cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
-        libboost1.55-dev libboost-filesystem1.55-dev libboost-test1.55-dev \
-        gcc-8 g++-8
-RUN apt-get install -y --force-yes llvm-4.0 llvm-4.0-dev clang-4.0
+RUN apt-get install -y --force-yes gcc-8 g++-8 cmake libgmp-dev libboost1.55-dev \
+        libboost-filesystem1.55-dev libboost-test1.55-dev python python-pygments \
+        libsqlite3-dev libz-dev libedit-dev llvm-4.0 llvm-4.0-dev clang-4.0
 
 # Update path to include llvm
 ENV PATH "/usr/lib/llvm-4.0/bin:$PATH"
@@ -45,7 +44,9 @@ ADD . /root/ikos
 RUN rm -rf /root/ikos/build && mkdir /root/ikos/build
 WORKDIR /root/ikos/build
 ENV MAKEFLAGS "-j$njobs"
-RUN CC=gcc-8 CXX=g++-8 cmake \
+RUN cmake \
+        -DCMAKE_C_COMPILER="gcc-8" \
+        -DCMAKE_CXX_COMPILER="g++-8" \
         -DCMAKE_INSTALL_PREFIX="/opt/ikos" \
         -DCMAKE_BUILD_TYPE="$build_type" \
         ..

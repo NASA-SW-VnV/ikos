@@ -18,7 +18,7 @@ RUN dnf -y update
 
 # Install all dependencies
 RUN dnf install -y which findutils patch bzip2 xz zlib-devel libedit-devel \
-        sqlite-devel gmp-devel make cmake python boost-devel gcc gcc-c++
+        gcc gcc-c++ make cmake gmp-devel boost-devel python python-pygments sqlite-devel
 
 # Add ikos source code
 ADD . /root/ikos

@@ -29,9 +29,9 @@ Then, run the following commands:
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
-    libboost1.55-dev libboost-filesystem1.55-dev libboost-test1.55-dev \
-    gcc-8 g++-8 llvm-4.0 llvm-4.0-dev clang-4.0
+$ sudo apt-get install gcc-8 g++-8 cmake libgmp-dev libboost1.55-dev \
+    libboost-filesystem1.55-dev libboost-test1.55-dev python python-pygments \
+    libsqlite3-dev libz-dev libedit-dev llvm-4.0 llvm-4.0-dev clang-4.0
 ```
 
 Now, add the LLVM directory to your `PATH` (consider adding this in your `.bashrc`):

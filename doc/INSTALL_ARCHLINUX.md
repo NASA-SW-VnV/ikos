@@ -31,7 +31,7 @@ $ sudo pacman -Syu
 Now, install the following packages using your favorite **AUR** helper:
 
 ```
-$ yay -S base-devel cmake gmp boost boost-libs python sqlite libedit llvm40 clang40
+$ yay -S base-devel cmake gmp boost boost-libs python python-pygments sqlite libedit llvm40 llvm40-libs clang40 apron-ppl-svn
 ```
 
 Note that this may take some time.

@@ -19,7 +19,7 @@ RUN pacman --noconfirm -Syu
 RUN pacman-db-upgrade
 
 # Install most dependencies
-RUN pacman -S --noconfirm base-devel cmake gmp boost boost-libs python sqlite libedit
+RUN pacman -S --noconfirm base-devel cmake gmp boost boost-libs python python-pygments sqlite libedit
 
 # Use -j$njobs when building packages
 RUN echo "MAKEFLAGS=\"-j$njobs\"" >> /etc/makepkg.conf
@@ -39,7 +39,7 @@ WORKDIR /home/yay/yay
 RUN makepkg -si --noconfirm
 
 # Install llvm 4
-RUN yay -S --noconfirm --mflags="--nocheck" llvm40 clang40
+RUN yay -S --noconfirm --mflags="--nocheck" llvm40 llvm40-libs clang40 apron-ppl-svn
 
 # Add ikos source code
 USER root

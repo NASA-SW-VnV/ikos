@@ -15,7 +15,7 @@ Now, install the following packages:
 
 ```
 $ sudo dnf install which findutils patch bzip2 xz zlib-devel libedit-devel \
-    sqlite-devel gmp-devel make cmake python boost-devel gcc gcc-c++
+    gcc gcc-c++ make cmake gmp-devel boost-devel python python-pygments sqlite-devel
 ```
 
 In the next step, we will use the bootstrap script to build and install llvm, clang and IKOS.

@@ -24,10 +24,9 @@ RUN echo "deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie-4.0 main" >> /et
 RUN apt-get update
 
 # Install all dependencies
-RUN apt-get install -y cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
-        libboost-dev libboost-filesystem-dev libboost-test-dev \
-        gcc g++
-RUN apt-get install -y --force-yes llvm-4.0 llvm-4.0-dev clang-4.0
+RUN apt-get install -y --force-yes gcc g++ cmake libgmp-dev libboost-dev \
+        libboost-filesystem-dev libboost-test-dev python python-pygments \
+        libsqlite3-dev libz-dev libedit-dev llvm-4.0 llvm-4.0-dev clang-4.0
 
 # Update path to include llvm
 ENV PATH "/usr/lib/llvm-4.0/bin:$PATH"

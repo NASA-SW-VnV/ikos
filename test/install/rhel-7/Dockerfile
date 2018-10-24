@@ -22,7 +22,7 @@ RUN subscription-manager register --username=$rhel_username --password=$rhel_pas
 RUN yum -y update
 
 # Install dependencies
-RUN yum -y install which file patch tar bzip2 xz zlib-devel ncurses-devel sqlite-devel gmp-devel gcc gcc-c++ make python
+RUN yum -y install which file patch tar bzip2 xz zlib-devel ncurses-devel gcc gcc-c++ make gmp-devel python sqlite-devel
 
 # Add ikos source code
 ADD . /root/ikos
