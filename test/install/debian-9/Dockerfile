@@ -27,7 +27,7 @@ RUN apt-get update
 RUN apt-get install -y cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
         libboost-dev libboost-filesystem-dev libboost-test-dev \
         gcc g++
-RUN apt-get install -y --allow-unauthenticated llvm-4.0 clang-4.0
+RUN apt-get install -y --allow-unauthenticated llvm-4.0 llvm-4.0-dev clang-4.0
 
 # Update path to include llvm
 ENV PATH "/usr/lib/llvm-4.0/bin:$PATH"

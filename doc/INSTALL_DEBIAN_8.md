@@ -21,7 +21,8 @@ Then, run the following commands:
 ```
 $ sudo apt-get update
 $ sudo apt-get install cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
-    libboost-dev libboost-filesystem-dev libboost-test-dev gcc g++ llvm-4.0 clang-4.0
+    libboost-dev libboost-filesystem-dev libboost-test-dev gcc g++ \
+    llvm-4.0 llvm-4.0-dev clang-4.0
 ```
 
 Now, add the LLVM directory to your `PATH` (consider adding this in your `.bashrc`):

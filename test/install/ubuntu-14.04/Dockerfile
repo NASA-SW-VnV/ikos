@@ -33,7 +33,7 @@ RUN apt-get update
 RUN apt-get install -y cmake libgmp-dev libsqlite3-dev libz-dev libedit-dev \
         libboost1.55-dev libboost-filesystem1.55-dev libboost-test1.55-dev \
         gcc-8 g++-8
-RUN apt-get install -y --force-yes llvm-4.0 clang-4.0
+RUN apt-get install -y --force-yes llvm-4.0 llvm-4.0-dev clang-4.0
 
 # Update path to include llvm
 ENV PATH "/usr/lib/llvm-4.0/bin:$PATH"
