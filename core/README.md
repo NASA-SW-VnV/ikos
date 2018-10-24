@@ -17,10 +17,11 @@ IKOS Core is a header-only C++ library. It can be installed independently from t
 
 To use IKOS Core, you will need the following dependencies:
 
+* A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
 * CMake >= 2.8.12.2
 * GMP >= 4.3.1
 * Boost >= 1.55
-* A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
+* (Optional) APRON >= 0.9.10
 
 ### Install
 
