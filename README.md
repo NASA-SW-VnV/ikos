@@ -2,6 +2,7 @@ IKOS 2.0
 ========
 
 [![Build Status](https://travis-ci.org/NASA-SW-VnV/ikos.svg?branch=master)](https://travis-ci.org/NASA-SW-VnV/ikos)
+[![License](https://img.shields.io/badge/license-NOSA%201.3-blue.svg)](LICENSE.pdf)
 
 IKOS (Inference Kernel for Open Static Analyzers) is a static analyzer for C/C++ based on the theory of Abstract Interpretation.
 
