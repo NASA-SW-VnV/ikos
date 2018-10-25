@@ -65,7 +65,6 @@ enum class MachineIntDomainOption {
   Interval,
   Congruence,
   IntervalCongruence,
-  Octagon,
   DBM,
   VarPackDBM,
   VarPackDBMCongruence,
@@ -95,8 +94,6 @@ inline const char* machine_int_domain_option_str(MachineIntDomainOption d) {
       return "congruence";
     case MachineIntDomainOption::IntervalCongruence:
       return "interval-congruence";
-    case MachineIntDomainOption::Octagon:
-      return "octagon";
     case MachineIntDomainOption::DBM:
       return "dbm";
     case MachineIntDomainOption::VarPackDBM:

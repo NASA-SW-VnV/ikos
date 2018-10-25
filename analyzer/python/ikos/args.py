@@ -176,8 +176,6 @@ domains = (
      'Congruence domain'),
     ('interval-congruence',
      'Reduced product of Interval and Congruence'),
-    ('octagon',
-     'Octagon domain'),
     ('dbm',
      'Difference-Bound Matrices domain'),
     ('var-pack-dbm',

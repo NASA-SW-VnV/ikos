@@ -70,6 +70,9 @@ namespace numeric {
 /// Warning: The memory of this domain is managed in a brute force
 /// fashion (O(n^2)) as it is intended to be used for small sets of
 /// variables (~10-20).
+///
+/// XXX: The implementation has several issues (segfaults, unsoundness, etc.).
+/// Prefer the APRON octagon domain if necessary.
 template < typename Number, typename VariableRef >
 class Octagon final
     : public numeric::AbstractDomain< Number,

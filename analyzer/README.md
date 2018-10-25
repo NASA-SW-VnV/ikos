@@ -242,7 +242,6 @@ The list of available numerical abstract domains are:
 * `-d=interval`: The interval domain, see [CC77](https://www.di.ens.fr/~cousot/COUSOTpapers/publications.www/CousotCousot-POPL-77-ACM-p238--252-1977.pdf).
 * `-d=congruence`: The congruence domain, see [Gra89](http://www.tandfonline.com/doi/abs/10.1080/00207168908803778).
 * `-d=interval-congruence`: The reduced product of interval and congruence.
-* `-d=octagon`: The octagon domain, see [AST01](https://www-apr.lip6.fr/~mine/publi/article-mine-ast01.pdf).
 * `-d=dbm`: The Difference-Bound Matrices domain, see [PADO01](https://www-apr.lip6.fr/~mine/publi/article-mine-padoII.pdf).
 * `-d=var-pack-dbm`: The Difference-Bound Matrices domain with variable packing, see [VMCAI16](https://seahorn.github.io/papers/vmcai16.pdf).
 * `-d=var-pack-dbm-congruence`: The reduced product of DBM with variable packing and congruence.
@@ -285,7 +284,6 @@ You should consider running different analyses in this specific order.
 
 Please also note that:
 * Floating point variables are safely ignored.
-* The `octagon` domain is buggy. Consider using `apron-octagon` instead.
 * In order to use the **APRON** abstract domain, you need to build IKOS with APRON first. See [APRON Support](#apron-support).
 
 ### Entry points

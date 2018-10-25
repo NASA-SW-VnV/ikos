@@ -62,7 +62,6 @@ using MachineIntAbstractDomain =
 MachineIntAbstractDomain make_top_machine_int_interval();
 MachineIntAbstractDomain make_top_machine_int_congruence();
 MachineIntAbstractDomain make_top_machine_int_interval_congruence();
-MachineIntAbstractDomain make_top_machine_int_octagon();
 MachineIntAbstractDomain make_top_machine_int_dbm();
 MachineIntAbstractDomain make_top_machine_int_var_pack_dbm();
 MachineIntAbstractDomain make_top_machine_int_var_pack_dbm_congruence();
@@ -97,8 +96,6 @@ inline MachineIntAbstractDomain make_top_machine_int_domain(
       return make_top_machine_int_congruence();
     case MachineIntDomainOption::IntervalCongruence:
       return make_top_machine_int_interval_congruence();
-    case MachineIntDomainOption::Octagon:
-      return make_top_machine_int_octagon();
     case MachineIntDomainOption::DBM:
       return make_top_machine_int_dbm();
     case MachineIntDomainOption::VarPackDBM:

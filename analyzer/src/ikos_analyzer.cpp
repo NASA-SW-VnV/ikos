@@ -220,10 +220,6 @@ static llvm::cl::opt< analyzer::MachineIntDomainOption > Domain(
                    machine_int_domain_option_str(
                        analyzer::MachineIntDomainOption::IntervalCongruence),
                    "Reduced product of Interval and Congruence"),
-        clEnumValN(analyzer::MachineIntDomainOption::Octagon,
-                   machine_int_domain_option_str(
-                       analyzer::MachineIntDomainOption::Octagon),
-                   "Octagon domain"),
         clEnumValN(analyzer::MachineIntDomainOption::DBM,
                    machine_int_domain_option_str(
                        analyzer::MachineIntDomainOption::DBM),

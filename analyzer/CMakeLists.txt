@@ -210,7 +210,6 @@ add_executable(ikos-analyzer
   src/analysis/value/machine_int_domain/gauge_interval_congruence.cpp
   src/analysis/value/machine_int_domain/interval.cpp
   src/analysis/value/machine_int_domain/interval_congruence.cpp
-  src/analysis/value/machine_int_domain/octagon.cpp
   src/analysis/value/machine_int_domain/var_pack_apron_octagon.cpp
   src/analysis/value/machine_int_domain/var_pack_apron_pkgrid_polyhedra_lin_cong.cpp
   src/analysis/value/machine_int_domain/var_pack_apron_polka_linear_equalities.cpp
