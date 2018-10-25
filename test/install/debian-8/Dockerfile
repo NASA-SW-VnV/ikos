@@ -17,16 +17,10 @@ ARG build_type=Release
 RUN apt-get update
 RUN apt-get upgrade -y
 
-# Add ppa for llvm 4.0
-RUN echo "deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie-4.0 main" >> /etc/apt/sources.list
-
-# Refresh cache
-RUN apt-get update
-
 # Install all dependencies
-RUN apt-get install -y --force-yes gcc g++ cmake libgmp-dev libboost-dev \
-        libboost-filesystem-dev libboost-test-dev python python-pygments \
-        libsqlite3-dev libz-dev libedit-dev llvm-4.0 llvm-4.0-dev clang-4.0
+RUN apt-get install -y gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
+        libboost-test-dev python python-pygments libsqlite3-dev libz-dev libedit-dev \
+        llvm-4.0 llvm-4.0-dev clang-4.0
 
 # Update path to include llvm
 ENV PATH "/usr/lib/llvm-4.0/bin:$PATH"

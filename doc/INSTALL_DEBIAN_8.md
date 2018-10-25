@@ -10,16 +10,9 @@ $ sudo apt-get update
 $ sudo apt-get upgrade
 ```
 
-Now, you will need to add the LLVM repositories to your apt `sources.list`:
-
-```
-$ echo "deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie-4.0 main" | sudo tee -a /etc/apt/sources.list
-```
-
 Then, run the following commands:
 
 ```
-$ sudo apt-get update
 $ sudo apt-get install gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
     libboost-test-dev python python-pygments libsqlite3-dev libz-dev libedit-dev \
     llvm-4.0 llvm-4.0-dev clang-4.0
