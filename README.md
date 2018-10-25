@@ -206,7 +206,9 @@ Current and Past contributors
 * Thomas Bailleux
 * Guillaume Brat
 * Clément Decoodt
+* Arnaud Hamon
 * Jorge Navas
+* Elodie-Jane Simms
 * Nija Shi
 * Sarah Thompson
 * Arnaud Venet
