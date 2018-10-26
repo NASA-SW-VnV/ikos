@@ -45,7 +45,7 @@ if (NOT AR_FOUND)
   set(AR_LIB_SEARCH_DIRS "")
 
   # use AR_ROOT as a hint
-  set(AR_ROOT "" CACHE PATH "Path to ikos AR install directory.")
+  set(AR_ROOT "" CACHE PATH "Path to ikos ar install directory")
 
   if (AR_ROOT)
     list(APPEND AR_INCLUDE_SEARCH_DIRS "${AR_ROOT}/include")
@@ -53,19 +53,29 @@ if (NOT AR_FOUND)
   endif()
 
   # use ikos-config as a hint
-  find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "ikos-config executable")
+  find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "Path to ikos-config binary")
 
   if (IKOS_CONFIG_EXECUTABLE)
     execute_process(
       COMMAND ${IKOS_CONFIG_EXECUTABLE} --includedir
+      RESULT_VARIABLE HAD_ERROR
       OUTPUT_VARIABLE IKOS_CONFIG_INCLUDE_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    if (HAD_ERROR)
+      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+    endif()
+
     execute_process(
       COMMAND ${IKOS_CONFIG_EXECUTABLE} --libdir
+      RESULT_VARIABLE HAD_ERROR
       OUTPUT_VARIABLE IKOS_CONFIG_LIB_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    if (HAD_ERROR)
+      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+    endif()
+
     list(APPEND AR_INCLUDE_SEARCH_DIRS "${IKOS_CONFIG_INCLUDE_DIR}")
     list(APPEND AR_LIB_SEARCH_DIRS "${IKOS_CONFIG_LIB_DIR}")
   endif()
@@ -73,17 +83,20 @@ if (NOT AR_FOUND)
   find_path(AR_INCLUDE_DIR
     NAMES ikos/ar/semantic/context.hpp
     HINTS ${AR_INCLUDE_SEARCH_DIRS}
+    DOC "Path to ikos ar include directory"
   )
 
   find_library(AR_LIB
     NAMES ikos-ar
     HINTS ${AR_LIB_SEARCH_DIRS}
+    DOC "Path to ikos ar library"
   )
-
-  mark_as_advanced(AR_INCLUDE_DIR AR_LIB)
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(AR
-    REQUIRED_VARS AR_INCLUDE_DIR AR_LIB
-    FAIL_MESSAGE "Could NOT find ikos AR. Please provide -DAR_ROOT=<ar-directory>")
+    REQUIRED_VARS
+      AR_INCLUDE_DIR
+      AR_LIB
+    FAIL_MESSAGE
+      "Could NOT find ikos AR. Please provide -DAR_ROOT=/path/to/ar")
 endif()

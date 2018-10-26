@@ -41,7 +41,7 @@
 #*****************************************************************************/
 
 if (NOT APRON_FOUND)
-  set(APRON_ROOT "" CACHE PATH "Path to apron install directory.")
+  set(APRON_ROOT "" CACHE PATH "Path to apron install directory")
 
   set(APRON_INCLUDE_SEARCH_DIRS "")
   set(APRON_LIBRARY_SEARCH_DIRS "")
@@ -62,48 +62,62 @@ if (NOT APRON_FOUND)
   find_path(APRON_INCLUDE_DIR
     NAMES ap_abstract0.h
     HINTS ${APRON_INCLUDE_SEARCH_DIRS}
+    DOC "Path to apron include directory"
   )
 
   find_library(APRON_APRON_LIB
     NAMES apron
     HINTS ${APRON_LIBRARY_SEARCH_DIRS}
+    DOC "Path to apron library"
   )
 
   find_library(APRON_BOX_LIB
     NAMES boxMPQ
     HINTS ${APRON_LIBRARY_SEARCH_DIRS}
+    DOC "Path to apron boxMPQ library"
   )
 
   find_library(APRON_OCT_LIB
     NAMES octMPQ
     HINTS ${APRON_LIBRARY_SEARCH_DIRS}
+    DOC "Path to apron octMPQ library"
   )
 
   find_library(APRON_POLKA_LIB
     NAMES polkaMPQ
     HINTS ${APRON_LIBRARY_SEARCH_DIRS}
+    DOC "Path to apron polkaMPQ library"
   )
 
   find_library(APRON_PPL_LIB
     NAMES ap_ppl
     HINTS ${APRON_LIBRARY_SEARCH_DIRS}
+    DOC "Path to apron ap_ppl library"
   )
 
   find_library(APRON_PKGRID_LIB
     NAMES ap_pkgrid
     HINTS ${APRON_LIBRARY_SEARCH_DIRS}
+    DOC "Path to apron ap_pkgrid library"
   )
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(APRON
     REQUIRED_VARS
-      APRON_INCLUDE_DIR APRON_APRON_LIB APRON_BOX_LIB APRON_OCT_LIB
-      APRON_POLKA_LIB APRON_PPL_LIB APRON_PKGRID_LIB
-      GMP_FOUND MPFR_FOUND PPL_FOUND
+      APRON_INCLUDE_DIR
+      APRON_APRON_LIB
+      APRON_BOX_LIB
+      APRON_OCT_LIB
+      APRON_POLKA_LIB
+      APRON_PPL_LIB
+      APRON_PKGRID_LIB
+      GMP_FOUND
+      MPFR_FOUND
+      PPL_FOUND
     FAIL_MESSAGE
-      "Could NOT find APRON. Please provide -DAPRON_ROOT=<apron-directory>")
+      "Could NOT find APRON. Please provide -DAPRON_ROOT=/path/to/apron")
 
-  set(APRON_INCLUDE_DIR
+  set(APRON_INCLUDE_DIRS
     ${APRON_INCLUDE_DIR}
     ${GMP_INCLUDE_DIR}
     ${GMPXX_INCLUDE_DIR}
@@ -122,13 +136,5 @@ if (NOT APRON_FOUND)
     ${MPFR_LIB}
     ${PPL_LIB})
 
-  mark_as_advanced(
-    APRON_INCLUDE_DIR
-    APRON_APRON_LIB
-    APRON_BOX_LIB
-    APRON_OCT_LIB
-    APRON_POLKA_LIB
-    APRON_PPL_LIB
-    APRON_PKGRID_LIB
-    APRON_LIBRARIES)
+  mark_as_advanced(APRON_INCLUDE_DIRS APRON_LIBRARIES)
 endif()

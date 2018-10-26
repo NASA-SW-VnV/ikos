@@ -1,14 +1,16 @@
 if (NOT MPFR_FOUND)
-  set(MPFR_ROOT "" CACHE PATH "Path to mpfr install directory.")
+  set(MPFR_ROOT "" CACHE PATH "Path to mpfr install directory")
 
   find_path(MPFR_INCLUDE_DIR
     NAMES mpfr.h
     HINTS "${MPFR_ROOT}/include"
+    DOC "Path to mpfr include directory"
   )
 
   find_library(MPFR_LIB
     NAMES mpfr
     HINTS "${MPFR_ROOT}/lib"
+    DOC "Path to mpfr library"
   )
 
   # Set MPFR_FIND_VERSION to 1.0.0 if no minimum version is specified
@@ -49,10 +51,12 @@ if (NOT MPFR_FOUND)
     endif()
   endif()
 
-  mark_as_advanced(MPFR_ROOT MPFR_INCLUDE_DIR MPFR_LIB)
-
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(MPFR
-    REQUIRED_VARS MPFR_INCLUDE_DIR MPFR_LIB MPFR_VERSION_OK
-    FAIL_MESSAGE "Could NOT find MPFR. Please provide -DMPFR_ROOT=<mpfr-directory>")
+    REQUIRED_VARS
+      MPFR_INCLUDE_DIR
+      MPFR_LIB
+      MPFR_VERSION_OK
+    FAIL_MESSAGE
+      "Could NOT find MPFR. Please provide -DMPFR_ROOT=/path/to/mpfr")
 endif()

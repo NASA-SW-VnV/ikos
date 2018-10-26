@@ -2,16 +2,16 @@
 add_dependencies(build-frontend-llvm-tests ikos-pp)
 
 # Try to find FileCheck
-find_program(LLVM_FILE_CHECK
+find_program(LLVM_FILE_CHECK_EXECUTABLE
   CACHE NAMES FileCheck
   HINTS ${LLVM_TOOLS_BINARY_DIR}
-  DOC "FileCheck executable")
-if (NOT LLVM_FILE_CHECK)
+  DOC "Path to FileCheck binary")
+if (NOT LLVM_FILE_CHECK_EXECUTABLE)
   message(WARNING "Could NOT find FileCheck. Tests for ikos-pp are disabled.")
 endif()
 
 function(add_pass_test test_name test_directory)
-  if (NOT LLVM_FILE_CHECK)
+  if (NOT LLVM_FILE_CHECK_EXECUTABLE)
     return() # Skip the test
   endif()
 
@@ -19,7 +19,7 @@ function(add_pass_test test_name test_directory)
            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${test_directory}"
            COMMAND runtest
              --ikos-pp "$<TARGET_FILE:ikos-pp>"
-             --file-check "${LLVM_FILE_CHECK}")
+             --file-check "${LLVM_FILE_CHECK_EXECUTABLE}")
 endfunction()
 
 add_pass_test(lower-cst-expr lower_cst_expr)

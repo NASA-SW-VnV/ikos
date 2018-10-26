@@ -46,7 +46,7 @@ if (NOT FRONTEND_LLVM_FOUND)
   set(FRONTEND_LLVM_BIN_SEARCH_DIRS "")
 
   # use FRONTEND_LLVM_ROOT as a hint
-  set(FRONTEND_LLVM_ROOT "" CACHE PATH "Path to ikos llvm frontend install directory.")
+  set(FRONTEND_LLVM_ROOT "" CACHE PATH "Path to ikos llvm frontend install directory")
 
   if (FRONTEND_LLVM_ROOT)
     list(APPEND FRONTEND_LLVM_INCLUDE_SEARCH_DIRS "${FRONTEND_LLVM_ROOT}/include")
@@ -55,24 +55,39 @@ if (NOT FRONTEND_LLVM_FOUND)
   endif()
 
   # use ikos-config as a hint
-  find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "ikos-config executable")
+  find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "Path to ikos-config binary")
 
   if (IKOS_CONFIG_EXECUTABLE)
     execute_process(
       COMMAND ${IKOS_CONFIG_EXECUTABLE} --includedir
+      RESULT_VARIABLE HAD_ERROR
       OUTPUT_VARIABLE IKOS_CONFIG_INCLUDE_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    if (HAD_ERROR)
+      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+    endif()
+
     execute_process(
       COMMAND ${IKOS_CONFIG_EXECUTABLE} --libdir
+      RESULT_VARIABLE HAD_ERROR
       OUTPUT_VARIABLE IKOS_CONFIG_LIB_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    if (HAD_ERROR)
+      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+    endif()
+
     execute_process(
       COMMAND ${IKOS_CONFIG_EXECUTABLE} --bindir
+      RESULT_VARIABLE HAD_ERROR
       OUTPUT_VARIABLE IKOS_CONFIG_BIN_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    if (HAD_ERROR)
+      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+    endif()
+
     list(APPEND FRONTEND_LLVM_INCLUDE_SEARCH_DIRS "${IKOS_CONFIG_INCLUDE_DIR}")
     list(APPEND FRONTEND_LLVM_LIB_SEARCH_DIRS "${IKOS_CONFIG_LIB_DIR}")
     list(APPEND FRONTEND_LLVM_BIN_SEARCH_DIRS "${IKOS_CONFIG_BIN_DIR}")
@@ -81,22 +96,27 @@ if (NOT FRONTEND_LLVM_FOUND)
   find_path(FRONTEND_LLVM_INCLUDE_DIR
     NAMES ikos/frontend/llvm/import.hpp
     HINTS ${FRONTEND_LLVM_INCLUDE_SEARCH_DIRS}
+    DOC "Path to ikos llvm frontend include directory"
   )
 
   find_library(FRONTEND_LLVM_TO_AR_LIB
     NAMES ikos-llvm-to-ar
     HINTS ${FRONTEND_LLVM_LIB_SEARCH_DIRS}
+    DOC "Path to ikos llvm-to-ar library"
   )
 
-  find_program(FRONTEND_LLVM_IKOS_PP_BIN
+  find_program(FRONTEND_LLVM_IKOS_PP_EXECUTABLE
     NAMES ikos-pp
     HINTS ${FRONTEND_LLVM_BIN_SEARCH_DIRS}
+    DOC "Path to ikos-pp binary"
   )
-
-  mark_as_advanced(FRONTEND_LLVM_INCLUDE_DIR FRONTEND_LLVM_TO_AR_LIB FRONTEND_LLVM_IKOS_PP_BIN)
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(FrontendLLVM
-    REQUIRED_VARS FRONTEND_LLVM_INCLUDE_DIR FRONTEND_LLVM_TO_AR_LIB FRONTEND_LLVM_IKOS_PP_BIN
-    FAIL_MESSAGE "Could NOT find ikos llvm frontend. Please provide -DFRONTEND_LLVM_ROOT=<directory>")
+    REQUIRED_VARS
+      FRONTEND_LLVM_INCLUDE_DIR
+      FRONTEND_LLVM_TO_AR_LIB
+      FRONTEND_LLVM_IKOS_PP_EXECUTABLE
+    FAIL_MESSAGE
+      "Could NOT find ikos llvm frontend. Please provide -DFRONTEND_LLVM_ROOT=/path/to/frontend")
 endif()

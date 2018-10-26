@@ -44,33 +44,39 @@ if (NOT CORE_FOUND)
   set(CORE_INCLUDE_SEARCH_DIRS "")
 
   # use CORE_ROOT as a hint
-  set(CORE_ROOT "" CACHE PATH "Path to ikos core install directory.")
+  set(CORE_ROOT "" CACHE PATH "Path to ikos core install directory")
 
   if (CORE_ROOT)
     list(APPEND CORE_INCLUDE_SEARCH_DIRS "${CORE_ROOT}/include")
   endif()
 
-  # use ikos-config --includedir as a hint
-  find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "ikos-config executable")
+  # use `ikos-config --includedir` as a hint
+  find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "Path to ikos-config binary")
 
   if (IKOS_CONFIG_EXECUTABLE)
     execute_process(
       COMMAND ${IKOS_CONFIG_EXECUTABLE} --includedir
+      RESULT_VARIABLE HAD_ERROR
       OUTPUT_VARIABLE IKOS_CONFIG_INCLUDE_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    if (HAD_ERROR)
+      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+    endif()
+
     list(APPEND CORE_INCLUDE_SEARCH_DIRS "${IKOS_CONFIG_INCLUDE_DIR}")
   endif()
 
   find_path(CORE_INCLUDE_DIR
     NAMES ikos/core/domain/numeric/interval.hpp
     HINTS ${CORE_INCLUDE_SEARCH_DIRS}
+    DOC "Path to ikos core include directory"
   )
-
-  mark_as_advanced(CORE_INCLUDE_DIR)
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(Core
-    REQUIRED_VARS CORE_INCLUDE_DIR
-    FAIL_MESSAGE "Could NOT find ikos core. Please provide -DCORE_ROOT=<core-directory>")
+    REQUIRED_VARS
+      CORE_INCLUDE_DIR
+    FAIL_MESSAGE
+      "Could NOT find ikos core. Please provide -DCORE_ROOT=/path/to/core")
 endif()

@@ -66,7 +66,7 @@ endif()
 message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
 
 # Add path for custom modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Generate compile_commands.json, used by clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -136,7 +136,7 @@ add_subdirectory(frontend/llvm)
 set(FRONTEND_LLVM_FOUND TRUE)
 set(FRONTEND_LLVM_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/frontend/llvm/include")
 set(FRONTEND_LLVM_TO_AR_LIB ikos-llvm-to-ar)
-set(FRONTEND_LLVM_IKOS_PP_BIN "$<TARGET_FILE:ikos-pp>")
+set(FRONTEND_LLVM_IKOS_PP_EXECUTABLE "$<TARGET_FILE:ikos-pp>")
 
 # Add analyzer
 message(STATUS "Including analyzer")

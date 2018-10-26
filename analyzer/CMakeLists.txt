@@ -88,7 +88,7 @@ endif()
 #
 
 # Add path for custom modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
 set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation.")
 if (CUSTOM_BOOST_ROOT)
@@ -109,7 +109,7 @@ include_directories(SYSTEM ${SQLITE3_INCLUDE_DIR})
 
 find_package(APRON)
 if (APRON_FOUND)
-  include_directories(SYSTEM ${APRON_INCLUDE_DIR})
+  include_directories(SYSTEM ${APRON_INCLUDE_DIRS})
   add_definitions("-DHAS_APRON")
 endif()
 
@@ -145,7 +145,7 @@ include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 
 # incorporate the cmake features provided by LLVM
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${LLVM_CMAKE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
 
 include(LLVMConfig)
 include(HandleLLVMOptions)

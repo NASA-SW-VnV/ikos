@@ -122,10 +122,6 @@ def ikos_analyzer():
     return path
 
 
-def ikos_view():
-    assert False, 'could not find ikos-view, see TROUBLESHOOTING.md'
-
-
 ########################
 # main for ikos-config #
 ########################
