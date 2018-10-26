@@ -104,11 +104,6 @@ find_package(GMP REQUIRED)
 include_directories(SYSTEM ${GMP_INCLUDE_DIR})
 include_directories(SYSTEM ${GMPXX_INCLUDE_DIR})
 
-find_package(RT)
-if (NOT RT_FOUND)
-  set(RT_LIB "")
-endif()
-
 find_package(Core REQUIRED)
 include_directories(${CORE_INCLUDE_DIR})
 

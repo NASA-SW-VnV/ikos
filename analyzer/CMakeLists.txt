@@ -115,11 +115,6 @@ endif()
 
 find_package(PythonInterp REQUIRED)
 
-find_package(RT)
-if (NOT RT_FOUND)
-  set(RT_LIB "")
-endif()
-
 find_package(Core REQUIRED)
 include_directories(${CORE_INCLUDE_DIR})
 
