@@ -1,6 +1,6 @@
-#*******************************************************************************
+###############################################################################
 #
-# Find APRON library.
+# Find APRON headers and libraries.
 #
 # Author: Maxime Arthaud
 #
@@ -38,7 +38,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-#*****************************************************************************/
+###############################################################################
 
 if (NOT APRON_FOUND)
   set(APRON_ROOT "" CACHE PATH "Path to apron install directory")

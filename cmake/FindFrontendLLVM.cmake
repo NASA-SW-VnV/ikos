@@ -1,6 +1,6 @@
-#*******************************************************************************
+###############################################################################
 #
-# Find IKOS llvm frontend headers and library.
+# Find IKOS LLVM frontend headers and library.
 #
 # Author: Maxime Arthaud
 #
@@ -38,7 +38,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-#*****************************************************************************/
+###############################################################################
 
 if (NOT FRONTEND_LLVM_FOUND)
   set(FRONTEND_LLVM_INCLUDE_SEARCH_DIRS "")
