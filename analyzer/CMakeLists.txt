@@ -104,7 +104,7 @@ find_package(GMP REQUIRED)
 include_directories(SYSTEM ${GMP_INCLUDE_DIR})
 include_directories(SYSTEM ${GMPXX_INCLUDE_DIR})
 
-find_package(SQLITE3 REQUIRED)
+find_package(SQLite3 REQUIRED)
 include_directories(SYSTEM ${SQLITE3_INCLUDE_DIR})
 
 find_package(APRON)

@@ -1,6 +1,6 @@
 ###############################################################################
 #
-# Find SQLite headers and libraries.
+# Find SQLite 3 headers and libraries.
 #
 # Author: Maxime Arthaud
 #
@@ -56,10 +56,10 @@ if (NOT SQLITE3_FOUND)
   )
 
   include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(SQLITE3
+  find_package_handle_standard_args(SQLite3
     REQUIRED_VARS
       SQLITE3_INCLUDE_DIR
       SQLITE3_LIB
     FAIL_MESSAGE
-      "Could NOT find SQLITE3. Please provide -DSQLITE3_ROOT=/path/to/sqlite3")
+      "Could NOT find SQLite3. Please provide -DSQLITE3_ROOT=/path/to/sqlite3")
 endif()
