@@ -146,6 +146,12 @@ include(LLVMConfig)
 include(HandleLLVMOptions)
 include(AddLLVM)
 
+find_package(Clang REQUIRED)
+
+if (NOT (LLVM_VERSION VERSION_EQUAL CLANG_VERSION))
+  message(FATAL_ERROR "LLVM and Clang versions do not match.")
+endif()
+
 #
 # Compiler flags
 #

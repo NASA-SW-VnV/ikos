@@ -154,7 +154,6 @@ if (NOT LLVM_FOUND)
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(LLVM
     REQUIRED_VARS
-      LLVM_VERSION
       LLVM_ROOT
       LLVM_INCLUDE_DIR
       LLVM_TOOLS_BINARY_DIR
@@ -164,6 +163,7 @@ if (NOT LLVM_FOUND)
       LLVM_LDFLAGS
       LLVM_OBJ_ROOT
       LLVM_MODULE_LIBS
+      LLVM_VERSION
     VERSION_VAR
       LLVM_VERSION
     FAIL_MESSAGE

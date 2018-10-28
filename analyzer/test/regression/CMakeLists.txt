@@ -5,7 +5,7 @@ function(add_analysis_test test_name test_directory)
   add_test(NAME "analysis-${test_name}"
            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${test_directory}"
            COMMAND ${PYTHON_EXECUTABLE} runtest
-             --clang "${LLVM_TOOLS_BINARY_DIR}/clang"
+             --clang "${CLANG_EXECUTABLE}"
              --ikos-pp "${FRONTEND_LLVM_IKOS_PP_EXECUTABLE}"
              --ikos-analyzer "$<TARGET_FILE:ikos-analyzer>")
 endfunction()

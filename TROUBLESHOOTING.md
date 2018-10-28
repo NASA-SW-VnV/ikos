@@ -27,6 +27,16 @@ For instance, if you installed LLVM using Homebrew on Mac OS X, you can add LLVM
 $ PATH="$(brew --prefix)/opt/llvm@4/bin:$PATH"
 ```
 
+### "Could NOT find Clang" while running cmake
+
+CMake could not find Clang.
+
+First, install Clang 4.0.x. This can usually be done with your package manager.
+
+If this message still shows up, it means cmake cannot find the `clang` command.
+
+You can either add the clang binary directory in your PATH, or give cmake the full path to clang, using `-DCLANG_EXECUTABLE=/path/to/clang`
+
 ### "Could not find ikos python module" while running ikos
 
 The ikos command could not import the ikos python module.
@@ -38,12 +48,6 @@ If the ikos python module is in another directory, make sure it is in your PYTHO
 ```
 export PYTHONPATH=/path/to/ikos-python-module
 ```
-
-### "Could not find clang" while running ikos
-
-IKOS is expecting clang to be in the LLVM binary directory, i.e. in the directory given by `ikos-config --llvm-bindir`.
-
-If clang is installed in another directory, you can hard-code its path in settings.py under `/path/to/ikos-install/lib/python*/site-packages/ikos/settings/__init__.py`
 
 Analysis issues
 ---------------

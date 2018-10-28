@@ -86,6 +86,10 @@ LLVM_INCLUDE_DIR = '@LLVM_INCLUDE_DIR@'
 
 LLVM_LIB_DIR = '@LLVM_LIBRARY_DIR@'
 
+CLANG = '@CLANG_EXECUTABLE@'
+
+CLANG_VERSION = '@CLANG_VERSION@'
+
 HAS_APRON = @HAS_APRON@
 
 
@@ -99,7 +103,7 @@ def is_executable(path):
 
 
 def clang():
-    path = os.path.join(LLVM_BIN_DIR, 'clang')
+    path = CLANG
     assert is_executable(path), 'could not find clang, see TROUBLESHOOTING.md'
     return path
 
@@ -168,5 +172,9 @@ def main(argv):
                         help='Directory containing LLVM headers')
     parser.add_argument('--llvm-libdir', action=print_action(LLVM_LIB_DIR), nargs=0,
                         help='Directory containing LLVM libraries')
+    parser.add_argument('--clang', action=print_action(CLANG), nargs=0,
+                        help='Print the path to clang')
+    parser.add_argument('--clang-version', action=print_action(CLANG_VERSION), nargs=0,
+                        help='Print clang version')
 
     parser.parse_args(argv[1:])
