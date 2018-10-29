@@ -130,6 +130,20 @@ def ikos_analyzer():
     return path
 
 
+def ikos_scan_cc():
+    path = os.path.join(BIN_DIR, 'ikos-scan-cc')
+    assert os.path.isabs(path)
+    assert is_executable(path), 'could not find ikos-scan-cc'
+    return path
+
+
+def ikos_scan_cxx():
+    path = os.path.join(BIN_DIR, 'ikos-scan-c++')
+    assert os.path.isabs(path)
+    assert is_executable(path), 'could not find ikos-scan-c++'
+    return path
+
+
 ########################
 # main for ikos-config #
 ########################

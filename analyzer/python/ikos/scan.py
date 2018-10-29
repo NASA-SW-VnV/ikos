@@ -42,10 +42,14 @@
 import argparse
 import os
 import os.path
+import subprocess
+import sys
 
 from ikos import args
 from ikos import colors
 from ikos import log
+from ikos import settings
+from ikos.analyzer import command_string
 
 
 def parse_arguments(argv):
@@ -116,6 +120,17 @@ def parse_arguments(argv):
     return opt
 
 
+###########################################
+# main for ikos-scan-cc and ikos-scan-c++ #
+###########################################
+
+def compile(mode, argv):
+    # run the command
+    proc = subprocess.Popen([mode] + argv[1:], executable=settings.clang())
+    rc = proc.wait()
+    sys.exit(rc)
+
+
 ######################
 # main for ikos-scan #
 ######################
@@ -130,4 +145,12 @@ def main(argv):
     colors.setup(opt.color, file=log.out)
     log.setup(opt.log_level)
 
-    # TODO
+    # setup environment variables
+    os.environ['CC'] = settings.ikos_scan_cc()
+    os.environ['CXX'] = settings.ikos_scan_cxx()
+
+    # run the build command
+    log.debug('Running %s' % command_string(opt.args))
+    proc = subprocess.Popen(opt.args)
+    rc = proc.wait()
+    sys.exit(rc)
