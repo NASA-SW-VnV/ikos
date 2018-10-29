@@ -347,6 +347,9 @@ install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-report" DESTINATION bi
 configure_file(script/ikos-view.py.in script/ikos-view @ONLY)
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-view" DESTINATION bin)
 
+configure_file(script/ikos-scan.py.in script/ikos-scan @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-scan" DESTINATION bin)
+
 #
 # Regression tests
 #

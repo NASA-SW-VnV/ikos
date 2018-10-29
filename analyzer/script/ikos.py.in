@@ -1,5 +1,5 @@
 #!@PYTHON_EXECUTABLE@
-################################################################################
+###############################################################################
 #
 # ikos: a static analyzer for C/C++ programs
 #
@@ -39,7 +39,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-################################################################################
+###############################################################################
 import glob
 import os.path
 import sys

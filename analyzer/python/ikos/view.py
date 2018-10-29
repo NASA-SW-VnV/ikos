@@ -47,6 +47,7 @@ import io
 import json
 import operator
 import os
+import os.path
 import re
 import sqlite3
 import sys

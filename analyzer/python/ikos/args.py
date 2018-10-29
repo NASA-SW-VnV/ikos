@@ -285,7 +285,7 @@ log_levels = (
     ('all', 'Show all messages'),
 )
 
-default_log_level = 'warning'
+default_log_level = 'info'
 
 # Report options choices
 

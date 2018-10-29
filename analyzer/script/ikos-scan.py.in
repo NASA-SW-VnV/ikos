@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 ###############################################################################
 #
-# ikos-report: generate an analysis report from a result database.
+# ikos-scan: a python helper to analyze whole C/C++ projects
 #
 # Author: Maxime Arthaud
 #
@@ -9,7 +9,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2018 United States Government as represented by the
+# Copyright (c) 2018 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -53,10 +53,10 @@ if __name__ == '__main__':
         sys.path.insert(1, site_pkgs[0])
 
     try:
-        import ikos.report
+        import ikos.scan
     except ImportError:
         sys.stderr.write('error: could not find ikos python module\n')
         sys.stderr.write('error: see TROUBLESHOOTING.md\n')
         sys.exit(1)
 
-    ikos.report.main(sys.argv)
+    ikos.scan.main(sys.argv)
