@@ -458,12 +458,31 @@ class ClangArgumentParser:
 
 def build_bitcode(mode, parser, src_path, bc_path):
     ''' Compile the given source file to llvm bitcode '''
-    cmd = [mode, '-c', '-emit-llvm', '-g', '-D_FORTIFY_SOURCE=0']
+    cmd = [mode,
+           '-c',
+           '-emit-llvm']
     cmd += parser.compile_args
-    cmd += [src_path, '-o', bc_path]
+    cmd += ['-g',
+            '-D_FORTIFY_SOURCE=0',
+            '-O0',
+            src_path,
+            '-o', bc_path]
 
     log.debug('Running %s' % command_string(cmd))
     proc = subprocess.Popen(cmd, executable=settings.clang())
+    rc = proc.wait()
+    if rc != 0:
+        sys.exit(rc)
+
+
+def link_bitcodes(mode, parser, input_paths, output_path):
+    ''' Link the given bitcode files to a single llvm bitcode '''
+    cmd = ['llvm-link']
+    cmd += input_paths
+    cmd += ['-o', output_path]
+
+    log.debug('Running %s' % command_string(cmd))
+    proc = subprocess.Popen(cmd, executable=settings.llvm_link())
     rc = proc.wait()
     if rc != 0:
         sys.exit(rc)
@@ -476,11 +495,12 @@ def build_bitcode(mode, parser, src_path, bc_path):
 def compile(mode, argv):
     assert mode in ('clang', 'clang++')
 
+    # remove 'ikos-scan-cc'
+    argv = list(argv[1:])
+
     # setup colors and logging
     colors.setup(os.environ['IKOS_SCAN_COLOR'], file=log.out)
     log.setup(os.environ['IKOS_SCAN_LOG_LEVEL'])
-
-    argv = list(argv[1:])
 
     # run the command
     proc = subprocess.Popen([mode] + argv, executable=settings.clang())
@@ -494,14 +514,25 @@ def compile(mode, argv):
     if parser.skip_bitcode_gen():
         return
 
-    # compile a single file
-    if len(parser.source_files) == 1 and not parser.is_link:
+    # compile to llvm bitcode
+    if len(parser.source_files) == 1 and len(parser.object_files) == 0:
         src_path = parser.source_files[0]
-        obj_path = parser.output_file
-        bc_path = '%s.bc' % obj_path
+        bc_path = '%s.bc' % parser.output_file
         build_bitcode(mode, parser, src_path, bc_path)
+    else:
+        bitcode_files = []
 
-    # TODO
+        for src_path in parser.source_files:
+            bc_path = '%s.bc' % src_path
+            build_bitcode(mode, parser, src_path, bc_path)
+            bitcode_files.append(bc_path)
+
+        for obj_path in parser.object_files:
+            bc_path = '%s.bc' % obj_path
+            bitcode_files.append(bc_path)
+
+        bc_path = '%s.bc' % parser.output_file
+        link_bitcodes(mode, parser, bitcode_files, bc_path)
 
 
 ######################

@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 #
 # Configuration file for ikos
 #
@@ -38,7 +38,7 @@
 # RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
-################################################################################
+###############################################################################
 import argparse
 import os
 import os.path
@@ -113,6 +113,13 @@ def opt():
     path = os.path.join(LLVM_BIN_DIR, 'opt')
     assert os.path.isabs(path)
     assert is_executable(path), 'could not find opt'
+    return path
+
+
+def llvm_link():
+    path = os.path.join(LLVM_BIN_DIR, 'llvm-link')
+    assert os.path.isabs(path)
+    assert is_executable(path), 'could not find llvm-link'
     return path
 
 

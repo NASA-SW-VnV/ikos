@@ -516,6 +516,7 @@ def clang(bc_path, cpp_path, colors=True):
            '-emit-llvm',
            '-g',
            '-D_FORTIFY_SOURCE=0',
+           '-O0',
            '-Wall',
            cpp_path,
            '-o', bc_path]
