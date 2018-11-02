@@ -46,6 +46,7 @@ import os.path
 import re
 import subprocess
 import sys
+import tempfile
 
 from ikos import args
 from ikos import colors
@@ -157,6 +158,8 @@ class ClangArgumentParser:
             '-emit-llvm': (0, ClangArgumentParser._set_emit_llvm),
             '-v': (0, ClangArgumentParser._set_verbose),
             '--verbose': (0, ClangArgumentParser._set_verbose),
+            '-w': (0, ClangArgumentParser._set_compile_only),
+            '-W': (0, ClangArgumentParser._set_compile_only),
             # Preprocessor assertions
             '-A': (1, ClangArgumentParser._add_compile_binary),
             '-D': (1, ClangArgumentParser._add_compile_binary),
@@ -193,29 +196,30 @@ class ClangArgumentParser:
             '-pedantic': (0, ClangArgumentParser._add_compile_unary),
             '-x': (1, ClangArgumentParser._add_compile_binary),
             # Ignore debug flags
-            '-g': (0, ClangArgumentParser._ignore),
-            '-g0': (0, ClangArgumentParser._ignore),
-            '-ggdb': (0, ClangArgumentParser._ignore),
-            '-ggdb3': (0, ClangArgumentParser._ignore),
-            '-gdwarf-2': (0, ClangArgumentParser._ignore),
-            '-gdwarf-3': (0, ClangArgumentParser._ignore),
-            '-gline-tables-only': (0, ClangArgumentParser._ignore),
-            '-p': (0, ClangArgumentParser._ignore),
-            '-pg': (0, ClangArgumentParser._ignore),
+            '-g': (0, ClangArgumentParser._add_compile_unary),
+            '-g0': (0, ClangArgumentParser._add_compile_unary),
+            '-g1': (0, ClangArgumentParser._add_compile_unary),
+            '-ggdb': (0, ClangArgumentParser._add_compile_unary),
+            '-ggdb3': (0, ClangArgumentParser._add_compile_unary),
+            '-gdwarf-2': (0, ClangArgumentParser._add_compile_unary),
+            '-gdwarf-3': (0, ClangArgumentParser._add_compile_unary),
+            '-gline-tables-only': (0, ClangArgumentParser._add_compile_unary),
+            '-p': (0, ClangArgumentParser._add_compile_unary),
+            '-pg': (0, ClangArgumentParser._add_compile_unary),
             # Ignore optimization flags
-            '-O': (0, ClangArgumentParser._ignore),
-            '-O0': (0, ClangArgumentParser._ignore),
-            '-O1': (0, ClangArgumentParser._ignore),
-            '-O2': (0, ClangArgumentParser._ignore),
-            '-O3': (0, ClangArgumentParser._ignore),
-            '-Os': (0, ClangArgumentParser._ignore),
-            '-Ofast': (0, ClangArgumentParser._ignore),
-            '-Og': (0, ClangArgumentParser._ignore),
-            '-Oz': (0, ClangArgumentParser._ignore),
+            '-O': (0, ClangArgumentParser._add_compile_unary),
+            '-O0': (0, ClangArgumentParser._add_compile_unary),
+            '-O1': (0, ClangArgumentParser._add_compile_unary),
+            '-O2': (0, ClangArgumentParser._add_compile_unary),
+            '-O3': (0, ClangArgumentParser._add_compile_unary),
+            '-Os': (0, ClangArgumentParser._add_compile_unary),
+            '-Ofast': (0, ClangArgumentParser._add_compile_unary),
+            '-Og': (0, ClangArgumentParser._add_compile_unary),
+            '-Oz': (0, ClangArgumentParser._add_compile_unary),
             # Ignore code coverage instrumentation
-            '-fprofile-arcs': (0, ClangArgumentParser._ignore),
-            '-coverage': (0, ClangArgumentParser._ignore),
-            '--coverage': (0, ClangArgumentParser._ignore),
+            '-fprofile-arcs': (0, ClangArgumentParser._add_compile_link_unary),
+            '-coverage': (0, ClangArgumentParser._add_compile_link_unary),
+            '--coverage': (0, ClangArgumentParser._add_compile_link_unary),
             # Component-specifiers
             '-Xclang': (1, ClangArgumentParser._add_compile_binary),
             '-Xpreprocessor': (1, ClangArgumentParser._ignore),
@@ -233,7 +237,9 @@ class ClangArgumentParser:
             '-dynamiclib': (0, ClangArgumentParser._add_link_unary),
             '-current_version': (1, ClangArgumentParser._add_link_binary),
             '-compatibility_version': (1, ClangArgumentParser._add_link_binary),
+            '-install_name': (1, ClangArgumentParser._add_link_binary),
             # Misc.
+            '-arch': (1, ClangArgumentParser._add_compile_binary),
             '/dev/null': (0, ClangArgumentParser._add_source_file),
             '-pipe': (0, ClangArgumentParser._add_compile_unary),
             '-undef': (0, ClangArgumentParser._add_compile_unary),
@@ -243,7 +249,11 @@ class ClangArgumentParser:
             '-Qunused-arguments': (0, ClangArgumentParser._add_compile_unary),
             '-no-integrated-as': (0, ClangArgumentParser._add_compile_unary),
             '-integrated-as': (0, ClangArgumentParser._add_compile_unary),
+            '-no-canonical-prefixes': (0, ClangArgumentParser._add_compile_link_unary),
             '-pthread': (0, ClangArgumentParser._add_compile_unary),
+            '--param': (1, ClangArgumentParser._ignore),
+            '-aux-info': (1, ClangArgumentParser._ignore),
+            '-no-cpp-precomp': (0, ClangArgumentParser._add_compile_unary),
             '-mno-omit-leaf-frame-pointer': (0, ClangArgumentParser._add_compile_unary),
             '-maes': (0, ClangArgumentParser._add_compile_unary),
             '-mno-aes': (0, ClangArgumentParser._add_compile_unary),
@@ -254,18 +264,26 @@ class ClangArgumentParser:
             '-mmmx': (0, ClangArgumentParser._add_compile_unary),
             '-mno-mmx': (0, ClangArgumentParser._add_compile_unary),
             '-msse': (0, ClangArgumentParser._add_compile_unary),
-            '-mno-sse2': (0, ClangArgumentParser._add_compile_unary),
-            '-msse2': (0, ClangArgumentParser._add_compile_unary),
-            '-mno-sse3': (0, ClangArgumentParser._add_compile_unary),
-            '-msse3': (0, ClangArgumentParser._add_compile_unary),
             '-mno-sse': (0, ClangArgumentParser._add_compile_unary),
+            '-msse2': (0, ClangArgumentParser._add_compile_unary),
+            '-mno-sse2': (0, ClangArgumentParser._add_compile_unary),
+            '-msse3': (0, ClangArgumentParser._add_compile_unary),
+            '-mno-sse3': (0, ClangArgumentParser._add_compile_unary),
+            '-mssse3': (0, ClangArgumentParser._add_compile_unary),
+            '-mno-ssse3': (0, ClangArgumentParser._add_compile_unary),
+            '-msse4': (0, ClangArgumentParser._add_compile_unary),
+            '-mno-sse4': (0, ClangArgumentParser._add_compile_unary),
+            '-msse4.1': (0, ClangArgumentParser._add_compile_unary),
+            '-mno-sse4.1': (0, ClangArgumentParser._add_compile_unary),
+            '-msse4.2': (0, ClangArgumentParser._add_compile_unary),
+            '-mno-sse4.2': (0, ClangArgumentParser._add_compile_unary),
             '-msoft-float': (0, ClangArgumentParser._add_compile_unary),
             '-m3dnow': (0, ClangArgumentParser._add_compile_unary),
             '-mno-3dnow': (0, ClangArgumentParser._add_compile_unary),
             '-m16': (0, ClangArgumentParser._add_compile_unary),
             '-m32': (0, ClangArgumentParser._add_compile_unary),
-            '-mx32': (0, ClangArgumentParser._add_compile_unary),
             '-m64': (0, ClangArgumentParser._add_compile_unary),
+            '-mx32': (0, ClangArgumentParser._add_compile_unary),
             '-miamcu': (0, ClangArgumentParser._add_compile_unary),
             '-mstackrealign': (0, ClangArgumentParser._add_compile_unary),
             '-mretpoline-external-thunk': (0, ClangArgumentParser._add_compile_unary),
@@ -275,9 +293,11 @@ class ClangArgumentParser:
             '-print-multi-directory': (0, ClangArgumentParser._add_compile_unary),
             '-print-multi-lib': (0, ClangArgumentParser._add_compile_unary),
             '-print-libgcc-file-name': (0, ClangArgumentParser._add_compile_unary),
+            '-print-search-dirs': (0, ClangArgumentParser._add_compile_unary),
             '-mno-80387': (0, ClangArgumentParser._add_compile_unary),
             '-mno-global-merge': (0, ClangArgumentParser._add_compile_unary),
-            '-Wl,-dead_strip': (0, ClangArgumentParser._darwin_warning_add_link_unary),
+            '-Wl,-dead_strip': (0, ClangArgumentParser._warning_link_unary),
+            '-dead_strip': (0, ClangArgumentParser._warning_link_unary),
         }
 
         pattern_arguments = {
@@ -289,9 +309,13 @@ class ClangArgumentParser:
             r'^-(l|L).+$': (0, ClangArgumentParser._add_link_unary),
             r'^-I.+$': (0, ClangArgumentParser._add_compile_unary),
             r'^-D.+$': (0, ClangArgumentParser._add_compile_unary),
+            r'^-B.+$': (0, ClangArgumentParser._add_compile_link_unary),
+            r'^-isystem.+$': (0, ClangArgumentParser._add_compile_link_unary),
             r'^-U.+$': (0, ClangArgumentParser._add_compile_unary),
             r'^-Wl,.+$': (0, ClangArgumentParser._add_link_unary),
-            r'^-W(?!l,).*$': (0, ClangArgumentParser._add_compile_unary),
+            r'^-W[^l].+$': (0, ClangArgumentParser._add_compile_unary),
+            r'^-W[l][^,].+$': (0, ClangArgumentParser._add_compile_unary),
+            r'^-fsanitize=.+$': (0, ClangArgumentParser._add_compile_link_unary),
             r'^-f.+$': (0, ClangArgumentParser._add_compile_unary),
             r'^-rtlib=.+$': (0, ClangArgumentParser._add_link_unary),
             r'^-std=.+$': (0, ClangArgumentParser._add_compile_unary),
@@ -314,10 +338,12 @@ class ClangArgumentParser:
         self.args = collections.deque(cmd)
 
         while self.args:
-            if (self.is_preprocess or
+            if (self.is_standard_in or
+                    self.is_preprocess or
                     self.is_assemble or
                     self.is_assembly or
-                    self.is_version):
+                    self.is_version or
+                    self.is_emit_llvm):
                 break  # no need to emit llvm bitcode
 
             # next argument
@@ -418,13 +444,10 @@ class ClangArgumentParser:
         self.compile_args.append(flag)
         self.link_args.append(flag)
 
-    def _darwin_warning_add_link_unary(self, flag):
-        if sys.platform.startswith('darwin'):
-            printf('error: flag "%s" cannot be used with ikos-scan\n', flag,
-                   file=sys.stderr)
-            sys.exit(1)
-        else:
-            self.link_args.append(flag)
+    def _warning_link_unary(self, flag):
+        printf('warning: flag "%s" cannot be used with ikos-scan, ignored.\n',
+               flag,
+               file=sys.stderr)
 
     @property
     def output_file(self):
@@ -439,8 +462,6 @@ class ClangArgumentParser:
 
     def skip_bitcode_gen(self):
         ''' Return True if it is unnecessary to generate llvm bitcode '''
-        if not self.source_files and not self.object_files:
-            return True
         if self.is_standard_in:
             return True
         if self.is_preprocess:
@@ -456,23 +477,29 @@ class ClangArgumentParser:
         return False
 
 
+def run(cmd, executable=None):
+    ''' Run the given command '''
+    log.debug('Running %s' % command_string(cmd))
+    proc = subprocess.Popen(cmd, executable=executable)
+    rc = proc.wait()
+    if rc != 0:
+        sys.exit(rc)
+    return rc
+
+
 def build_bitcode(mode, parser, src_path, bc_path):
     ''' Compile the given source file to llvm bitcode '''
     cmd = [mode,
            '-c',
            '-emit-llvm']
     cmd += parser.compile_args
-    cmd += ['-g',
+    cmd += ['-U_FORTIFY_SOURCE',
             '-D_FORTIFY_SOURCE=0',
+            '-g',
             '-O0',
             src_path,
             '-o', bc_path]
-
-    log.debug('Running %s' % command_string(cmd))
-    proc = subprocess.Popen(cmd, executable=settings.clang())
-    rc = proc.wait()
-    if rc != 0:
-        sys.exit(rc)
+    run(cmd, executable=settings.clang())
 
 
 def link_bitcodes(mode, parser, input_paths, output_path):
@@ -480,12 +507,68 @@ def link_bitcodes(mode, parser, input_paths, output_path):
     cmd = ['llvm-link']
     cmd += input_paths
     cmd += ['-o', output_path]
+    run(cmd, executable=settings.llvm_link())
 
-    log.debug('Running %s' % command_string(cmd))
-    proc = subprocess.Popen(cmd, executable=settings.llvm_link())
-    rc = proc.wait()
-    if rc != 0:
-        sys.exit(rc)
+
+def build_object(mode, parser, src_path, obj_path):
+    ''' Compile the given source file to an object file '''
+    cmd = [mode, '-c']
+    cmd += parser.compile_args
+    cmd += [src_path, '-o', obj_path]
+    run(cmd, executable=settings.clang())
+
+
+def link_objects(mode, parser, input_paths, output_path):
+    cmd = [mode]
+    cmd += input_paths
+    cmd += parser.link_args
+    cmd += ['-o', output_path]
+    run(cmd, executable=settings.clang())
+
+
+DARWIN_SEGMENT_NAME = '__WLLVM'
+DARWIN_SECTION_NAME = '__llvm_bc'
+ELF_SECTION_NAME = '.llvm_bc'
+
+
+def attach_bitcode_path(obj_path, bc_path):
+    ''' Attach the bitcode full path to the given object file '''
+    ext = os.path.splitext(obj_path)[1]
+
+    if ext not in ('.o', '.lo', '.os', '.So', '.po'):
+        return  # unexpected file format
+
+    abs_bc_path = os.path.abspath(bc_path)
+
+    # write the absolute path to the bitcode file in a temporary file
+    f = tempfile.NamedTemporaryFile(mode='w+b',
+                                    suffix='.llvm_bc',
+                                    delete=False)
+    f.write(abs_bc_path.encode())
+    f.write(b'\n')
+    f.flush()
+    os.fsync(f.fileno())
+    f.close()
+
+    # add a section in the object file
+    if sys.platform.startswith('darwin'):
+        cmd = ['ld',
+               '-r',
+               '-keep_private_externs',
+               obj_path,
+               '-sectcreate',
+               DARWIN_SEGMENT_NAME,
+               DARWIN_SECTION_NAME, f.name,
+               '-o',
+               obj_path]
+    else:
+        cmd = ['objcopy',
+               '--add-section',
+               '%s=%s' % (ELF_SECTION_NAME, f.name),
+               obj_path]
+
+    run(cmd)
+    os.remove(f.name)
 
 
 ###########################################
@@ -495,44 +578,60 @@ def link_bitcodes(mode, parser, input_paths, output_path):
 def compile(mode, argv):
     assert mode in ('clang', 'clang++')
 
-    # remove 'ikos-scan-cc'
-    argv = list(argv[1:])
-
     # setup colors and logging
     colors.setup(os.environ['IKOS_SCAN_COLOR'], file=log.out)
     log.setup(os.environ['IKOS_SCAN_LOG_LEVEL'])
 
-    # run the command
-    proc = subprocess.Popen([mode] + argv, executable=settings.clang())
-    rc = proc.wait()
-    if rc != 0:
-        sys.exit(rc)
+    # first step, run the actual command
+    run([mode] + argv[1:], executable=settings.clang())
 
-    # parse the command line
-    parser = ClangArgumentParser(argv)
+    # second step, parse the command line and compile to llvm bitcode
+    parser = ClangArgumentParser(argv[1:])
 
     if parser.skip_bitcode_gen():
         return
 
-    # compile to llvm bitcode
-    if len(parser.source_files) == 1 and len(parser.object_files) == 0:
+    if (len(parser.source_files) == 1 and
+            len(parser.object_files) == 0 and
+            not parser.is_link):
+        # in this case, just compile to llvm bitcode and attach the llvm
+        # bitcode path to the output object file
         src_path = parser.source_files[0]
-        bc_path = '%s.bc' % parser.output_file
+        obj_path = parser.output_file
+        bc_path = '%s.bc' % obj_path
         build_bitcode(mode, parser, src_path, bc_path)
-    else:
-        bitcode_files = []
+        attach_bitcode_path(obj_path, bc_path)
+        return
 
-        for src_path in parser.source_files:
-            bc_path = '%s.bc' % src_path
-            build_bitcode(mode, parser, src_path, bc_path)
-            bitcode_files.append(bc_path)
+    # else, compile source files one by one and attach the llvm bitcode path
+    new_object_files = []
+    for src_path in parser.source_files:
+        # build the object file
+        obj_path = '%s.o' % src_path
+        build_object(mode, parser, src_path, obj_path)
+        new_object_files.append(obj_path)
 
-        for obj_path in parser.object_files:
+        # build the bitcode file
+        if src_path.endswith('.bc'):
+            bc_path = src_path
+        else:
             bc_path = '%s.bc' % obj_path
-            bitcode_files.append(bc_path)
+            build_bitcode(mode, parser, src_path, bc_path)
 
-        bc_path = '%s.bc' % parser.output_file
-        link_bitcodes(mode, parser, bitcode_files, bc_path)
+        # attach the bitcode path to the object file, ready to be linked
+        attach_bitcode_path(obj_path, src_path)
+
+    # re-link to merge the llvm bitcode paths section
+    if parser.is_link and new_object_files:
+        link_objects(mode,
+                     parser,
+                     new_object_files + parser.object_files,
+                     parser.output_file)
+    else:
+        assert not new_object_files, 'new object files but nothing to link'
+
+    if parser.is_link:
+        pass  # TODO: check if it's a binary and extract the llvm bitcode
 
 
 ######################
@@ -556,7 +655,5 @@ def main(argv):
     os.environ['CXX'] = settings.ikos_scan_cxx()
 
     # run the build command
-    log.debug('Running %s' % command_string(opt.args))
-    proc = subprocess.Popen(opt.args)
-    rc = proc.wait()
+    rc = run(opt.args)
     sys.exit(rc)
