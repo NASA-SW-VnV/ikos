@@ -619,5 +619,3 @@ def main(argv):
     except sqlite3.DatabaseError as e:
         printf('%s: error: %s\n', progname, e, file=sys.stderr)
         sys.exit(1)
-    except KeyboardInterrupt:
-        pass

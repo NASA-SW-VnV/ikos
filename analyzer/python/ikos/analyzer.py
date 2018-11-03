@@ -738,140 +738,137 @@ def main(argv):
                progname, file=sys.stderr)
         sys.exit(1)
 
-    try:
-        # create working directory
-        wd = create_working_directory(opt.temp_dir, opt.save_temps)
+    # create working directory
+    wd = create_working_directory(opt.temp_dir, opt.save_temps)
 
-        input_path = opt.file
+    input_path = opt.file
 
-        # compile c/c++ code
-        if path_ext(input_path) in ('.c', '.cpp'):
-            bc_path = namer(opt.file, '.bc', wd)
+    # compile c/c++ code
+    if path_ext(input_path) in ('.c', '.cpp'):
+        bc_path = namer(opt.file, '.bc', wd)
 
-            try:
-                with stats.timer('clang'):
-                    clang(bc_path, input_path, colors.ENABLE)
-            except subprocess.CalledProcessError as e:
-                printf('%s: error while compiling %s, abort.\n',
-                       progname, input_path, file=sys.stderr)
-                sys.exit(e.returncode)
-
-            input_path = bc_path
-
-        if path_ext(input_path) != '.bc':
-            printf('%s: error: unexpected file extension.\n',
-                   progname, file=sys.stderr)
-            sys.exit(1)
-
-        # ikos-pp: preprocess llvm bitcode
-        pp_path = namer(opt.file, '.pp.bc', wd)
         try:
-            with stats.timer('ikos-pp'):
-                ikos_pp(pp_path, input_path,
-                        opt.entry_points, opt.opt_level,
-                        opt.inline_all, not opt.disable_bc_verify)
+            with stats.timer('clang'):
+                clang(bc_path, input_path, colors.ENABLE)
         except subprocess.CalledProcessError as e:
-            printf('%s: error while preprocessing llvm bitcode, abort.\n',
-                   progname, file=sys.stderr)
+            printf('%s: error while compiling %s, abort.\n',
+                   progname, input_path, file=sys.stderr)
             sys.exit(e.returncode)
 
-        # display the llvm bitcode, if requested
-        if opt.display_llvm:
-            display_llvm(pp_path)
+        input_path = bc_path
 
-        # ikos-analyzer: analyze llvm bitcode
-        try:
-            with stats.timer('ikos-analyzer'):
-                ikos_analyzer(opt.output_db, pp_path, opt)
-        except AnalyzerError as e:
-            printf('%s: error: %s\n', progname, e, file=sys.stderr)
-            sys.exit(e.returncode)
+    if path_ext(input_path) != '.bc':
+        printf('%s: error: unexpected file extension.\n',
+               progname, file=sys.stderr)
+        sys.exit(1)
 
-        # open output database
-        db = sqlite3.connect(opt.output_db)
+    # ikos-pp: preprocess llvm bitcode
+    pp_path = namer(opt.file, '.pp.bc', wd)
+    try:
+        with stats.timer('ikos-pp'):
+            ikos_pp(pp_path, input_path,
+                    opt.entry_points, opt.opt_level,
+                    opt.inline_all, not opt.disable_bc_verify)
+    except subprocess.CalledProcessError as e:
+        printf('%s: error while preprocessing llvm bitcode, abort.\n',
+               progname, file=sys.stderr)
+        sys.exit(e.returncode)
 
-        # insert timing results in the database
-        stats.save_database(db)
+    # display the llvm bitcode, if requested
+    if opt.display_llvm:
+        display_llvm(pp_path)
 
-        # insert settings in the database
-        settings_rows = [
-            ('version', settings.VERSION),
-            ('start-date', start_date.isoformat(' ')),
-            ('end-date', datetime.datetime.now().isoformat(' ')),
-            ('working-directory', wd),
-            ('input', opt.file),
-            ('bc-file', input_path),
-            ('pp-bc-file', pp_path),
-            ('clang', settings.clang()),
-            ('ikos-pp', settings.ikos_pp()),
-            ('opt-level', opt.opt_level),
-            ('inline-all', json.dumps(opt.inline_all)),
-            ('use-libc-intrinsics', json.dumps(not opt.no_libc)),
-            ('use-libcpp-intrinsics', json.dumps(not opt.no_libcpp)),
-            ('use-libikos-intrinsics', json.dumps(not opt.no_libikos)),
-            ('use-simplify-cfg', json.dumps(not opt.no_simplify_cfg)),
-            ('use-simplify-upcast-comparison',
-             json.dumps(not opt.no_simplify_upcast_comparison)),
-        ]
-        if opt.cpu > 0:
-            settings_rows.append(('cpu-limit', opt.cpu))
-        if opt.mem > 0:
-            settings_rows.append(('mem-limit', opt.mem))
-        save_settings(db, settings_rows)
+    # ikos-analyzer: analyze llvm bitcode
+    try:
+        with stats.timer('ikos-analyzer'):
+            ikos_analyzer(opt.output_db, pp_path, opt)
+    except AnalyzerError as e:
+        printf('%s: error: %s\n', progname, e, file=sys.stderr)
+        sys.exit(e.returncode)
 
-        first = (log.LEVEL >= log.ERROR)
+    # open output database
+    db = sqlite3.connect(opt.output_db)
 
-        # display timing results
-        if opt.display_times != 'no':
+    # insert timing results in the database
+    stats.save_database(db)
+
+    # insert settings in the database
+    settings_rows = [
+        ('version', settings.VERSION),
+        ('start-date', start_date.isoformat(' ')),
+        ('end-date', datetime.datetime.now().isoformat(' ')),
+        ('working-directory', wd),
+        ('input', opt.file),
+        ('bc-file', input_path),
+        ('pp-bc-file', pp_path),
+        ('clang', settings.clang()),
+        ('ikos-pp', settings.ikos_pp()),
+        ('opt-level', opt.opt_level),
+        ('inline-all', json.dumps(opt.inline_all)),
+        ('use-libc-intrinsics', json.dumps(not opt.no_libc)),
+        ('use-libcpp-intrinsics', json.dumps(not opt.no_libcpp)),
+        ('use-libikos-intrinsics', json.dumps(not opt.no_libikos)),
+        ('use-simplify-cfg', json.dumps(not opt.no_simplify_cfg)),
+        ('use-simplify-upcast-comparison',
+         json.dumps(not opt.no_simplify_upcast_comparison)),
+    ]
+    if opt.cpu > 0:
+        settings_rows.append(('cpu-limit', opt.cpu))
+    if opt.mem > 0:
+        settings_rows.append(('mem-limit', opt.mem))
+    save_settings(db, settings_rows)
+
+    first = (log.LEVEL >= log.ERROR)
+
+    # display timing results
+    if opt.display_times != 'no':
+        if not first:
+            printf('\n')
+        report.print_timing_results(db, opt.display_times == 'full')
+        first = False
+
+    # display summary
+    if opt.display_summary != 'no':
+        if not first:
+            printf('\n')
+        report.print_summary(db, opt.display_summary == 'full')
+        first = False
+
+    # display raw checks
+    if opt.display_raw_checks:
+        if not first:
+            printf('\n')
+        report.print_raw_checks(db, opt.procedural == 'inter')
+        first = False
+
+    # start ikos-view
+    if opt.format == 'web':
+        ikos_view(opt, db)
+        return
+
+    # report
+    if opt.format != 'no':
+        if opt.report_file is sys.stdout:
             if not first:
                 printf('\n')
-            report.print_timing_results(db, opt.display_times == 'full')
+            printf(colors.bold('# Results') + '\n')
             first = False
 
-        # display summary
-        if opt.display_summary != 'no':
-            if not first:
-                printf('\n')
-            report.print_summary(db, opt.display_summary == 'full')
-            first = False
+        # setup colors again (in case opt.color = 'auto')
+        colors.setup(opt.color, file=opt.report_file)
 
-        # display raw checks
-        if opt.display_raw_checks:
-            if not first:
-                printf('\n')
-            report.print_raw_checks(db, opt.procedural == 'inter')
-            first = False
+        # generate report
+        rep = report.generate_report(db,
+                                     status_filter=opt.status_filter,
+                                     analyses_filter=None)
 
-        # start ikos-view
-        if opt.format == 'web':
-            ikos_view(opt, db)
-            return
+        # format report
+        formatter_class = report.formats[opt.format]
+        formatter = formatter_class(opt.report_file, opt.report_verbosity)
+        formatter.format(rep)
 
-        # report
-        if opt.format != 'no':
-            if opt.report_file is sys.stdout:
-                if not first:
-                    printf('\n')
-                printf(colors.bold('# Results') + '\n')
-                first = False
+    # close database
+    db.close()
 
-            # setup colors again (in case opt.color = 'auto')
-            colors.setup(opt.color, file=opt.report_file)
-
-            # generate report
-            rep = report.generate_report(db,
-                                         status_filter=opt.status_filter,
-                                         analyses_filter=None)
-
-            # format report
-            formatter_class = report.formats[opt.format]
-            formatter = formatter_class(opt.report_file, opt.report_verbosity)
-            formatter.format(rep)
-
-        # close database
-        db.close()
-
-        if opt.remove_db:
-            os.remove(opt.output_db)
-    except KeyboardInterrupt:
-        pass
+    if opt.remove_db:
+        os.remove(opt.output_db)

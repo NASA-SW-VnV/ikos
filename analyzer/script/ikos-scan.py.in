@@ -59,4 +59,7 @@ if __name__ == '__main__':
         sys.stderr.write('error: see TROUBLESHOOTING.md\n')
         sys.exit(1)
 
-    ikos.scan.main(sys.argv)
+    try:
+        ikos.scan.main(sys.argv)
+    except KeyboardInterrupt:
+        pass
