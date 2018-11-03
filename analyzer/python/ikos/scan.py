@@ -40,7 +40,9 @@
 #
 ###############################################################################
 import argparse
+import codecs
 import collections
+import itertools
 import os
 import os.path
 import re
@@ -54,6 +56,7 @@ from ikos import log
 from ikos import settings
 from ikos.analyzer import command_string
 from ikos.log import printf
+from ikos.filetype import filetype
 
 
 def parse_arguments(argv):
@@ -478,13 +481,31 @@ class ClangArgumentParser:
 
 
 def run(cmd, executable=None):
-    ''' Run the given command '''
+    ''' Run the given command and return the exit code '''
     log.debug('Running %s' % command_string(cmd))
-    proc = subprocess.Popen(cmd, executable=executable)
-    rc = proc.wait()
+
+    try:
+        proc = subprocess.Popen(cmd, executable=executable)
+        rc = proc.wait()
+    except OSError as e:
+        printf('error: %s: %s\n', cmd[0], e.strerror, file=sys.stderr)
+        sys.exit(e.errno)
+
     if rc != 0:
         sys.exit(rc)
+
     return rc
+
+
+def check_output(cmd, executable=None):
+    ''' Run the given command and return the standard output '''
+    log.debug('Running %s' % command_string(cmd))
+
+    try:
+        return subprocess.check_output(cmd, executable=executable)
+    except OSError as e:
+        printf('error: %s: %s\n', cmd[0], e.strerror, file=sys.stderr)
+        sys.exit(e.errno)
 
 
 def build_bitcode(mode, parser, src_path, bc_path):
@@ -502,7 +523,7 @@ def build_bitcode(mode, parser, src_path, bc_path):
     run(cmd, executable=settings.clang())
 
 
-def link_bitcodes(mode, parser, input_paths, output_path):
+def link_bitcodes(input_paths, output_path):
     ''' Link the given bitcode files to a single llvm bitcode '''
     cmd = ['llvm-link']
     cmd += input_paths
@@ -551,6 +572,7 @@ def attach_bitcode_path(obj_path, bc_path):
     f.close()
 
     # add a section in the object file
+    # TODO: use llvm-objcopy (available in LLVM >= 6.0)
     if sys.platform.startswith('darwin'):
         cmd = ['ld',
                '-r',
@@ -569,6 +591,30 @@ def attach_bitcode_path(obj_path, bc_path):
 
     run(cmd)
     os.remove(f.name)
+
+
+def extract_bitcode(exe_path, bc_path):
+    ''' Extract the llvm bitcode for the given executable file '''
+
+    # first, extract the llvm bitcode paths
+    cmd = ['llvm-objdump', '-s']
+    if sys.platform.startswith('freebsd') or sys.platform.startswith('linux'):
+        cmd.append('-section=%s' % ELF_SECTION_NAME)
+    elif sys.platform.startswith('darwin'):
+        cmd.append('-section=%s' % DARWIN_SECTION_NAME)
+    cmd.append(exe_path)
+
+    output = check_output(cmd, executable=settings.llvm_objdump())
+    section_content = b''
+
+    for line in itertools.islice(output.splitlines(), 4, None):
+        n = line.find(b' ', 1)
+        line = line[n + 1:n + 36]
+        for item in line.split(b' '):
+            section_content += codecs.decode(item, 'hex')
+
+    bc_paths = section_content.splitlines()
+    link_bitcodes(bc_paths, bc_path)
 
 
 ###########################################
@@ -591,47 +637,55 @@ def compile(mode, argv):
     if parser.skip_bitcode_gen():
         return
 
-    if (len(parser.source_files) == 1 and
-            len(parser.object_files) == 0 and
-            not parser.is_link):
-        # in this case, just compile to llvm bitcode and attach the llvm
-        # bitcode path to the output object file
-        src_path = parser.source_files[0]
-        obj_path = parser.output_file
-        bc_path = '%s.bc' % obj_path
-        build_bitcode(mode, parser, src_path, bc_path)
-        attach_bitcode_path(obj_path, bc_path)
-        return
-
-    # else, compile source files one by one and attach the llvm bitcode path
-    new_object_files = []
-    for src_path in parser.source_files:
-        # build the object file
-        obj_path = '%s.o' % src_path
-        build_object(mode, parser, src_path, obj_path)
-        new_object_files.append(obj_path)
-
-        # build the bitcode file
-        if src_path.endswith('.bc'):
-            bc_path = src_path
-        else:
+    try:
+        if (len(parser.source_files) == 1 and
+                len(parser.object_files) == 0 and
+                not parser.is_link):
+            # in this case, just compile to llvm bitcode and attach the llvm
+            # bitcode path to the output object file
+            src_path = parser.source_files[0]
+            obj_path = parser.output_file
             bc_path = '%s.bc' % obj_path
             build_bitcode(mode, parser, src_path, bc_path)
+            attach_bitcode_path(obj_path, bc_path)
+            return
 
-        # attach the bitcode path to the object file, ready to be linked
-        attach_bitcode_path(obj_path, src_path)
+        # compile the source files one by one and attach the llvm bitcode path
+        new_object_files = []
+        for src_path in parser.source_files:
+            # build the object file
+            obj_path = '%s.o' % src_path
+            build_object(mode, parser, src_path, obj_path)
+            new_object_files.append(obj_path)
 
-    # re-link to merge the llvm bitcode paths section
-    if parser.is_link and new_object_files:
-        link_objects(mode,
-                     parser,
-                     new_object_files + parser.object_files,
-                     parser.output_file)
-    else:
-        assert not new_object_files, 'new object files but nothing to link'
+            # build the bitcode file
+            if src_path.endswith('.bc'):
+                bc_path = src_path
+            else:
+                bc_path = '%s.bc' % obj_path
+                build_bitcode(mode, parser, src_path, bc_path)
 
-    if parser.is_link:
-        pass  # TODO: check if it's a binary and extract the llvm bitcode
+            # attach the bitcode path to the object file, ready to be linked
+            attach_bitcode_path(obj_path, bc_path)
+
+        # re-link to merge the llvm bitcode paths section
+        if parser.is_link and new_object_files:
+            link_objects(mode,
+                         parser,
+                         new_object_files + parser.object_files,
+                         parser.output_file)
+        else:
+            assert not new_object_files, 'new object files but nothing to link'
+
+        if parser.is_link and u'executable' in filetype(parser.output_file):
+            bc_path = '%s.bc' % parser.output_file
+            extract_bitcode(parser.output_file, bc_path)
+    except IOError as error:
+        # ./configure sometimes removes the file while we are still running
+        if error.filename == parser.output_file:
+            pass
+        else:
+            raise error
 
 
 ######################

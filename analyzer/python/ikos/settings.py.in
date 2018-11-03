@@ -123,6 +123,13 @@ def llvm_link():
     return path
 
 
+def llvm_objdump():
+    path = os.path.join(LLVM_BIN_DIR, 'llvm-objdump')
+    assert os.path.isabs(path)
+    assert is_executable(path), 'could not find llvm-objdump'
+    return path
+
+
 def ikos_pp():
     path = os.path.join(BIN_DIR, 'ikos-pp')
     assert os.path.isabs(path)
