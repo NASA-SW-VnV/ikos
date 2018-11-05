@@ -498,7 +498,7 @@ def run(cmd, executable=None):
 
 
 def check_output(cmd, executable=None):
-    ''' Run the given command and return the standard output '''
+    ''' Run the given command and return the standard output, in bytes '''
     log.debug('Running %s' % command_string(cmd))
 
     try:
@@ -565,7 +565,7 @@ def attach_bitcode_path(obj_path, bc_path):
     f = tempfile.NamedTemporaryFile(mode='w+b',
                                     suffix='.llvm_bc',
                                     delete=False)
-    f.write(abs_bc_path.encode())
+    f.write(abs_bc_path.encode('utf-8'))
     f.write(b'\n')
     f.flush()
     os.fsync(f.fileno())
@@ -613,7 +613,7 @@ def extract_bitcode(exe_path, bc_path):
         for item in line.split(b' '):
             section_content += codecs.decode(item, 'hex')
 
-    bc_paths = section_content.splitlines()
+    bc_paths = [path.decode('utf-8') for path in section_content.splitlines()]
     link_bitcodes(bc_paths, bc_path)
 
 

@@ -53,7 +53,7 @@ def filetype(path):
         printf('error: file: %s', e.strerror, file=sys.stderr)
         sys.exit(e.errno)
 
-    if output.startswith('cannot open '):
+    if output.startswith(b'cannot open '):
         open(path)  # raise IOError
 
-    return output.decode().strip()
+    return output.decode('utf-8').strip()

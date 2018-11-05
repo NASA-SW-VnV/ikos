@@ -70,7 +70,7 @@ try:
     from pygments.lexers import CLexer, CppLexer
     from pygments.formatters import HtmlFormatter
     from pygments import highlight
-except ImportError as e:
+except ImportError:
     log.warning("Syntax highlighting is not available:"
                 " module `pygments` is not installed.")
     log.warning("Note: use `pip install --user pygments`"
