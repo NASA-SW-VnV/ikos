@@ -683,6 +683,10 @@ class ScanServer(threading.Thread):
     def cancel(self):
         self.running = False
 
+    @property
+    def binaries(self):
+        return self.httpd.binaries
+
 
 ###########################################
 # main for ikos-scan-cc and ikos-scan-c++ #
@@ -786,3 +790,25 @@ def main(argv):
     # stop the scan server
     server.cancel()
     server.join()
+
+    # skip binaries that have been removed
+    binaries = [binary for binary in server.binaries
+                if os.path.exists(binary['exe_path'])]
+
+    if not binaries:
+        print('Nothing to analyze.')
+
+    # analyze each binary
+    for binary in binaries:
+        exe_path = os.path.relpath(binary['exe_path'])
+        bc_path = os.path.relpath(binary['bc_path'])
+
+        printf('Analyze %s? [Y/n] ', colors.bold(exe_path))
+        answer = sys.stdin.readline().strip().lower()
+
+        if answer in ('', 'y', 'yes'):
+            cmd = ['ikos', bc_path, '-o', '%s.db' % exe_path]
+            log.info('Running %s' % colors.bold(command_string(cmd)))
+            cmd += ['--color=%s' % opt.color,
+                    '--log=%s' % opt.log_level]
+            run(cmd)
