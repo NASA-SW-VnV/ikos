@@ -61,9 +61,8 @@ from ikos.enums import Result, CheckKind, CheckerName, ValueKind, \
     StatementKind, MemoryLocationKind, FunctionCallCheckKind, \
     BufferOverflowCheckKind, ChecksTable
 from ikos.log import printf
-from ikos.output_db import load_settings, load_timing_results, \
-    OutputDatabase, File, Function, Statement, CallContext, Operand, \
-    NumOperandPair, MemoryLocation, Check
+from ikos.output_db import OutputDatabase, File, Function, Statement, \
+    CallContext, Operand, NumOperandPair, MemoryLocation, Check
 
 
 ##################
@@ -99,7 +98,7 @@ def format_time(elapsed):
 
 def print_timing_results(db, full=True, sort=True):
     ''' Print the timing results from the database '''
-    results = load_timing_results(db, full, sort)
+    results = db.load_timing_results(full, sort)
 
     printf(bold('# Time stats:') + '\n')
     name_width = max(len(name) for name, _ in results)
@@ -182,7 +181,7 @@ def generate_summary(db):
     '''
     summary = Summary(ok=0, error=0, warning=0, unreachable=0)
 
-    c = db.cursor()
+    c = db.con.cursor()
     order_by = 'statement_id, call_context_id'
     c.execute('SELECT * FROM checks ORDER BY %s' % order_by)
 
@@ -338,15 +337,13 @@ def print_raw_checks(db, interprocedural):
     if not interprocedural:
         header.pop(0)  # no context column if intraprocedural
 
-    output_db = OutputDatabase(db)
-
-    c = db.cursor()
+    c = db.con.cursor()
     c.execute('SELECT * FROM checks ORDER BY %s' % order_by)
     rows = c.fetchall()
 
     # Format all rows
     for i, row in enumerate(rows):
-        check = Check(row, output_db)
+        check = Check(row, db)
         statement = check.statement()
         function = statement.function()
         call_context = check.call_context()
@@ -398,8 +395,8 @@ def print_raw_checks(db, interprocedural):
 class Report:
     ''' Represents an analysis report '''
 
-    def __init__(self, output_db):
-        self.output_db = output_db
+    def __init__(self, db):
+        self.db = db
         self.statement_reports = []
 
     def append(self, statement_report):
@@ -417,14 +414,14 @@ class StatementReport:
     ''' Represents a report on a statement '''
 
     def __init__(self,
-                 output_db,
+                 db,
                  kind,
                  status,
                  statement_id,
                  call_context_ids,
                  operands=None,
                  info=None):
-        self.output_db = output_db
+        self.db = db
         self.kind = kind
         self.status = status
         self.statement_id = statement_id
@@ -433,11 +430,10 @@ class StatementReport:
         self.info = info
 
     def statement(self):
-        return self.output_db.statements[self.statement_id]
+        return self.db.statements[self.statement_id]
 
     def call_contexts(self):
-        return (self.output_db.call_contexts[id]
-                for id in self.call_context_ids)
+        return (self.db.call_contexts[id] for id in self.call_context_ids)
 
     def load_operands(self):
         ''' Return the operands, or None '''
@@ -445,7 +441,7 @@ class StatementReport:
             return None
 
         operands = json.loads(self.operands)
-        return [NumOperandPair(no, self.output_db.operands[id])
+        return [NumOperandPair(no, self.db.operands[id])
                 for no, id in operands]
 
     def load_info(self):
@@ -479,8 +475,7 @@ def generate_report(db, status_filter=None, analyses_filter=None):
         status_filter(list): List of status, or None
         analyses_filter(list): List of checkers, or None
     '''
-    output_db = OutputDatabase(db)
-    report = Report(output_db)
+    report = Report(db)
 
     # Parse filters
     if status_filter is not None:
@@ -529,7 +524,7 @@ def generate_report(db, status_filter=None, analyses_filter=None):
     order_by = 'ORDER BY statement_id, call_context_id'
 
     # Execute query
-    c = db.cursor()
+    c = db.con.cursor()
     c.execute('SELECT * FROM checks %s %s' % (where, order_by))
 
     stmt_id_key = operator.itemgetter(ChecksTable.STATEMENT_ID)
@@ -570,7 +565,7 @@ def generate_report(db, status_filter=None, analyses_filter=None):
             # check that we want unreachable checks and that it comes from dca
             if display_unreachables and CheckerName.DEAD_CODE in checkers:
                 report.append(StatementReport(
-                    output_db=output_db,
+                    db=db,
                     kind=CheckKind.UNREACHABLE,
                     status=Result.UNREACHABLE,
                     statement_id=statement_id,
@@ -578,7 +573,7 @@ def generate_report(db, status_filter=None, analyses_filter=None):
                 ))
         else:
             for check, context_ids in statement_errors.items():
-                report.append(StatementReport(output_db=output_db,
+                report.append(StatementReport(db=db,
                                               kind=check.kind,
                                               status=Result.ERROR,
                                               statement_id=statement_id,
@@ -586,7 +581,7 @@ def generate_report(db, status_filter=None, analyses_filter=None):
                                               operands=check.operands,
                                               info=check.info))
             for check, context_ids in statement_warnings.items():
-                report.append(StatementReport(output_db=output_db,
+                report.append(StatementReport(db=db,
                                               kind=check.kind,
                                               status=Result.WARNING,
                                               statement_id=statement_id,
@@ -594,7 +589,7 @@ def generate_report(db, status_filter=None, analyses_filter=None):
                                               operands=check.operands,
                                               info=check.info))
             for check, context_ids in statement_oks.items():
-                report.append(StatementReport(output_db=output_db,
+                report.append(StatementReport(db=db,
                                               kind=check.kind,
                                               status=Result.OK,
                                               statement_id=statement_id,
@@ -798,12 +793,12 @@ class JSONEncoder(json.JSONEncoder):
     @staticmethod
     def encode_report(report):
         return {
-            'files': report.output_db.files,
-            'functions': report.output_db.functions,
-            'statements': report.output_db.statements,
-            'operands': report.output_db.operands,
-            'call_contexts': report.output_db.call_contexts,
-            'memory_locations': report.output_db.memory_locations,
+            'files': report.db.files,
+            'functions': report.db.functions,
+            'statements': report.db.statements,
+            'operands': report.db.operands,
+            'call_contexts': report.db.call_contexts,
+            'memory_locations': report.db.memory_locations,
             'reports': report.statement_reports,
         }
 
@@ -936,11 +931,13 @@ class AutoFormatter(TextFormatter):
             printf('No entries.\n', file=self.output)
         elif len(report.statement_reports) > AutoFormatter.MAX_NUM_REPORT:
             printf('Report is too big (> %d entries)\n\n'
-                   'Use `ikos-report output.db` to examine the report'
+                   'Use `ikos-report %s` to examine the report'
                    ' in your terminal.\n'
-                   'Use `ikos-view output.db` to examine the report'
+                   'Use `ikos-view %s` to examine the report'
                    ' in a web interface.\n',
                    AutoFormatter.MAX_NUM_REPORT,
+                   report.db.path,
+                   report.db.path,
                    file=self.output)
         else:
             super(AutoFormatter, self).format(report)
@@ -1063,7 +1060,7 @@ def memory_location_str(mem_loc):
         else:
             assert False, 'unexpected global memory location'
     elif mem_loc.kind == MemoryLocationKind.FUNCTION:
-        function = mem_loc.output_db.functions[info['id']]
+        function = mem_loc.db.functions[info['id']]
         return "function '%s'" % function.pretty_name()
     elif mem_loc.kind == MemoryLocationKind.AGGREGATE:
         return 'aggregate variable'
@@ -1074,7 +1071,7 @@ def memory_location_str(mem_loc):
     elif mem_loc.kind == MemoryLocationKind.ARGV:
         return 'argv'
     elif mem_loc.kind == MemoryLocationKind.DYN_ALLOC:
-        call = mem_loc.output_db.statements[info['call_id']]
+        call = mem_loc.db.statements[info['call_id']]
         function = call.function()
 
         if call.line is not None and call.column is not None:
@@ -1336,7 +1333,7 @@ def generate_unaligned_pointer_message(report, verbosity):
     points_to = []
     for block_info in info['points_to']:
         mem_loc_id = block_info['id']
-        mem_loc = report.output_db.memory_locations[mem_loc_id]
+        mem_loc = report.db.memory_locations[mem_loc_id]
 
         if mem_loc.kind == MemoryLocationKind.ABSOLUTE_ZERO:
             continue
@@ -1427,7 +1424,7 @@ def generate_buffer_overflow_message(report, verbosity):
         status = block_info['status']
         kind = block_info['kind']
         mem_loc_id = block_info['id']
-        mem_loc = report.output_db.memory_locations[mem_loc_id]
+        mem_loc = report.db.memory_locations[mem_loc_id]
 
         line = memory_location_str(mem_loc)
 
@@ -1628,7 +1625,7 @@ def generate_function_call_message(report, verbosity):
         callees = []
         for block_info in info['points_to']:
             function_id = block_info['fun_id']
-            function = report.output_db.functions[function_id]
+            function = report.db.functions[function_id]
             callees.append("'%s'" % function.pretty_name())
 
         if len(callees) == 1:
@@ -1653,13 +1650,13 @@ def generate_function_call_message(report, verbosity):
     for block_info in info['points_to']:
         status = block_info['kind']
         mem_loc_id = block_info['id']
-        mem_loc = report.output_db.memory_locations[mem_loc_id]
+        mem_loc = report.db.memory_locations[mem_loc_id]
 
         if status == FunctionCallCheckKind.NOT_FUNCTION:
             line = '%s, which is not a function' % memory_location_str(mem_loc)
         else:
             function_id = block_info['fun_id']
-            function = report.output_db.functions[function_id]
+            function = report.db.functions[function_id]
             line = "function '%s'" % function.pretty_name()
 
             if status == FunctionCallCheckKind.WRONG_SIGNATURE:
@@ -1690,7 +1687,7 @@ def generate_double_free_message(report, verbosity):
     for block_info in info['points_to']:
         mem_loc_id = block_info['id']
         status = block_info['status']
-        mem_loc = report.output_db.memory_locations[mem_loc_id]
+        mem_loc = report.db.memory_locations[mem_loc_id]
 
         line = memory_location_str(mem_loc)
         if mem_loc.kind != MemoryLocationKind.DYN_ALLOC:
@@ -1929,12 +1926,12 @@ def main(argv):
 
     try:
         # open result database
-        db = sqlite3.connect(opt.file)
+        db = OutputDatabase(opt.file)
 
         first = True
 
         # load settings
-        settings = load_settings(db)
+        settings = db.load_settings()
 
         # display timing results
         if opt.display_times != 'no':

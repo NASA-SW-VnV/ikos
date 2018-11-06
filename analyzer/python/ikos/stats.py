@@ -124,6 +124,11 @@ def stop(key):
         sw.stop()
 
 
+def rows():
+    ''' Return all statistics as rows '''
+    return [(name, sw.elapsed) for name, sw in _statistics.items()]
+
+
 def timer(key):
     '''
     ContextManager to help measuring time.
@@ -145,11 +150,3 @@ def timer(key):
             return False
 
     return TimerContextManager(key)
-
-
-def save_database(db):
-    ''' Save all statistics into the database '''
-    c = db.cursor()
-    rows = [(name, sw.elapsed) for name, sw in _statistics.items()]
-    c.executemany('INSERT INTO times VALUES (?, ?)', rows)
-    db.commit()

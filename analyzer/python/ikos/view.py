@@ -58,13 +58,13 @@ from ikos import args
 from ikos import colors
 from ikos import html
 from ikos import log
-from ikos import output_db
 from ikos import report
 from ikos import settings
 from ikos.enums import Result, CheckKind
 from ikos.highlight import CppLexer, HtmlFormatter, highlight
 from ikos.http import HTTPServer, BaseHTTPRequestHandler
 from ikos.log import printf
+from ikos.output_db import OutputDatabase
 
 
 # Path to web resources
@@ -208,7 +208,7 @@ class RequestHandler(BaseHTTPRequestHandler):
     def _serve_settings(self):
         ''' Serve the settings page '''
         db = View.get().db
-        settings = output_db.load_settings(db)
+        settings = db.load_settings()
         s = []
 
         for name, value in settings.items():
@@ -350,7 +350,6 @@ class ViewReport:
     def __init__(self, db):
         self.db = db
         self._report = None
-        self._output_db = None
         self.kinds = None
         self.files = None
 
@@ -362,18 +361,15 @@ class ViewReport:
 
     def pre_process(self):
         ''' Pre processing some values '''
-        db = self.db
-
         # List of CheckKind
-        c = db.cursor()
+        c = self.db.con.cursor()
         rows = c.execute("SELECT DISTINCT kind FROM checks ORDER BY kind")
         self.kinds = [row[0] for row in rows]
 
         # Generate report
-        self._report = report.generate_report(db)
-        self._output_db = self._report.output_db
+        self._report = report.generate_report(self.db)
 
-        self.files = self._output_db.files
+        self.files = self.db.files
         self.files_status_kinds = {}
         self.files_lines_reports = {}
         for file in self.files:
@@ -605,7 +601,7 @@ def main(argv):
 
     try:
         # open result database
-        db = sqlite3.connect(opt.file)
+        db = OutputDatabase(opt.file)
 
         v = View(db, port=opt.port)
         browser_timer = threading.Timer(0.1,

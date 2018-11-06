@@ -50,7 +50,6 @@ import resource
 import shlex
 import shutil
 import signal
-import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -63,6 +62,7 @@ from ikos import report
 from ikos import settings
 from ikos import stats
 from ikos.log import printf
+from ikos.output_db import OutputDatabase
 
 
 def parse_arguments(argv):
@@ -711,13 +711,6 @@ def ikos_analyzer(db_path, pp_path, opt):
                             signum)
 
 
-def save_settings(db, rows):
-    ''' Save the analysis settings into the database '''
-    c = db.cursor()
-    c.executemany('INSERT INTO settings VALUES (?,?)', rows)
-    db.commit()
-
-
 def ikos_view(opt, db):
     from ikos import view
     v = view.View(db)
@@ -796,10 +789,10 @@ def main(argv):
         sys.exit(e.returncode)
 
     # open output database
-    db = sqlite3.connect(opt.output_db)
+    db = OutputDatabase(path=opt.output_db)
 
     # insert timing results in the database
-    stats.save_database(db)
+    db.insert_timing_results(stats.rows())
 
     # insert settings in the database
     settings_rows = [
@@ -825,7 +818,7 @@ def main(argv):
         settings_rows.append(('cpu-limit', opt.cpu))
     if opt.mem > 0:
         settings_rows.append(('mem-limit', opt.mem))
-    save_settings(db, settings_rows)
+    db.insert_settings(settings_rows)
 
     first = (log.LEVEL >= log.ERROR)
 

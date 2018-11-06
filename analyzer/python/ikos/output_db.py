@@ -41,69 +41,98 @@
 ###############################################################################
 import collections
 import json
+import sqlite3
 
 from ikos.enums import FilesTable, FunctionsTable, StatementsTable, \
     CallContextsTable, OperandsTable, MemoryLocationsTable, ChecksTable
 
 
-############
-# settings #
-############
+class CachedProperty(object):
+    ''' A property attribute that only calls its getter the first access. '''
 
+    def __init__(self, factory):
+        self._attr_name = factory.__name__
+        self._factory = factory
 
-def load_settings(db):
-    ''' Load the settings from the database '''
-    c = db.cursor()
-    c.execute('SELECT name, value FROM settings')
-
-    settings = {}
-    for key, value in c:
-        try:
-            settings[key] = json.loads(value)
-        except ValueError:
-            settings[key] = value
-
-    c.close()
-    return settings
-
-
-##################
-# timing results #
-##################
-
-
-def load_timing_results(db, full=True, sort=True):
-    '''
-    Return the timing results from the database,
-    as a list of tuples (pass, elapsed)
-    '''
-    c = db.cursor()
-    where = "WHERE pass NOT LIKE '%ikos-analyzer.%'" if not full else ''
-    order_by = 'ORDER BY pass' if sort else ''
-    c.execute('SELECT pass, time FROM times %s %s' % (where, order_by))
-    return c.fetchall()
-
-
-##########
-# checks #
-##########
+    def __get__(self, instance, owner):
+        value = self._factory(instance)
+        setattr(instance, self._attr_name, value)
+        return value
 
 
 class OutputDatabase(object):
     ''' Represents an output database '''
 
-    def __init__(self, db):
-        self.db = db
-        self.files = self._fetch_table('files', File)
-        self.functions = self._fetch_table('functions', Function)
-        self.statements = self._fetch_table('statements', Statement)
-        self.operands = self._fetch_table('operands', Operand)
-        self.call_contexts = self._fetch_table('call_contexts', CallContext)
-        self.memory_locations = self._fetch_table('memory_locations',
-                                                  MemoryLocation)
+    def __init__(self, path):
+        self.path = path
+        self.con = sqlite3.connect(path)
+
+    def close(self):
+        self.con.close()
+
+    def load_settings(self):
+        ''' Load the analysis settings from the database '''
+        c = self.con.cursor()
+        c.execute('SELECT name, value FROM settings')
+
+        settings = {}
+        for key, value in c:
+            try:
+                settings[key] = json.loads(value)
+            except ValueError:
+                settings[key] = value
+
+        return settings
+
+    def insert_settings(self, rows):
+        ''' Insert the analysis settings into the database '''
+        c = self.con.cursor()
+        c.executemany('INSERT INTO settings VALUES (?, ?)', rows)
+        self.con.commit()
+
+    def load_timing_results(self, full=True, sort=True):
+        '''
+        Load the timing results from the database,
+        as a list of tuples (pass, elapsed)
+        '''
+        c = self.con.cursor()
+        where = "WHERE pass NOT LIKE '%ikos-analyzer.%'" if not full else ''
+        order_by = 'ORDER BY pass' if sort else ''
+        c.execute('SELECT pass, time FROM times %s %s' % (where, order_by))
+        return c.fetchall()
+
+    def insert_timing_results(self, rows):
+        ''' Insert the timing results into the database '''
+        c = self.con.cursor()
+        c.executemany('INSERT INTO times VALUES (?, ?)', rows)
+        self.con.commit()
+
+    @CachedProperty
+    def files(self):
+        return self._fetch_table('files', File)
+
+    @CachedProperty
+    def functions(self):
+        return self._fetch_table('functions', Function)
+
+    @CachedProperty
+    def statements(self):
+        return self._fetch_table('statements', Statement)
+
+    @CachedProperty
+    def operands(self):
+        return self._fetch_table('operands', Operand)
+
+    @CachedProperty
+    def call_contexts(self):
+        return self._fetch_table('call_contexts', CallContext)
+
+    @CachedProperty
+    def memory_locations(self):
+        return self._fetch_table('memory_locations', MemoryLocation)
 
     def _fetch_table(self, table, klass):
-        c = self.db.cursor()
+        c = self.con.cursor()
         c.execute('SELECT * FROM %s ORDER BY id' % table)
         return [klass(row, self) for row in c]
 
@@ -113,7 +142,7 @@ class File(object):
 
     __slots__ = ('id', 'path')
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[FilesTable.ID]
         self.path = row[FilesTable.PATH]
 
@@ -128,17 +157,17 @@ class Function(object):
         'definition',
         'file_id',
         'line',
-        'output_db'
+        'db'
     )
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[FunctionsTable.ID]
         self.name = row[FunctionsTable.NAME]
         self.demangled = row[FunctionsTable.DEMANGLED]  # or None
         self.definition = (row[FunctionsTable.DEFINITION] == 1)
         self.file_id = row[FunctionsTable.FILE_ID]  # or None
         self.line = row[FunctionsTable.LINE]  # or None
-        self.output_db = output_db
+        self.db = db
 
     def pretty_name(self):
         ''' Return a pretty name '''
@@ -152,14 +181,14 @@ class Function(object):
         if self.file_id is None:
             return None
 
-        return self.output_db.files[self.file_id]
+        return self.db.files[self.file_id]
 
     def file_path(self):
         ''' Return the source file path, or None '''
         if self.file_id is None:
             return None
 
-        return self.output_db.files[self.file_id].path
+        return self.db.files[self.file_id].path
 
 
 class Statement(object):
@@ -172,35 +201,35 @@ class Statement(object):
         'file_id',
         'line',
         'column',
-        'output_db'
+        'db'
     )
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[StatementsTable.ID]
         self.kind = row[StatementsTable.KIND]
         self.function_id = row[StatementsTable.FUNCTION_ID]
         self.file_id = row[StatementsTable.FILE_ID]  # or None
         self.line = row[StatementsTable.LINE]  # or None
         self.column = row[StatementsTable.COLUMN]  # or None
-        self.output_db = output_db
+        self.db = db
 
     def function(self):
         ''' Return the function '''
-        return self.output_db.functions[self.function_id]
+        return self.db.functions[self.function_id]
 
     def file(self):
         ''' Return the source file, or None '''
         if self.file_id is None:
             return None
 
-        return self.output_db.files[self.file_id]
+        return self.db.files[self.file_id]
 
     def file_path(self):
         ''' Return the source file path, or None '''
         if self.file_id is None:
             return None
 
-        return self.output_db.files[self.file_id].path
+        return self.db.files[self.file_id].path
 
     def file_id_or(self, default):
         ''' Return the file id, or default '''
@@ -229,7 +258,7 @@ class Operand(object):
 
     __slots__ = ('id', 'kind', 'repr')
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[OperandsTable.ID]
         self.kind = row[OperandsTable.KIND]
         self.repr = row[OperandsTable.REPR]
@@ -242,14 +271,14 @@ NumOperandPair = collections.namedtuple('NumOperandPair', ('num', 'operand'))
 class CallContext(object):
     ''' Represents a calling context '''
 
-    __slots__ = ('id', 'call_id', 'function_id', 'parent_id', 'output_db')
+    __slots__ = ('id', 'call_id', 'function_id', 'parent_id', 'db')
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[CallContextsTable.ID]
         self.call_id = row[CallContextsTable.CALL_ID]  # or None
         self.function_id = row[CallContextsTable.FUNCTION_ID]  # or None
         self.parent_id = row[CallContextsTable.PARENT_ID]  # or None
-        self.output_db = output_db
+        self.db = db
 
     def empty(self):
         return self.call_id is None
@@ -257,17 +286,17 @@ class CallContext(object):
     def call(self):
         ''' Return the call statement '''
         assert self.call_id is not None
-        return self.output_db.statements[self.call_id]
+        return self.db.statements[self.call_id]
 
     def function(self):
         ''' Return the function '''
         assert self.function_id is not None
-        return self.output_db.functions[self.function_id]
+        return self.db.functions[self.function_id]
 
     def parent(self):
         ''' Return the parent calling context '''
         assert self.parent_id is not None
-        return self.output_db.call_contexts[self.parent_id]
+        return self.db.call_contexts[self.parent_id]
 
     def str(self):
         ''' Format a calling context '''
@@ -297,13 +326,13 @@ class CallContext(object):
 class MemoryLocation(object):
     ''' Represents a memory location '''
 
-    __slots__ = ('id', 'kind', 'info', 'output_db')
+    __slots__ = ('id', 'kind', 'info', 'db')
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[MemoryLocationsTable.ID]
         self.kind = row[MemoryLocationsTable.KIND]
         self.info = row[MemoryLocationsTable.INFO]  # or None
-        self.output_db = output_db
+        self.db = db
 
     def load_info(self):
         ''' Return the info, or None '''
@@ -325,10 +354,10 @@ class Check(object):
         'call_context_id',
         'operands',
         'info',
-        'output_db'
+        'db'
     )
 
-    def __init__(self, row, output_db):
+    def __init__(self, row, db):
         self.id = row[ChecksTable.ID]
         self.kind = row[ChecksTable.KIND]
         self.checker = row[ChecksTable.CHECKER]
@@ -337,15 +366,15 @@ class Check(object):
         self.call_context_id = row[ChecksTable.CALL_CONTEXT_ID]
         self.operands = row[ChecksTable.OPERANDS]  # or None
         self.info = row[ChecksTable.INFO]  # or None
-        self.output_db = output_db
+        self.db = db
 
     def statement(self):
         ''' Return the statement '''
-        return self.output_db.statements[self.statement_id]
+        return self.db.statements[self.statement_id]
 
     def call_context(self):
         ''' Return the call context '''
-        return self.output_db.call_contexts[self.call_context_id]
+        return self.db.call_contexts[self.call_context_id]
 
     def load_operands(self):
         ''' Return the operands, or None '''
@@ -353,5 +382,5 @@ class Check(object):
             return None
 
         operands = json.loads(self.operands)
-        return [NumOperandPair(num, self.output_db.operands[id])
+        return [NumOperandPair(num, self.db.operands[id])
                 for num, id in operands]
