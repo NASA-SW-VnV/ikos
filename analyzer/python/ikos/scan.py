@@ -45,18 +45,21 @@ import collections
 import itertools
 import os
 import os.path
+import random
 import re
 import subprocess
 import sys
 import tempfile
+import threading
 
 from ikos import args
 from ikos import colors
+from ikos import http
 from ikos import log
 from ikos import settings
 from ikos.analyzer import command_string
-from ikos.log import printf
 from ikos.filetype import filetype
+from ikos.log import printf
 
 
 def parse_arguments(argv):
@@ -617,6 +620,70 @@ def extract_bitcode(exe_path, bc_path):
     link_bitcodes(bc_paths, bc_path)
 
 
+def notify_binary_built(exe_path, bc_path):
+    ''' Notify the scan server that a binary was built '''
+    binary = {
+        'exe': os.path.abspath(exe_path),
+        'bc': os.path.abspath(bc_path),
+    }
+    data = http.urlencode(binary).encode('utf-8')
+    http.urlopen(os.environ['IKOS_SCAN_SERVER'], data)
+
+
+class ScanServerRequestHandler(http.BaseHTTPRequestHandler):
+    def do_POST(self):
+        # parse request
+        length = int(self.headers['content-length'])
+        data = http.parse_qs(self.rfile.read(length).decode('utf-8'))
+        binary = {
+            'exe_path': data['exe'][0],
+            'bc_path': data['bc'][0],
+        }
+        self.server.binaries.append(binary)
+        log.debug('Received %r' % binary)
+
+        # send response
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'OK\n')
+
+    def log_message(self, fmt, *args):
+        return  # disable logging
+
+
+class ScanServer(threading.Thread):
+    '''
+    HTTP server that logs the output files of the compiler
+
+    Note that the server is single threaded.
+    '''
+
+    def __init__(self):
+        super(ScanServer, self).__init__()
+
+        self.port = None
+        while self.port is None:
+            try:
+                # try to start the http server on a random port
+                self.port = random.randint(8000, 9000)
+                self.httpd = http.HTTPServer(('', self.port),
+                                             ScanServerRequestHandler)
+            except (OSError, IOError):
+                self.port = None  # port already in use
+
+        self.httpd.timeout = 0.1
+        self.httpd.binaries = []  # list of built binaries
+        self.running = False
+
+    def run(self):
+        self.running = True
+        while self.running:
+            self.httpd.handle_request()
+
+    def cancel(self):
+        self.running = False
+
+
 ###########################################
 # main for ikos-scan-cc and ikos-scan-c++ #
 ###########################################
@@ -680,6 +747,7 @@ def compile(mode, argv):
         if parser.is_link and u'executable' in filetype(parser.output_file):
             bc_path = '%s.bc' % parser.output_file
             extract_bitcode(parser.output_file, bc_path)
+            notify_binary_built(parser.output_file, bc_path)
     except IOError as error:
         # ./configure sometimes removes the file while we are still running
         if error.filename == parser.output_file:
@@ -693,8 +761,6 @@ def compile(mode, argv):
 ######################
 
 def main(argv):
-    progname = os.path.basename(argv[0])
-
     # parse arguments
     opt = parse_arguments(argv[1:])
 
@@ -702,12 +768,21 @@ def main(argv):
     colors.setup(opt.color, file=log.out)
     log.setup(opt.log_level)
 
+    # scan server
+    server = ScanServer()
+    server.daemon = True
+    server.start()
+
     # setup environment variables
     os.environ['IKOS_SCAN_COLOR'] = 'yes' if colors.ENABLE else 'no'
     os.environ['IKOS_SCAN_LOG_LEVEL'] = opt.log_level
+    os.environ['IKOS_SCAN_SERVER'] = 'http://localhost:%d' % server.port
     os.environ['CC'] = settings.ikos_scan_cc()
     os.environ['CXX'] = settings.ikos_scan_cxx()
 
     # run the build command
     rc = run(opt.args)
-    sys.exit(rc)
+
+    # stop the scan server
+    server.cancel()
+    server.join()

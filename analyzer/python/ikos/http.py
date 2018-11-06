@@ -42,6 +42,11 @@
 try:
     # Python 3
     from http.server import HTTPServer, BaseHTTPRequestHandler
+    from urllib.parse import parse_qs, urlencode
+    from urllib.request import urlopen
 except ImportError:
     # Python 2
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+    from urlparse import parse_qs
+    from urllib import urlencode
+    from urllib2 import urlopen
