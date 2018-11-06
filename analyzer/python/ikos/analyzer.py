@@ -49,6 +49,7 @@ import pipes
 import resource
 import shlex
 import shutil
+import signal
 import sqlite3
 import subprocess
 import sys
@@ -505,10 +506,19 @@ def namer(path, ext, wd):
     return os.path.join(wd, os.path.splitext(base)[0] + ext)
 
 
+def signal_name(signum):
+    ''' Return the signal name given the signal number '''
+    for name, value in signal.__dict__.items():
+        if (name.startswith('SIG') and
+                not name.startswith('SIG_') and
+                value == signum):
+            return name
+    return str(signum)
+
+
 ##################
 # ikos toolchain #
 ##################
-
 
 def clang(bc_path, cpp_path, colors=True):
     cmd = [settings.clang(),
@@ -664,9 +674,7 @@ def ikos_analyzer(db_path, pp_path, opt):
     def kill(p):
         try:
             log.error('Timeout')
-            p.terminate()
-            p.kill()
-            p.wait()
+            p.send_signal(signal.SIGALRM)
         except OSError:
             pass
 
@@ -691,12 +699,16 @@ def ikos_analyzer(db_path, pp_path, opt):
         raise AnalyzerError('a run-time error occured', cmd, exit_status)
 
     if os.WIFSIGNALED(return_status):
-        signal = os.WTERMSIG(return_status)
-        raise AnalyzerError('exited with signal %d' % signal, cmd, signal)
+        signum = os.WTERMSIG(return_status)
+        raise AnalyzerError('exited with signal %s' % signal_name(signum),
+                            cmd,
+                            signum)
 
     if os.WIFSTOPPED(return_status):
-        signal = os.WSTOPSIG(return_status)
-        raise AnalyzerError('exited with signal %d' % signal, cmd, signal)
+        signum = os.WSTOPSIG(return_status)
+        raise AnalyzerError('exited with signal %d' % signal_name(signum),
+                            cmd,
+                            signum)
 
 
 def save_settings(db, rows):
@@ -720,9 +732,6 @@ def main(argv):
     progname = os.path.basename(argv[0])
 
     start_date = datetime.datetime.now()
-
-    # disable unix signals forwarding
-    os.setpgrp()
 
     # parse arguments
     opt = parse_arguments(argv[1:])
