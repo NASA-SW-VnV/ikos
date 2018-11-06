@@ -695,9 +695,17 @@ class ScanServer(threading.Thread):
 def compile(mode, argv):
     assert mode in ('clang', 'clang++')
 
+    progname = os.path.basename(argv[0])
+
+    if 'IKOS_SCAN_SERVER' not in os.environ:
+        printf('error: %s: missing environment variable IKOS_SCAN_SERVER.\n',
+               progname, file=sys.stderr)
+        sys.exit(1)
+
     # setup colors and logging
-    colors.setup(os.environ['IKOS_SCAN_COLOR'], file=log.out)
-    log.setup(os.environ['IKOS_SCAN_LOG_LEVEL'])
+    colors.setup(os.environ.get('IKOS_SCAN_COLOR', args.default_color),
+                 file=log.out)
+    log.setup(os.environ.get('IKOS_SCAN_LOG_LEVEL', args.default_log_level))
 
     # first step, run the actual command
     run([mode] + argv[1:], executable=settings.clang())
@@ -740,13 +748,14 @@ def compile(mode, argv):
             attach_bitcode_path(obj_path, bc_path)
 
         # re-link to merge the llvm bitcode paths section
-        if parser.is_link and new_object_files:
-            link_objects(mode,
-                         parser,
-                         new_object_files + parser.object_files,
-                         parser.output_file)
-        else:
-            assert not new_object_files, 'new object files but nothing to link'
+        if new_object_files:
+            if parser.is_link:
+                link_objects(mode,
+                             parser,
+                             new_object_files + parser.object_files,
+                             parser.output_file)
+            else:
+                log.warning('New object files but nothing to link')
 
         if parser.is_link and u'executable' in filetype(parser.output_file):
             bc_path = '%s.bc' % parser.output_file
@@ -796,7 +805,7 @@ def main(argv):
                 if os.path.exists(binary['exe_path'])]
 
     if not binaries:
-        print('Nothing to analyze.')
+        printf('Nothing to analyze.\n')
 
     # analyze each binary
     for binary in binaries:
