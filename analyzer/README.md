@@ -147,45 +147,28 @@ If the analysis report is too big, you shall use:
 * `ikos-report output.db` to examine the report in your terminal
 * `ikos-view output.db` to examine the report in a web interface
 
-Running IKOS on a whole C/C++ project
--------------------------------------
+Analyze a whole project
+-----------------------
 
-To run IKOS on a large project, you will first need to compile the program into LLVM bitcode (`.bc`). The LLVM bitcode is a generic assembly language that can be used as an intermediate representation for most compiled language.
+To run IKOS on a large project, you shall use ikos-scan.
 
-The easiest way to compile your project into a `.bc` file is to use the tool **Whole Program LLVM**: https://github.com/travitch/whole-program-llvm
+ikos-scan is a command line utility that runs the static analyzer over a codebase after performing a regular build.
 
-You can install it easily using pip:
+The ikos-scan command works by overriding the environment variables `CC` and `CXX` to intercept the compiler commands. Behind the scene, it builds the original program as well as the LLVM bitcode file that is necessary to run the analyzer.
 
-```
-$ pip install wllvm
-```
-
-Then, you will need to set the following environment variable:
+To use ikos-scan, just prefix your build commands with `ikos-scan`. For instance, to analyze pkg-config:
 
 ```
-$ export LLVM_COMPILER=clang
+$ tar xf pkg-config-0.29.2.tar.gz
+$ cd pkg-config-0.29.2
+$ ikos-scan ./configure
+[...]
+$ ikos-scan make
+[...]
+Analyze pkg-config? [Y/n]
 ```
 
-Now, just use `wllvm` and `wllvm++` as your C and C++ compilers. These are wrappers that invoke the compiler as normal, and then, for each object file, create the equivalent LLVM bitcode file. This way, you can actually build your project as you usually do, and extract the final LLVM bitcode afterwards. It is also independent from any build system (autoconfig, cmake, Makefiles, ..).
-
-For instance, using autoconf, you shall run:
-
-```
-$ CC=wllvm CXX=wllvm++ ./configure
-$ make
-```
-
-Once everything is built, you can extract the LLVM bitcode file from a binary using the `extract-bc` command:
-
-```
-$ extract-bc prog
-```
-
-It will produce the LLVM bitcode file `prog.bc`. You can now analyze it using ikos:
-
-```
-$ ikos prog.bc
-```
+ikos-scan will produce a `.bc` file for each executable in your project. You can analyze them with specific options using `ikos [options] program.bc`.
 
 Analysis Options
 ----------------

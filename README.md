@@ -191,7 +191,7 @@ If the analysis report is too big, you shall use:
 * `ikos-view output.db` to examine the report in a web interface
 
 Further information:
-* [Running IKOS on a whole C/C++ project](analyzer/README.md#running-ikos-on-a-whole-cc-project)
+* [Analyze a whole project](analyzer/README.md#analyze-a-whole-project)
 * [Analysis options](analyzer/README.md#analysis-options)
 * [Report options](analyzer/README.md#report-options)
 * [Checks](analyzer/README.md#checks)
