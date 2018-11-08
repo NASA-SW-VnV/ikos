@@ -794,6 +794,10 @@ def main(argv):
     os.environ['CXX'] = settings.ikos_scan_cxx()
     os.environ['LD'] = settings.ikos_scan_cc()
 
+    # add -e to make commands, to avoid makefiles overriding CC/CXX/LD
+    if os.path.basename(opt.args[0]) == 'make':
+        opt.args.insert(1, '-e')
+
     # run the build command
     rc = run(opt.args)
 
