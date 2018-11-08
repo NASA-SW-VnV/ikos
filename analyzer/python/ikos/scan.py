@@ -792,6 +792,7 @@ def main(argv):
     os.environ['IKOS_SCAN_SERVER'] = 'http://localhost:%d' % server.port
     os.environ['CC'] = settings.ikos_scan_cc()
     os.environ['CXX'] = settings.ikos_scan_cxx()
+    os.environ['LD'] = settings.ikos_scan_cc()
 
     # run the build command
     rc = run(opt.args)
