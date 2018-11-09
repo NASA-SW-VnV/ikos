@@ -169,13 +169,22 @@ int main(int argc, char** argv) {
   llvm::initializeRewriteSymbolsLegacyPassPass(registry);
   llvm::initializeWinEHPreparePass(registry);
   llvm::initializeDwarfEHPreparePass(registry);
+#if LLVM_VERSION_MAJOR >= 5
+  llvm::initializeSafeStackLegacyPassPass(registry);
+#else
   llvm::initializeSafeStackPass(registry);
+#endif
   llvm::initializeSjLjEHPreparePass(registry);
   llvm::initializePreISelIntrinsicLoweringLegacyPassPass(registry);
   llvm::initializeGlobalMergePass(registry);
   llvm::initializeInterleavedAccessPass(registry);
   llvm::initializeCountingFunctionInserterPass(registry);
   llvm::initializeUnreachableBlockElimLegacyPassPass(registry);
+#if LLVM_VERSION_MAJOR >= 5
+  llvm::initializeScalarizeMaskedMemIntrinPass(registry);
+  llvm::initializeIndirectBrExpandPassPass(registry);
+  llvm::initializeExpandReductionsPass(registry);
+#endif
   ikos_pp::initializeIkosPasses(registry);
 
   /*

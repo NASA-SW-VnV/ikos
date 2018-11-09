@@ -112,8 +112,8 @@ include_directories(${AR_INCLUDE_DIR})
 
 find_package(LLVM REQUIRED)
 
-if ((LLVM_VERSION VERSION_LESS "4.0") OR (NOT (LLVM_VERSION VERSION_LESS "5.0")))
-  message(FATAL_ERROR "LLVM 4 is required.")
+if ((LLVM_VERSION VERSION_LESS "4") OR (NOT (LLVM_VERSION VERSION_LESS "6")))
+  message(FATAL_ERROR "LLVM 4 or 5 is required.")
 endif()
 
 set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")

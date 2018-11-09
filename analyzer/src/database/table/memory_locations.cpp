@@ -108,8 +108,12 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
     }
 
     // Check for llvm.dbg.value
-    llvm::DbgValueList dbgs;
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
+#if LLVM_VERSION_MAJOR >= 5
+    llvm::findDbgValues(dbgs, value);
+#else
     llvm::FindAllocaDbgValues(dbgs, value);
+#endif
 
     if (!dbgs.empty()) {
       llvm::DbgValueInst* dbg = dbgs.front();

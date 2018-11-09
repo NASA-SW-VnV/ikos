@@ -539,7 +539,13 @@ ReprResult repr(llvm::Constant* cst) {
     r += "]";
     return ReprResult{r};
   } else if (auto cst_expr = llvm::dyn_cast< llvm::ConstantExpr >(cst)) {
-    std::unique_ptr< llvm::Instruction > inst(cst_expr->getAsInstruction());
+#if LLVM_VERSION_MAJOR >= 5
+    auto inst_deleter = [](llvm::Instruction* inst) { inst->deleteValue(); };
+#else
+    auto inst_deleter = std::default_delete< llvm::Instruction >{};
+#endif
+    std::unique_ptr< llvm::Instruction, decltype(inst_deleter) >
+        inst(cst_expr->getAsInstruction(), inst_deleter);
     return repr(inst.get());
   } else {
     throw LogicError("unexpected llvm::Constant");
@@ -658,8 +664,12 @@ ReprResult repr(llvm::Value* value) {
 
   // Check for llvm.dbg.value
   if (!llvm::isa< llvm::Constant >(value)) {
-    llvm::DbgValueList dbgs;
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
+#if LLVM_VERSION_MAJOR >= 5
+    llvm::findDbgValues(dbgs, value);
+#else
     llvm::FindAllocaDbgValues(dbgs, value);
+#endif
 
     if (!dbgs.empty()) {
       llvm::DbgValueInst* dbg = dbgs.front();
@@ -980,8 +990,12 @@ struct OperandReprVisitor {
     }
 
     // Check for llvm.dbg.value
-    llvm::DbgValueList dbgs;
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
+#if LLVM_VERSION_MAJOR >= 5
+    llvm::findDbgValues(dbgs, value);
+#else
     llvm::FindAllocaDbgValues(dbgs, value);
+#endif
 
     if (!dbgs.empty()) {
       llvm::DbgValueInst* dbg = dbgs.front();

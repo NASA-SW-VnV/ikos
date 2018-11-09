@@ -516,20 +516,61 @@ def signal_name(signum):
     return str(signum)
 
 
+def version_tuple(version):
+    ''' Convert a version represented as a string to a tuple of integers.
+
+    >>> version_tuple('1.2.3')
+    (1, 2, 3)
+    >>> version_tuple('1.0')
+    (1,)
+    '''
+    result = [int(s) for s in version.split('.')]
+
+    # normalize by removing ending zeros
+    while result and result[-1] == 0:
+        result.pop()
+
+    return tuple(result)
+
+
+def clang_emit_llvm_flags():
+    ''' Clang flags to emit llvm bitcode '''
+    return ['-c', '-emit-llvm']
+
+
+def clang_ikos_flags():
+    ''' Clang flags for ikos '''
+    flags = [
+        # enable clang warnings
+        '-Wall',
+        # disable source code fortification
+        '-U_FORTIFY_SOURCE',
+        '-D_FORTIFY_SOURCE=0',
+        # compile in debug mode
+        '-g',
+        # disable optimizations
+        '-O0',
+    ]
+
+    if version_tuple(settings.CLANG_VERSION) >= (5,):
+        # disable the 'optnone' attribute
+        # see https://bugs.llvm.org/show_bug.cgi?id=35950#c10
+        flags += ['-Xclang', '-disable-O0-optnone']
+
+    return flags
+
+
 ##################
 # ikos toolchain #
 ##################
 
 def clang(bc_path, cpp_path, colors=True):
-    cmd = [settings.clang(),
-           '-c',
-           '-emit-llvm',
-           '-D_FORTIFY_SOURCE=0',
-           '-g',
-           '-O0',
-           '-Wall',
-           cpp_path,
-           '-o', bc_path]
+    cmd = [settings.clang()]
+    cmd += clang_emit_llvm_flags()
+    cmd += clang_ikos_flags()
+    cmd += [cpp_path,
+            '-o',
+            bc_path]
 
     # For #include <ikos/analyzer/intrinsic.hpp>
     cmd += ['-isystem', settings.INCLUDE_DIR]

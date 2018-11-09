@@ -15,7 +15,7 @@ Installation issues
 
 CMake could not find LLVM.
 
-First, install LLVM 4.0.x. This can usually be done with your package manager.
+First, install LLVM. This can usually be done with your package manager.
 
 If this message still shows up, it means cmake cannot find the `llvm-config` command.
 
@@ -31,7 +31,7 @@ $ PATH="$(brew --prefix)/opt/llvm@4/bin:$PATH"
 
 CMake could not find Clang.
 
-First, install Clang 4.0.x. This can usually be done with your package manager.
+First, install Clang. This can usually be done with your package manager.
 
 If this message still shows up, it means cmake cannot find the `clang` command.
 

@@ -23,7 +23,7 @@ To build and run the analyzer, you will need the following dependencies:
 * Boost >= 1.55
 * Python 2 >= 2.7.3 or Python 3 >= 3.3
 * SQLite >= 3.6.20
-* LLVM and Clang 4.0.x
+* LLVM and Clang 4 or 5
 * (Optional) APRON >= 0.9.10
 * (Optional) Pygments
 * IKOS Core

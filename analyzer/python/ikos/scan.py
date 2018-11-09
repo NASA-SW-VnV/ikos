@@ -52,6 +52,7 @@ import sys
 import tempfile
 import threading
 
+from ikos import analyzer
 from ikos import args
 from ikos import colors
 from ikos import http
@@ -513,16 +514,13 @@ def check_output(cmd, executable=None):
 
 def build_bitcode(mode, parser, src_path, bc_path):
     ''' Compile the given source file to llvm bitcode '''
-    cmd = [mode,
-           '-c',
-           '-emit-llvm']
+    cmd = [mode]
+    cmd += analyzer.clang_emit_llvm_flags()
     cmd += parser.compile_args
-    cmd += ['-U_FORTIFY_SOURCE',
-            '-D_FORTIFY_SOURCE=0',
-            '-g',
-            '-O0',
-            src_path,
-            '-o', bc_path]
+    cmd += analyzer.clang_ikos_flags()
+    cmd += [src_path,
+            '-o',
+            bc_path]
     run(cmd, executable=settings.clang())
 
 

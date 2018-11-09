@@ -24,7 +24,7 @@ To build IKOS LLVM Frontend, you will need the following dependencies:
 * CMake >= 2.8.12.2
 * GMP >= 4.3.1
 * Boost >= 1.55
-* LLVM and Clang 4.0.x
+* LLVM 4 or 5
 * IKOS Core
 * IKOS AR
 
