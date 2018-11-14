@@ -1,12 +1,12 @@
 ; ModuleID = 'aggregate-in-reg.cpp.pp.bc'
 source_filename = "aggregate-in-reg.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.12.0
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 %class.Foo = type { %class.Vector3 }
 %class.Vector3 = type { float, float, float }
@@ -15,7 +15,7 @@ target triple = "x86_64-apple-macosx10.12.0"
 define linkonce_odr { <2 x float>, float } @_ZN3Foo9get_coordEv(%class.Foo*) #3 align 2 !dbg !59 {
   %2 = alloca %class.Vector3, align 4
   %3 = alloca { <2 x float>, float }, align 8
-  call void @llvm.dbg.value(metadata %class.Foo* %0, i64 0, metadata !60, metadata !15), !dbg !61
+  call void @llvm.dbg.value(metadata %class.Foo* %0, metadata !60, metadata !DIExpression()), !dbg !61
   %4 = getelementptr inbounds %class.Foo, %class.Foo* %0, i32 0, i32 0, !dbg !62
   %5 = bitcast %class.Vector3* %2 to i8*, !dbg !62
   %6 = bitcast %class.Vector3* %4 to i8*, !dbg !62
@@ -44,10 +44,10 @@ define linkonce_odr { <2 x float>, float } @_ZN3Foo9get_coordEv(%class.Foo*) #3 
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN3FooC1Efff(%class.Foo*, float, float, float) unnamed_addr #2 align 2 !dbg !47 {
-  call void @llvm.dbg.value(metadata %class.Foo* %0, i64 0, metadata !48, metadata !15), !dbg !50
-  call void @llvm.dbg.value(metadata float %1, i64 0, metadata !51, metadata !15), !dbg !52
-  call void @llvm.dbg.value(metadata float %2, i64 0, metadata !53, metadata !15), !dbg !54
-  call void @llvm.dbg.value(metadata float %3, i64 0, metadata !55, metadata !15), !dbg !56
+  call void @llvm.dbg.value(metadata %class.Foo* %0, metadata !48, metadata !DIExpression()), !dbg !50
+  call void @llvm.dbg.value(metadata float %1, metadata !51, metadata !DIExpression()), !dbg !52
+  call void @llvm.dbg.value(metadata float %2, metadata !53, metadata !DIExpression()), !dbg !54
+  call void @llvm.dbg.value(metadata float %3, metadata !55, metadata !DIExpression()), !dbg !56
   call void @_ZN3FooC2Efff(%class.Foo* %0, float %1, float %2, float %3), !dbg !57
   ret void, !dbg !58
 }
@@ -60,10 +60,10 @@ define linkonce_odr void @_ZN3FooC1Efff(%class.Foo*, float, float, float) unname
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN3FooC2Efff(%class.Foo*, float, float, float) unnamed_addr #2 align 2 !dbg !64 {
-  call void @llvm.dbg.value(metadata %class.Foo* %0, i64 0, metadata !65, metadata !15), !dbg !66
-  call void @llvm.dbg.value(metadata float %1, i64 0, metadata !67, metadata !15), !dbg !68
-  call void @llvm.dbg.value(metadata float %2, i64 0, metadata !69, metadata !15), !dbg !70
-  call void @llvm.dbg.value(metadata float %3, i64 0, metadata !71, metadata !15), !dbg !72
+  call void @llvm.dbg.value(metadata %class.Foo* %0, metadata !65, metadata !DIExpression()), !dbg !66
+  call void @llvm.dbg.value(metadata float %1, metadata !67, metadata !DIExpression()), !dbg !68
+  call void @llvm.dbg.value(metadata float %2, metadata !69, metadata !DIExpression()), !dbg !70
+  call void @llvm.dbg.value(metadata float %3, metadata !71, metadata !DIExpression()), !dbg !72
   %5 = getelementptr inbounds %class.Foo, %class.Foo* %0, i32 0, i32 0, !dbg !73
   call void @_ZN7Vector3IfEC1Efff(%class.Vector3* %5, float %1, float %2, float %3), !dbg !74
   ret void, !dbg !75
@@ -78,10 +78,10 @@ define linkonce_odr void @_ZN3FooC2Efff(%class.Foo*, float, float, float) unname
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN7Vector3IfEC1Efff(%class.Vector3*, float, float, float) unnamed_addr #2 align 2 !dbg !76 {
-  call void @llvm.dbg.value(metadata %class.Vector3* %0, i64 0, metadata !77, metadata !15), !dbg !79
-  call void @llvm.dbg.value(metadata float %1, i64 0, metadata !80, metadata !15), !dbg !81
-  call void @llvm.dbg.value(metadata float %2, i64 0, metadata !82, metadata !15), !dbg !83
-  call void @llvm.dbg.value(metadata float %3, i64 0, metadata !84, metadata !15), !dbg !85
+  call void @llvm.dbg.value(metadata %class.Vector3* %0, metadata !77, metadata !DIExpression()), !dbg !79
+  call void @llvm.dbg.value(metadata float %1, metadata !80, metadata !DIExpression()), !dbg !81
+  call void @llvm.dbg.value(metadata float %2, metadata !82, metadata !DIExpression()), !dbg !83
+  call void @llvm.dbg.value(metadata float %3, metadata !84, metadata !DIExpression()), !dbg !85
   call void @_ZN7Vector3IfEC2Efff(%class.Vector3* %0, float %1, float %2, float %3), !dbg !86
   ret void, !dbg !87
 }
@@ -94,10 +94,10 @@ define linkonce_odr void @_ZN7Vector3IfEC1Efff(%class.Vector3*, float, float, fl
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float, float) unnamed_addr #3 align 2 !dbg !88 {
-  call void @llvm.dbg.value(metadata %class.Vector3* %0, i64 0, metadata !89, metadata !15), !dbg !90
-  call void @llvm.dbg.value(metadata float %1, i64 0, metadata !91, metadata !15), !dbg !92
-  call void @llvm.dbg.value(metadata float %2, i64 0, metadata !93, metadata !15), !dbg !94
-  call void @llvm.dbg.value(metadata float %3, i64 0, metadata !95, metadata !15), !dbg !96
+  call void @llvm.dbg.value(metadata %class.Vector3* %0, metadata !89, metadata !DIExpression()), !dbg !90
+  call void @llvm.dbg.value(metadata float %1, metadata !91, metadata !DIExpression()), !dbg !92
+  call void @llvm.dbg.value(metadata float %2, metadata !93, metadata !DIExpression()), !dbg !94
+  call void @llvm.dbg.value(metadata float %3, metadata !95, metadata !DIExpression()), !dbg !96
   %5 = getelementptr inbounds %class.Vector3, %class.Vector3* %0, i32 0, i32 0, !dbg !97
   store float %1, float* %5, align 4, !dbg !97
   %6 = getelementptr inbounds %class.Vector3, %class.Vector3* %0, i32 0, i32 1, !dbg !98
@@ -118,26 +118,20 @@ define linkonce_odr void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float, fl
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
-
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #4
 ; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
 
-; Function Attrs: nounwind readnone
-declare void @llvm.dbg.value(metadata, i64, metadata, metadata) #1
-
 ; Function Attrs: noinline norecurse ssp uwtable
-define i32 @main(i32, i8**) #0 !dbg !7 {
+define i32 @main(i32, i8**) #0 !dbg !8 {
   %3 = alloca %class.Foo, align 4
   %4 = alloca %class.Vector3, align 4
   %5 = alloca { <2 x float>, float }, align 8
-  call void @llvm.dbg.value(metadata i32 %0, i64 0, metadata !14, metadata !15), !dbg !16
-  call void @llvm.dbg.value(metadata i8** %1, i64 0, metadata !17, metadata !15), !dbg !18
-  call void @llvm.dbg.declare(metadata %class.Foo* %3, metadata !19, metadata !15), !dbg !42
+  call void @llvm.dbg.value(metadata i32 %0, metadata !15, metadata !DIExpression()), !dbg !16
+  call void @llvm.dbg.value(metadata i8** %1, metadata !17, metadata !DIExpression()), !dbg !18
+  call void @llvm.dbg.declare(metadata %class.Foo* %3, metadata !19, metadata !DIExpression()), !dbg !42
   call void @_ZN3FooC1Efff(%class.Foo* %3, float 1.000000e+00, float 2.000000e+00, float 3.000000e+00), !dbg !42
-  call void @llvm.dbg.declare(metadata %class.Vector3* %4, metadata !43, metadata !15), !dbg !44
+  call void @llvm.dbg.declare(metadata %class.Vector3* %4, metadata !43, metadata !DIExpression()), !dbg !44
   %6 = call { <2 x float>, float } @_ZN3Foo9get_coordEv(%class.Foo* %3), !dbg !45
   store { <2 x float>, float } %6, { <2 x float>, float }* %5, align 8, !dbg !45
   %7 = bitcast { <2 x float>, float }* %5 to i8*, !dbg !45
@@ -160,36 +154,42 @@ define i32 @main(i32, i8**) #0 !dbg !7 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind readnone }
-attributes #2 = { noinline ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+
+; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.value(metadata, metadata, metadata) #1
+
+attributes #0 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind readnone speculatable }
+attributes #2 = { noinline ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #4 = { argmemonly nounwind }
 
 !llvm.dbg.cu = !{!0}
-!llvm.module.flags = !{!3, !4, !5}
-!llvm.ident = !{!6}
+!llvm.module.flags = !{!3, !4, !5, !6}
+!llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
-!1 = !DIFile(filename: "aggregate-in-reg.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!1 = !DIFile(filename: "aggregate-in-reg.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
-!5 = !{i32 1, !"PIC Level", i32 2}
-!6 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!7 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 19, type: !8, isLocal: false, isDefinition: true, scopeLine: 19, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
-!8 = !DISubroutineType(types: !9)
-!9 = !{!10, !10, !11}
-!10 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!11 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !12, size: 64)
+!5 = !{i32 1, !"wchar_size", i32 4}
+!6 = !{i32 7, !"PIC Level", i32 2}
+!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 19, type: !9, isLocal: false, isDefinition: true, scopeLine: 19, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!9 = !DISubroutineType(types: !10)
+!10 = !{!11, !11, !12}
+!11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !12 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !13, size: 64)
-!13 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
-!14 = !DILocalVariable(name: "argc", arg: 1, scope: !7, file: !1, line: 19, type: !10)
-!15 = !DIExpression()
-!16 = !DILocation(line: 19, column: 14, scope: !7)
-!17 = !DILocalVariable(name: "argv", arg: 2, scope: !7, file: !1, line: 19, type: !11)
-!18 = !DILocation(line: 19, column: 26, scope: !7)
-!19 = !DILocalVariable(name: "f", scope: !7, file: !1, line: 20, type: !20)
+!13 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !14, size: 64)
+!14 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
+!15 = !DILocalVariable(name: "argc", arg: 1, scope: !8, file: !1, line: 19, type: !11)
+!16 = !DILocation(line: 19, column: 14, scope: !8)
+!17 = !DILocalVariable(name: "argv", arg: 2, scope: !8, file: !1, line: 19, type: !12)
+!18 = !DILocation(line: 19, column: 26, scope: !8)
+!19 = !DILocalVariable(name: "f", scope: !8, file: !1, line: 20, type: !20)
 !20 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "Foo", file: !1, line: 10, size: 96, elements: !21, identifier: "_ZTS3Foo")
 !21 = !{!22, !35, !39}
 !22 = !DIDerivedType(tag: DW_TAG_member, name: "coord", scope: !20, file: !1, line: 12, baseType: !23, size: 96)
@@ -212,11 +212,11 @@ attributes #4 = { argmemonly nounwind }
 !39 = !DISubprogram(name: "get_coord", linkageName: "_ZN3Foo9get_coordEv", scope: !20, file: !1, line: 16, type: !40, isLocal: false, isDefinition: false, scopeLine: 16, flags: DIFlagPublic | DIFlagPrototyped, isOptimized: false)
 !40 = !DISubroutineType(types: !41)
 !41 = !{!23, !38}
-!42 = !DILocation(line: 20, column: 7, scope: !7)
-!43 = !DILocalVariable(name: "coord", scope: !7, file: !1, line: 21, type: !23)
-!44 = !DILocation(line: 21, column: 20, scope: !7)
-!45 = !DILocation(line: 21, column: 30, scope: !7)
-!46 = !DILocation(line: 22, column: 3, scope: !7)
+!42 = !DILocation(line: 20, column: 7, scope: !8)
+!43 = !DILocalVariable(name: "coord", scope: !8, file: !1, line: 21, type: !23)
+!44 = !DILocation(line: 21, column: 20, scope: !8)
+!45 = !DILocation(line: 21, column: 30, scope: !8)
+!46 = !DILocation(line: 22, column: 3, scope: !8)
 !47 = distinct !DISubprogram(name: "Foo", linkageName: "_ZN3FooC1Efff", scope: !20, file: !1, line: 15, type: !36, isLocal: false, isDefinition: true, scopeLine: 15, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, variables: !2)
 !48 = !DILocalVariable(name: "this", arg: 1, scope: !47, type: !49, flags: DIFlagArtificial | DIFlagObjectPointer)
 !49 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !20, size: 64)

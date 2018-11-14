@@ -155,6 +155,7 @@ int main(int argc, char** argv) {
 
   llvm::PassRegistry& registry = *llvm::PassRegistry::getPassRegistry();
   llvm::initializeCore(registry);
+  llvm::initializeCoroutines(registry);
   llvm::initializeScalarOpts(registry);
   llvm::initializeObjCARCOpts(registry);
   llvm::initializeVectorization(registry);
@@ -164,27 +165,24 @@ int main(int argc, char** argv) {
   llvm::initializeInstCombine(registry);
   llvm::initializeInstrumentation(registry);
   llvm::initializeTarget(registry);
+  llvm::initializeExpandMemCmpPassPass(registry);
+  llvm::initializeScalarizeMaskedMemIntrinPass(registry);
   llvm::initializeCodeGenPreparePass(registry);
   llvm::initializeAtomicExpandPass(registry);
   llvm::initializeRewriteSymbolsLegacyPassPass(registry);
   llvm::initializeWinEHPreparePass(registry);
   llvm::initializeDwarfEHPreparePass(registry);
-#if LLVM_VERSION_MAJOR >= 5
   llvm::initializeSafeStackLegacyPassPass(registry);
-#else
-  llvm::initializeSafeStackPass(registry);
-#endif
   llvm::initializeSjLjEHPreparePass(registry);
   llvm::initializePreISelIntrinsicLoweringLegacyPassPass(registry);
   llvm::initializeGlobalMergePass(registry);
-  llvm::initializeInterleavedAccessPass(registry);
-  llvm::initializeCountingFunctionInserterPass(registry);
-  llvm::initializeUnreachableBlockElimLegacyPassPass(registry);
-#if LLVM_VERSION_MAJOR >= 5
-  llvm::initializeScalarizeMaskedMemIntrinPass(registry);
   llvm::initializeIndirectBrExpandPassPass(registry);
+  llvm::initializeInterleavedAccessPass(registry);
+  llvm::initializeEntryExitInstrumenterPass(registry);
+  llvm::initializePostInlineEntryExitInstrumenterPass(registry);
+  llvm::initializeUnreachableBlockElimLegacyPassPass(registry);
   llvm::initializeExpandReductionsPass(registry);
-#endif
+  llvm::initializeWriteBitcodePassPass(registry);
   ikos_pp::initializeIkosPasses(registry);
 
   /*
@@ -223,10 +221,10 @@ int main(int argc, char** argv) {
 
   // Output stream
   std::error_code ec;
-  std::unique_ptr< llvm::tool_output_file > output =
-      std::make_unique< llvm::tool_output_file >(OutputFilename,
-                                                 ec,
-                                                 llvm::sys::fs::F_None);
+  std::unique_ptr< llvm::ToolOutputFile > output =
+      std::make_unique< llvm::ToolOutputFile >(OutputFilename,
+                                               ec,
+                                               llvm::sys::fs::F_None);
   if (ec) {
     llvm::errs() << progname << ": " << ec.message() << '\n';
     return 1;

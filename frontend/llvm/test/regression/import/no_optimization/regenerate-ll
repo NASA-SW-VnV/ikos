@@ -5,8 +5,10 @@ clang="clang"
 ikos_pp="ikos-pp"
 opt="opt"
 opt_level="none"
-cflags="-c -emit-llvm -g -D_FORTIFY_SOURCE=0 -Wall"
+cflags="-c -emit-llvm -Wall -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone"
 cxxflags="$cflags -std=c++14"
+ikos_import="ikos-import"
+ikos_import_opts="-format=text -order-globals"
 
 set -e
 
@@ -28,6 +30,7 @@ do
     run "$clang" $cflags "$filename" -o "$filename.bc"
     run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
     run "$opt" -S "$filename.pp.bc" -o "$filename_ll"
+    "$ikos_import" $ikos_import_opts "$filename_ll" | sed 's/^/; CHECK: /' >> "$filename_ll"
 done
 
 for filename in *.cpp
@@ -43,6 +46,7 @@ do
     run "$clang" $cxxflags "$filename" -o "$filename.bc"
     run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
     run "$opt" -S "$filename.pp.bc" -o "$filename_ll"
+    "$ikos_import" $ikos_import_opts "$filename_ll" | sed 's/^/; CHECK: /' >> "$filename_ll"
 done
 
 rm -f *.bc

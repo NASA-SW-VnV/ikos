@@ -112,8 +112,8 @@ include_directories(${AR_INCLUDE_DIR})
 
 find_package(LLVM REQUIRED)
 
-if ((LLVM_VERSION VERSION_LESS "4") OR (NOT (LLVM_VERSION VERSION_LESS "6")))
-  message(FATAL_ERROR "LLVM 4 or 5 is required.")
+if ((LLVM_VERSION VERSION_LESS "6") OR (NOT (LLVM_VERSION VERSION_LESS "7")))
+  message(FATAL_ERROR "LLVM 6 is required.")
 endif()
 
 set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")
@@ -184,6 +184,7 @@ llvm_map_components_to_libnames(IKOS_PP_LLVM_LIBS
   bitwriter
   codegen
   core
+  coroutines
   instcombine
   instrumentation
   ipo

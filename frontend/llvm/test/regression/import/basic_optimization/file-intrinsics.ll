@@ -1,7 +1,12 @@
 ; ModuleID = 'file-intrinsics.c.pp.bc'
 source_filename = "file-intrinsics.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
+
+; CHECK-LABEL: Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 %struct.__sFILE = type { i8*, i32, i32, i16, i16, %struct.__sbuf, i32, i8*, i32 (i8*)*, i32 (i8*, i8*, i32)*, i64 (i8*, i64, i32)*, i32 (i8*, i8*, i32)*, %struct.__sbuf, %struct.__sFILEX*, i32, [3 x i8], [1 x i8], %struct.__sbuf, i32, i64 }
 %struct.__sFILEX = type opaque
@@ -59,16 +64,19 @@ declare i32 @"\01_fputs"(i8*, %struct.__sFILE*) #2
 declare i32 @fscanf(%struct.__sFILE*, i8*, ...) #2
 ; CHECK: declare si32 @ar.libc.fscanf(opaque*, si8*, ...)
 
+; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+
 ; Function Attrs: noinline nounwind ssp uwtable
-define i32 @main() #0 !dbg !7 {
+define i32 @main() #0 !dbg !8 {
   %1 = alloca [1025 x i8], align 16
   %2 = alloca i32, align 4
-  %3 = getelementptr inbounds [10 x i8], [10 x i8]* @.str, i32 0, i32 0, !dbg !11
-  %4 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.1, i32 0, i32 0, !dbg !11
-  %5 = call %struct.__sFILE* @"\01_fopen"(i8* %3, i8* %4), !dbg !11
-  call void @llvm.dbg.value(metadata %struct.__sFILE* %5, i64 0, metadata !12, metadata !76), !dbg !77
-  call void @llvm.dbg.declare(metadata [1025 x i8]* %1, metadata !78, metadata !76), !dbg !82
-  call void @llvm.dbg.declare(metadata i32* %2, metadata !83, metadata !76), !dbg !84
+  %3 = getelementptr inbounds [10 x i8], [10 x i8]* @.str, i32 0, i32 0, !dbg !12
+  %4 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.1, i32 0, i32 0, !dbg !12
+  %5 = call %struct.__sFILE* @"\01_fopen"(i8* %3, i8* %4), !dbg !12
+  call void @llvm.dbg.value(metadata %struct.__sFILE* %5, metadata !13, metadata !DIExpression()), !dbg !77
+  call void @llvm.dbg.declare(metadata [1025 x i8]* %1, metadata !78, metadata !DIExpression()), !dbg !82
+  call void @llvm.dbg.declare(metadata i32* %2, metadata !83, metadata !DIExpression()), !dbg !84
   %6 = getelementptr inbounds [1025 x i8], [1025 x i8]* %1, i32 0, i32 0, !dbg !85
   %7 = call i8* @fgets(i8* %6, i32 1024, %struct.__sFILE* %5), !dbg !86
   %8 = call i32 @fgetc(%struct.__sFILE* %5), !dbg !87
@@ -112,111 +120,108 @@ define i32 @main() #0 !dbg !7 {
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.value(metadata, metadata, metadata) #1
 
-; Function Attrs: nounwind readnone
-declare void @llvm.dbg.value(metadata, i64, metadata, metadata) #1
-
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind readnone }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind readnone speculatable }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!0}
-!llvm.module.flags = !{!3, !4, !5}
-!llvm.ident = !{!6}
+!llvm.module.flags = !{!3, !4, !5, !6}
+!llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
-!1 = !DIFile(filename: "file-intrinsics.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!1 = !DIFile(filename: "file-intrinsics.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
-!5 = !{i32 1, !"PIC Level", i32 2}
-!6 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!7 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 3, type: !8, isLocal: false, isDefinition: true, scopeLine: 3, isOptimized: false, unit: !0, variables: !2)
-!8 = !DISubroutineType(types: !9)
-!9 = !{!10}
-!10 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!11 = !DILocation(line: 4, column: 13, scope: !7)
-!12 = !DILocalVariable(name: "f", scope: !7, file: !1, line: 4, type: !13)
-!13 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !14, size: 64)
-!14 = !DIDerivedType(tag: DW_TAG_typedef, name: "FILE", file: !15, line: 153, baseType: !16)
-!15 = !DIFile(filename: "/usr/include/stdio.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
-!16 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__sFILE", file: !15, line: 122, size: 1216, elements: !17)
-!17 = !{!18, !21, !22, !23, !25, !26, !31, !32, !34, !38, !44, !54, !60, !61, !64, !65, !69, !73, !74, !75}
-!18 = !DIDerivedType(tag: DW_TAG_member, name: "_p", scope: !16, file: !15, line: 123, baseType: !19, size: 64)
-!19 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !20, size: 64)
-!20 = !DIBasicType(name: "unsigned char", size: 8, encoding: DW_ATE_unsigned_char)
-!21 = !DIDerivedType(tag: DW_TAG_member, name: "_r", scope: !16, file: !15, line: 124, baseType: !10, size: 32, offset: 64)
-!22 = !DIDerivedType(tag: DW_TAG_member, name: "_w", scope: !16, file: !15, line: 125, baseType: !10, size: 32, offset: 96)
-!23 = !DIDerivedType(tag: DW_TAG_member, name: "_flags", scope: !16, file: !15, line: 126, baseType: !24, size: 16, offset: 128)
-!24 = !DIBasicType(name: "short", size: 16, encoding: DW_ATE_signed)
-!25 = !DIDerivedType(tag: DW_TAG_member, name: "_file", scope: !16, file: !15, line: 127, baseType: !24, size: 16, offset: 144)
-!26 = !DIDerivedType(tag: DW_TAG_member, name: "_bf", scope: !16, file: !15, line: 128, baseType: !27, size: 128, offset: 192)
-!27 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__sbuf", file: !15, line: 88, size: 128, elements: !28)
-!28 = !{!29, !30}
-!29 = !DIDerivedType(tag: DW_TAG_member, name: "_base", scope: !27, file: !15, line: 89, baseType: !19, size: 64)
-!30 = !DIDerivedType(tag: DW_TAG_member, name: "_size", scope: !27, file: !15, line: 90, baseType: !10, size: 32, offset: 64)
-!31 = !DIDerivedType(tag: DW_TAG_member, name: "_lbfsize", scope: !16, file: !15, line: 129, baseType: !10, size: 32, offset: 320)
-!32 = !DIDerivedType(tag: DW_TAG_member, name: "_cookie", scope: !16, file: !15, line: 132, baseType: !33, size: 64, offset: 384)
-!33 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: null, size: 64)
-!34 = !DIDerivedType(tag: DW_TAG_member, name: "_close", scope: !16, file: !15, line: 133, baseType: !35, size: 64, offset: 448)
-!35 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !36, size: 64)
-!36 = !DISubroutineType(types: !37)
-!37 = !{!10, !33}
-!38 = !DIDerivedType(tag: DW_TAG_member, name: "_read", scope: !16, file: !15, line: 134, baseType: !39, size: 64, offset: 512)
-!39 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !40, size: 64)
-!40 = !DISubroutineType(types: !41)
-!41 = !{!10, !33, !42, !10}
-!42 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !43, size: 64)
-!43 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
-!44 = !DIDerivedType(tag: DW_TAG_member, name: "_seek", scope: !16, file: !15, line: 135, baseType: !45, size: 64, offset: 576)
-!45 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !46, size: 64)
-!46 = !DISubroutineType(types: !47)
-!47 = !{!48, !33, !48, !10}
-!48 = !DIDerivedType(tag: DW_TAG_typedef, name: "fpos_t", file: !15, line: 77, baseType: !49)
-!49 = !DIDerivedType(tag: DW_TAG_typedef, name: "__darwin_off_t", file: !50, line: 71, baseType: !51)
-!50 = !DIFile(filename: "/usr/include/sys/_types.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
-!51 = !DIDerivedType(tag: DW_TAG_typedef, name: "__int64_t", file: !52, line: 46, baseType: !53)
-!52 = !DIFile(filename: "/usr/include/i386/_types.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
-!53 = !DIBasicType(name: "long long int", size: 64, encoding: DW_ATE_signed)
-!54 = !DIDerivedType(tag: DW_TAG_member, name: "_write", scope: !16, file: !15, line: 136, baseType: !55, size: 64, offset: 640)
-!55 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !56, size: 64)
-!56 = !DISubroutineType(types: !57)
-!57 = !{!10, !33, !58, !10}
-!58 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !59, size: 64)
-!59 = !DIDerivedType(tag: DW_TAG_const_type, baseType: !43)
-!60 = !DIDerivedType(tag: DW_TAG_member, name: "_ub", scope: !16, file: !15, line: 139, baseType: !27, size: 128, offset: 704)
-!61 = !DIDerivedType(tag: DW_TAG_member, name: "_extra", scope: !16, file: !15, line: 140, baseType: !62, size: 64, offset: 832)
-!62 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !63, size: 64)
-!63 = !DICompositeType(tag: DW_TAG_structure_type, name: "__sFILEX", file: !15, line: 94, flags: DIFlagFwdDecl)
-!64 = !DIDerivedType(tag: DW_TAG_member, name: "_ur", scope: !16, file: !15, line: 141, baseType: !10, size: 32, offset: 896)
-!65 = !DIDerivedType(tag: DW_TAG_member, name: "_ubuf", scope: !16, file: !15, line: 144, baseType: !66, size: 24, offset: 928)
-!66 = !DICompositeType(tag: DW_TAG_array_type, baseType: !20, size: 24, elements: !67)
-!67 = !{!68}
-!68 = !DISubrange(count: 3)
-!69 = !DIDerivedType(tag: DW_TAG_member, name: "_nbuf", scope: !16, file: !15, line: 145, baseType: !70, size: 8, offset: 952)
-!70 = !DICompositeType(tag: DW_TAG_array_type, baseType: !20, size: 8, elements: !71)
-!71 = !{!72}
-!72 = !DISubrange(count: 1)
-!73 = !DIDerivedType(tag: DW_TAG_member, name: "_lb", scope: !16, file: !15, line: 148, baseType: !27, size: 128, offset: 960)
-!74 = !DIDerivedType(tag: DW_TAG_member, name: "_blksize", scope: !16, file: !15, line: 151, baseType: !10, size: 32, offset: 1088)
-!75 = !DIDerivedType(tag: DW_TAG_member, name: "_offset", scope: !16, file: !15, line: 152, baseType: !48, size: 64, offset: 1152)
-!76 = !DIExpression()
-!77 = !DILocation(line: 4, column: 9, scope: !7)
-!78 = !DILocalVariable(name: "buf", scope: !7, file: !1, line: 5, type: !79)
-!79 = !DICompositeType(tag: DW_TAG_array_type, baseType: !43, size: 8200, elements: !80)
+!5 = !{i32 1, !"wchar_size", i32 4}
+!6 = !{i32 7, !"PIC Level", i32 2}
+!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 3, type: !9, isLocal: false, isDefinition: true, scopeLine: 3, isOptimized: false, unit: !0, variables: !2)
+!9 = !DISubroutineType(types: !10)
+!10 = !{!11}
+!11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!12 = !DILocation(line: 4, column: 13, scope: !8)
+!13 = !DILocalVariable(name: "f", scope: !8, file: !1, line: 4, type: !14)
+!14 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !15, size: 64)
+!15 = !DIDerivedType(tag: DW_TAG_typedef, name: "FILE", file: !16, line: 157, baseType: !17)
+!16 = !DIFile(filename: "/usr/include/_stdio.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
+!17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__sFILE", file: !16, line: 126, size: 1216, elements: !18)
+!18 = !{!19, !22, !23, !24, !26, !27, !32, !33, !35, !39, !45, !55, !61, !62, !65, !66, !70, !74, !75, !76}
+!19 = !DIDerivedType(tag: DW_TAG_member, name: "_p", scope: !17, file: !16, line: 127, baseType: !20, size: 64)
+!20 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !21, size: 64)
+!21 = !DIBasicType(name: "unsigned char", size: 8, encoding: DW_ATE_unsigned_char)
+!22 = !DIDerivedType(tag: DW_TAG_member, name: "_r", scope: !17, file: !16, line: 128, baseType: !11, size: 32, offset: 64)
+!23 = !DIDerivedType(tag: DW_TAG_member, name: "_w", scope: !17, file: !16, line: 129, baseType: !11, size: 32, offset: 96)
+!24 = !DIDerivedType(tag: DW_TAG_member, name: "_flags", scope: !17, file: !16, line: 130, baseType: !25, size: 16, offset: 128)
+!25 = !DIBasicType(name: "short", size: 16, encoding: DW_ATE_signed)
+!26 = !DIDerivedType(tag: DW_TAG_member, name: "_file", scope: !17, file: !16, line: 131, baseType: !25, size: 16, offset: 144)
+!27 = !DIDerivedType(tag: DW_TAG_member, name: "_bf", scope: !17, file: !16, line: 132, baseType: !28, size: 128, offset: 192)
+!28 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__sbuf", file: !16, line: 92, size: 128, elements: !29)
+!29 = !{!30, !31}
+!30 = !DIDerivedType(tag: DW_TAG_member, name: "_base", scope: !28, file: !16, line: 93, baseType: !20, size: 64)
+!31 = !DIDerivedType(tag: DW_TAG_member, name: "_size", scope: !28, file: !16, line: 94, baseType: !11, size: 32, offset: 64)
+!32 = !DIDerivedType(tag: DW_TAG_member, name: "_lbfsize", scope: !17, file: !16, line: 133, baseType: !11, size: 32, offset: 320)
+!33 = !DIDerivedType(tag: DW_TAG_member, name: "_cookie", scope: !17, file: !16, line: 136, baseType: !34, size: 64, offset: 384)
+!34 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: null, size: 64)
+!35 = !DIDerivedType(tag: DW_TAG_member, name: "_close", scope: !17, file: !16, line: 137, baseType: !36, size: 64, offset: 448)
+!36 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !37, size: 64)
+!37 = !DISubroutineType(types: !38)
+!38 = !{!11, !34}
+!39 = !DIDerivedType(tag: DW_TAG_member, name: "_read", scope: !17, file: !16, line: 138, baseType: !40, size: 64, offset: 512)
+!40 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !41, size: 64)
+!41 = !DISubroutineType(types: !42)
+!42 = !{!11, !34, !43, !11}
+!43 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !44, size: 64)
+!44 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
+!45 = !DIDerivedType(tag: DW_TAG_member, name: "_seek", scope: !17, file: !16, line: 139, baseType: !46, size: 64, offset: 576)
+!46 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !47, size: 64)
+!47 = !DISubroutineType(types: !48)
+!48 = !{!49, !34, !49, !11}
+!49 = !DIDerivedType(tag: DW_TAG_typedef, name: "fpos_t", file: !16, line: 81, baseType: !50)
+!50 = !DIDerivedType(tag: DW_TAG_typedef, name: "__darwin_off_t", file: !51, line: 71, baseType: !52)
+!51 = !DIFile(filename: "/usr/include/sys/_types.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
+!52 = !DIDerivedType(tag: DW_TAG_typedef, name: "__int64_t", file: !53, line: 46, baseType: !54)
+!53 = !DIFile(filename: "/usr/include/i386/_types.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
+!54 = !DIBasicType(name: "long long int", size: 64, encoding: DW_ATE_signed)
+!55 = !DIDerivedType(tag: DW_TAG_member, name: "_write", scope: !17, file: !16, line: 140, baseType: !56, size: 64, offset: 640)
+!56 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !57, size: 64)
+!57 = !DISubroutineType(types: !58)
+!58 = !{!11, !34, !59, !11}
+!59 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !60, size: 64)
+!60 = !DIDerivedType(tag: DW_TAG_const_type, baseType: !44)
+!61 = !DIDerivedType(tag: DW_TAG_member, name: "_ub", scope: !17, file: !16, line: 143, baseType: !28, size: 128, offset: 704)
+!62 = !DIDerivedType(tag: DW_TAG_member, name: "_extra", scope: !17, file: !16, line: 144, baseType: !63, size: 64, offset: 832)
+!63 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !64, size: 64)
+!64 = !DICompositeType(tag: DW_TAG_structure_type, name: "__sFILEX", file: !16, line: 98, flags: DIFlagFwdDecl)
+!65 = !DIDerivedType(tag: DW_TAG_member, name: "_ur", scope: !17, file: !16, line: 145, baseType: !11, size: 32, offset: 896)
+!66 = !DIDerivedType(tag: DW_TAG_member, name: "_ubuf", scope: !17, file: !16, line: 148, baseType: !67, size: 24, offset: 928)
+!67 = !DICompositeType(tag: DW_TAG_array_type, baseType: !21, size: 24, elements: !68)
+!68 = !{!69}
+!69 = !DISubrange(count: 3)
+!70 = !DIDerivedType(tag: DW_TAG_member, name: "_nbuf", scope: !17, file: !16, line: 149, baseType: !71, size: 8, offset: 952)
+!71 = !DICompositeType(tag: DW_TAG_array_type, baseType: !21, size: 8, elements: !72)
+!72 = !{!73}
+!73 = !DISubrange(count: 1)
+!74 = !DIDerivedType(tag: DW_TAG_member, name: "_lb", scope: !17, file: !16, line: 152, baseType: !28, size: 128, offset: 960)
+!75 = !DIDerivedType(tag: DW_TAG_member, name: "_blksize", scope: !17, file: !16, line: 155, baseType: !11, size: 32, offset: 1088)
+!76 = !DIDerivedType(tag: DW_TAG_member, name: "_offset", scope: !17, file: !16, line: 156, baseType: !49, size: 64, offset: 1152)
+!77 = !DILocation(line: 4, column: 9, scope: !8)
+!78 = !DILocalVariable(name: "buf", scope: !8, file: !1, line: 5, type: !79)
+!79 = !DICompositeType(tag: DW_TAG_array_type, baseType: !44, size: 8200, elements: !80)
 !80 = !{!81}
 !81 = !DISubrange(count: 1025)
-!82 = !DILocation(line: 5, column: 8, scope: !7)
-!83 = !DILocalVariable(name: "x", scope: !7, file: !1, line: 6, type: !10)
-!84 = !DILocation(line: 6, column: 7, scope: !7)
-!85 = !DILocation(line: 7, column: 9, scope: !7)
-!86 = !DILocation(line: 7, column: 3, scope: !7)
-!87 = !DILocation(line: 8, column: 3, scope: !7)
-!88 = !DILocation(line: 9, column: 3, scope: !7)
-!89 = !DILocation(line: 10, column: 3, scope: !7)
-!90 = !DILocation(line: 11, column: 3, scope: !7)
-!91 = !DILocation(line: 12, column: 3, scope: !7)
-!92 = !DILocation(line: 13, column: 3, scope: !7)
-!93 = !DILocation(line: 14, column: 1, scope: !7)
+!82 = !DILocation(line: 5, column: 8, scope: !8)
+!83 = !DILocalVariable(name: "x", scope: !8, file: !1, line: 6, type: !11)
+!84 = !DILocation(line: 6, column: 7, scope: !8)
+!85 = !DILocation(line: 7, column: 9, scope: !8)
+!86 = !DILocation(line: 7, column: 3, scope: !8)
+!87 = !DILocation(line: 8, column: 3, scope: !8)
+!88 = !DILocation(line: 9, column: 3, scope: !8)
+!89 = !DILocation(line: 10, column: 3, scope: !8)
+!90 = !DILocation(line: 11, column: 3, scope: !8)
+!91 = !DILocation(line: 12, column: 3, scope: !8)
+!92 = !DILocation(line: 13, column: 3, scope: !8)
+!93 = !DILocation(line: 14, column: 1, scope: !8)

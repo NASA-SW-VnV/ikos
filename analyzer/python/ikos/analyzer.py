@@ -516,23 +516,6 @@ def signal_name(signum):
     return str(signum)
 
 
-def version_tuple(version):
-    ''' Convert a version represented as a string to a tuple of integers.
-
-    >>> version_tuple('1.2.3')
-    (1, 2, 3)
-    >>> version_tuple('1.0')
-    (1,)
-    '''
-    result = [int(s) for s in version.split('.')]
-
-    # normalize by removing ending zeros
-    while result and result[-1] == 0:
-        result.pop()
-
-    return tuple(result)
-
-
 def clang_emit_llvm_flags():
     ''' Clang flags to emit llvm bitcode '''
     return ['-c', '-emit-llvm']
@@ -540,7 +523,7 @@ def clang_emit_llvm_flags():
 
 def clang_ikos_flags():
     ''' Clang flags for ikos '''
-    flags = [
+    return [
         # enable clang warnings
         '-Wall',
         # disable source code fortification
@@ -550,14 +533,11 @@ def clang_ikos_flags():
         '-g',
         # disable optimizations
         '-O0',
-    ]
-
-    if version_tuple(settings.CLANG_VERSION) >= (5,):
         # disable the 'optnone' attribute
         # see https://bugs.llvm.org/show_bug.cgi?id=35950#c10
-        flags += ['-Xclang', '-disable-O0-optnone']
-
-    return flags
+        '-Xclang',
+        '-disable-O0-optnone',
+    ]
 
 
 ##################

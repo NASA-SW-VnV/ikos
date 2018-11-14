@@ -420,11 +420,7 @@ std::unique_ptr< ar::Statement > ConstantImporter::
     // We only need to support constant expressions that appear in initializer
     // of global variables, because we assume the user lowered down
     // all constant expressions as instructions (using the lower-cst-expr pass)
-#if LLVM_VERSION_MAJOR >= 5
     auto inst_deleter = [](llvm::Instruction* inst) { inst->deleteValue(); };
-#else
-    auto inst_deleter = std::default_delete< llvm::Instruction >{};
-#endif
     std::unique_ptr< llvm::Instruction, decltype(inst_deleter) >
         inst(expr->getAsInstruction(), inst_deleter);
 

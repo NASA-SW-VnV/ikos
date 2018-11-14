@@ -100,24 +100,21 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
     auto value = lv->frontend< llvm::Value >();
     auto alloca = llvm::cast< llvm::AllocaInst >(value);
 
-    // Check for llvm.dbg.declare
-    llvm::DbgDeclareInst* declare = llvm::FindAllocaDbgDeclare(alloca);
-    if (declare != nullptr) {
-      llvm::DILocalVariable* di_var = declare->getVariable();
+    // Check for llvm.dbg.declare and llvm.dbg.addr
+    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+        llvm::FindDbgAddrUses(alloca);
+
+    if (!dbg_addrs.empty()) {
+      llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
       return {{"name", di_var->getName()}};
     }
 
     // Check for llvm.dbg.value
-    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
-#if LLVM_VERSION_MAJOR >= 5
-    llvm::findDbgValues(dbgs, value);
-#else
-    llvm::FindAllocaDbgValues(dbgs, value);
-#endif
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
+    llvm::findDbgValues(dbg_values, value);
 
-    if (!dbgs.empty()) {
-      llvm::DbgValueInst* dbg = dbgs.front();
-      llvm::DILocalVariable* di_var = dbg->getVariable();
+    if (!dbg_values.empty()) {
+      llvm::DILocalVariable* di_var = dbg_values.front()->getVariable();
       return {{"name", di_var->getName()}};
     }
 

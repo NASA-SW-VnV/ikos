@@ -1,12 +1,12 @@
 ; ModuleID = 'pointer-arithmetic.cpp.pp.bc'
 source_filename = "pointer-arithmetic.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.12.0
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 %struct.vector = type { i32, i32, i32 }
 
@@ -67,8 +67,8 @@ target triple = "x86_64-apple-macosx10.12.0"
 ; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define i32 @_Z1fv() #0 !dbg !32 {
-  ret i32 6, !dbg !35
+define i32 @_Z1fv() #0 !dbg !33 {
+  ret i32 6, !dbg !36
 }
 ; CHECK: define si32 @_Z1fv() {
 ; CHECK: #1 !entry !exit {
@@ -80,14 +80,14 @@ declare i32 @printf(i8*, ...) #2
 ; CHECK: declare si32 @ar.libc.printf(si8*, ...)
 
 ; Function Attrs: noinline norecurse ssp uwtable
-define i32 @main() #1 !dbg !36 {
+define i32 @main() #1 !dbg !37 {
   %1 = alloca i32, align 4
   store i32 0, i32* %1, align 4
-  %2 = getelementptr inbounds [2 x %struct.vector], [2 x %struct.vector]* @v, i64 0, i64 1, i32 2, !dbg !37
-  %3 = load i32, i32* %2, align 4, !dbg !37
-  %4 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.2, i32 0, i32 0, !dbg !38
-  %5 = call i32 (i8*, ...) @printf(i8* %4, i32 %3), !dbg !38
-  ret i32 %5, !dbg !39
+  %2 = getelementptr inbounds [2 x %struct.vector], [2 x %struct.vector]* @v, i64 0, i64 1, i32 2, !dbg !38
+  %3 = load i32, i32* %2, align 4, !dbg !38
+  %4 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.2, i32 0, i32 0, !dbg !39
+  %5 = call i32 (i8*, ...) @printf(i8* %4, i32 %3), !dbg !39
+  ret i32 %5, !dbg !40
 }
 ; CHECK: define si32 @main() {
 ; CHECK: #1 !entry !exit {
@@ -101,21 +101,21 @@ define i32 @main() #1 !dbg !36 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!2}
-!llvm.module.flags = !{!28, !29, !30}
-!llvm.ident = !{!31}
+!llvm.module.flags = !{!28, !29, !30, !31}
+!llvm.ident = !{!32}
 
-!0 = !DIGlobalVariableExpression(var: !1)
+!0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "ptr_fun", scope: !2, file: !3, line: 7, type: !26, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
 !3 = !DIFile(filename: "pointer-arithmetic.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !4 = !{}
 !5 = !{!0, !6, !14, !23}
-!6 = !DIGlobalVariableExpression(var: !7)
+!6 = !DIGlobalVariableExpression(var: !7, expr: !DIExpression())
 !7 = distinct !DIGlobalVariable(name: "string_map", scope: !2, file: !3, line: 9, type: !8, isLocal: false, isDefinition: true)
 !8 = !DICompositeType(tag: DW_TAG_array_type, baseType: !9, size: 128, elements: !12)
 !9 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !10, size: 64)
@@ -123,7 +123,7 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !11 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
 !12 = !{!13}
 !13 = !DISubrange(count: 2)
-!14 = !DIGlobalVariableExpression(var: !15)
+!14 = !DIGlobalVariableExpression(var: !15, expr: !DIExpression())
 !15 = distinct !DIGlobalVariable(name: "v", scope: !2, file: !3, line: 17, type: !16, isLocal: false, isDefinition: true)
 !16 = !DICompositeType(tag: DW_TAG_array_type, baseType: !17, size: 192, elements: !12)
 !17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !3, line: 11, size: 96, elements: !18, identifier: "_ZTS6vector")
@@ -132,20 +132,21 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !20 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !21 = !DIDerivedType(tag: DW_TAG_member, name: "y", scope: !17, file: !3, line: 13, baseType: !20, size: 32, offset: 32)
 !22 = !DIDerivedType(tag: DW_TAG_member, name: "z", scope: !17, file: !3, line: 14, baseType: !20, size: 32, offset: 64)
-!23 = !DIGlobalVariableExpression(var: !24)
+!23 = !DIGlobalVariableExpression(var: !24, expr: !DIExpression())
 !24 = distinct !DIGlobalVariable(name: "ptr", scope: !2, file: !3, line: 19, type: !25, isLocal: false, isDefinition: true)
 !25 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !20, size: 64)
 !26 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !27, size: 64)
 !27 = !DIBasicType(name: "unsigned char", size: 8, encoding: DW_ATE_unsigned_char)
 !28 = !{i32 2, !"Dwarf Version", i32 4}
 !29 = !{i32 2, !"Debug Info Version", i32 3}
-!30 = !{i32 1, !"PIC Level", i32 2}
-!31 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!32 = distinct !DISubprogram(name: "f", linkageName: "_Z1fv", scope: !3, file: !3, line: 3, type: !33, isLocal: false, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
-!33 = !DISubroutineType(types: !34)
-!34 = !{!20}
-!35 = !DILocation(line: 4, column: 3, scope: !32)
-!36 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 21, type: !33, isLocal: false, isDefinition: true, scopeLine: 21, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
-!37 = !DILocation(line: 22, column: 30, scope: !36)
-!38 = !DILocation(line: 22, column: 10, scope: !36)
-!39 = !DILocation(line: 22, column: 3, scope: !36)
+!30 = !{i32 1, !"wchar_size", i32 4}
+!31 = !{i32 7, !"PIC Level", i32 2}
+!32 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!33 = distinct !DISubprogram(name: "f", linkageName: "_Z1fv", scope: !3, file: !3, line: 3, type: !34, isLocal: false, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!34 = !DISubroutineType(types: !35)
+!35 = !{!20}
+!36 = !DILocation(line: 4, column: 3, scope: !33)
+!37 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 21, type: !34, isLocal: false, isDefinition: true, scopeLine: 21, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!38 = !DILocation(line: 22, column: 30, scope: !37)
+!39 = !DILocation(line: 22, column: 10, scope: !37)
+!40 = !DILocation(line: 22, column: 3, scope: !37)

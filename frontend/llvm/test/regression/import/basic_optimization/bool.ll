@@ -1,12 +1,12 @@
 ; ModuleID = 'bool.cpp.pp.bc'
 source_filename = "bool.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.12.0
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 @b = global i8 1, align 1, !dbg !0
 ; CHECK: define ui8* @b, align 1, init {
@@ -16,8 +16,8 @@ target triple = "x86_64-apple-macosx10.12.0"
 ; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define i32 @_Z1fb(i1 zeroext) #0 !dbg !11 {
-  call void @llvm.dbg.value(metadata i1 %0, i64 0, metadata !15, metadata !16), !dbg !17
+define i32 @_Z1fb(i1 zeroext) #0 !dbg !12 {
+  call void @llvm.dbg.value(metadata i1 %0, metadata !16, metadata !DIExpression()), !dbg !17
   call void @llvm.trap(), !dbg !18
   unreachable, !dbg !18
 }
@@ -42,38 +42,38 @@ define i32 @main() #2 !dbg !19 {
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone
-declare void @llvm.dbg.value(metadata, i64, metadata, metadata) #3
+; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.value(metadata, metadata, metadata) #3
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { noreturn nounwind }
-attributes #2 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { nounwind readnone }
+attributes #2 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { nounwind readnone speculatable }
 
 !llvm.dbg.cu = !{!2}
-!llvm.module.flags = !{!7, !8, !9}
-!llvm.ident = !{!10}
+!llvm.module.flags = !{!7, !8, !9, !10}
+!llvm.ident = !{!11}
 
-!0 = !DIGlobalVariableExpression(var: !1)
+!0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "b", scope: !2, file: !3, line: 1, type: !6, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
-!3 = !DIFile(filename: "bool.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!3 = !DIFile(filename: "bool.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !4 = !{}
 !5 = !{!0}
 !6 = !DIBasicType(name: "bool", size: 8, encoding: DW_ATE_boolean)
 !7 = !{i32 2, !"Dwarf Version", i32 4}
 !8 = !{i32 2, !"Debug Info Version", i32 3}
-!9 = !{i32 1, !"PIC Level", i32 2}
-!10 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!11 = distinct !DISubprogram(name: "f", linkageName: "_Z1fb", scope: !3, file: !3, line: 3, type: !12, isLocal: false, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
-!12 = !DISubroutineType(types: !13)
-!13 = !{!14, !6}
-!14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!15 = !DILocalVariable(name: "i", arg: 1, scope: !11, file: !3, line: 3, type: !6)
-!16 = !DIExpression(DW_OP_LLVM_fragment, 0, 1)
-!17 = !DILocation(line: 3, column: 12, scope: !11)
-!18 = !DILocation(line: 3, column: 15, scope: !11)
+!9 = !{i32 1, !"wchar_size", i32 4}
+!10 = !{i32 7, !"PIC Level", i32 2}
+!11 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!12 = distinct !DISubprogram(name: "f", linkageName: "_Z1fb", scope: !3, file: !3, line: 3, type: !13, isLocal: false, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!13 = !DISubroutineType(types: !14)
+!14 = !{!15, !6}
+!15 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!16 = !DILocalVariable(name: "i", arg: 1, scope: !12, file: !3, line: 3, type: !6)
+!17 = !DILocation(line: 3, column: 12, scope: !12)
+!18 = !DILocation(line: 3, column: 15, scope: !12)
 !19 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 5, type: !20, isLocal: false, isDefinition: true, scopeLine: 5, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
 !20 = !DISubroutineType(types: !21)
-!21 = !{!14}
+!21 = !{!15}
 !22 = !DILocation(line: 6, column: 3, scope: !19)

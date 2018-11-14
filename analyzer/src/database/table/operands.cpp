@@ -539,11 +539,7 @@ ReprResult repr(llvm::Constant* cst) {
     r += "]";
     return ReprResult{r};
   } else if (auto cst_expr = llvm::dyn_cast< llvm::ConstantExpr >(cst)) {
-#if LLVM_VERSION_MAJOR >= 5
     auto inst_deleter = [](llvm::Instruction* inst) { inst->deleteValue(); };
-#else
-    auto inst_deleter = std::default_delete< llvm::Instruction >{};
-#endif
     std::unique_ptr< llvm::Instruction, decltype(inst_deleter) >
         inst(cst_expr->getAsInstruction(), inst_deleter);
     return repr(inst.get());
@@ -664,26 +660,23 @@ ReprResult repr(llvm::Value* value) {
 
   // Check for llvm.dbg.value
   if (!llvm::isa< llvm::Constant >(value)) {
-    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
-#if LLVM_VERSION_MAJOR >= 5
-    llvm::findDbgValues(dbgs, value);
-#else
-    llvm::FindAllocaDbgValues(dbgs, value);
-#endif
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
+    llvm::findDbgValues(dbg_values, value);
 
-    if (!dbgs.empty()) {
-      llvm::DbgValueInst* dbg = dbgs.front();
-      llvm::DILocalVariable* di_var = dbg->getVariable();
+    if (!dbg_values.empty()) {
+      llvm::DILocalVariable* di_var = dbg_values.front()->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
       return ReprResult{di_var->getName(), pointee_type(di_type)};
     }
   }
 
   if (auto arg = llvm::dyn_cast< llvm::Argument >(value)) {
-    // Check for llvm.dbg.declare
-    llvm::DbgDeclareInst* declare = llvm::FindAllocaDbgDeclare(arg);
-    if (declare != nullptr) {
-      llvm::DILocalVariable* di_var = declare->getVariable();
+    // Check for llvm.dbg.declare and llvm.dbg.addr
+    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+        llvm::FindDbgAddrUses(arg);
+
+    if (!dbg_addrs.empty()) {
+      llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
       return ReprResult{"&" + demangle(di_var->getName()), di_type};
     }
@@ -702,10 +695,12 @@ ReprResult repr(llvm::Value* value) {
 
   if (auto inst = llvm::dyn_cast< llvm::Instruction >(value)) {
     if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(inst)) {
-      // Check for llvm.dbg.declare
-      llvm::DbgDeclareInst* declare = llvm::FindAllocaDbgDeclare(alloca);
-      if (declare != nullptr) {
-        llvm::DILocalVariable* di_var = declare->getVariable();
+      // Check for llvm.dbg.declare and llvm.dbg.addr
+      llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+          llvm::FindDbgAddrUses(alloca);
+
+      if (!dbg_addrs.empty()) {
+        llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
         auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
         return ReprResult{"&" + demangle(di_var->getName()),
                           alloca->isArrayAllocation() ? pointee_type(di_type)
@@ -982,24 +977,21 @@ struct OperandReprVisitor {
     ikos_assert(llvm::isa< llvm::AllocaInst >(value));
     auto alloca = llvm::cast< llvm::AllocaInst >(value);
 
-    // Check for llvm.dbg.declare
-    llvm::DbgDeclareInst* declare = llvm::FindAllocaDbgDeclare(alloca);
-    if (declare != nullptr) {
-      llvm::DILocalVariable* di_var = declare->getVariable();
+    // Check for llvm.dbg.declare and llvm.dbg.addr
+    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+        llvm::FindDbgAddrUses(alloca);
+
+    if (!dbg_addrs.empty()) {
+      llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
       return "&" + demangle(di_var->getName());
     }
 
     // Check for llvm.dbg.value
-    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
-#if LLVM_VERSION_MAJOR >= 5
-    llvm::findDbgValues(dbgs, value);
-#else
-    llvm::FindAllocaDbgValues(dbgs, value);
-#endif
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
+    llvm::findDbgValues(dbg_values, value);
 
-    if (!dbgs.empty()) {
-      llvm::DbgValueInst* dbg = dbgs.front();
-      llvm::DILocalVariable* di_var = dbg->getVariable();
+    if (!dbg_values.empty()) {
+      llvm::DILocalVariable* di_var = dbg_values.front()->getVariable();
       return "&" + demangle(di_var->getName());
     }
 

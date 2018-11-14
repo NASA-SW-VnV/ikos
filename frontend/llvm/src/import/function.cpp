@@ -1110,6 +1110,12 @@ void FunctionImporter::translate_binary_operator(
                 wrapping_inst->hasNoUnsignedWrap();
     }
 
+    // Add the exact flag
+    bool exact = false;
+    if (auto exact_inst = llvm::dyn_cast< llvm::PossiblyExactOperator >(inst)) {
+      exact = exact_inst->isExact();
+    }
+
     // Create statement
     auto stmt =
         ar::BinaryOperation::create(convert_int_bin_op(inst->getOpcode(), sign),
@@ -1117,7 +1123,7 @@ void FunctionImporter::translate_binary_operator(
                                     left,
                                     right,
                                     no_wrap,
-                                    inst->isExact());
+                                    exact);
     stmt->set_frontend< llvm::Value >(inst);
     bb_translation->add_statement(std::move(stmt));
 
@@ -1716,12 +1722,13 @@ ar::InternalVariable* FunctionImporter::add_integer_casts(
 }
 
 ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
-  // Check for llvm.dbg.declare
+  // Check for llvm.dbg.declare and llvm.dbg.addr
   if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
-    llvm::DbgDeclareInst* declare = llvm::FindAllocaDbgDeclare(alloca);
+    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+        llvm::FindDbgAddrUses(alloca);
 
-    if (declare != nullptr) {
-      llvm::DILocalVariable* di_var = declare->getVariable();
+    if (!dbg_addrs.empty()) {
+      llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
       // Aggressive optimizations can mess debug information.
@@ -1743,16 +1750,11 @@ ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
   }
 
   // Check for llvm.dbg.value
-  llvm::SmallVector< llvm::DbgValueInst*, 1 > dbgs;
-#if LLVM_VERSION_MAJOR >= 5
-  llvm::findDbgValues(dbgs, value);
-#else
-  llvm::FindAllocaDbgValues(dbgs, value);
-#endif
+  llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
+  llvm::findDbgValues(dbg_values, value);
 
-  if (!dbgs.empty()) {
-    llvm::DbgValueInst* dbg = dbgs.front();
-    llvm::DILocalVariable* di_var = dbg->getVariable();
+  if (!dbg_values.empty()) {
+    llvm::DILocalVariable* di_var = dbg_values.front()->getVariable();
     auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
     if (!this->_allow_debug_info_mismatch) {

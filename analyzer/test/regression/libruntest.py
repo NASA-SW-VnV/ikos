@@ -42,7 +42,6 @@
 import argparse
 import atexit
 import os
-import re
 import shutil
 import sqlite3
 import subprocess
@@ -175,36 +174,6 @@ def find_ikos_analyzer():
     return path
 
 
-def clang_version():
-    if hasattr(clang_version, '_cache'):
-        return clang_version._cache
-
-    output = subprocess.check_output([find_clang(), '--version'])
-    r = re.match(r'^clang version ([0-9]+(\.[0-9]+)*)( |\n|-|$)(.*)$',
-                 output.decode('utf-8'),
-                 re.DOTALL)
-    assert r, 'could not parse clang version'
-    clang_version._cache = r.group(1)
-    return clang_version._cache
-
-
-def version_tuple(version):
-    ''' Convert a version represented as a string to a tuple of integers.
-
-    >>> version_tuple('1.2.3')
-    (1, 2, 3)
-    >>> version_tuple('1.0')
-    (1,)
-    '''
-    result = [int(s) for s in version.split('.')]
-
-    # normalize by removing ending zeros
-    while result and result[-1] == 0:
-        result.pop()
-
-    return tuple(result)
-
-
 def clang_emit_llvm_flags():
     ''' Clang flags to emit llvm bitcode '''
     # see analyzer.clang_emit_llvm_flags()
@@ -214,7 +183,7 @@ def clang_emit_llvm_flags():
 def clang_ikos_flags():
     ''' Clang flags for ikos '''
     # see analyzer.clang_ikos_flags()
-    flags = [
+    return [
         # enable clang warnings
         '-Wall',
         # disable source code fortification
@@ -224,14 +193,11 @@ def clang_ikos_flags():
         '-g',
         # disable optimizations
         '-O0',
-    ]
-
-    if version_tuple(clang_version()) >= (5,):
         # disable the 'optnone' attribute
         # see https://bugs.llvm.org/show_bug.cgi?id=35950#c10
-        flags += ['-Xclang', '-disable-O0-optnone']
-
-    return flags
+        '-Xclang',
+        '-disable-O0-optnone',
+    ]
 
 
 class Result:

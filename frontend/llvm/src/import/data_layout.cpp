@@ -63,7 +63,7 @@ std::unique_ptr< ar::DataLayout > translate_data_layout(
 
   // Translate pointer size and alignments
   ar::DataLayoutInfo pointers(llvm_data_layout.getPointerSizeInBits(),
-                              llvm_data_layout.getPointerABIAlignment(),
+                              llvm_data_layout.getPointerABIAlignment(0),
                               llvm_data_layout.getPointerPrefAlignment());
 
   // Create ar::DataLayout

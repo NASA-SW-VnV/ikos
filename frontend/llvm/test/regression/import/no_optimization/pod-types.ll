@@ -1,12 +1,12 @@
 ; ModuleID = 'pod-types.c.pp.bc'
 source_filename = "pod-types.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.12.0
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 @b = common global i8 0, align 1, !dbg !19
 ; CHECK: define ui8* @b, align 1, init {
@@ -62,8 +62,8 @@ declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #2
 ; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define void @fun() #0 !dbg !34 {
-  ret void, !dbg !37
+define void @fun() #0 !dbg !35 {
+  ret void, !dbg !38
 }
 ; CHECK: define void @fun() {
 ; CHECK: #1 !entry !exit {
@@ -72,17 +72,17 @@ define void @fun() #0 !dbg !34 {
 ; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define i32 @main(i32, i8**) #0 !dbg !38 {
+define i32 @main(i32, i8**) #0 !dbg !39 {
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   %5 = alloca i8**, align 8
   %6 = alloca [10 x i32], align 16
   store i32 0, i32* %3, align 4
   store i32 %0, i32* %4, align 4
-  call void @llvm.dbg.declare(metadata i32* %4, metadata !44, metadata !45), !dbg !46
+  call void @llvm.dbg.declare(metadata i32* %4, metadata !45, metadata !DIExpression()), !dbg !46
   store i8** %1, i8*** %5, align 8
-  call void @llvm.dbg.declare(metadata i8*** %5, metadata !47, metadata !45), !dbg !48
-  call void @llvm.dbg.declare(metadata [10 x i32]* %6, metadata !49, metadata !45), !dbg !52
+  call void @llvm.dbg.declare(metadata i8*** %5, metadata !47, metadata !DIExpression()), !dbg !48
+  call void @llvm.dbg.declare(metadata [10 x i32]* %6, metadata !49, metadata !DIExpression()), !dbg !52
   %7 = bitcast [10 x i32]* %6 to i8*, !dbg !52
   call void @llvm.memset.p0i8.i64(i8* %7, i8 0, i64 40, i32 16, i1 false), !dbg !52
   %8 = bitcast i8* %7 to [10 x i32]*, !dbg !52
@@ -120,40 +120,40 @@ define i32 @main(i32, i8**) #0 !dbg !38 {
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone
+; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind readnone }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { argmemonly nounwind }
 
 !llvm.dbg.cu = !{!2}
-!llvm.module.flags = !{!30, !31, !32}
-!llvm.ident = !{!33}
+!llvm.module.flags = !{!30, !31, !32, !33}
+!llvm.ident = !{!34}
 
-!0 = !DIGlobalVariableExpression(var: !1)
+!0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "i", scope: !2, file: !3, line: 1, type: !29, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
 !3 = !DIFile(filename: "pod-types.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !4 = !{}
 !5 = !{!0, !6, !9, !12, !15, !19, !22}
-!6 = !DIGlobalVariableExpression(var: !7)
+!6 = !DIGlobalVariableExpression(var: !7, expr: !DIExpression())
 !7 = distinct !DIGlobalVariable(name: "f", scope: !2, file: !3, line: 3, type: !8, isLocal: false, isDefinition: true)
 !8 = !DIBasicType(name: "float", size: 32, encoding: DW_ATE_float)
-!9 = !DIGlobalVariableExpression(var: !10)
+!9 = !DIGlobalVariableExpression(var: !10, expr: !DIExpression())
 !10 = distinct !DIGlobalVariable(name: "d", scope: !2, file: !3, line: 5, type: !11, isLocal: false, isDefinition: true)
 !11 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
-!12 = !DIGlobalVariableExpression(var: !13)
+!12 = !DIGlobalVariableExpression(var: !13, expr: !DIExpression())
 !13 = distinct !DIGlobalVariable(name: "p", scope: !2, file: !3, line: 7, type: !14, isLocal: false, isDefinition: true)
 !14 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: null, size: 64)
-!15 = !DIGlobalVariableExpression(var: !16)
+!15 = !DIGlobalVariableExpression(var: !16, expr: !DIExpression())
 !16 = distinct !DIGlobalVariable(name: "q", scope: !2, file: !3, line: 9, type: !17, isLocal: false, isDefinition: true)
 !17 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !18, size: 64)
 !18 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!19 = !DIGlobalVariableExpression(var: !20)
+!19 = !DIGlobalVariableExpression(var: !20, expr: !DIExpression())
 !20 = distinct !DIGlobalVariable(name: "b", scope: !2, file: !3, line: 11, type: !21, isLocal: false, isDefinition: true)
 !21 = !DIBasicType(name: "unsigned char", size: 8, encoding: DW_ATE_unsigned_char)
-!22 = !DIGlobalVariableExpression(var: !23)
+!22 = !DIGlobalVariableExpression(var: !23, expr: !DIExpression())
 !23 = distinct !DIGlobalVariable(name: "tab", scope: !2, file: !3, line: 13, type: !24, isLocal: false, isDefinition: true)
 !24 = !DICompositeType(tag: DW_TAG_array_type, baseType: !25, size: 1920, elements: !26)
 !25 = !DIBasicType(name: "short", size: 16, encoding: DW_ATE_signed)
@@ -163,25 +163,25 @@ attributes #2 = { argmemonly nounwind }
 !29 = !DIBasicType(name: "unsigned int", size: 32, encoding: DW_ATE_unsigned)
 !30 = !{i32 2, !"Dwarf Version", i32 4}
 !31 = !{i32 2, !"Debug Info Version", i32 3}
-!32 = !{i32 1, !"PIC Level", i32 2}
-!33 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!34 = distinct !DISubprogram(name: "fun", scope: !3, file: !3, line: 15, type: !35, isLocal: false, isDefinition: true, scopeLine: 15, isOptimized: false, unit: !2, variables: !4)
-!35 = !DISubroutineType(types: !36)
-!36 = !{null}
-!37 = !DILocation(line: 15, column: 13, scope: !34)
-!38 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 17, type: !39, isLocal: false, isDefinition: true, scopeLine: 17, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
-!39 = !DISubroutineType(types: !40)
-!40 = !{!18, !18, !41}
-!41 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !42, size: 64)
+!32 = !{i32 1, !"wchar_size", i32 4}
+!33 = !{i32 7, !"PIC Level", i32 2}
+!34 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!35 = distinct !DISubprogram(name: "fun", scope: !3, file: !3, line: 15, type: !36, isLocal: false, isDefinition: true, scopeLine: 15, isOptimized: false, unit: !2, variables: !4)
+!36 = !DISubroutineType(types: !37)
+!37 = !{null}
+!38 = !DILocation(line: 15, column: 13, scope: !35)
+!39 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 17, type: !40, isLocal: false, isDefinition: true, scopeLine: 17, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!40 = !DISubroutineType(types: !41)
+!41 = !{!18, !18, !42}
 !42 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !43, size: 64)
-!43 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
-!44 = !DILocalVariable(name: "argc", arg: 1, scope: !38, file: !3, line: 17, type: !18)
-!45 = !DIExpression()
-!46 = !DILocation(line: 17, column: 14, scope: !38)
-!47 = !DILocalVariable(name: "argv", arg: 2, scope: !38, file: !3, line: 17, type: !41)
-!48 = !DILocation(line: 17, column: 27, scope: !38)
-!49 = !DILocalVariable(name: "xxx", scope: !38, file: !3, line: 18, type: !50)
+!43 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !44, size: 64)
+!44 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
+!45 = !DILocalVariable(name: "argc", arg: 1, scope: !39, file: !3, line: 17, type: !18)
+!46 = !DILocation(line: 17, column: 14, scope: !39)
+!47 = !DILocalVariable(name: "argv", arg: 2, scope: !39, file: !3, line: 17, type: !42)
+!48 = !DILocation(line: 17, column: 27, scope: !39)
+!49 = !DILocalVariable(name: "xxx", scope: !39, file: !3, line: 18, type: !50)
 !50 = !DICompositeType(tag: DW_TAG_array_type, baseType: !18, size: 320, elements: !51)
 !51 = !{!27}
-!52 = !DILocation(line: 18, column: 7, scope: !38)
-!53 = !DILocation(line: 19, column: 3, scope: !38)
+!52 = !DILocation(line: 18, column: 7, scope: !39)
+!53 = !DILocation(line: 19, column: 3, scope: !39)

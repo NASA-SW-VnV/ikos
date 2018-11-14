@@ -1,18 +1,18 @@
 ; ModuleID = 'call-args.c.pp.bc'
 source_filename = "call-args.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.12.0
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define i32 @foo(i32) #0 !dbg !7 {
+define i32 @foo(i32) #0 !dbg !8 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
-  call void @llvm.dbg.declare(metadata i32* %2, metadata !11, metadata !12), !dbg !13
+  call void @llvm.dbg.declare(metadata i32* %2, metadata !12, metadata !DIExpression()), !dbg !13
   %3 = load i32, i32* %2, align 4, !dbg !14
   %4 = add nsw i32 %3, 1, !dbg !15
   ret i32 %4, !dbg !16
@@ -27,7 +27,7 @@ define i32 @foo(i32) #0 !dbg !7 {
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone
+; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
 ; Function Attrs: noinline nounwind ssp uwtable
@@ -37,9 +37,9 @@ define i32 @main(i32, i8**) #0 !dbg !17 {
   %5 = alloca i8**, align 8
   store i32 0, i32* %3, align 4
   store i32 %0, i32* %4, align 4
-  call void @llvm.dbg.declare(metadata i32* %4, metadata !23, metadata !12), !dbg !24
+  call void @llvm.dbg.declare(metadata i32* %4, metadata !23, metadata !DIExpression()), !dbg !24
   store i8** %1, i8*** %5, align 8
-  call void @llvm.dbg.declare(metadata i8*** %5, metadata !25, metadata !12), !dbg !26
+  call void @llvm.dbg.declare(metadata i8*** %5, metadata !25, metadata !DIExpression()), !dbg !26
   %6 = load i32, i32* %4, align 4, !dbg !27
   %7 = call i32 @foo(i32 %6), !dbg !28
   ret i32 %7, !dbg !29
@@ -58,37 +58,37 @@ define i32 @main(i32, i8**) #0 !dbg !17 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { nounwind readnone }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { nounwind readnone speculatable }
 
 !llvm.dbg.cu = !{!0}
-!llvm.module.flags = !{!3, !4, !5}
-!llvm.ident = !{!6}
+!llvm.module.flags = !{!3, !4, !5, !6}
+!llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "call-args.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
-!5 = !{i32 1, !"PIC Level", i32 2}
-!6 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!7 = distinct !DISubprogram(name: "foo", scope: !1, file: !1, line: 1, type: !8, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
-!8 = !DISubroutineType(types: !9)
-!9 = !{!10, !10}
-!10 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!11 = !DILocalVariable(name: "i", arg: 1, scope: !7, file: !1, line: 1, type: !10)
-!12 = !DIExpression()
-!13 = !DILocation(line: 1, column: 13, scope: !7)
-!14 = !DILocation(line: 2, column: 10, scope: !7)
-!15 = !DILocation(line: 2, column: 12, scope: !7)
-!16 = !DILocation(line: 2, column: 3, scope: !7)
+!5 = !{i32 1, !"wchar_size", i32 4}
+!6 = !{i32 7, !"PIC Level", i32 2}
+!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!8 = distinct !DISubprogram(name: "foo", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!9 = !DISubroutineType(types: !10)
+!10 = !{!11, !11}
+!11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!12 = !DILocalVariable(name: "i", arg: 1, scope: !8, file: !1, line: 1, type: !11)
+!13 = !DILocation(line: 1, column: 13, scope: !8)
+!14 = !DILocation(line: 2, column: 10, scope: !8)
+!15 = !DILocation(line: 2, column: 12, scope: !8)
+!16 = !DILocation(line: 2, column: 3, scope: !8)
 !17 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 5, type: !18, isLocal: false, isDefinition: true, scopeLine: 5, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
 !18 = !DISubroutineType(types: !19)
-!19 = !{!10, !10, !20}
+!19 = !{!11, !11, !20}
 !20 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !21, size: 64)
 !21 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !22, size: 64)
 !22 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
-!23 = !DILocalVariable(name: "argc", arg: 1, scope: !17, file: !1, line: 5, type: !10)
+!23 = !DILocalVariable(name: "argc", arg: 1, scope: !17, file: !1, line: 5, type: !11)
 !24 = !DILocation(line: 5, column: 14, scope: !17)
 !25 = !DILocalVariable(name: "argv", arg: 2, scope: !17, file: !1, line: 5, type: !20)
 !26 = !DILocation(line: 5, column: 27, scope: !17)

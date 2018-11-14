@@ -1,12 +1,12 @@
 ; ModuleID = 'multiple-inheritance.cpp.pp.bc'
 source_filename = "multiple-inheritance.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.12.0"
+target triple = "x86_64-apple-macosx10.13.0"
 
-; CHECK-LABEL: Bundle
+; CHECK-LABEL: // Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.12.0
+; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 %class.Child = type { %class.Base, %struct.Mixin, [10 x i32] }
 %class.Base = type { i32, i32 }
@@ -20,8 +20,8 @@ target triple = "x86_64-apple-macosx10.12.0"
 ; CHECK: }
 
 ; Function Attrs: noinline norecurse nounwind ssp uwtable
-define i32 @main() #0 !dbg !34 {
-  ret i32 0, !dbg !37
+define i32 @main() #0 !dbg !35 {
+  ret i32 0, !dbg !38
 }
 ; CHECK: define si32 @main() {
 ; CHECK: #1 !entry !exit {
@@ -29,16 +29,16 @@ define i32 @main() #0 !dbg !34 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!2}
-!llvm.module.flags = !{!30, !31, !32}
-!llvm.ident = !{!33}
+!llvm.module.flags = !{!30, !31, !32, !33}
+!llvm.ident = !{!34}
 
-!0 = !DIGlobalVariableExpression(var: !1)
+!0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "c", scope: !2, file: !3, line: 21, type: !6, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 4.0.1 (tags/RELEASE_401/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
-!3 = !DIFile(filename: "multiple-inheritance.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/normal_optimization")
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!3 = !DIFile(filename: "multiple-inheritance.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !4 = !{}
 !5 = !{!0}
 !6 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "Child", file: !3, line: 16, size: 416, elements: !7, identifier: "_ZTS5Child")
@@ -67,9 +67,10 @@ attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-div
 !29 = !DISubrange(count: 10)
 !30 = !{i32 2, !"Dwarf Version", i32 4}
 !31 = !{i32 2, !"Debug Info Version", i32 3}
-!32 = !{i32 1, !"PIC Level", i32 2}
-!33 = !{!"clang version 4.0.1 (tags/RELEASE_401/final)"}
-!34 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 23, type: !35, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
-!35 = !DISubroutineType(types: !36)
-!36 = !{!12}
-!37 = !DILocation(line: 24, column: 3, scope: !34)
+!32 = !{i32 1, !"wchar_size", i32 4}
+!33 = !{i32 7, !"PIC Level", i32 2}
+!34 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
+!35 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 23, type: !36, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!36 = !DISubroutineType(types: !37)
+!37 = !{!12}
+!38 = !DILocation(line: 24, column: 3, scope: !35)
