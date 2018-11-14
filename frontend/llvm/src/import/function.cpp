@@ -494,6 +494,7 @@ void FunctionImporter::translate_intrinsic_call(
                                        src,
                                        length,
                                        memcpy->getAlignment(),
+                                       memcpy->getAlignment(),
                                        memcpy->isVolatile());
     stmt->set_frontend< llvm::Value >(memcpy);
     bb_translation->add_statement(std::move(stmt));
@@ -513,6 +514,7 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
+                                       memmove->getAlignment(),
                                        memmove->getAlignment(),
                                        memmove->isVolatile());
     stmt->set_frontend< llvm::Value >(memmove);

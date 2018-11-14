@@ -2083,7 +2083,7 @@ private:
       return;
     }
 
-    if (cast< ar::IntegerConstant >(call->argument(4))->value() == 0) {
+    if (cast< ar::IntegerConstant >(call->argument(5))->value() == 0) {
       // non-volatile
       this->_inv.normal().mem_copy(this->_var_factory,
                                    dest.var(),

@@ -79,23 +79,23 @@ void PointerAlignmentChecker::check(ar::Statement* stmt,
   } else if (auto memcpy = dyn_cast< ar::MemoryCopy >(stmt)) {
     this->check_alignment(memcpy,
                           memcpy->source(),
-                          memcpy->alignment(),
+                          memcpy->source_alignment(),
                           inv,
                           call_context);
     this->check_alignment(memcpy,
                           memcpy->destination(),
-                          memcpy->alignment(),
+                          memcpy->destination_alignment(),
                           inv,
                           call_context);
   } else if (auto memmove = dyn_cast< ar::MemoryMove >(stmt)) {
     this->check_alignment(memmove,
                           memmove->source(),
-                          memmove->alignment(),
+                          memmove->source_alignment(),
                           inv,
                           call_context);
     this->check_alignment(memmove,
                           memmove->destination(),
-                          memmove->alignment(),
+                          memmove->destination_alignment(),
                           inv,
                           call_context);
   } else if (auto memset = dyn_cast< ar::MemorySet >(stmt)) {

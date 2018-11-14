@@ -76,7 +76,8 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(void_ptr_ty); // dest
       params.push_back(void_ptr_ty); // src
       params.push_back(size_ty);     // length
-      params.push_back(ui32_ty);     // alignment
+      params.push_back(ui32_ty);     // dest_alignment
+      params.push_back(ui32_ty);     // src_alignment
       params.push_back(ui1_ty);      // volatile
     } break;
     case MemoryMove: {
@@ -84,7 +85,8 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(void_ptr_ty); // dest
       params.push_back(void_ptr_ty); // src
       params.push_back(size_ty);     // length
-      params.push_back(ui32_ty);     // alignment
+      params.push_back(ui32_ty);     // dest_alignment
+      params.push_back(ui32_ty);     // src_alignment
       params.push_back(ui1_ty);      // volatile
     } break;
     case MemorySet: {

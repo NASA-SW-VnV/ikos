@@ -12,7 +12,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #2
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @f(%struct.my_struct* noalias sret, %struct.my_struct*) #0 !dbg !8 {
@@ -26,7 +26,7 @@ define void @f(%struct.my_struct* noalias sret, %struct.my_struct*) #0 !dbg !8 {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %3 = bitcast %1
 ; CHECK:   si8* %4 = bitcast %2
-; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 0)
+; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 1, 0)
 ; CHECK:   return
 ; CHECK: }
 ; CHECK: }
@@ -46,7 +46,7 @@ define void @g(%struct.my_struct* noalias sret, %struct.my_struct* byval align 8
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %3 = bitcast %1
 ; CHECK:   si8* %4 = bitcast %2
-; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 0)
+; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 1, 0)
 ; CHECK:   return
 ; CHECK: }
 ; CHECK: }

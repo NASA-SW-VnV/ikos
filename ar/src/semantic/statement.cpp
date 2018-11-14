@@ -932,14 +932,16 @@ MemoryCopy::MemoryCopy(Bundle* bundle,
                        Value* destination,
                        Value* source,
                        Value* length,
-                       unsigned alignment,
+                       unsigned destination_alignment,
+                       unsigned source_alignment,
                        bool is_volatile)
     : IntrinsicCall(nullptr,
                     bundle->intrinsic_function(Intrinsic::MemoryCopy),
                     {destination,
                      source,
                      length,
-                     alignment_constant(bundle, alignment),
+                     alignment_constant(bundle, destination_alignment),
+                     alignment_constant(bundle, source_alignment),
                      volatile_constant(bundle, is_volatile)}) {
   ikos_assert_msg(destination, "destination is null");
   ikos_assert_msg(source, "source is null");
@@ -950,13 +952,15 @@ std::unique_ptr< MemoryCopy > MemoryCopy::create(Bundle* bundle,
                                                  Value* destination,
                                                  Value* source,
                                                  Value* length,
-                                                 unsigned alignment,
+                                                 unsigned destination_alignment,
+                                                 unsigned source_alignment,
                                                  bool is_volatile) {
   return std::unique_ptr< MemoryCopy >(new MemoryCopy(bundle,
                                                       destination,
                                                       source,
                                                       length,
-                                                      alignment,
+                                                      destination_alignment,
+                                                      source_alignment,
                                                       is_volatile));
 }
 
@@ -966,14 +970,16 @@ MemoryMove::MemoryMove(Bundle* bundle,
                        Value* destination,
                        Value* source,
                        Value* length,
-                       unsigned alignment,
+                       unsigned destination_alignment,
+                       unsigned source_alignment,
                        bool is_volatile)
     : IntrinsicCall(nullptr,
                     bundle->intrinsic_function(Intrinsic::MemoryMove),
                     {destination,
                      source,
                      length,
-                     alignment_constant(bundle, alignment),
+                     alignment_constant(bundle, destination_alignment),
+                     alignment_constant(bundle, source_alignment),
                      volatile_constant(bundle, is_volatile)}) {
   ikos_assert_msg(destination, "destination is null");
   ikos_assert_msg(source, "source is null");
@@ -984,13 +990,15 @@ std::unique_ptr< MemoryMove > MemoryMove::create(Bundle* bundle,
                                                  Value* destination,
                                                  Value* source,
                                                  Value* length,
-                                                 unsigned alignment,
+                                                 unsigned destination_alignment,
+                                                 unsigned source_alignment,
                                                  bool is_volatile) {
   return std::unique_ptr< MemoryMove >(new MemoryMove(bundle,
                                                       destination,
                                                       source,
                                                       length,
-                                                      alignment,
+                                                      destination_alignment,
+                                                      source_alignment,
                                                       is_volatile));
 }
 

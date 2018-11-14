@@ -23,7 +23,7 @@ declare i8* @strcpy(i8*, i8*) #2
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #3
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #3
@@ -152,7 +152,7 @@ define i32 @main() #0 !dbg !37 {
 ; CHECK:   store $3, %13, align 8
 ; CHECK:   si8* %14 = ptrshift $4, 10 * 0, 1 * 0
 ; CHECK:   si8* %15 = load $3, align 8
-; CHECK:   call @ar.memcpy(%14, %15, 10, 1, 0)
+; CHECK:   call @ar.memcpy(%14, %15, 10, 1, 1, 0)
 ; CHECK:   si8* %16 = ptrshift $4, 10 * 0, 1 * 0
 ; CHECK:   si8* %17 = call @foo(%16, 10)
 ; CHECK:   store $5, %17, align 8

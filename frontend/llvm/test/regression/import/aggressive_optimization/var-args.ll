@@ -163,7 +163,7 @@ define internal void @PrintInts(i32, ...) unnamed_addr #0 !dbg !11 {
 ; CHECK:   ui64 %strlen = call @ar.libc.strlen(%12)
 ; CHECK:   si8* %endptr = ptrshift %12, 1 * %strlen
 ; CHECK:   si8* %26 = ptrshift @.str, 6 * 0, 1 * 0
-; CHECK:   call @ar.memcpy(%endptr, %26, 6, 1, 0)
+; CHECK:   call @ar.memcpy(%endptr, %26, 6, 1, 1, 0)
 ; CHECK:   si32 %27 = %.1 sadd.nw -1
 ; CHECK:   si32 %.1 = %27
 ; CHECK: }
@@ -192,7 +192,7 @@ declare i64 @strlen(i8* nocapture) local_unnamed_addr #4
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #6
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: nounwind
 declare void @llvm.va_copy(i8*, i8*) #2

@@ -1264,7 +1264,8 @@ private:
              Value* destination,
              Value* source,
              Value* length,
-             unsigned alignment,
+             unsigned destination_alignment,
+             unsigned source_alignment,
              bool is_volatile);
 
 public:
@@ -1273,7 +1274,8 @@ public:
                                               Value* destination,
                                               Value* source,
                                               Value* length,
-                                              unsigned alignment,
+                                              unsigned destination_alignment,
+                                              unsigned source_alignment,
                                               bool is_volatile);
 
   /// \brief Get the destination operand
@@ -1285,17 +1287,19 @@ public:
   /// \brief Get the length operand
   Value* length() const { return this->argument(2); }
 
-  /// \brief Get the alignment of the memory access, in bytes (0 if unspecified)
-  unsigned alignment() const {
+  /// \brief Get the alignment of the destination, in bytes (0 if unspecified)
+  unsigned destination_alignment() const {
     return cast< IntegerConstant >(this->argument(3))->value().to< unsigned >();
   }
 
-  /// \brief Return true if this statement has an alignment constraint
-  bool has_alignment() const { return this->alignment() > 0; }
+  /// \brief Get the alignment of the source, in bytes (0 if unspecified)
+  unsigned source_alignment() const {
+    return cast< IntegerConstant >(this->argument(4))->value().to< unsigned >();
+  }
 
   /// \brief Return true if the source or destination is volatile
   bool is_volatile() const {
-    return cast< IntegerConstant >(this->argument(4))->value() != 0;
+    return cast< IntegerConstant >(this->argument(5))->value() != 0;
   }
 
   /// \brief Method for type support (isa, cast, dyn_cast)
@@ -1314,7 +1318,8 @@ private:
              Value* destination,
              Value* source,
              Value* length,
-             unsigned alignment,
+             unsigned destination_alignment,
+             unsigned source_alignment,
              bool is_volatile);
 
 public:
@@ -1323,7 +1328,8 @@ public:
                                               Value* destination,
                                               Value* source,
                                               Value* length,
-                                              unsigned alignment,
+                                              unsigned destination_alignment,
+                                              unsigned source_alignment,
                                               bool is_volatile);
 
   /// \brief Get the destination operand
@@ -1335,17 +1341,19 @@ public:
   /// \brief Get the length operand
   Value* length() const { return this->argument(2); }
 
-  /// \brief Get the alignment of the memory access, in bytes (0 if unspecified)
-  unsigned alignment() const {
+  /// \brief Get the alignment of the destination, in bytes (0 if unspecified)
+  unsigned destination_alignment() const {
     return cast< IntegerConstant >(this->argument(3))->value().to< unsigned >();
   }
 
-  /// \brief Return true if this statement has an alignment constraint
-  bool has_alignment() const { return this->alignment() > 0; }
+  /// \brief Get the alignment of the source, in bytes (0 if unspecified)
+  unsigned source_alignment() const {
+    return cast< IntegerConstant >(this->argument(4))->value().to< unsigned >();
+  }
 
   /// \brief Return true if the source or destination is volatile
   bool is_volatile() const {
-    return cast< IntegerConstant >(this->argument(4))->value() != 0;
+    return cast< IntegerConstant >(this->argument(5))->value() != 0;
   }
 
   /// \brief Method for type support (isa, cast, dyn_cast)

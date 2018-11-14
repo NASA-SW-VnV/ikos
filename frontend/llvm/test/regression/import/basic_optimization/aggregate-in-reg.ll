@@ -33,10 +33,10 @@ define linkonce_odr { <2 x float>, float } @_ZN3Foo9get_coordEv(%class.Foo*) #3 
 ; CHECK:   {0: float, 4: float, 8: float}* %4 = ptrshift %1, 12 * 0, 1 * 0
 ; CHECK:   si8* %5 = bitcast $2
 ; CHECK:   si8* %6 = bitcast %4
-; CHECK:   call @ar.memcpy(%5, %6, 12, 4, 0)
+; CHECK:   call @ar.memcpy(%5, %6, 12, 4, 4, 0)
 ; CHECK:   si8* %7 = bitcast $3
 ; CHECK:   si8* %8 = bitcast $2
-; CHECK:   call @ar.memcpy(%7, %8, 12, 4, 0)
+; CHECK:   call @ar.memcpy(%7, %8, 12, 4, 4, 0)
 ; CHECK:   {0: <2 x float>, 8: float} %9 = load $3, align 8
 ; CHECK:   return %9
 ; CHECK: }
@@ -120,7 +120,7 @@ define linkonce_odr void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float, fl
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #4
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !8 {
@@ -149,7 +149,7 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; CHECK:   store $5, %6, align 8
 ; CHECK:   si8* %7 = bitcast $5
 ; CHECK:   si8* %8 = bitcast $4
-; CHECK:   call @ar.memcpy(%8, %7, 12, 4, 0)
+; CHECK:   call @ar.memcpy(%8, %7, 12, 4, 4, 0)
 ; CHECK:   return 0
 ; CHECK: }
 ; CHECK: }

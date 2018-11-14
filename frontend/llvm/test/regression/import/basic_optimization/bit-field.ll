@@ -19,7 +19,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #2
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !8 {
@@ -35,7 +35,7 @@ define i32 @main() #0 !dbg !8 {
 ; CHECK:   {0: ui16, 2: [2 x si8]}* $1 = allocate {0: ui16, 2: [2 x si8]}, 1, align 4
 ; CHECK:   si8* %2 = bitcast $1
 ; CHECK:   si8* %3 = ptrshift @main.info, 4 * 0, 1 * 0
-; CHECK:   call @ar.memcpy(%2, %3, 4, 4, 0)
+; CHECK:   call @ar.memcpy(%2, %3, 4, 4, 4, 0)
 ; CHECK:   return 0
 ; CHECK: }
 ; CHECK: }

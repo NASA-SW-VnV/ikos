@@ -310,8 +310,9 @@ ar::Function* BundleImporter::translate_intrinsic_function(
                       fun->getName().str());
   }
 
-  // sanity check
-  if (ar_fun != nullptr &&
+  // sanity check (skip for memcpy and memmove)
+  if (id != llvm::Intrinsic::memcpy && id != llvm::Intrinsic::memmove &&
+      ar_fun != nullptr &&
       !_ctx.type_imp->match_extern_function_type(fun->getFunctionType(),
                                                  ar_fun->type())) {
     std::ostringstream buf;

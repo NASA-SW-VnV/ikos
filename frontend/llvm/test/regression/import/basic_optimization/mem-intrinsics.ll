@@ -10,11 +10,11 @@ target triple = "x86_64-apple-macosx10.13.0"
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #1
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1) #1
-; CHECK: declare void @ar.memmove(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memmove(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #1
@@ -47,10 +47,10 @@ define i32 @main() #0 !dbg !17 {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %1 = bitcast undef
 ; CHECK:   si8* %2 = bitcast undef
-; CHECK:   call @ar.memcpy(%1, %2, 10, 4, 0)
+; CHECK:   call @ar.memcpy(%1, %2, 10, 4, 4, 0)
 ; CHECK:   si8* %3 = bitcast undef
 ; CHECK:   si8* %4 = bitcast undef
-; CHECK:   call @ar.memmove(%3, %4, 50, 4, 0)
+; CHECK:   call @ar.memmove(%3, %4, 50, 4, 4, 0)
 ; CHECK:   si8* %5 = bitcast undef
 ; CHECK:   call @ar.memset(%5, 1, 50, 4, 0)
 ; CHECK:   return 0

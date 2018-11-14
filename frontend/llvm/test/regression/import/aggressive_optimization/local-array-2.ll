@@ -17,7 +17,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #2
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui1)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #2
@@ -95,11 +95,11 @@ define i32 @main() local_unnamed_addr #0 !dbg !32 {
 ; CHECK:   [10 x si8]* $2 = allocate [10 x si8], 1, align 1
 ; CHECK:   si8* %3 = ptrshift $1, 50 * 0, 1 * 0
 ; CHECK:   si8* %4 = ptrshift @.str, 34 * 0, 1 * 0
-; CHECK:   call @ar.memcpy(%3, %4, 34, 1, 0)
+; CHECK:   call @ar.memcpy(%3, %4, 34, 1, 1, 0)
 ; CHECK:   call @ar.memset(%3, 36, 50, 16, 0)
 ; CHECK:   si8* %5 = call @foo(%3, 10)
 ; CHECK:   si8* %6 = ptrshift $2, 10 * 0, 1 * 0
-; CHECK:   call @ar.memcpy(%6, %5, 10, 1, 0)
+; CHECK:   call @ar.memcpy(%6, %5, 10, 1, 1, 0)
 ; CHECK:   si8* %7 = call @foo(%6, 10)
 ; CHECK:   return 0
 ; CHECK: }
