@@ -1347,6 +1347,9 @@ def generate_unaligned_pointer_message(report, verbosity):
 
         points_to.append(line)
 
+    # make the output deterministic
+    points_to.sort()
+
     if len(points_to) == 1:
         s += '\npointer points to ' + points_to[0]
     elif len(points_to) > 1:
@@ -1486,6 +1489,9 @@ def generate_buffer_overflow_message(report, verbosity):
             assert False, 'unexpected kind'
 
         points_to.append(line)
+
+    # make the output deterministic
+    points_to.sort()
 
     if kinds == {BufferOverflowCheckKind.OUT_OF_BOUND} and array_element_size:
         # Out of bound array access
@@ -1628,6 +1634,9 @@ def generate_function_call_message(report, verbosity):
             function = report.db.functions[function_id]
             callees.append("'%s'" % function.pretty_name())
 
+        # make the output deterministic
+        callees.sort()
+
         if len(callees) == 1:
             s += ' to %s' % callees[0]
         else:
@@ -1668,6 +1677,9 @@ def generate_function_call_message(report, verbosity):
 
         callees.append(line)
 
+    # make the output deterministic
+    callees.sort()
+
     if len(callees) == 1:
         s += ' %s' % callees[0]
     else:
@@ -1704,6 +1716,9 @@ def generate_double_free_message(report, verbosity):
             assert False, 'unexpected status'
 
         points_to.append(line)
+
+    # make the output deterministic
+    points_to.sort()
 
     if all_dyn_alloc:
         if report.status == Result.WARNING:
