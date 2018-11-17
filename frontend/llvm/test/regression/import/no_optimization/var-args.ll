@@ -280,11 +280,11 @@ define i32 @main() #0 !dbg !92 {
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone speculatable
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
-
 declare i32 @vprintf(i8*, %struct.__va_list_tag*) #4
 ; CHECK: declare si32 @vprintf(si8*, {0: si32, 4: si32, 8: si8*, 16: si8*}*)
+
+; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
@@ -297,7 +297,7 @@ attributes #5 = { allocsize(0) }
 !llvm.module.flags = !{!6, !7, !8, !9}
 !llvm.ident = !{!10}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3)
 !1 = !DIFile(filename: "var-args.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{!4}
@@ -307,8 +307,8 @@ attributes #5 = { allocsize(0) }
 !7 = !{i32 2, !"Debug Info Version", i32 3}
 !8 = !{i32 1, !"wchar_size", i32 4}
 !9 = !{i32 7, !"PIC Level", i32 2}
-!10 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!11 = distinct !DISubprogram(name: "PrintInts", scope: !1, file: !1, line: 8, type: !12, isLocal: false, isDefinition: true, scopeLine: 8, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!10 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!11 = distinct !DISubprogram(name: "PrintInts", scope: !1, file: !1, line: 8, type: !12, isLocal: false, isDefinition: true, scopeLine: 8, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !12 = !DISubroutineType(types: !13)
 !13 = !{null, !14, null}
 !14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -389,7 +389,7 @@ attributes #5 = { allocsize(0) }
 !89 = !DILocation(line: 35, column: 3, scope: !11)
 !90 = !DILocation(line: 37, column: 3, scope: !11)
 !91 = !DILocation(line: 38, column: 1, scope: !11)
-!92 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 40, type: !93, isLocal: false, isDefinition: true, scopeLine: 40, isOptimized: false, unit: !0, variables: !2)
+!92 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 40, type: !93, isLocal: false, isDefinition: true, scopeLine: 40, isOptimized: false, unit: !0, retainedNodes: !2)
 !93 = !DISubroutineType(types: !94)
 !94 = !{!14}
 !95 = !DILocation(line: 41, column: 3, scope: !92)

@@ -18,7 +18,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #2
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1) #2
 ; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
@@ -27,7 +27,7 @@ define i32 @main() #0 !dbg !8 {
   call void @llvm.dbg.declare(metadata %union.my_union* %1, metadata !12, metadata !DIExpression()), !dbg !19
   %2 = bitcast %union.my_union* %1 to i8*, !dbg !19
   %3 = bitcast { i32, [4 x i8] }* @main.x to i8*, !dbg !19
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %2, i8* %3, i64 8, i32 8, i1 false), !dbg !19
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 8 %2, i8* align 8 %3, i64 8, i1 false), !dbg !19
   ret i32 0, !dbg !20
 }
 ; CHECK: define si32 @main() {
@@ -51,15 +51,15 @@ attributes #2 = { argmemonly nounwind }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "union.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 6, type: !9, isLocal: false, isDefinition: true, scopeLine: 6, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 6, type: !9, isLocal: false, isDefinition: true, scopeLine: 6, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)

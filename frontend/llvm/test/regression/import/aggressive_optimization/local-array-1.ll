@@ -18,21 +18,22 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   br label %4, !dbg !26
 
 ; <label>:4:                                      ; preds = %6, %2
-  %.0 = phi i32 [ 0, %2 ], [ %9, %6 ]
+  %.0 = phi i32 [ 0, %2 ], [ %9, %6 ], !dbg !28
   call void @llvm.dbg.value(metadata i32 %.0, metadata !24, metadata !DIExpression()), !dbg !25
-  %5 = icmp ult i32 %.0, 10, !dbg !28
-  br i1 %5, label %6, label %10, !dbg !30
+  %5 = icmp ult i32 %.0, 10, !dbg !30
+  br i1 %5, label %6, label %10, !dbg !31
 
 ; <label>:6:                                      ; preds = %4
-  %7 = zext i32 %.0 to i64, !dbg !31
-  %8 = getelementptr inbounds [10 x i32], [10 x i32]* %3, i64 0, i64 %7, !dbg !31
-  store i32 %.0, i32* %8, align 4, !dbg !33
-  %9 = add nuw nsw i32 %.0, 1, !dbg !34
+  %7 = zext i32 %.0 to i64, !dbg !32
+  %8 = getelementptr inbounds [10 x i32], [10 x i32]* %3, i64 0, i64 %7, !dbg !32
+  store i32 %.0, i32* %8, align 4, !dbg !34
+  %9 = add nuw nsw i32 %.0, 1, !dbg !35
   call void @llvm.dbg.value(metadata i32 %9, metadata !24, metadata !DIExpression()), !dbg !25
-  br label %4, !dbg !35, !llvm.loop !36
+  br label %4, !dbg !36, !llvm.loop !37
 
 ; <label>:10:                                     ; preds = %4
-  ret i32 0, !dbg !38
+  call void @llvm.dbg.value(metadata !2, metadata !24, metadata !DIExpression()), !dbg !25
+  ret i32 0, !dbg !39
 }
 ; CHECK: define si32 @main(si32 %1, si8** %2) {
 ; CHECK: #1 !entry successors={#2} {
@@ -70,15 +71,15 @@ attributes #1 = { nounwind readnone speculatable }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "local-array-1.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/aggressive_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 6, type: !9, isLocal: false, isDefinition: true, scopeLine: 6, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 6, type: !9, isLocal: false, isDefinition: true, scopeLine: 6, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !12}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -98,14 +99,15 @@ attributes #1 = { nounwind readnone speculatable }
 !25 = !DILocation(line: 7, column: 7, scope: !8)
 !26 = !DILocation(line: 9, column: 8, scope: !27)
 !27 = distinct !DILexicalBlock(scope: !8, file: !1, line: 9, column: 3)
-!28 = !DILocation(line: 9, column: 17, scope: !29)
+!28 = !DILocation(line: 0, scope: !29)
 !29 = distinct !DILexicalBlock(scope: !27, file: !1, line: 9, column: 3)
-!30 = !DILocation(line: 9, column: 3, scope: !27)
-!31 = !DILocation(line: 10, column: 5, scope: !32)
-!32 = distinct !DILexicalBlock(scope: !29, file: !1, line: 9, column: 28)
-!33 = !DILocation(line: 10, column: 10, scope: !32)
-!34 = !DILocation(line: 9, column: 24, scope: !29)
-!35 = !DILocation(line: 9, column: 3, scope: !29)
-!36 = distinct !{!36, !30, !37}
-!37 = !DILocation(line: 11, column: 3, scope: !27)
-!38 = !DILocation(line: 13, column: 3, scope: !8)
+!30 = !DILocation(line: 9, column: 17, scope: !29)
+!31 = !DILocation(line: 9, column: 3, scope: !27)
+!32 = !DILocation(line: 10, column: 5, scope: !33)
+!33 = distinct !DILexicalBlock(scope: !29, file: !1, line: 9, column: 28)
+!34 = !DILocation(line: 10, column: 10, scope: !33)
+!35 = !DILocation(line: 9, column: 24, scope: !29)
+!36 = !DILocation(line: 9, column: 3, scope: !29)
+!37 = distinct !{!37, !31, !38}
+!38 = !DILocation(line: 11, column: 3, scope: !27)
+!39 = !DILocation(line: 13, column: 3, scope: !8)

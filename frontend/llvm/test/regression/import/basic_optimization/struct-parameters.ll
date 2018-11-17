@@ -11,7 +11,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 %struct.my_struct = type { [10 x i8], [10 x i8], [10 x i8] }
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #2
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1) #2
 ; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
@@ -19,7 +19,7 @@ define void @f(%struct.my_struct* noalias sret, %struct.my_struct*) #0 !dbg !8 {
   call void @llvm.dbg.value(metadata %struct.my_struct* %1, metadata !22, metadata !DIExpression()), !dbg !23
   %3 = bitcast %struct.my_struct* %0 to i8*, !dbg !24
   %4 = bitcast %struct.my_struct* %1 to i8*, !dbg !24
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %3, i8* %4, i64 30, i32 1, i1 false), !dbg !24
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %3, i8* align 1 %4, i64 30, i1 false), !dbg !24
   ret void, !dbg !25
 }
 ; CHECK: define void @f({0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %1, {0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %2) {
@@ -31,22 +31,19 @@ define void @f(%struct.my_struct* noalias sret, %struct.my_struct*) #0 !dbg !8 {
 ; CHECK: }
 ; CHECK: }
 
-; Function Attrs: nounwind readnone speculatable
-declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @g(%struct.my_struct* noalias sret, %struct.my_struct* byval align 8) #0 !dbg !26 {
   call void @llvm.dbg.declare(metadata %struct.my_struct* %1, metadata !29, metadata !DIExpression()), !dbg !30
   %3 = bitcast %struct.my_struct* %0 to i8*, !dbg !31
   %4 = bitcast %struct.my_struct* %1 to i8*, !dbg !31
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %3, i8* %4, i64 30, i32 1, i1 false), !dbg !31
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %3, i8* align 8 %4, i64 30, i1 false), !dbg !31
   ret void, !dbg !32
 }
 ; CHECK: define void @g({0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %1, {0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %2) {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %3 = bitcast %1
 ; CHECK:   si8* %4 = bitcast %2
-; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 1, 0)
+; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 8, 0)
 ; CHECK:   return
 ; CHECK: }
 ; CHECK: }
@@ -62,6 +59,9 @@ define i32 @main() #0 !dbg !33 {
 ; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
+declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
+
+; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
@@ -72,15 +72,15 @@ attributes #2 = { argmemonly nounwind }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "struct-parameters.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "f", scope: !1, file: !1, line: 9, type: !9, isLocal: false, isDefinition: true, scopeLine: 9, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "f", scope: !1, file: !1, line: 9, type: !9, isLocal: false, isDefinition: true, scopeLine: 9, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !21}
 !11 = !DIDerivedType(tag: DW_TAG_typedef, name: "my_struct", file: !1, line: 7, baseType: !12)
@@ -98,14 +98,14 @@ attributes #2 = { argmemonly nounwind }
 !23 = !DILocation(line: 9, column: 24, scope: !8)
 !24 = !DILocation(line: 10, column: 10, scope: !8)
 !25 = !DILocation(line: 10, column: 3, scope: !8)
-!26 = distinct !DISubprogram(name: "g", scope: !1, file: !1, line: 13, type: !27, isLocal: false, isDefinition: true, scopeLine: 13, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!26 = distinct !DISubprogram(name: "g", scope: !1, file: !1, line: 13, type: !27, isLocal: false, isDefinition: true, scopeLine: 13, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !27 = !DISubroutineType(types: !28)
 !28 = !{!11, !11}
 !29 = !DILocalVariable(name: "s", arg: 1, scope: !26, file: !1, line: 13, type: !11)
 !30 = !DILocation(line: 13, column: 23, scope: !26)
 !31 = !DILocation(line: 14, column: 10, scope: !26)
 !32 = !DILocation(line: 14, column: 3, scope: !26)
-!33 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 17, type: !34, isLocal: false, isDefinition: true, scopeLine: 17, isOptimized: false, unit: !0, variables: !2)
+!33 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 17, type: !34, isLocal: false, isDefinition: true, scopeLine: 17, isOptimized: false, unit: !0, retainedNodes: !2)
 !34 = !DISubroutineType(types: !35)
 !35 = !{!36}
 !36 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)

@@ -26,7 +26,7 @@ define i32 @main() local_unnamed_addr #1 !dbg !17 {
   %1 = alloca i32, align 4
   call void @llvm.dbg.value(metadata i32 0, metadata !20, metadata !DIExpression()), !dbg !21
   store i32 0, i32* %1, align 4, !dbg !21
-  call void @llvm.dbg.value(metadata i32* %1, metadata !20, metadata !DIExpression()), !dbg !21
+  call void @llvm.dbg.value(metadata i32* %1, metadata !20, metadata !DIExpression(DW_OP_deref)), !dbg !21
   call fastcc void @_Z1fRi(i32* nonnull dereferenceable(4) %1), !dbg !22
   %2 = load i32, i32* %1, align 4, !dbg !23
   call void @llvm.dbg.value(metadata i32 %2, metadata !20, metadata !DIExpression()), !dbg !21
@@ -53,15 +53,15 @@ attributes #2 = { nounwind readnone speculatable }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "reference.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/aggressive_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "f", linkageName: "_Z1fRi", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "f", linkageName: "_Z1fRi", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{null, !11}
 !11 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !12, size: 64)
@@ -70,7 +70,7 @@ attributes #2 = { nounwind readnone speculatable }
 !14 = !DILocation(line: 1, column: 13, scope: !8)
 !15 = !DILocation(line: 2, column: 5, scope: !8)
 !16 = !DILocation(line: 3, column: 1, scope: !8)
-!17 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 5, type: !18, isLocal: false, isDefinition: true, scopeLine: 5, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!17 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 5, type: !18, isLocal: false, isDefinition: true, scopeLine: 5, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !18 = !DISubroutineType(types: !19)
 !19 = !{!12}
 !20 = !DILocalVariable(name: "y", scope: !17, file: !1, line: 6, type: !12)

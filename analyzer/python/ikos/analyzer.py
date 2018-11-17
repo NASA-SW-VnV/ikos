@@ -638,7 +638,7 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-libikos')
 
     # add -allow-dbg-mismatch if necessary
-    if opt.opt_level == 'aggressive':
+    if opt.opt_level in ('basic', 'aggressive'):
         cmd.append('-allow-dbg-mismatch')
 
     # AR passes options

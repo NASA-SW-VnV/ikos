@@ -107,7 +107,7 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "ptr_fun", scope: !2, file: !3, line: 7, type: !26, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
 !3 = !DIFile(filename: "pointer-arithmetic.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !4 = !{}
 !5 = !{!0, !6, !14, !23}
@@ -122,7 +122,7 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !14 = !DIGlobalVariableExpression(var: !15, expr: !DIExpression())
 !15 = distinct !DIGlobalVariable(name: "v", scope: !2, file: !3, line: 17, type: !16, isLocal: false, isDefinition: true)
 !16 = !DICompositeType(tag: DW_TAG_array_type, baseType: !17, size: 192, elements: !12)
-!17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !3, line: 11, size: 96, elements: !18, identifier: "_ZTS6vector")
+!17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !3, line: 11, size: 96, flags: DIFlagTypePassByValue | DIFlagTrivial, elements: !18, identifier: "_ZTS6vector")
 !18 = !{!19, !21, !22}
 !19 = !DIDerivedType(tag: DW_TAG_member, name: "x", scope: !17, file: !3, line: 12, baseType: !20, size: 32)
 !20 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -137,12 +137,12 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !29 = !{i32 2, !"Debug Info Version", i32 3}
 !30 = !{i32 1, !"wchar_size", i32 4}
 !31 = !{i32 7, !"PIC Level", i32 2}
-!32 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!33 = distinct !DISubprogram(name: "f", linkageName: "_Z1fv", scope: !3, file: !3, line: 3, type: !34, isLocal: false, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!32 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!33 = distinct !DISubprogram(name: "f", linkageName: "_Z1fv", scope: !3, file: !3, line: 3, type: !34, isLocal: false, isDefinition: true, scopeLine: 3, flags: DIFlagPrototyped, isOptimized: false, unit: !2, retainedNodes: !4)
 !34 = !DISubroutineType(types: !35)
 !35 = !{!20}
 !36 = !DILocation(line: 4, column: 3, scope: !33)
-!37 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 21, type: !34, isLocal: false, isDefinition: true, scopeLine: 21, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!37 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 21, type: !34, isLocal: false, isDefinition: true, scopeLine: 21, flags: DIFlagPrototyped, isOptimized: false, unit: !2, retainedNodes: !4)
 !38 = !DILocation(line: 22, column: 30, scope: !37)
 !39 = !DILocation(line: 22, column: 10, scope: !37)
 !40 = !DILocation(line: 22, column: 3, scope: !37)

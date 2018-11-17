@@ -22,11 +22,11 @@ declare i8* @strcpy(i8*, i8*) #2
 ; CHECK: declare si8* @ar.libc.strcpy(si8*, si8*)
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #3
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1) #3
 ; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #3
+declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1) #3
 ; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
@@ -115,7 +115,7 @@ define i32 @main() #0 !dbg !37 {
   %9 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !47
   %10 = call i32 @puts(i8* %9), !dbg !48
   %11 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !49
-  call void @llvm.memset.p0i8.i64(i8* %11, i8 36, i64 50, i32 16, i1 false), !dbg !49
+  call void @llvm.memset.p0i8.i64(i8* align 16 %11, i8 36, i64 50, i1 false), !dbg !49
   call void @llvm.dbg.declare(metadata i8** %3, metadata !50, metadata !DIExpression()), !dbg !51
   %12 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !52
   %13 = call i8* @foo(i8* %12, i32 10), !dbg !53
@@ -123,7 +123,7 @@ define i32 @main() #0 !dbg !37 {
   call void @llvm.dbg.declare(metadata [10 x i8]* %4, metadata !54, metadata !DIExpression()), !dbg !58
   %14 = getelementptr inbounds [10 x i8], [10 x i8]* %4, i32 0, i32 0, !dbg !59
   %15 = load i8*, i8** %3, align 8, !dbg !60
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %14, i8* %15, i64 10, i32 1, i1 false), !dbg !59
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %14, i8* align 1 %15, i64 10, i1 false), !dbg !59
   call void @llvm.dbg.declare(metadata i8** %5, metadata !61, metadata !DIExpression()), !dbg !62
   %16 = getelementptr inbounds [10 x i8], [10 x i8]* %4, i32 0, i32 0, !dbg !63
   %17 = call i8* @foo(i8* %16, i32 10), !dbg !64
@@ -171,15 +171,15 @@ attributes #3 = { argmemonly nounwind }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "local-array-2.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "foo", scope: !1, file: !1, line: 4, type: !9, isLocal: false, isDefinition: true, scopeLine: 4, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "foo", scope: !1, file: !1, line: 4, type: !9, isLocal: false, isDefinition: true, scopeLine: 4, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !13}
 !11 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !12, size: 64)
@@ -208,7 +208,7 @@ attributes #3 = { argmemonly nounwind }
 !34 = !DILocation(line: 7, column: 12, scope: !21)
 !35 = !DILocation(line: 8, column: 10, scope: !8)
 !36 = !DILocation(line: 8, column: 3, scope: !8)
-!37 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 11, type: !38, isLocal: false, isDefinition: true, scopeLine: 11, isOptimized: false, unit: !0, variables: !2)
+!37 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 11, type: !38, isLocal: false, isDefinition: true, scopeLine: 11, isOptimized: false, unit: !0, retainedNodes: !2)
 !38 = !DISubroutineType(types: !39)
 !39 = !{!13}
 !40 = !DILocalVariable(name: "str", scope: !37, file: !1, line: 12, type: !41)

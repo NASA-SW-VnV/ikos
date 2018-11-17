@@ -12,7 +12,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 define i32 @main() #0 !dbg !8 {
   call void @llvm.dbg.value(metadata i32 3, metadata !12, metadata !DIExpression()), !dbg !13
   call void @llvm.dbg.value(metadata i32 5, metadata !14, metadata !DIExpression()), !dbg !15
-  ret i32 0, !dbg !16
+  call void @llvm.dbg.value(metadata i32 3, metadata !16, metadata !DIExpression(DW_OP_constu, 5, DW_OP_or, DW_OP_stack_value)), !dbg !17
+  ret i32 0, !dbg !18
 }
 ; CHECK: define si32 @main() {
 ; CHECK: #1 !entry !exit {
@@ -30,15 +31,15 @@ attributes #1 = { nounwind readnone speculatable }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "bitwise-op.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -46,4 +47,6 @@ attributes #1 = { nounwind readnone speculatable }
 !13 = !DILocation(line: 2, column: 7, scope: !8)
 !14 = !DILocalVariable(name: "y", scope: !8, file: !1, line: 2, type: !11)
 !15 = !DILocation(line: 2, column: 14, scope: !8)
-!16 = !DILocation(line: 4, column: 1, scope: !8)
+!16 = !DILocalVariable(name: "z", scope: !8, file: !1, line: 3, type: !11)
+!17 = !DILocation(line: 3, column: 7, scope: !8)
+!18 = !DILocation(line: 4, column: 1, scope: !8)

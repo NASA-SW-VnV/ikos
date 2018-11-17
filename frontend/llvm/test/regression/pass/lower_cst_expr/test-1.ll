@@ -17,7 +17,7 @@ define i32 @main(i32 %arg_1, i8** %arg_2) {
 ; CHECK:  store i32 %arg_1, i32* %_2, align 4
 ; CHECK:  store i8** %arg_2, i8*** %_3, align 8
 ; CHECK:  %_7 = bitcast [5 x i32]* %_4 to i8*
-; CHECK:  call void @llvm.memset.p0i8.i64(i8* %_7, i8 0, i64 20, i32 16, i1 false)
+; CHECK:  call void @llvm.memset.p0i8.i64(i8* align 16 %_7, i8 0, i64 20, i1 false)
 ; CHECK:  %_8 = getelementptr inbounds %struct.foo, %struct.foo* %_5, i32 0, i32 0
 ; CHECK:  store i32 59, i32* %_8, align 4
 ; CHECK:  %_9 = load i32, i32* @x, align 4
@@ -50,7 +50,7 @@ bb_1:
   store i32 %arg_1, i32* %_2, align 4
   store i8** %arg_2, i8*** %_3, align 8
   %_7 = bitcast [5 x i32]* %_4 to i8*
-  call void @llvm.memset.p0i8.i64(i8* %_7, i8 0, i64 20, i32 16, i1 false)
+  call void @llvm.memset.p0i8.i64(i8* align 16 %_7, i8 0, i64 20, i1 false)
   %_8 = getelementptr inbounds %struct.foo, %struct.foo* %_5, i32 0, i32 0
   store i32 59, i32* %_8, align 4
   %_9 = load i32, i32* @x, align 4
@@ -73,6 +73,6 @@ bb_1:
 }
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #0
+declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1) #0
 
 attributes #0 = { argmemonly nounwind }

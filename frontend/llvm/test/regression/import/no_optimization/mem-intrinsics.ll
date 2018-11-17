@@ -9,15 +9,15 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: target-triple = x86_64-apple-macosx10.13.0
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i32, i1) #2
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1) #2
 ; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i32, i1) #2
+declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i1) #2
 ; CHECK: declare void @ar.memmove(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #2
+declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1) #2
 ; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
@@ -52,19 +52,19 @@ define i32 @main() #0 !dbg !18 {
   %5 = bitcast i32* %4 to i8*, !dbg !26
   %6 = load i32*, i32** %2, align 8, !dbg !27
   %7 = bitcast i32* %6 to i8*, !dbg !26
-  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %5, i8* %7, i64 10, i32 4, i1 false), !dbg !26
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 4 %5, i8* align 4 %7, i64 10, i1 false), !dbg !26
   %8 = bitcast i8* %5 to i32*, !dbg !28
   store i32* %8, i32** %3, align 8, !dbg !29
   %9 = load i32*, i32** %1, align 8, !dbg !30
   %10 = bitcast i32* %9 to i8*, !dbg !31
   %11 = load i32*, i32** %2, align 8, !dbg !32
   %12 = bitcast i32* %11 to i8*, !dbg !31
-  call void @llvm.memmove.p0i8.p0i8.i64(i8* %10, i8* %12, i64 50, i32 4, i1 false), !dbg !31
+  call void @llvm.memmove.p0i8.p0i8.i64(i8* align 4 %10, i8* align 4 %12, i64 50, i1 false), !dbg !31
   %13 = bitcast i8* %10 to i32*, !dbg !33
   store i32* %13, i32** %3, align 8, !dbg !34
   %14 = load i32*, i32** %1, align 8, !dbg !35
   %15 = bitcast i32* %14 to i8*, !dbg !36
-  call void @llvm.memset.p0i8.i64(i8* %15, i8 1, i64 50, i32 4, i1 false), !dbg !36
+  call void @llvm.memset.p0i8.i64(i8* align 4 %15, i8 1, i64 50, i1 false), !dbg !36
   %16 = bitcast i8* %15 to i32*, !dbg !37
   store i32* %16, i32** %3, align 8, !dbg !38
   ret i32 0, !dbg !39
@@ -105,7 +105,7 @@ attributes #2 = { argmemonly nounwind }
 !llvm.module.flags = !{!6, !7, !8, !9}
 !llvm.ident = !{!10}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3)
 !1 = !DIFile(filename: "mem-intrinsics.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{!4}
@@ -115,15 +115,15 @@ attributes #2 = { argmemonly nounwind }
 !7 = !{i32 2, !"Debug Info Version", i32 3}
 !8 = !{i32 1, !"wchar_size", i32 4}
 !9 = !{i32 7, !"PIC Level", i32 2}
-!10 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!11 = distinct !DISubprogram(name: "cst", scope: !1, file: !1, line: 3, type: !12, isLocal: false, isDefinition: true, scopeLine: 3, isOptimized: false, unit: !0, variables: !2)
+!10 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!11 = distinct !DISubprogram(name: "cst", scope: !1, file: !1, line: 3, type: !12, isLocal: false, isDefinition: true, scopeLine: 3, isOptimized: false, unit: !0, retainedNodes: !2)
 !12 = !DISubroutineType(types: !13)
 !13 = !{!5}
 !14 = !DILocalVariable(name: "G", scope: !11, file: !1, line: 4, type: !5)
 !15 = !DILocation(line: 4, column: 7, scope: !11)
 !16 = !DILocation(line: 5, column: 10, scope: !11)
 !17 = !DILocation(line: 5, column: 3, scope: !11)
-!18 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 8, type: !12, isLocal: false, isDefinition: true, scopeLine: 8, isOptimized: false, unit: !0, variables: !2)
+!18 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 8, type: !12, isLocal: false, isDefinition: true, scopeLine: 8, isOptimized: false, unit: !0, retainedNodes: !2)
 !19 = !DILocalVariable(name: "p", scope: !18, file: !1, line: 9, type: !4)
 !20 = !DILocation(line: 9, column: 8, scope: !18)
 !21 = !DILocalVariable(name: "q", scope: !18, file: !1, line: 9, type: !4)

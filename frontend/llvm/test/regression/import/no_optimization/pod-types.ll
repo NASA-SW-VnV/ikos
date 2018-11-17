@@ -58,7 +58,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 
 ; Function Attrs: argmemonly nounwind
-declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i32, i1) #2
+declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1) #2
 ; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
@@ -84,16 +84,16 @@ define i32 @main(i32, i8**) #0 !dbg !39 {
   call void @llvm.dbg.declare(metadata i8*** %5, metadata !47, metadata !DIExpression()), !dbg !48
   call void @llvm.dbg.declare(metadata [10 x i32]* %6, metadata !49, metadata !DIExpression()), !dbg !52
   %7 = bitcast [10 x i32]* %6 to i8*, !dbg !52
-  call void @llvm.memset.p0i8.i64(i8* %7, i8 0, i64 40, i32 16, i1 false), !dbg !52
+  call void @llvm.memset.p0i8.i64(i8* align 16 %7, i8 0, i64 40, i1 false), !dbg !52
   %8 = bitcast i8* %7 to [10 x i32]*, !dbg !52
-  %9 = getelementptr [10 x i32], [10 x i32]* %8, i32 0, i32 0, !dbg !52
-  store i32 1, i32* %9, !dbg !52
-  %10 = getelementptr [10 x i32], [10 x i32]* %8, i32 0, i32 1, !dbg !52
-  store i32 -1, i32* %10, !dbg !52
-  %11 = getelementptr [10 x i32], [10 x i32]* %8, i32 0, i32 2, !dbg !52
-  store i32 255, i32* %11, !dbg !52
-  %12 = getelementptr [10 x i32], [10 x i32]* %8, i32 0, i32 3, !dbg !52
-  store i32 42, i32* %12, !dbg !52
+  %9 = getelementptr inbounds [10 x i32], [10 x i32]* %8, i32 0, i32 0, !dbg !52
+  store i32 1, i32* %9, align 16, !dbg !52
+  %10 = getelementptr inbounds [10 x i32], [10 x i32]* %8, i32 0, i32 1, !dbg !52
+  store i32 -1, i32* %10, align 4, !dbg !52
+  %11 = getelementptr inbounds [10 x i32], [10 x i32]* %8, i32 0, i32 2, !dbg !52
+  store i32 255, i32* %11, align 8, !dbg !52
+  %12 = getelementptr inbounds [10 x i32], [10 x i32]* %8, i32 0, i32 3, !dbg !52
+  store i32 42, i32* %12, align 4, !dbg !52
   ret i32 0, !dbg !53
 }
 ; CHECK: define si32 @main(si32 %1, si8** %2) {
@@ -109,13 +109,13 @@ define i32 @main(i32, i8**) #0 !dbg !39 {
 ; CHECK:   call @ar.memset(%7, 0, 40, 16, 0)
 ; CHECK:   [10 x si32]* %8 = bitcast %7
 ; CHECK:   si32* %9 = ptrshift %8, 40 * 0, 4 * 0
-; CHECK:   store %9, 1
+; CHECK:   store %9, 1, align 16
 ; CHECK:   si32* %10 = ptrshift %8, 40 * 0, 4 * 1
-; CHECK:   store %10, -1
+; CHECK:   store %10, -1, align 4
 ; CHECK:   si32* %11 = ptrshift %8, 40 * 0, 4 * 2
-; CHECK:   store %11, 255
+; CHECK:   store %11, 255, align 8
 ; CHECK:   si32* %12 = ptrshift %8, 40 * 0, 4 * 3
-; CHECK:   store %12, 42
+; CHECK:   store %12, 42, align 4
 ; CHECK:   return 0
 ; CHECK: }
 ; CHECK: }
@@ -133,7 +133,7 @@ attributes #2 = { argmemonly nounwind }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "i", scope: !2, file: !3, line: 1, type: !29, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
 !3 = !DIFile(filename: "pod-types.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !4 = !{}
 !5 = !{!0, !6, !9, !12, !15, !19, !22}
@@ -165,12 +165,12 @@ attributes #2 = { argmemonly nounwind }
 !31 = !{i32 2, !"Debug Info Version", i32 3}
 !32 = !{i32 1, !"wchar_size", i32 4}
 !33 = !{i32 7, !"PIC Level", i32 2}
-!34 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!35 = distinct !DISubprogram(name: "fun", scope: !3, file: !3, line: 15, type: !36, isLocal: false, isDefinition: true, scopeLine: 15, isOptimized: false, unit: !2, variables: !4)
+!34 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!35 = distinct !DISubprogram(name: "fun", scope: !3, file: !3, line: 15, type: !36, isLocal: false, isDefinition: true, scopeLine: 15, isOptimized: false, unit: !2, retainedNodes: !4)
 !36 = !DISubroutineType(types: !37)
 !37 = !{null}
 !38 = !DILocation(line: 15, column: 13, scope: !35)
-!39 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 17, type: !40, isLocal: false, isDefinition: true, scopeLine: 17, flags: DIFlagPrototyped, isOptimized: false, unit: !2, variables: !4)
+!39 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 17, type: !40, isLocal: false, isDefinition: true, scopeLine: 17, flags: DIFlagPrototyped, isOptimized: false, unit: !2, retainedNodes: !4)
 !40 = !DISubroutineType(types: !41)
 !41 = !{!18, !18, !42}
 !42 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !43, size: 64)

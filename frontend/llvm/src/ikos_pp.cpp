@@ -163,6 +163,7 @@ int main(int argc, char** argv) {
   llvm::initializeAnalysis(registry);
   llvm::initializeTransformUtils(registry);
   llvm::initializeInstCombine(registry);
+  llvm::initializeAggressiveInstCombine(registry);
   llvm::initializeInstrumentation(registry);
   llvm::initializeTarget(registry);
   llvm::initializeExpandMemCmpPassPass(registry);
@@ -182,6 +183,7 @@ int main(int argc, char** argv) {
   llvm::initializePostInlineEntryExitInstrumenterPass(registry);
   llvm::initializeUnreachableBlockElimLegacyPassPass(registry);
   llvm::initializeExpandReductionsPass(registry);
+  llvm::initializeWasmEHPreparePass(registry);
   llvm::initializeWriteBitcodePassPass(registry);
   ikos_pp::initializeIkosPasses(registry);
 
@@ -382,9 +384,7 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createLCSSAPass());
 
     // Loop invariant code motion (opt -licm)
-    // pass disabled because of a segmentation fault in the LICM pass
-    // see https://bugs.llvm.org/show_bug.cgi?id=27146
-    // pass_manager.add(llvm::createLICMPass());
+    pass_manager.add(llvm::createLICMPass());
 
     // SSA (opt -mem2reg)
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());

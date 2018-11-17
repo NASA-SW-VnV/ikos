@@ -141,7 +141,7 @@ declare noalias i8* @_Znwm(i64) local_unnamed_addr #3
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() local_unnamed_addr #1 !dbg !26 {
   %1 = alloca %class.Master, align 8
-  call void @llvm.dbg.value(metadata %class.Master* %1, metadata !29, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.value(metadata %class.Master* %1, metadata !29, metadata !DIExpression(DW_OP_deref)), !dbg !39
   call fastcc void @_ZN6MasterC1Ev(%class.Master* nonnull %1), !dbg !39
   ret i32 0, !dbg !40
 }
@@ -169,20 +169,20 @@ attributes #7 = { nounwind }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "constructors.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/aggressive_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "f", linkageName: "_Z1fP6Vector", scope: !1, file: !1, line: 14, type: !9, isLocal: false, isDefinition: true, scopeLine: 14, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "f", linkageName: "_Z1fP6Vector", scope: !1, file: !1, line: 14, type: !9, isLocal: false, isDefinition: true, scopeLine: 14, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !12}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !12 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !13, size: 64)
-!13 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "Vector", file: !1, line: 5, size: 96, elements: !14, identifier: "_ZTS6Vector")
+!13 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "Vector", file: !1, line: 5, size: 96, flags: DIFlagTypePassByValue, elements: !14, identifier: "_ZTS6Vector")
 !14 = !{!15, !16, !17, !18}
 !15 = !DIDerivedType(tag: DW_TAG_member, name: "_x", scope: !13, file: !1, line: 7, baseType: !11, size: 32, flags: DIFlagPublic)
 !16 = !DIDerivedType(tag: DW_TAG_member, name: "_y", scope: !13, file: !1, line: 8, baseType: !11, size: 32, offset: 32, flags: DIFlagPublic)
@@ -195,11 +195,11 @@ attributes #7 = { nounwind }
 !23 = !DILocation(line: 14, column: 15, scope: !8)
 !24 = !DILocation(line: 15, column: 13, scope: !8)
 !25 = !DILocation(line: 15, column: 3, scope: !8)
-!26 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 30, type: !27, isLocal: false, isDefinition: true, scopeLine: 30, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!26 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 30, type: !27, isLocal: false, isDefinition: true, scopeLine: 30, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !27 = !DISubroutineType(types: !28)
 !28 = !{!11}
 !29 = !DILocalVariable(name: "master", scope: !26, file: !1, line: 31, type: !30)
-!30 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "Master", file: !1, line: 18, size: 128, elements: !31, identifier: "_ZTS6Master")
+!30 = distinct !DICompositeType(tag: DW_TAG_class_type, name: "Master", file: !1, line: 18, size: 128, flags: DIFlagTypePassByValue, elements: !31, identifier: "_ZTS6Master")
 !31 = !{!32, !33, !35}
 !32 = !DIDerivedType(tag: DW_TAG_member, name: "_v", scope: !30, file: !1, line: 20, baseType: !12, size: 64, flags: DIFlagPublic)
 !33 = !DIDerivedType(tag: DW_TAG_member, name: "_p", scope: !30, file: !1, line: 21, baseType: !34, size: 64, offset: 64, flags: DIFlagPublic)
@@ -210,13 +210,13 @@ attributes #7 = { nounwind }
 !38 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !30, size: 64, flags: DIFlagArtificial | DIFlagObjectPointer)
 !39 = !DILocation(line: 31, column: 10, scope: !26)
 !40 = !DILocation(line: 32, column: 3, scope: !26)
-!41 = distinct !DISubprogram(name: "Master", linkageName: "_ZN6MasterC1Ev", scope: !30, file: !1, line: 23, type: !36, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, variables: !2)
+!41 = distinct !DISubprogram(name: "Master", linkageName: "_ZN6MasterC1Ev", scope: !30, file: !1, line: 23, type: !36, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, retainedNodes: !2)
 !42 = !DILocalVariable(name: "this", arg: 1, scope: !41, type: !43, flags: DIFlagArtificial | DIFlagObjectPointer)
 !43 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !30, size: 64)
 !44 = !DILocation(line: 0, scope: !41)
 !45 = !DILocation(line: 23, column: 12, scope: !41)
 !46 = !DILocation(line: 27, column: 3, scope: !41)
-!47 = distinct !DISubprogram(name: "Master", linkageName: "_ZN6MasterC2Ev", scope: !30, file: !1, line: 23, type: !36, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, variables: !2)
+!47 = distinct !DISubprogram(name: "Master", linkageName: "_ZN6MasterC2Ev", scope: !30, file: !1, line: 23, type: !36, isLocal: false, isDefinition: true, scopeLine: 23, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, retainedNodes: !2)
 !48 = !DILocalVariable(name: "this", arg: 1, scope: !47, type: !43, flags: DIFlagArtificial | DIFlagObjectPointer)
 !49 = !DILocation(line: 0, scope: !47)
 !50 = !DILocation(line: 24, column: 10, scope: !51)
@@ -230,7 +230,7 @@ attributes #7 = { nounwind }
 !58 = !DILocation(line: 26, column: 25, scope: !51)
 !59 = !DILocation(line: 26, column: 5, scope: !51)
 !60 = !DILocation(line: 27, column: 3, scope: !47)
-!61 = distinct !DISubprogram(name: "Vector", linkageName: "_ZN6VectorC1Eiii", scope: !13, file: !1, line: 11, type: !19, isLocal: false, isDefinition: true, scopeLine: 11, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !18, variables: !2)
+!61 = distinct !DISubprogram(name: "Vector", linkageName: "_ZN6VectorC1Eiii", scope: !13, file: !1, line: 11, type: !19, isLocal: false, isDefinition: true, scopeLine: 11, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !18, retainedNodes: !2)
 !62 = !DILocalVariable(name: "this", arg: 1, scope: !61, type: !12, flags: DIFlagArtificial | DIFlagObjectPointer)
 !63 = !DILocation(line: 0, scope: !61)
 !64 = !DILocalVariable(name: "x", arg: 2, scope: !61, file: !1, line: 11, type: !11)
@@ -241,7 +241,7 @@ attributes #7 = { nounwind }
 !69 = !DILocation(line: 11, column: 28, scope: !61)
 !70 = !DILocation(line: 11, column: 62, scope: !61)
 !71 = !DILocation(line: 11, column: 63, scope: !61)
-!72 = distinct !DISubprogram(name: "Vector", linkageName: "_ZN6VectorC2Eiii", scope: !13, file: !1, line: 11, type: !19, isLocal: false, isDefinition: true, scopeLine: 11, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !18, variables: !2)
+!72 = distinct !DISubprogram(name: "Vector", linkageName: "_ZN6VectorC2Eiii", scope: !13, file: !1, line: 11, type: !19, isLocal: false, isDefinition: true, scopeLine: 11, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !18, retainedNodes: !2)
 !73 = !DILocalVariable(name: "this", arg: 1, scope: !72, type: !12, flags: DIFlagArtificial | DIFlagObjectPointer)
 !74 = !DILocation(line: 0, scope: !72)
 !75 = !DILocalVariable(name: "x", arg: 2, scope: !72, file: !1, line: 11, type: !11)

@@ -103,18 +103,30 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
     // Check for llvm.dbg.declare and llvm.dbg.addr
     llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
         llvm::FindDbgAddrUses(alloca);
+    auto dbg_addr =
+        std::find_if(dbg_addrs.begin(),
+                     dbg_addrs.end(),
+                     [](llvm::DbgInfoIntrinsic* dbg) {
+                       return dbg->getExpression()->getNumElements() == 0;
+                     });
 
-    if (!dbg_addrs.empty()) {
-      llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
+    if (dbg_addr != dbg_addrs.end()) {
+      llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
       return {{"name", di_var->getName()}};
     }
 
     // Check for llvm.dbg.value
     llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
     llvm::findDbgValues(dbg_values, value);
+    auto dbg_value =
+        std::find_if(dbg_values.begin(),
+                     dbg_values.end(),
+                     [](llvm::DbgValueInst* dbg) {
+                       return dbg->getExpression()->getNumElements() == 0;
+                     });
 
-    if (!dbg_values.empty()) {
-      llvm::DILocalVariable* di_var = dbg_values.front()->getVariable();
+    if (dbg_value != dbg_values.end()) {
+      llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
       return {{"name", di_var->getName()}};
     }
 

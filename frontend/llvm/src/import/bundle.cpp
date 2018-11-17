@@ -298,6 +298,7 @@ ar::Function* BundleImporter::translate_intrinsic_function(
              id == llvm::Intrinsic::fabs || id == llvm::Intrinsic::floor ||
              id == llvm::Intrinsic::ceil || id == llvm::Intrinsic::trunc ||
              id == llvm::Intrinsic::rint || id == llvm::Intrinsic::round ||
+             id == llvm::Intrinsic::minnum || id == llvm::Intrinsic::maxnum ||
              id == llvm::Intrinsic::bswap ||
              id == llvm::Intrinsic::objectsize ||
              id == llvm::Intrinsic::returnaddress ||
@@ -310,9 +311,9 @@ ar::Function* BundleImporter::translate_intrinsic_function(
                       fun->getName().str());
   }
 
-  // sanity check (skip for memcpy and memmove)
+  // sanity check (skip for memcpy, memmove and memset)
   if (id != llvm::Intrinsic::memcpy && id != llvm::Intrinsic::memmove &&
-      ar_fun != nullptr &&
+      id != llvm::Intrinsic::memset && ar_fun != nullptr &&
       !_ctx.type_imp->match_extern_function_type(fun->getFunctionType(),
                                                  ar_fun->type())) {
     std::ostringstream buf;

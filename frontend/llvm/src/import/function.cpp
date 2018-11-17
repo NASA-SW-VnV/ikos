@@ -493,8 +493,8 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
-                                       memcpy->getAlignment(),
-                                       memcpy->getAlignment(),
+                                       memcpy->getParamAlignment(0),
+                                       memcpy->getParamAlignment(1),
                                        memcpy->isVolatile());
     stmt->set_frontend< llvm::Value >(memcpy);
     bb_translation->add_statement(std::move(stmt));
@@ -514,8 +514,8 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
-                                       memmove->getAlignment(),
-                                       memmove->getAlignment(),
+                                       memmove->getParamAlignment(0),
+                                       memmove->getParamAlignment(1),
                                        memmove->isVolatile());
     stmt->set_frontend< llvm::Value >(memmove);
     bb_translation->add_statement(std::move(stmt));
@@ -534,7 +534,7 @@ void FunctionImporter::translate_intrinsic_call(
                                       dest,
                                       value,
                                       length,
-                                      memset->getAlignment(),
+                                      memset->getDestAlignment(),
                                       memset->isVolatile());
     stmt->set_frontend< llvm::Value >(memset);
     bb_translation->add_statement(std::move(stmt));
@@ -1728,9 +1728,15 @@ ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
   if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
     llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
         llvm::FindDbgAddrUses(alloca);
+    auto dbg_addr =
+        std::find_if(dbg_addrs.begin(),
+                     dbg_addrs.end(),
+                     [](llvm::DbgInfoIntrinsic* dbg) {
+                       return dbg->getExpression()->getNumElements() == 0;
+                     });
 
-    if (!dbg_addrs.empty()) {
-      llvm::DILocalVariable* di_var = dbg_addrs.front()->getVariable();
+    if (dbg_addr != dbg_addrs.end()) {
+      llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
       // Aggressive optimizations can mess debug information.
@@ -1754,9 +1760,15 @@ ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
   // Check for llvm.dbg.value
   llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
   llvm::findDbgValues(dbg_values, value);
+  auto dbg_value =
+      std::find_if(dbg_values.begin(),
+                   dbg_values.end(),
+                   [](llvm::DbgValueInst* dbg) {
+                     return dbg->getExpression()->getNumElements() == 0;
+                   });
 
-  if (!dbg_values.empty()) {
-    llvm::DILocalVariable* di_var = dbg_values.front()->getVariable();
+  if (dbg_value != dbg_values.end()) {
+    llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
     auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
     if (!this->_allow_debug_info_mismatch) {

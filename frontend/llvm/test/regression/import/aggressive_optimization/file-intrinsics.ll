@@ -75,7 +75,7 @@ define i32 @main() local_unnamed_addr #0 !dbg !8 {
   %8 = call i32 @fgetc(%struct.__sFILE* %5) #3, !dbg !85
   %9 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.2, i64 0, i64 0, !dbg !86
   %10 = call i32 @"\01_fputs"(i8* %9, %struct.__sFILE* %5) #3, !dbg !86
-  call void @llvm.dbg.value(metadata i32* %2, metadata !87, metadata !DIExpression()), !dbg !88
+  call void @llvm.dbg.value(metadata i32* %2, metadata !87, metadata !DIExpression(DW_OP_deref)), !dbg !88
   %11 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i64 0, i64 0, !dbg !89
   %12 = call i32 (%struct.__sFILE*, i8*, ...) @fscanf(%struct.__sFILE* %5, i8* %11, i32* nonnull %2) #3, !dbg !89
   %13 = call i32 @fflush(%struct.__sFILE* %5) #3, !dbg !90
@@ -124,15 +124,15 @@ attributes #3 = { nounwind }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "file-intrinsics.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/aggressive_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 3, type: !9, isLocal: false, isDefinition: true, scopeLine: 3, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 3, type: !9, isLocal: false, isDefinition: true, scopeLine: 3, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)

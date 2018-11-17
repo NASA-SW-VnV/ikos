@@ -22,39 +22,39 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
   br label %7, !dbg !31
 
 ; <label>:7:                                      ; preds = %20, %2
-  %.0 = phi i32 [ 0, %2 ], [ %21, %20 ]
+  %.0 = phi i32 [ 0, %2 ], [ %21, %20 ], !dbg !32
   call void @llvm.dbg.value(metadata i32 %.0, metadata !19, metadata !DIExpression()), !dbg !20
-  %8 = icmp slt i32 %.0, 10, !dbg !32
-  br i1 %8, label %9, label %22, !dbg !35
+  %8 = icmp slt i32 %.0, 10, !dbg !35
+  br i1 %8, label %9, label %22, !dbg !36
 
 ; <label>:9:                                      ; preds = %7
-  %10 = trunc i8 %6 to i1, !dbg !36
-  br i1 %10, label %11, label %15, !dbg !39
+  %10 = trunc i8 %6 to i1, !dbg !37
+  br i1 %10, label %11, label %15, !dbg !40
 
 ; <label>:11:                                     ; preds = %9
-  %12 = xor i32 %.0, 2, !dbg !40
-  %13 = sext i32 %.0 to i64, !dbg !41
-  %14 = getelementptr inbounds [10 x i32], [10 x i32]* %3, i64 0, i64 %13, !dbg !41
-  store i32 %12, i32* %14, align 4, !dbg !42
-  br label %19, !dbg !41
+  %12 = xor i32 %.0, 2, !dbg !41
+  %13 = sext i32 %.0 to i64, !dbg !42
+  %14 = getelementptr inbounds [10 x i32], [10 x i32]* %3, i64 0, i64 %13, !dbg !42
+  store i32 %12, i32* %14, align 4, !dbg !43
+  br label %19, !dbg !42
 
 ; <label>:15:                                     ; preds = %9
-  %16 = mul nsw i32 %.0, 2, !dbg !43
-  %17 = sext i32 %.0 to i64, !dbg !44
-  %18 = getelementptr inbounds [10 x i32], [10 x i32]* %3, i64 0, i64 %17, !dbg !44
-  store i32 %16, i32* %18, align 4, !dbg !45
+  %16 = mul nsw i32 %.0, 2, !dbg !44
+  %17 = sext i32 %.0 to i64, !dbg !45
+  %18 = getelementptr inbounds [10 x i32], [10 x i32]* %3, i64 0, i64 %17, !dbg !45
+  store i32 %16, i32* %18, align 4, !dbg !46
   br label %19
 
 ; <label>:19:                                     ; preds = %15, %11
-  br label %20, !dbg !46
+  br label %20, !dbg !47
 
 ; <label>:20:                                     ; preds = %19
-  %21 = add nsw i32 %.0, 1, !dbg !47
+  %21 = add nsw i32 %.0, 1, !dbg !48
   call void @llvm.dbg.value(metadata i32 %21, metadata !19, metadata !DIExpression()), !dbg !20
-  br label %7, !dbg !48, !llvm.loop !49
+  br label %7, !dbg !49, !llvm.loop !50
 
 ; <label>:22:                                     ; preds = %7
-  ret i32 0, !dbg !51
+  ret i32 0, !dbg !52
 }
 ; CHECK: define si32 @main(si32 %1, si8** %2) {
 ; CHECK: #1 !entry successors={#2, #3} {
@@ -114,15 +114,15 @@ attributes #1 = { nounwind readnone speculatable }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
 !1 = !DIFile(filename: "phi-4.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 1, type: !9, isLocal: false, isDefinition: true, scopeLine: 1, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !12}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -146,23 +146,24 @@ attributes #1 = { nounwind readnone speculatable }
 !29 = !DILocalVariable(name: "flag", scope: !8, file: !1, line: 3, type: !30)
 !30 = !DIBasicType(name: "bool", size: 8, encoding: DW_ATE_boolean)
 !31 = !DILocation(line: 4, column: 3, scope: !8)
-!32 = !DILocation(line: 4, column: 12, scope: !33)
+!32 = !DILocation(line: 0, scope: !33)
 !33 = distinct !DILexicalBlock(scope: !34, file: !1, line: 4, column: 3)
 !34 = distinct !DILexicalBlock(scope: !8, file: !1, line: 4, column: 3)
-!35 = !DILocation(line: 4, column: 3, scope: !34)
-!36 = !DILocation(line: 5, column: 9, scope: !37)
-!37 = distinct !DILexicalBlock(scope: !38, file: !1, line: 5, column: 9)
-!38 = distinct !DILexicalBlock(scope: !33, file: !1, line: 4, column: 23)
-!39 = !DILocation(line: 5, column: 9, scope: !38)
-!40 = !DILocation(line: 6, column: 16, scope: !37)
-!41 = !DILocation(line: 6, column: 7, scope: !37)
-!42 = !DILocation(line: 6, column: 12, scope: !37)
-!43 = !DILocation(line: 8, column: 16, scope: !37)
-!44 = !DILocation(line: 8, column: 7, scope: !37)
-!45 = !DILocation(line: 8, column: 12, scope: !37)
-!46 = !DILocation(line: 9, column: 3, scope: !38)
-!47 = !DILocation(line: 4, column: 19, scope: !33)
-!48 = !DILocation(line: 4, column: 3, scope: !33)
-!49 = distinct !{!49, !35, !50}
-!50 = !DILocation(line: 9, column: 3, scope: !34)
-!51 = !DILocation(line: 10, column: 3, scope: !8)
+!35 = !DILocation(line: 4, column: 12, scope: !33)
+!36 = !DILocation(line: 4, column: 3, scope: !34)
+!37 = !DILocation(line: 5, column: 9, scope: !38)
+!38 = distinct !DILexicalBlock(scope: !39, file: !1, line: 5, column: 9)
+!39 = distinct !DILexicalBlock(scope: !33, file: !1, line: 4, column: 23)
+!40 = !DILocation(line: 5, column: 9, scope: !39)
+!41 = !DILocation(line: 6, column: 16, scope: !38)
+!42 = !DILocation(line: 6, column: 7, scope: !38)
+!43 = !DILocation(line: 6, column: 12, scope: !38)
+!44 = !DILocation(line: 8, column: 16, scope: !38)
+!45 = !DILocation(line: 8, column: 7, scope: !38)
+!46 = !DILocation(line: 8, column: 12, scope: !38)
+!47 = !DILocation(line: 9, column: 3, scope: !39)
+!48 = !DILocation(line: 4, column: 19, scope: !33)
+!49 = !DILocation(line: 4, column: 3, scope: !33)
+!50 = distinct !{!50, !36, !51}
+!51 = !DILocation(line: 9, column: 3, scope: !34)
+!52 = !DILocation(line: 10, column: 3, scope: !8)

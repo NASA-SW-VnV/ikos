@@ -42,7 +42,7 @@
 
 progname=$(basename "$0")
 ikos_import="ikos-import"
-ikos_import_opts="-format=text -order-globals"
+ikos_import_opts="-format=text -order-globals -allow-dbg-mismatch"
 file_check="FileCheck"
 
 # Parse arguments

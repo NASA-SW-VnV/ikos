@@ -39,7 +39,7 @@ attributes #1 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !llvm.module.flags = !{!28, !29, !30, !31}
 !llvm.ident = !{!32}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 6.0.1 (tags/RELEASE_601/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, globals: !3)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, globals: !3)
 !1 = !DIFile(filename: "pointer-arithmetic.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/aggressive_optimization")
 !2 = !{}
 !3 = !{!4, !8, !16, !25}
@@ -58,7 +58,7 @@ attributes #1 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !16 = !DIGlobalVariableExpression(var: !17, expr: !DIExpression())
 !17 = distinct !DIGlobalVariable(name: "v", scope: !0, file: !1, line: 17, type: !18, isLocal: false, isDefinition: true)
 !18 = !DICompositeType(tag: DW_TAG_array_type, baseType: !19, size: 192, elements: !14)
-!19 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !1, line: 11, size: 96, elements: !20, identifier: "_ZTS6vector")
+!19 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !1, line: 11, size: 96, flags: DIFlagTypePassByValue | DIFlagTrivial, elements: !20, identifier: "_ZTS6vector")
 !20 = !{!21, !23, !24}
 !21 = !DIDerivedType(tag: DW_TAG_member, name: "x", scope: !19, file: !1, line: 12, baseType: !22, size: 32)
 !22 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -71,8 +71,8 @@ attributes #1 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !29 = !{i32 2, !"Debug Info Version", i32 3}
 !30 = !{i32 1, !"wchar_size", i32 4}
 !31 = !{i32 7, !"PIC Level", i32 2}
-!32 = !{!"clang version 6.0.1 (tags/RELEASE_601/final)"}
-!33 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 21, type: !34, isLocal: false, isDefinition: true, scopeLine: 21, flags: DIFlagPrototyped, isOptimized: false, unit: !0, variables: !2)
+!32 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
+!33 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 21, type: !34, isLocal: false, isDefinition: true, scopeLine: 21, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
 !34 = !DISubroutineType(types: !35)
 !35 = !{!22}
 !36 = !DILocation(line: 22, column: 10, scope: !33)
