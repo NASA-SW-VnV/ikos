@@ -455,7 +455,9 @@ public:
           return false;
         }
       }
-      default: { ikos_unreachable("unexpected operator"); }
+      default: {
+        ikos_unreachable("unexpected operator");
+      }
     }
   }
 

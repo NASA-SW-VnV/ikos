@@ -457,7 +457,9 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
     case LibcppEndCatch: {
       ret_ty = void_ty; // ret
     } break;
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   };
 
   return FunctionType::get(ctx, ret_ty, params, var_arg);

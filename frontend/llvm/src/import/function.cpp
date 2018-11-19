@@ -1078,7 +1078,9 @@ void FunctionImporter::translate_binary_operator(
         }
         sign = stmt_type->sign();
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
 
     if (stmt_type == nullptr) {
@@ -2083,7 +2085,9 @@ FunctionImporter::TypeHint FunctionImporter::
     case llvm::Instruction::FDiv: {
       return TypeHint(); // no hint, sign is irrelevant
     }
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 
   llvm::Type* llvm_type = inst->getOperand(use.getOperandNo())->getType();

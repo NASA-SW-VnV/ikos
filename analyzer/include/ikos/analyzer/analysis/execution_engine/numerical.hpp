@@ -1297,7 +1297,9 @@ public:
       case ar::BinaryOperation::FRem: {
         this->exec_float_bin_operation(lhs, left, right);
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
 
     this->_inv.normal().uninitialized().assign_initialized(lhs.var());
@@ -1432,7 +1434,9 @@ public:
       case ar::Comparison::PLE: {
         this->exec_ptr_comparison(PtrPredicate::LE, left, right);
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -1935,7 +1939,9 @@ private:
       case ar::Intrinsic::IkosCounterIncr: {
         this->exec_ikos_counter_incr(call);
       } break;
-      default: { this->exec_unknown_extern_call(call); } break;
+      default: {
+        this->exec_unknown_extern_call(call);
+      } break;
     }
 
     // TODO(marthaud): support va_start, va_end, va_copy

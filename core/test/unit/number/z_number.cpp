@@ -496,8 +496,8 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   BOOST_CHECK(
       Z(std::numeric_limits< unsigned int >::max()).fits< unsigned int >());
   BOOST_CHECK(!Z(-1).fits< unsigned int >());
-  BOOST_CHECK(!(Z(std::numeric_limits< unsigned int >::max()) +
-                1).fits< unsigned int >());
+  BOOST_CHECK(!(Z(std::numeric_limits< unsigned int >::max()) + 1)
+                   .fits< unsigned int >());
 
   BOOST_CHECK(Z(1).fits< long >());
   BOOST_CHECK(Z(-1).fits< long >());
@@ -511,8 +511,8 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   BOOST_CHECK(
       Z(std::numeric_limits< unsigned long >::max()).fits< unsigned long >());
   BOOST_CHECK(!Z(-1).fits< unsigned long >());
-  BOOST_CHECK(!(Z(std::numeric_limits< unsigned long >::max()) +
-                1).fits< unsigned long >());
+  BOOST_CHECK(!(Z(std::numeric_limits< unsigned long >::max()) + 1)
+                   .fits< unsigned long >());
 
   BOOST_CHECK(Z(1).fits< long long >());
   BOOST_CHECK(Z(-1).fits< long long >());
@@ -531,8 +531,8 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   BOOST_CHECK(!Z(-1).fits< unsigned long long >());
   BOOST_CHECK(Z(std::numeric_limits< unsigned long long >::max())
                   .fits< unsigned long long >());
-  BOOST_CHECK(!(Z(std::numeric_limits< unsigned long long >::max()) +
-                1).fits< unsigned long long >());
+  BOOST_CHECK(!(Z(std::numeric_limits< unsigned long long >::max()) + 1)
+                   .fits< unsigned long long >());
   BOOST_CHECK(
       ((Z(0x12345678) << 32) + Z(0x01234567)).fits< unsigned long long >());
   BOOST_CHECK(

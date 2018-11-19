@@ -819,7 +819,9 @@ public:
           this->set(x, apply_bin_operator(op, yi, zi));
         }
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -870,7 +872,9 @@ public:
         this->set(x,
                   apply_bin_operator(op, this->to_interval(y), IntervalT(z)));
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -906,7 +910,9 @@ public:
         this->set(x,
                   apply_bin_operator(op, IntervalT(y), this->to_interval(z)));
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 

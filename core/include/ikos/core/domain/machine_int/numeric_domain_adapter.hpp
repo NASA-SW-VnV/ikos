@@ -259,7 +259,9 @@ public:
       case MachIntUnaryOperator::Cast: {
         this->wrap(x, y, VariableTrait::bit_width(x), VariableTrait::sign(x));
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -375,7 +377,9 @@ public:
         this->_inv.apply(ZBinaryOperator::Xor, x, y, z);
         this->wrap(x);
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -495,7 +499,9 @@ public:
         this->_inv.apply(ZBinaryOperator::Xor, x, y, z.to_z_number());
         this->wrap(x);
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -607,7 +613,9 @@ public:
         this->_inv.apply(ZBinaryOperator::Xor, x, y.to_z_number(), z);
         this->wrap(x);
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -631,7 +639,9 @@ public:
       case MachIntPredicate::LE: {
         this->_inv.add(ZVariableExpression(x) <= ZVariableExpression(y));
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 
@@ -655,7 +665,9 @@ public:
       case MachIntPredicate::LE: {
         this->_inv.add(ZVariableExpression(x) <= y.to_z_number());
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 

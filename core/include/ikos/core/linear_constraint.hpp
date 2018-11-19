@@ -126,7 +126,9 @@ public:
         // x <= 0
         return this->_expr.constant() <= 0;
       }
-      default: { ikos_unreachable("unexpected kind"); }
+      default: {
+        ikos_unreachable("unexpected kind");
+      }
     }
   }
 
@@ -149,7 +151,9 @@ public:
         // x <= 0
         return this->_expr.constant() > 0;
       }
-      default: { ikos_unreachable("unexpected kind"); }
+      default: {
+        ikos_unreachable("unexpected kind");
+      }
     }
   }
 
@@ -226,7 +230,9 @@ public:
           o << " <= ";
           break;
         }
-        default: { ikos_unreachable("unexpected kind"); }
+        default: {
+          ikos_unreachable("unexpected kind");
+        }
       }
       o << c;
     }

@@ -132,7 +132,9 @@ inline MachineIntAbstractDomain make_top_machine_int_domain(
       return make_top_machine_int_var_pack_apron_ppl_linear_congruences();
     case MachineIntDomainOption::VarPackApronPkgridPolyhedraLinearCongruences:
       return make_top_machine_int_var_pack_apron_pkgrid_polyhedra_lin_cong();
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 

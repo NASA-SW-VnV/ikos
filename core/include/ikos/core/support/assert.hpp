@@ -47,6 +47,8 @@
 #undef ikos_assert_msg
 #undef ikos_unreachable
 
+// clang-format off
+
 #if defined(IKOS_DISABLE_ASSERTS) || defined(NDEBUG)
 
 # define ikos_assert(expr) static_cast< void >(0)
@@ -97,3 +99,5 @@
 # define ikos_unreachable(msg) assert(false && (msg)) // NOLINT
 
 #endif
+
+// clang-format on

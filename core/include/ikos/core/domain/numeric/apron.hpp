@@ -766,7 +766,9 @@ private:
         // XXX(marthaud): AP_TEXPR_MOD is actually a signed remainder..
         t = apron::binop_expr< Number >(AP_TEXPR_MOD, left, right);
       } break;
-      default: { ikos_unreachable("unsupported operator"); }
+      default: {
+        ikos_unreachable("unsupported operator");
+      }
     }
 
     ap_dim_t x_dim = var_dim_insert(x);

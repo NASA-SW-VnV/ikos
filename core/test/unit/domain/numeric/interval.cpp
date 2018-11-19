@@ -99,7 +99,8 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
   inv.set(y, Interval(Bound(1), Bound(2)));
   std::pair< Variable, Interval > tab2[] = {
-      {y, Interval(Bound(1), Bound(2))}, {x, Interval(1)},
+      {y, Interval(Bound(1), Bound(2))},
+      {x, Interval(1)},
   };
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab2), std::end(tab2)));

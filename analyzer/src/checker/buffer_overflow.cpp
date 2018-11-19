@@ -215,7 +215,9 @@ void BufferOverflowChecker::check(ar::Statement* stmt,
                                  call_context);
         }
       } break;
-      default: { break; }
+      default: {
+        break;
+      }
     }
   }
 }
@@ -810,11 +812,10 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_strcpy(
         out() << " - s <= ";
         dest_size->dump(out());
         out() << " - d" << std::endl;
-      } else if (!is_bottom &&
-                 this->display_strcpy_check(Result::Warning,
-                                            stmt,
-                                            dest_op,
-                                            src_op)) {
+      } else if (!is_bottom && this->display_strcpy_check(Result::Warning,
+                                                          stmt,
+                                                          dest_op,
+                                                          src_op)) {
         out() << ": ∃(s, d) ∈ src.offset x dest.offset, ";
         src_size->dump(out());
         out() << " - s > ";

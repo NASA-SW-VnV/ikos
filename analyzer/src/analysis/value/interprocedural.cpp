@@ -104,7 +104,9 @@ bool is_initialized(ar::GlobalVariable* gv, GlobalsInitPolicy policy) {
       // Do not initialize any global variable
       return false;
     }
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 

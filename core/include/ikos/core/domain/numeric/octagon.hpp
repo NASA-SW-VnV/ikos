@@ -1264,7 +1264,9 @@ private:
                                      this->to_interval(y),
                                      IntervalT(lb, ub)));
       } break;
-      default: { ikos_unreachable("invalid operation"); }
+      default: {
+        ikos_unreachable("invalid operation");
+      }
     }
 
     this->_norm_vector[i - 1] = 0;

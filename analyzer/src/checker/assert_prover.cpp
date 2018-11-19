@@ -82,7 +82,9 @@ void AssertProverChecker::check(ar::Statement* stmt,
       case ar::Intrinsic::IkosPrintValues: {
         this->exec_print_values(call, inv);
       } break;
-      default: { break; }
+      default: {
+        break;
+      }
     }
   }
 }

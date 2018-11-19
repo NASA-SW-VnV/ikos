@@ -117,7 +117,9 @@ std::string DotFormatter::armor(StringRef s) {
         buffer.push_back('\\');
         buffer.push_back(c);
       } break;
-      default: { buffer.push_back(c); }
+      default: {
+        buffer.push_back(c);
+      }
     }
   }
 

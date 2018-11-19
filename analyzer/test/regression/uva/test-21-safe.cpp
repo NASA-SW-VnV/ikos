@@ -6,7 +6,10 @@ typedef struct {
   float y;
 } pos_t;
 
-typedef struct { pos_t begin, end; } line_t;
+typedef struct {
+  pos_t begin;
+  pos_t end;
+} line_t;
 
 line_t f(float y) {
   return {{0.0, y}, {2.0, 0}};

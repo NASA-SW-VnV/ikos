@@ -97,7 +97,9 @@ void NullDereferenceChecker::check(ar::Statement* stmt,
         this->check_null(stmt, call->argument(0), inv, call_context);
         this->check_null(stmt, call->argument(1), inv, call_context);
       } break;
-      default: { break; }
+      default: {
+        break;
+      }
     }
   }
 }

@@ -130,7 +130,9 @@ inline const char* machine_int_domain_option_str(MachineIntDomainOption d) {
       return "var-pack-apron-ppl-linear-congruences";
     case MachineIntDomainOption::VarPackApronPkgridPolyhedraLinearCongruences:
       return "var-pack-apron-pkgrid-polyhedra-lin-cong";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 
@@ -174,7 +176,9 @@ inline const char* precision_str(Precision p) {
       return "ptr";
     case Precision::Memory:
       return "mem";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 
@@ -194,7 +198,9 @@ inline const char* procedural_str(Procedural proc) {
       return "interprocedural";
     case Procedural::Intraprocedural:
       return "intraprocedural";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 
@@ -236,7 +242,9 @@ inline const char* globals_init_policy_str(GlobalsInitPolicy p) {
       return "skip-strings";
     case GlobalsInitPolicy::None:
       return "none";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 

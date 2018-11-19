@@ -202,9 +202,10 @@ public:
       // Add in fields
       AddAggregateField vis(fields,
                             /*offset = */ to_machine_int(it->first, _dl),
-                            /*size = */ to_machine_int(_dl.store_size_in_bytes(
-                                                           it->second->type()),
-                                                       _dl));
+                            /*size = */
+                            to_machine_int(_dl.store_size_in_bytes(
+                                               it->second->type()),
+                                           _dl));
       value.apply_visitor(vis);
     }
 

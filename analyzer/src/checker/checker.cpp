@@ -85,7 +85,9 @@ void Checker::display_result(Result result) const {
       out() << "[" << color::bold_magenta() << "unreachable" << color::off()
             << "] ";
     } break;
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 

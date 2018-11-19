@@ -109,7 +109,8 @@ struct nonesuch {
 
 template < typename Default,
            typename AlwaysVoid,
-           template < typename... > class Op,
+           template < typename... >
+           class Op,
            typename... Args >
 struct detector {
   using value_t = std::false_type;
@@ -117,7 +118,8 @@ struct detector {
 };
 
 template < typename Default,
-           template < typename... > class Op,
+           template < typename... >
+           class Op,
            typename... Args >
 struct detector< Default, void_t< Op< Args... > >, Op, Args... > {
   using value_t = std::true_type;
@@ -138,7 +140,8 @@ struct detector< Default, void_t< Op< Args... > >, Op, Args... > {
 /// This is a backport from the library fundamentals v2, see
 /// http://en.cppreference.com/w/cpp/experimental/is_detected
 template < typename Default,
-           template < typename... > class Op,
+           template < typename... >
+           class Op,
            typename... Args >
 using detected_or = detail::detector< Default, void, Op, Args... >;
 

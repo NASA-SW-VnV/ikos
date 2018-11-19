@@ -99,7 +99,8 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
   inv.set(y, Constant(2));
   std::pair< Variable, Constant > tab2[] = {
-      {y, Constant(2)}, {x, Constant(1)},
+      {y, Constant(2)},
+      {x, Constant(1)},
   };
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab2), std::end(tab2)));

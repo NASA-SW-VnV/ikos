@@ -62,7 +62,9 @@ inline const char* result_str(Result result) {
       return "error";
     case Result::Unreachable:
       return "unreachable";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   };
 }
 

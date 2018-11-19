@@ -290,7 +290,9 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
       out() << ": undefined call pointer operand" << std::endl;
     }
     return {{
-        CheckKind::UninitializedVariable, Result::Error, {call->called()},
+        CheckKind::UninitializedVariable,
+        Result::Error,
+        {call->called()},
     }};
   }
 

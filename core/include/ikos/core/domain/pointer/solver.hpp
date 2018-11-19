@@ -575,7 +575,9 @@ private:
           this->add_pointer(load->result(), this->get_memory(addr), op);
         }
       } break;
-      default: { ikos_unreachable("unexpected kind"); }
+      default: {
+        ikos_unreachable("unexpected kind");
+      }
     }
   }
 
@@ -595,7 +597,9 @@ private:
                                 Nullity::top(),
                                 Uninitialized::top());
       }
-      default: { ikos_unreachable("unexpected kind"); }
+      default: {
+        ikos_unreachable("unexpected kind");
+      }
     }
   }
 

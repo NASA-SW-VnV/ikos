@@ -172,7 +172,9 @@ public:
         o << "T";
         break;
       }
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
   }
 

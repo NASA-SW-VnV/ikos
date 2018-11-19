@@ -100,7 +100,9 @@ inline const char* checker_long_name(CheckerName checker) {
       return "Dead Code Analysis";
     case CheckerName::DoubleFree:
       return "Double Free Analysis";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 
@@ -137,7 +139,9 @@ inline const char* checker_short_name(CheckerName checker) {
       return "dca";
     case CheckerName::DoubleFree:
       return "dfa";
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 

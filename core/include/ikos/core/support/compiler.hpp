@@ -43,6 +43,8 @@
 
 #pragma once
 
+// clang-format off
+
 /// \macro __has_builtin
 /// \brief Evaluates to 1 if the builtin is supported, otherwise 0.
 #ifndef __has_builtin
@@ -103,3 +105,5 @@
 /// \macro ikos_ignore
 /// \brief Remove unused variable warnings for the given variable
 #define ikos_ignore(VAR) static_cast< void >(VAR)
+
+// clang-format on

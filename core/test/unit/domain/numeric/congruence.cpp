@@ -100,7 +100,8 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
   inv.set(y, Congruence(ZNumber(2), ZNumber(0)));
   std::pair< Variable, Congruence > tab2[] = {
-      {y, Congruence(ZNumber(2), ZNumber(0))}, {x, Congruence(1)},
+      {y, Congruence(ZNumber(2), ZNumber(0))},
+      {x, Congruence(1)},
   };
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab2), std::end(tab2)));

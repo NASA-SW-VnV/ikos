@@ -62,10 +62,14 @@ extern "C" {
 /// always holds.
 extern void __ikos_assert(int condition) IKOS_NOEXCEPT;
 
+// clang-format off
+
 /// \macro __ikos_assume
 ///
 /// Assume that the given condition always holds.
 #define __ikos_assume(c) if (!(c)) { __builtin_unreachable(); }
+
+// clang-format on
 
 /// \brief Return a non-deterministic signed integer
 extern int __ikos_nondet_int(void) IKOS_NOEXCEPT;
