@@ -1043,7 +1043,7 @@ def memory_location_str(mem_loc):
     info = mem_loc.load_info()
 
     if mem_loc.kind == MemoryLocationKind.LOCAL:
-        if 'name' in info:
+        if info and 'name' in info:
             return "local variable '%s'" % info['name']
         else:
             return 'unnamed local variable'
