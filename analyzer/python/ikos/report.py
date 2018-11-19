@@ -658,15 +658,12 @@ class TextFormatter(Formatter):
                statement.column_or('?'),
                file=self.output)
 
-    RESULT_RAW_STR = ['safe', 'warning', 'error', 'unreachable']
-
-    RESULT_FORMATTED_STR = [bold_green('safe'),
-                            bold_yellow('warning'),
-                            bold_red('error'),
-                            bold_magenta('unreachable')]
+    RESULT_STR = ['safe', 'warning', 'error', 'unreachable']
+    RESULT_FORMATTER = [bold_green, bold_yellow, bold_red, bold_magenta]
 
     def write_status(self, result):
-        printf('%s: ' % TextFormatter.RESULT_FORMATTED_STR[result],
+        formatter = TextFormatter.RESULT_FORMATTER[result]
+        printf('%s: ' % formatter(TextFormatter.RESULT_STR[result]),
                file=self.output)
 
     def write_note(self):
@@ -678,7 +675,7 @@ class TextFormatter(Formatter):
                                    statement.column_or('?')))
 
     def status_indent(self, result):
-        return len('%s: ' % TextFormatter.RESULT_RAW_STR[result])
+        return len('%s: ' % TextFormatter.RESULT_STR[result])
 
     def write_message(self, statement, result, message):
         if '\n' in message:
