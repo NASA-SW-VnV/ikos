@@ -711,7 +711,7 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > insert_or_assign(
                     node->branching_bit())) {
       auto new_left_tree = insert_or_assign(node->left_tree(), key, value);
       if (new_left_tree == node->left_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -720,7 +720,7 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > insert_or_assign(
     } else {
       auto new_right_tree = insert_or_assign(node->right_tree(), key, value);
       if (new_right_tree == node->right_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -777,7 +777,7 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > update_or_insert(
       auto new_left_tree =
           update_or_insert(node->left_tree(), combine, key, value);
       if (new_left_tree == node->left_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -787,7 +787,7 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > update_or_insert(
       auto new_right_tree =
           update_or_insert(node->right_tree(), combine, key, value);
       if (new_right_tree == node->right_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -881,7 +881,7 @@ update_or_insert_leaf(
           combine(s_leaf->value(), t_leaf->value());
       if (new_value) {
         if (s_leaf->value() == *new_value) {
-          return s_leaf;
+          return std::move(s_leaf);
         } else if (t_leaf->value() == *new_value) {
           return t_leaf;
         } else {
@@ -908,7 +908,7 @@ update_or_insert_leaf(
       auto new_left_tree =
           update_or_insert_leaf(s_node->left_tree(), t_leaf, combine);
       if (new_left_tree == s_node->left_tree()) {
-        return s_node;
+        return std::move(s_node);
       }
       return make_node(s_node->prefix(),
                        s_node->branching_bit(),
@@ -918,7 +918,7 @@ update_or_insert_leaf(
       auto new_right_tree =
           update_or_insert_leaf(s_node->right_tree(), t_leaf, combine);
       if (new_right_tree == s_node->right_tree()) {
-        return s_node;
+        return std::move(s_node);
       }
       return make_node(s_node->prefix(),
                        s_node->branching_bit(),
@@ -957,7 +957,7 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > erase(
                     node->branching_bit())) {
       auto new_left_tree = erase(node->left_tree(), key);
       if (new_left_tree == node->left_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -966,7 +966,7 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > erase(
     } else {
       auto new_right_tree = erase(node->right_tree(), key);
       if (new_right_tree == node->right_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -1119,9 +1119,9 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > intersect(
           combine(s_leaf->value(), t_leaf->value());
       if (new_value) {
         if (s_leaf->value() == *new_value) {
-          return s_leaf;
+          return std::move(s_leaf);
         } else if (t_leaf->value() == *new_value) {
-          return t_leaf;
+          return std::move(t_leaf);
         } else {
           return std::make_shared<
               const PatriciaTreeLeaf< Key, Value > >(s_leaf->key(), *new_value);
@@ -1139,9 +1139,9 @@ inline std::shared_ptr< const PatriciaTree< Key, Value > > intersect(
           combine(s_leaf->value(), t_leaf->value());
       if (new_value) {
         if (s_leaf->value() == *new_value) {
-          return s_leaf;
+          return std::move(s_leaf);
         } else if (t_leaf->value() == *new_value) {
-          return t_leaf;
+          return std::move(t_leaf);
         } else {
           return std::make_shared<
               const PatriciaTreeLeaf< Key, Value > >(t_leaf->key(), *new_value);

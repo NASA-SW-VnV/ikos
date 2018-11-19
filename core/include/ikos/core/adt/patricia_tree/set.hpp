@@ -541,7 +541,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > insert(
                     node->branching_bit())) {
       auto new_left_tree = insert(node->left_tree(), key);
       if (new_left_tree == node->left_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -550,7 +550,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > insert(
     } else {
       auto new_right_tree = insert(node->right_tree(), key);
       if (new_right_tree == node->right_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -579,7 +579,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > insert_leaf(
   if (s->is_leaf()) {
     auto s_leaf = std::static_pointer_cast< const PatriciaTreeLeaf< Key > >(s);
     if (s_leaf->key() == t_leaf->key()) {
-      return s_leaf;
+      return std::move(s_leaf);
     }
     return join_trees< Key >(IndexableTraits< Key >::index(s_leaf->key()),
                              s_leaf,
@@ -594,7 +594,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > insert_leaf(
                     s_node->branching_bit())) {
       auto new_left_tree = insert_leaf(s_node->left_tree(), t_leaf);
       if (new_left_tree == s_node->left_tree()) {
-        return s_node;
+        return std::move(s_node);
       }
       return make_node(s_node->prefix(),
                        s_node->branching_bit(),
@@ -603,7 +603,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > insert_leaf(
     } else {
       auto new_right_tree = insert_leaf(s_node->right_tree(), t_leaf);
       if (new_right_tree == s_node->right_tree()) {
-        return s_node;
+        return std::move(s_node);
       }
       return make_node(s_node->prefix(),
                        s_node->branching_bit(),
@@ -639,7 +639,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > erase(
                     node->branching_bit())) {
       auto new_left_tree = erase(node->left_tree(), key);
       if (new_left_tree == node->left_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
@@ -648,7 +648,7 @@ inline std::shared_ptr< const PatriciaTree< Key > > erase(
     } else {
       auto new_right_tree = erase(node->right_tree(), key);
       if (new_right_tree == node->right_tree()) {
-        return node;
+        return std::move(node);
       }
       return make_node(node->prefix(),
                        node->branching_bit(),
