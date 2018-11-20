@@ -616,12 +616,15 @@ private:
           _uninitialized(uninitialized) {}
 
     void machine_int(const MachineInt& rhs) {
-      // Cell variables are signed integers
-      ikos_assert(MachIntVariableTrait::bit_width(_lhs) == rhs.bit_width());
-      if (rhs.sign() == Signed) {
-        _integer.assign(_lhs, rhs);
+      if (MachIntVariableTrait::bit_width(_lhs) == rhs.bit_width()) {
+        // Cell variables are signed integers
+        if (rhs.sign() == Signed) {
+          _integer.assign(_lhs, rhs);
+        } else {
+          _integer.assign(_lhs, rhs.sign_cast(Signed));
+        }
       } else {
-        _integer.assign(_lhs, rhs.sign_cast(Signed));
+        _integer.forget(_lhs);
       }
       _pointer.forget(_lhs);
       _uninitialized.assign_initialized(_lhs);
@@ -652,13 +655,16 @@ private:
     }
 
     void machine_int_var(VariableRef rhs) {
-      // Cell variables are signed integers
-      ikos_assert(MachIntVariableTrait::bit_width(_lhs) ==
-                  MachIntVariableTrait::bit_width(rhs));
-      if (MachIntVariableTrait::sign(rhs) == Signed) {
-        _integer.assign(_lhs, rhs);
+      if (MachIntVariableTrait::bit_width(_lhs) ==
+          MachIntVariableTrait::bit_width(rhs)) {
+        // Cell variables are signed integers
+        if (MachIntVariableTrait::sign(rhs) == Signed) {
+          _integer.assign(_lhs, rhs);
+        } else {
+          _integer.apply(machine_int::UnaryOperator::SignCast, _lhs, rhs);
+        }
       } else {
-        _integer.apply(machine_int::UnaryOperator::SignCast, _lhs, rhs);
+        _integer.forget(_lhs);
       }
       _pointer.forget(_lhs);
       _uninitialized.assign(_lhs, rhs);
@@ -720,15 +726,16 @@ private:
         _integer.assign(lhs,
                         MachineInt::zero(MachIntVariableTrait::bit_width(lhs),
                                          MachIntVariableTrait::sign(lhs)));
-      } else {
+      } else if (MachIntVariableTrait::bit_width(lhs) ==
+                 MachIntVariableTrait::bit_width(_rhs)) {
         // Cell variables are signed integers
-        ikos_assert(MachIntVariableTrait::bit_width(lhs) ==
-                    MachIntVariableTrait::bit_width(_rhs));
         if (MachIntVariableTrait::sign(lhs) == Signed) {
           _integer.assign(lhs, _rhs);
         } else {
           _integer.apply(machine_int::UnaryOperator::SignCast, lhs, _rhs);
         }
+      } else {
+        _integer.forget(lhs);
       }
       _uninitialized.assign(lhs, _rhs);
     }
