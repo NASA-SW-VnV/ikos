@@ -573,8 +573,8 @@ def attach_bitcode_path(obj_path, bc_path):
     f.close()
 
     # add a section in the object file
-    # TODO: use llvm-objcopy (available in LLVM >= 6.0)
     if sys.platform.startswith('darwin'):
+        # TODO: use llvm-objcopy when they start supporting Mach-O
         cmd = ['ld',
                '-r',
                '-keep_private_externs',
@@ -584,13 +584,16 @@ def attach_bitcode_path(obj_path, bc_path):
                DARWIN_SECTION_NAME, f.name,
                '-o',
                obj_path]
-    else:
-        cmd = ['objcopy',
+        run(cmd)
+    elif sys.platform.startswith('freebsd') or sys.platform.startswith('linux'):
+        cmd = ['llvm-objcopy',
                '--add-section',
                '%s=%s' % (ELF_SECTION_NAME, f.name),
                obj_path]
+        run(cmd, executable=settings.llvm_objcopy())
+    else:
+        assert False, 'unsupported platform'
 
-    run(cmd)
     os.remove(f.name)
 
 
@@ -603,6 +606,8 @@ def extract_bitcode(exe_path, bc_path):
         cmd.append('-section=%s' % ELF_SECTION_NAME)
     elif sys.platform.startswith('darwin'):
         cmd.append('-section=%s' % DARWIN_SECTION_NAME)
+    else:
+        assert False, 'unsupported platform'
     cmd.append(exe_path)
 
     output = check_output(cmd, executable=settings.llvm_objdump())
