@@ -79,7 +79,7 @@ gcc_mpfr_install_version="3.1.4"
 gcc_mpc_install_version="1.0.3"
 gcc_isl_install_version="0.18"
 cmake_required_version="3.4.3"
-cmake_install_version="3.12.3"
+cmake_install_version="3.13.0"
 zlib_install_version="1.2.11"
 ncurses_install_version="6.1"
 libedit_install_version="2.11"
@@ -87,14 +87,14 @@ gmp_required_version="4.3.1"
 gmp_install_version="6.1.2"
 m4_install_version="1.4.18"
 sqlite_required_version="3.6.20"
-sqlite_install_version="3.25.2"
+sqlite_install_version="3.25.3"
 boost_required_version="1.55.0"
 boost_install_version="1.68.0"
 python2_required_version="2.7.3"
 python3_required_version="3.3"
 python_install_version="2.7.15"
-llvm_required_version="4"
-llvm_install_version="4.0.1"
+llvm_required_version="7"
+llvm_install_version="7.0.0"
 
 # Default parameters
 install_dir=""
@@ -1560,7 +1560,7 @@ if (( ! found_sqlite )); then
     else
         progress "Installing ${cgreen}sqlite $sqlite_install_version"
 
-        download_extract "https://sqlite.org/2018/sqlite-autoconf-3250200.tar.gz" \
+        download_extract "https://sqlite.org/2018/sqlite-autoconf-3250300.tar.gz" \
             "$build_dir/sqlite-$sqlite_install_version"
 
         cd "$build_dir/sqlite-$sqlite_install_version"
@@ -1849,109 +1849,10 @@ if (( ! found_llvm )); then
             "$build_dir/llvm-$llvm_install_version/tools/clang"
         download_extract "http://llvm.org/releases/$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/projects/compiler-rt"
+        download_extract "http://llvm.org/releases/$llvm_install_version/libcxx-$llvm_install_version.src.tar.xz" \
+            "$build_dir/llvm-$llvm_install_version/projects/libcxx"
 
         cd "$build_dir/llvm-$llvm_install_version"
-
-        cat > PR37486-Fix-lli-fails-to-build-with-gcc-8.patch <<EOF
---- include/llvm/ExecutionEngine/Orc/OrcRemoteTargetClient.h
-+++ include/llvm/ExecutionEngine/Orc/OrcRemoteTargetClient.h
-@@ -687,8 +687,8 @@ private:
- 
-   uint32_t getTrampolineSize() const { return RemoteTrampolineSize; }
- 
--  Expected<std::vector<char>> readMem(char *Dst, JITTargetAddress Src,
--                                      uint64_t Size) {
-+  Expected<std::vector<uint8_t>> readMem(char *Dst, JITTargetAddress Src,
-+                                         uint64_t Size) {
-     // Check for an 'out-of-band' error, e.g. from an MM destructor.
-     if (ExistingError)
-       return std::move(ExistingError);
-EOF
-
-        cat > D35246-Fix-sanitizer-build-against-latest-glibc.patch <<EOF
-Index: lib/sanitizer_common/sanitizer_linux.h
-===================================================================
---- lib/sanitizer_common/sanitizer_linux.h
-+++ lib/sanitizer_common/sanitizer_linux.h
-@@ -21,17 +21,15 @@
- #include "sanitizer_platform_limits_posix.h"
- 
- struct link_map;  // Opaque type returned by dlopen().
--struct sigaltstack;
- 
- namespace __sanitizer {
- // Dirent structure for getdents(). Note that this structure is different from
- // the one in <dirent.h>, which is used by readdir().
- struct linux_dirent;
- 
- // Syscall wrappers.
- uptr internal_getdents(fd_t fd, struct linux_dirent *dirp, unsigned int count);
--uptr internal_sigaltstack(const struct sigaltstack* ss,
--                          struct sigaltstack* oss);
-+uptr internal_sigaltstack(const void* ss, void* oss);
- uptr internal_sigprocmask(int how, __sanitizer_sigset_t *set,
-     __sanitizer_sigset_t *oldset);
- 
-Index: lib/sanitizer_common/sanitizer_linux.cc
-===================================================================
---- lib/sanitizer_common/sanitizer_linux.cc
-+++ lib/sanitizer_common/sanitizer_linux.cc
-@@ -607,8 +607,7 @@
- }
- #endif
- 
--uptr internal_sigaltstack(const struct sigaltstack *ss,
--                         struct sigaltstack *oss) {
-+uptr internal_sigaltstack(const void *ss, void *oss) {
-   return internal_syscall(SYSCALL(sigaltstack), (uptr)ss, (uptr)oss);
- }
- 
-Index: lib/sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cc
-===================================================================
---- lib/sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cc
-+++ lib/sanitizer_common/sanitizer_stoptheworld_linux_libcdep.cc
-@@ -275,7 +275,7 @@
- 
-   // Alternate stack for signal handling.
-   InternalScopedBuffer<char> handler_stack_memory(kHandlerStackSize);
--  struct sigaltstack handler_stack;
-+  stack_t handler_stack;
-   internal_memset(&handler_stack, 0, sizeof(handler_stack));
-   handler_stack.ss_sp = handler_stack_memory.data();
-   handler_stack.ss_size = kHandlerStackSize;
-Index: lib/tsan/rtl/tsan_platform_linux.cc
-===================================================================
---- lib/tsan/rtl/tsan_platform_linux.cc
-+++ lib/tsan/rtl/tsan_platform_linux.cc
-@@ -289,7 +289,7 @@
- int ExtractResolvFDs(void *state, int *fds, int nfd) {
- #if SANITIZER_LINUX && !SANITIZER_ANDROID
-   int cnt = 0;
--  __res_state *statp = (__res_state*)state;
-+  struct __res_state *statp = (struct __res_state*)state;
-   for (int i = 0; i < MAXNS && cnt < nfd; i++) {
-     if (statp->_u._ext.nsaddrs[i] && statp->_u._ext.nssocks[i] != -1)
-       fds[cnt++] = statp->_u._ext.nssocks[i];
-Index: lib/esan/esan_sideline_linux.cpp
-===================================================================
---- lib/esan/esan_sideline_linux.cpp
-+++ lib/esan/esan_sideline_linux.cpp
-@@ -70,7 +70,7 @@ int SidelineThread::runSideline(void *Arg) {
-
-   // Set up a signal handler on an alternate stack for safety.
-   InternalScopedBuffer<char> StackMap(SigAltStackSize);
--  struct sigaltstack SigAltStack;
-+  stack_t SigAltStack;
-   SigAltStack.ss_sp = StackMap.data();
-   SigAltStack.ss_size = SigAltStackSize;
-   SigAltStack.ss_flags = 0;
-EOF
-
-        progress "Applying patch PR37486-Fix-lli-fails-to-build-with-gcc-8.patch"
-        run_log_quiet patch -p0 < PR37486-Fix-lli-fails-to-build-with-gcc-8.patch || error_patch llvm
-
-        progress "Applying patch D35246-Fix-sanitizer-build-against-latest-glibc.patch"
-        run_log_quiet patch -p0 -d projects/compiler-rt <  D35246-Fix-sanitizer-build-against-latest-glibc.patch || error_patch llvm
 
         mkdir build
         cd build
@@ -1980,9 +1881,9 @@ EOF
 
         progress_run cmake \
             -DCMAKE_INSTALL_PREFIX="$install_dir/llvm-$llvm_install_version" \
+            -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_TARGETS_TO_BUILD="$llvm_targets" \
             -DLLVM_INSTALL_UTILS=ON \
-            -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_ENABLE_EH=ON \
             -DLLVM_ENABLE_CXX1Y=ON \
