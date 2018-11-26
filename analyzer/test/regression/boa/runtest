@@ -103,9 +103,11 @@ if __name__ == '__main__':
     t.add(Test('test-14.c', 'test-14.c', 'boa', 'safe',
                expected='unsafe', line_checks=[(9, 'ok', 'warning')]))
     t.add(Test('test-15.c', 'test-15.c (interval)', 'boa', 'safe',
-               expected='error', line_checks=[(13, 'unreachable', 'error')],
+               expected='error',
+               line_checks=[(13, 'unreachable', 'error')],
                domain='interval'))
     t.add(Test('test-15.c', 'test-15.c (interval-congruence)', 'boa', 'safe',
+               expected='safe',
                line_checks=[(13, 'unreachable')],
                domain='interval-congruence'))
     t.add(Test('test-16.c', 'test-16.c', 'boa', 'safe'))
@@ -124,6 +126,7 @@ if __name__ == '__main__':
                expected='unsafe',
                domain='interval'))
     t.add(Test('test-19b.c', 'test-19b.c (gauge-interval-congruence)', 'boa', 'safe',
+               expected='safe',
                domain='gauge-interval-congruence'))
     t.add(Test('test-20.c', 'test-20.c', 'boa', 'safe', expected='unsafe',
                line_checks=[(16, 'ok', 'warning'),
@@ -202,5 +205,13 @@ if __name__ == '__main__':
                             (23, 'warning'),
                             (27, 'warning')]))
     t.add(Test('test-52.c', 'test-52.c', 'boa', 'error'))
-    t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe'))
+    t.add(Test('test-53.c', 'test-53.c (interval)', 'boa', 'safe',
+               expected='unsafe',
+               domain='interval'))
+    t.add(Test('test-53.c', 'test-53.c (gauge-interval-congruence)', 'boa', 'safe',
+               expected='safe',
+               domain='gauge-interval-congruence'))
+    t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
+               expected='unsafe',
+               line_checks=[(20, 'ok', 'warning')]))
     t.run()

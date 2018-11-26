@@ -347,11 +347,8 @@ public:
     } else if (other.is_bottom()) {
       return;
     } else {
-      // Note: We use join_with() instead of widen_with() for pointer sets.
-      // This improves the precision and the fixpoint still converges because
-      // of the widening on the pointer domain.
       this->_cells.widen_with(other._cells);
-      this->_pointer_sets.join_with(other._pointer_sets);
+      this->_pointer_sets.widen_with(other._pointer_sets);
       this->_pointer.widen_with(other._pointer);
       this->_uninitialized.widen_with(other._uninitialized);
       this->_lifetime.widen_with(other._lifetime);
