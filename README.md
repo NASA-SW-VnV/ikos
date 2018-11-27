@@ -57,7 +57,7 @@ Note: You will need CMake >= 3.4.3 if you build LLVM from source
 
 Most of them can be installed using your package manager.
 
-Installation instructions for Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat and Ubuntu are available in the [doc](doc) directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in [doc/INSTALL_ROOTLESS.md](doc/INSTALL_ROOTLESS.md).
+Installation instructions for Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat, Ubuntu and Windows are available in the [doc](doc) directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in [doc/INSTALL_ROOTLESS.md](doc/INSTALL_ROOTLESS.md).
 
 Once you have all the required dependencies, move to the next section.
 

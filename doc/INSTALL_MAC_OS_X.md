@@ -37,7 +37,7 @@ $ brew install cmake gmp boost llvm@4
 When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
 
 ```
-cmake \
+$ cmake \
     -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
     -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm@4/bin/llvm-config" \
     ..
