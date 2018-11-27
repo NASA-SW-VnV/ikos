@@ -63,6 +63,7 @@ if (NOT LLVM_FOUND)
     if (HAD_ERROR)
       message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
     endif()
+    file(TO_CMAKE_PATH "${LLVM_ROOT}" LLVM_ROOT)
 
     execute_process(
       COMMAND ${LLVM_CONFIG_EXECUTABLE} --includedir
@@ -73,6 +74,7 @@ if (NOT LLVM_FOUND)
     if (HAD_ERROR)
       message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
     endif()
+    file(TO_CMAKE_PATH "${LLVM_INCLUDE_DIR}" LLVM_INCLUDE_DIR)
 
     execute_process(
       COMMAND ${LLVM_CONFIG_EXECUTABLE} --bindir
@@ -83,6 +85,7 @@ if (NOT LLVM_FOUND)
     if (HAD_ERROR)
       message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
     endif()
+    file(TO_CMAKE_PATH "${LLVM_TOOLS_BINARY_DIR}" LLVM_TOOLS_BINARY_DIR)
 
     execute_process(
       COMMAND ${LLVM_CONFIG_EXECUTABLE} --libdir
@@ -93,6 +96,7 @@ if (NOT LLVM_FOUND)
     if (HAD_ERROR)
       message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
     endif()
+    file(TO_CMAKE_PATH "${LLVM_LIBRARY_DIR}" LLVM_LIBRARY_DIR)
 
     execute_process(
       COMMAND ${LLVM_CONFIG_EXECUTABLE} --cppflags
@@ -133,6 +137,7 @@ if (NOT LLVM_FOUND)
     if (HAD_ERROR)
       message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
     endif()
+    file(TO_CMAKE_PATH "${LLVM_OBJ_ROOT}" LLVM_OBJ_ROOT)
 
     execute_process(
       COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core bitreader asmparser analysis
@@ -149,6 +154,7 @@ if (NOT LLVM_FOUND)
       OUTPUT_VARIABLE LLVM_CMAKE_DIR
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    file(TO_CMAKE_PATH "${LLVM_CMAKE_DIR}" LLVM_CMAKE_DIR)
   endif()
 
   include(FindPackageHandleStandardArgs)

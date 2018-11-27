@@ -178,9 +178,9 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
 
   // libc++ functions
   if (this->_enable_libcpp) {
-    if (name == "_Znwm") {
+    if (name == "_Znwm" || name == "_Znwy") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcppNew);
-    } else if (name == "_Znam") {
+    } else if (name == "_Znam" || name == "_Znay") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcppNewArray);
     } else if (name == "_ZdlPv") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcppDelete);

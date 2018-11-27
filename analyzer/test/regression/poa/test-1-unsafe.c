@@ -9,6 +9,6 @@ extern uint64_t f(void);
 
 int main() {
   int c[40];
-  uint64_t a = ULONG_MAX / 4 + 1;
+  uint64_t a = UINT64_MAX / 4 + 1;
   c[a] = 5;
 }

@@ -635,12 +635,12 @@ static void generate_dot(ar::Bundle* bundle,
 
   if (!boost::filesystem::exists(directory)) {
     if (!boost::filesystem::create_directories(directory, err)) {
-      analyzer::log::error(directory.native() + ": " + err.message());
+      analyzer::log::error(directory.string() + ": " + err.message());
       return;
     }
   }
   if (!boost::filesystem::is_directory(directory, err)) {
-    analyzer::log::error(directory.native() + ": Not a directory");
+    analyzer::log::error(directory.string() + ": Not a directory");
     return;
   }
 
@@ -656,11 +656,11 @@ static void generate_dot(ar::Bundle* bundle,
     std::string filename = fun->name() + ".dot";
     boost::filesystem::path filepath = directory / filename;
     analyzer::log::debug("Creating " +
-                         ((directory == ".") ? filename : filepath.native()));
+                         ((directory == ".") ? filename : filepath.string()));
     boost::filesystem::ofstream output(filepath);
 
     if (!output.is_open()) {
-      analyzer::log::error(filepath.native() + ": " + strerror(errno));
+      analyzer::log::error(filepath.string() + ": " + strerror(errno));
       return;
     }
 
@@ -674,7 +674,7 @@ int main(int argc, char** argv) {
   llvm::PrettyStackTraceProgram pstp(argc, argv);
 
   // Program name
-  std::string progname = boost::filesystem::path(argv[0]).filename().native();
+  std::string progname = boost::filesystem::path(argv[0]).filename().string();
 
   // Enable debug stream buffering
   llvm::EnableDebugBuffering = true;
@@ -853,7 +853,7 @@ int main(int argc, char** argv) {
       analyzer::log::info("Generating .dot files");
       analyzer::ScopeTimerDatabase t(output_db.times,
                                      "ikos-analyzer.generate-dot");
-      generate_dot(bundle, GenerateDotDirectory);
+      generate_dot(bundle, GenerateDotDirectory.getValue());
     }
 
     // Save analysis options in the database

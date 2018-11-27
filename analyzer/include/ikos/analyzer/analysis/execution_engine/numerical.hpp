@@ -2276,8 +2276,8 @@ private:
 
   /// \brief Execute a libcpp new or new[]
   ///
-  /// operator new(unsigned long)
-  /// operator new[](unsigned long)
+  /// operator new(size_t)
+  /// operator new[](size_t)
   ///
   /// Allocates requested number of bytes. These allocation functions are called
   /// by new-expressions to allocate memory in which new object would then be

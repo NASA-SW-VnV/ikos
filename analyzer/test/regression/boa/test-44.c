@@ -1,7 +1,8 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef void* (*fun_ptr_t)(unsigned long);
+typedef void* (*fun_ptr_t)(size_t);
 
 fun_ptr_t allocator() {
   return &malloc;

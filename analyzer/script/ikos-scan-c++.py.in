@@ -46,7 +46,7 @@ import sys
 
 if __name__ == '__main__':
     # Add ../lib/python*/site-packages at the beginning of the python path
-    root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     site_pkgs = glob.glob(os.path.join(root_dir, 'lib', 'python*', 'site-packages'))
 
     if len(site_pkgs) == 1:

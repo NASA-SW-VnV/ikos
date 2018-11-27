@@ -86,7 +86,7 @@ std::string source_location_string(ar::Statement* stmt,
       (rel_path.native().size() < abs_path.native().size()) ? rel_path
                                                             : abs_path;
   std::string r;
-  r += pretty_path.native();
+  r += pretty_path.string();
   r += ':';
   r += std::to_string(loc.line());
   r += ':';

@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
   llvm::PrettyStackTraceProgram pstp(argc, argv);
 
   // Program name
-  std::string progname = boost::filesystem::path(argv[0]).filename().native();
+  std::string progname = boost::filesystem::path(argv[0]).filename().string();
 
   // Enable debug stream buffering
   llvm::EnableDebugBuffering = true;
@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
       // Default to standard output
       formatter.format(std::cout, bundle);
     } else {
-      boost::filesystem::ofstream output(OutputFilename);
+      boost::filesystem::ofstream output(OutputFilename.getValue());
 
       if (!output.is_open()) {
         llvm::errs() << progname << ": " << OutputFilename << ": "
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
     }
 
     boost::system::error_code ec;
-    boost::filesystem::path output_dir(OutputFilename);
+    boost::filesystem::path output_dir(OutputFilename.getValue());
 
     if (!boost::filesystem::exists(output_dir)) {
       if (!boost::filesystem::create_directories(output_dir, ec)) {

@@ -551,6 +551,7 @@ def link_objects(mode, parser, input_paths, output_path):
 DARWIN_SEGMENT_NAME = '__WLLVM'
 DARWIN_SECTION_NAME = '__llvm_bc'
 ELF_SECTION_NAME = '.llvm_bc'
+PE_SECTION_NAME = '.llvm_bc'
 
 
 def attach_bitcode_path(obj_path, bc_path):
@@ -591,6 +592,13 @@ def attach_bitcode_path(obj_path, bc_path):
                '%s=%s' % (ELF_SECTION_NAME, f.name),
                obj_path]
         run(cmd, executable=settings.llvm_objcopy())
+    elif sys.platform.startswith('msys'):
+        # TODO: use llvm-objcopy when they start supporting COFF/PE
+        cmd = ['objcopy',
+               '--add-section',
+               '%s=%s' % (PE_SECTION_NAME, f.name),
+               obj_path]
+        run(cmd)
     else:
         assert False, 'unsupported platform'
 
@@ -602,10 +610,12 @@ def extract_bitcode(exe_path, bc_path):
 
     # first, extract the llvm bitcode paths
     cmd = ['llvm-objdump', '-s']
-    if sys.platform.startswith('freebsd') or sys.platform.startswith('linux'):
-        cmd.append('-section=%s' % ELF_SECTION_NAME)
-    elif sys.platform.startswith('darwin'):
+    if sys.platform.startswith('darwin'):
         cmd.append('-section=%s' % DARWIN_SECTION_NAME)
+    elif sys.platform.startswith('freebsd') or sys.platform.startswith('linux'):
+        cmd.append('-section=%s' % ELF_SECTION_NAME)
+    elif sys.platform.startswith('msys'):
+        cmd.append('-section=%s' % PE_SECTION_NAME)
     else:
         assert False, 'unsupported platform'
     cmd.append(exe_path)
@@ -619,7 +629,9 @@ def extract_bitcode(exe_path, bc_path):
         for item in line.split(b' '):
             section_content += codecs.decode(item, 'hex')
 
-    bc_paths = [path.decode('utf-8') for path in section_content.splitlines()]
+    section_content = section_content.rstrip(b'\x00')
+    bc_paths = [path.strip(b'\x00').decode('utf-8')
+                for path in section_content.splitlines()]
     link_bitcodes(bc_paths, bc_path)
 
 

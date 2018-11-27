@@ -51,7 +51,7 @@ if __name__ == '__main__':
     parse_args(description='Regression tests for the pointer overflow analysis')
 
     t = TestManager(root=current_dir)
-    t.add(Test('test-1-unsafe.c', 'test-1-negative.c', 'poa', 'error'))
+    t.add(Test('test-1-unsafe.c', 'test-1-unsafe.c', 'poa', 'error'))
     t.add(Test('test-2-warnings.c', 'test-2-warnings.c', 'poa', 'unsafe'))
     t.add(Test('test-3-undefined.c', 'test-3-undefined.c', 'poa', 'error'))
     t.run()

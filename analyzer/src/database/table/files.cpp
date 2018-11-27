@@ -71,7 +71,7 @@ sqlite::DbInt64 FilesTable::insert(llvm::DIFile* file) {
 
   // Check in _path_map
   {
-    auto it = this->_path_map.find(path.native());
+    auto it = this->_path_map.find(path.string());
     if (it != this->_path_map.end()) {
       this->_di_file_map.try_emplace(file, it->second);
       return it->second;
@@ -80,11 +80,11 @@ sqlite::DbInt64 FilesTable::insert(llvm::DIFile* file) {
 
   sqlite::DbInt64 id = this->_last_insert_id++;
   this->_row << id;
-  this->_row << path.native();
+  this->_row << path.string();
   this->_row << sqlite::end_row;
 
   this->_di_file_map.try_emplace(file, id);
-  this->_path_map.try_emplace(path.native(), id);
+  this->_path_map.try_emplace(path.string(), id);
   return id;
 }
 

@@ -329,10 +329,19 @@ add_custom_target(ikos-python ALL
   DEPENDS "python/build/lib/ikos/__init__.py"
 )
 
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install
-                                \"--prefix=${CMAKE_INSTALL_PREFIX}\"
-                                \"--root=\$ENV{DESTDIR}/\"
-                              WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/python\")")
+install(CODE "
+  set(PYTHON_SETUP_INSTALL
+    \"${PYTHON_EXECUTABLE}\"
+    \"setup.py\"
+    \"install\"
+    \"--prefix=${CMAKE_INSTALL_PREFIX}\"
+  )
+  if (DEFINED ENV{DESTDIR})
+    list(APPEND PYTHON_SETUP_INSTALL \"--root=\$ENV{DESTDIR}\")
+  endif()
+  execute_process(COMMAND \${PYTHON_SETUP_INSTALL}
+                  WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/python\")
+")
 
 # python web resources
 install(DIRECTORY python/ikos/view DESTINATION share/ikos)
