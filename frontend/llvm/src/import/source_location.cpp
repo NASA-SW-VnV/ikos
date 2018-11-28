@@ -56,23 +56,20 @@ boost::filesystem::path source_path(llvm::DIFile* file) {
   ikos_assert(file != nullptr);
 
   boost::filesystem::path path;
-  llvm::StringRef filename = file->getFilename();
-  llvm::StringRef directory = file->getDirectory();
+  boost::filesystem::path filename = file->getFilename().str();
+  boost::filesystem::path directory = file->getDirectory().str();
 
-  if (filename.startswith("/")) {
-    path = filename.str();
+  if (filename.is_absolute()) {
+    path = filename;
   } else {
-    path = directory.str();
-    if (!directory.endswith("/")) {
-      path += '/';
-    }
-    path += filename.str();
+    path = directory / filename;
   }
 
   if (boost::filesystem::exists(path)) {
     path = boost::filesystem::canonical(path);
   }
 
+  path.make_preferred();
   return path;
 }
 
