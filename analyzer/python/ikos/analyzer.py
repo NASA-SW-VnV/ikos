@@ -46,7 +46,6 @@ import json
 import os
 import os.path
 import pipes
-import resource
 import shlex
 import shutil
 import signal
@@ -685,11 +684,15 @@ def ikos_analyzer(db_path, pp_path, opt):
     # input/output
     cmd += [pp_path, '-o', db_path]
 
-    # set resource limit
-    def set_limits():
-        if opt.mem > 0:
+    # set resource limit, if requested
+    if opt.mem > 0:
+        import resource  # fails on Windows
+
+        def set_limits():
             mem_bytes = opt.mem * 1024 * 1024
             resource.setrlimit(resource.RLIMIT_AS, [mem_bytes, mem_bytes])
+    else:
+        set_limits = None
 
     # called after timeout
     def kill(p):
@@ -708,11 +711,21 @@ def ikos_analyzer(db_path, pp_path, opt):
         timer.start()
 
     try:
-        pid, return_status, ru_child = os.wait4(p.pid, 0)
+        if sys.platform.startswith('win'):
+            return_status = p.wait()
+        else:
+            _, return_status = os.waitpid(p.pid, 0)
     finally:
         # kill the timer if the process has terminated already
         if timer.isAlive():
             timer.cancel()
+
+    # special case for Windows, since it does not define WIFEXITED & co.
+    if sys.platform.startswith('win'):
+        if return_status != 0:
+            raise AnalyzerError('a run-time error occured', cmd, return_status)
+        else:
+            return
 
     # if it did not terminate properly, propagate this error code
     if os.WIFEXITED(return_status) and os.WEXITSTATUS(return_status) != 0:

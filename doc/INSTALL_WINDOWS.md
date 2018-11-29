@@ -1,9 +1,9 @@
 Install IKOS dependencies on Windows
 ====================================
 
-Here are the steps to install the required dependencies of IKOS on **[Windows](https://www.microsoft.com/en-us/windows)** using **[msys2](https://www.msys2.org/)**.
+Here are the steps to install the required dependencies of IKOS on **[Windows](https://www.microsoft.com/en-us/windows)** using **[MSYS2](https://www.msys2.org/)**.
 
-First, install **msys2** by following the instructions at https://www.msys2.org/
+First, install **MSYS2** by following the instructions at https://www.msys2.org/
 
 Then, use the "MSYS2 MinGW 64-bit" terminal from the Start menu.
 
@@ -22,8 +22,8 @@ $ pacman -S \
     mingw-w64-x86_64-cmake \
     mingw-w64-x86_64-gmp \
     mingw-w64-x86_64-boost \
-    python3 \
-    python3-pygments \
+    mingw-w64-x86_64-python3 \
+    mingw-w64-x86_64-python3-pygments \
     mingw-w64-x86_64-sqlite3 \
     mingw-w64-x86_64-llvm \
     mingw-w64-x86_64-clang \

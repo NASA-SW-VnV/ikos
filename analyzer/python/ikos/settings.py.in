@@ -105,63 +105,70 @@ def is_executable(path):
 def clang():
     path = CLANG
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find clang'
+    assert is_executable(path), 'could not find clang executable'
     return path
 
 
 def opt():
-    path = os.path.join(LLVM_BIN_DIR, 'opt')
+    path = os.path.join(LLVM_BIN_DIR, 'opt@CMAKE_EXECUTABLE_SUFFIX@')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find opt'
+    assert is_executable(path), 'could not find opt executable'
     return path
 
 
 def llvm_link():
-    path = os.path.join(LLVM_BIN_DIR, 'llvm-link')
+    path = os.path.join(LLVM_BIN_DIR, 'llvm-link@CMAKE_EXECUTABLE_SUFFIX@')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find llvm-link'
+    assert is_executable(path), 'could not find llvm-link executable'
     return path
 
 
 def llvm_objdump():
-    path = os.path.join(LLVM_BIN_DIR, 'llvm-objdump')
+    path = os.path.join(LLVM_BIN_DIR, 'llvm-objdump@CMAKE_EXECUTABLE_SUFFIX@')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find llvm-objdump'
+    assert is_executable(path), 'could not find llvm-objdump executable'
     return path
 
 
 def llvm_objcopy():
-    path = os.path.join(LLVM_BIN_DIR, 'llvm-objcopy')
+    path = os.path.join(LLVM_BIN_DIR, 'llvm-objcopy@CMAKE_EXECUTABLE_SUFFIX@')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find llvm-objcopy'
+    assert is_executable(path), 'could not find llvm-objcopy executable'
     return path
 
 
 def ikos_pp():
-    path = os.path.join(BIN_DIR, 'ikos-pp')
+    path = os.path.join(BIN_DIR, 'ikos-pp@CMAKE_EXECUTABLE_SUFFIX@')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find ikos-pp'
+    assert is_executable(path), 'could not find ikos-pp executable'
     return path
 
 
 def ikos_analyzer():
-    path = os.path.join(BIN_DIR, 'ikos-analyzer')
+    path = os.path.join(BIN_DIR, 'ikos-analyzer@CMAKE_EXECUTABLE_SUFFIX@')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find ikos-analyzer'
+    assert is_executable(path), 'could not find ikos-analyzer executable'
     return path
 
 
 def ikos_scan_cc():
     path = os.path.join(BIN_DIR, 'ikos-scan-cc')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find ikos-scan-cc'
+    assert is_executable(path), 'could not find ikos-scan-cc python script'
     return path
 
 
 def ikos_scan_cxx():
     path = os.path.join(BIN_DIR, 'ikos-scan-c++')
     assert os.path.isabs(path)
-    assert is_executable(path), 'could not find ikos-scan-c++'
+    assert is_executable(path), 'could not find ikos-scan-c++ python script'
+    return path
+
+
+def ikos():
+    path = os.path.join(BIN_DIR, 'ikos')
+    assert os.path.isabs(path)
+    assert is_executable(path), 'could not find ikos python script'
     return path
 
 

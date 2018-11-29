@@ -586,13 +586,13 @@ def attach_bitcode_path(obj_path, bc_path):
                '-o',
                obj_path]
         run(cmd)
-    elif sys.platform.startswith('freebsd') or sys.platform.startswith('linux'):
+    elif sys.platform.startswith('linux') or sys.platform.startswith('freebsd'):
         cmd = ['llvm-objcopy',
                '--add-section',
                '%s=%s' % (ELF_SECTION_NAME, f.name),
                obj_path]
         run(cmd, executable=settings.llvm_objcopy())
-    elif sys.platform.startswith('msys'):
+    elif sys.platform.startswith('win'):
         # TODO: use llvm-objcopy when they start supporting COFF/PE
         cmd = ['objcopy',
                '--add-section',
@@ -612,9 +612,9 @@ def extract_bitcode(exe_path, bc_path):
     cmd = ['llvm-objdump', '-s']
     if sys.platform.startswith('darwin'):
         cmd.append('-section=%s' % DARWIN_SECTION_NAME)
-    elif sys.platform.startswith('freebsd') or sys.platform.startswith('linux'):
+    elif sys.platform.startswith('linux') or sys.platform.startswith('freebsd'):
         cmd.append('-section=%s' % ELF_SECTION_NAME)
-    elif sys.platform.startswith('msys'):
+    elif sys.platform.startswith('win'):
         cmd.append('-section=%s' % PE_SECTION_NAME)
     else:
         assert False, 'unsupported platform'
@@ -838,6 +838,12 @@ def main(argv):
         if answer in ('', 'y', 'yes'):
             cmd = ['ikos', bc_path, '-o', '%s.db' % exe_path]
             log.info('Running %s' % colors.bold(command_string(cmd)))
-            cmd += ['--color=%s' % opt.color,
-                    '--log=%s' % opt.log_level]
+
+            cmd = [sys.executable,
+                   settings.ikos(),
+                   bc_path,
+                   '-o',
+                   '%s.db' % exe_path,
+                   '--color=%s' % opt.color,
+                   '--log=%s' % opt.log_level]
             run(cmd)
