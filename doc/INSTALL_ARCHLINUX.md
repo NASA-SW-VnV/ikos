@@ -31,18 +31,7 @@ $ sudo pacman -Syu
 Now, install the following packages using your favorite **AUR** helper:
 
 ```
-$ yay -S base-devel cmake gmp boost boost-libs python python-pygments sqlite libedit llvm40 llvm40-libs clang40 apron-ppl-svn
-```
-
-Note that this may take some time.
-
-When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
-
-```
-cmake \
-    -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
-    -DLLVM_CONFIG_EXECUTABLE="/usr/bin/llvm-config-4.0" \
-    ..
+$ yay -S base-devel cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang apron-ppl-svn
 ```
 
 You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md

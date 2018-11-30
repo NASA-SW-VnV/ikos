@@ -4,13 +4,16 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.12.3
+# cmake 3.12.4
 # gmp 6.1.2
-# boost 1.68.9
-# python 3.7.0
-# sqlite 3.25.2
-# llvm 4.0.1
-# clang 4.0.1
+# mpfr 4.0.1
+# ppl 1.2
+# apron 0.9.11
+# boost 1.68.0
+# python 3.7.1
+# sqlite 3.25.3
+# llvm 7.0.0
+# clang 7.0.0
 # gcc 8.2.1
 
 # Upgrade
@@ -19,7 +22,7 @@ RUN pacman --noconfirm -Syu
 RUN pacman-db-upgrade
 
 # Install most dependencies
-RUN pacman -S --noconfirm base-devel cmake gmp boost boost-libs python python-pygments sqlite libedit
+RUN pacman -S --noconfirm base-devel cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang
 
 # Use -j$njobs when building packages
 RUN echo "MAKEFLAGS=\"-j$njobs\"" >> /etc/makepkg.conf
@@ -38,8 +41,8 @@ RUN git clone https://aur.archlinux.org/yay.git
 WORKDIR /home/yay/yay
 RUN makepkg -si --noconfirm
 
-# Install llvm 4
-RUN yay -S --noconfirm --mflags="--nocheck" llvm40 llvm40-libs clang40 apron-ppl-svn
+# Install apron
+RUN yay -S --noconfirm apron-ppl-svn
 
 # Add ikos source code
 USER root
@@ -52,7 +55,6 @@ ENV MAKEFLAGS "-j$njobs"
 RUN cmake \
         -DCMAKE_INSTALL_PREFIX="/opt/ikos" \
         -DCMAKE_BUILD_TYPE="$build_type" \
-        -DLLVM_CONFIG_EXECUTABLE="/usr/bin/llvm-config-4.0" \
         ..
 RUN make
 RUN make install
