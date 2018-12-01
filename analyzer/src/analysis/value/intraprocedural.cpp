@@ -127,14 +127,14 @@ public:
     return before;
   }
 
-  /// \brief Return true to use decreasing iterations to refine a fixpoint
-  bool refine_iteration(ar::BasicBlock* /*head*/, unsigned iteration) override {
-    if (iteration >= 2 &&
-        !machine_int_domain_option_has_narrowing(this->_machine_int_domain)) {
-      // Narrowing is not implemented for this domain, stop iterating
-      return false;
+  /// \brief Check if the decreasing iterations fixpoint is reached
+  bool is_decreasing_iterations_fixpoint(const AbstractDomain& before,
+                                         const AbstractDomain& after) override {
+    if (machine_int_domain_option_has_narrowing(this->_machine_int_domain)) {
+      return before.leq(after);
+    } else {
+      return true; // stop after the first decreasing iteration
     }
-    return true;
   }
 
   /// \brief Propagate the invariant through the basic block

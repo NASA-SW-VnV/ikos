@@ -184,26 +184,21 @@ public:
                                     AbstractValue before,
                                     AbstractValue after) {
     ikos_ignore(head);
-
     if (iteration <= 1) {
       before.join_iter_with(after);
     } else {
       before.widen_with(after);
     }
-
     return before;
   }
 
-  /// \brief Return true to use decreasing iterations to refine a fixpoint
+  /// \brief Check if the increasing iterations fixpoint is reached
   ///
-  /// By default, it returns true.
-  ///
-  /// \param head Head of the cycle
-  /// \param iteration Iteration number
-  virtual bool refine_iteration(NodeRef head, unsigned iteration) {
-    ikos_ignore(head);
-    ikos_ignore(iteration);
-    return true;
+  /// \param before Abstract value before the iteration
+  /// \param after Abstract value after the iteration
+  virtual bool is_increasing_iterations_fixpoint(const AbstractValue& before,
+                                                 const AbstractValue& after) {
+    return after.leq(before);
   }
 
   /// \brief Refine the new state after a decreasing iteration
@@ -213,8 +208,7 @@ public:
   /// This method gives the user the ability to use different narrowing
   /// strategies.
   ///
-  /// By default, it applies a meet for the first iteration, and then the
-  /// narrowing until it reaches the post fixpoint.
+  /// By default, it applies the narrowing until it reaches the post fixpoint.
   ///
   /// \param head Head of the cycle
   /// \param iteration Iteration number
@@ -225,14 +219,18 @@ public:
                                AbstractValue before,
                                AbstractValue after) {
     ikos_ignore(head);
-
-    if (iteration <= 1) {
-      before.meet_with(after);
-    } else {
-      before.narrow_with(after);
-    }
-
+    ikos_ignore(iteration);
+    before.narrow_with(after);
     return before;
+  }
+
+  /// \brief Check if the decreasing iterations fixpoint is reached
+  ///
+  /// \param before Abstract value before the iteration
+  /// \param after Abstract value after the iteration
+  virtual bool is_decreasing_iterations_fixpoint(const AbstractValue& before,
+                                                 const AbstractValue& after) {
+    return before.leq(after);
   }
 
   /// \brief Compute the fixpoint with the given initial abstract value
@@ -267,6 +265,9 @@ public:
   using WtoCycleT = WtoCycle< GraphRef, GraphTrait >;
   using WtoT = Wto< GraphRef, GraphTrait >;
   using WtoNestingT = typename WtoT::WtoNestingT;
+
+private:
+  enum IterationKind { Increasing, Decreasing };
 
 private:
   InterleavedIterator& _iterator;
@@ -315,7 +316,8 @@ public:
       }
     }
 
-    // Increasing iteration sequence with widening
+    // Fixpoint iterations
+    IterationKind kind = Increasing;
     for (unsigned iteration = 1;; ++iteration) {
       this->_iterator.set_pre(head, pre);
       this->_iterator.set_post(head, this->_iterator.analyze_node(head, pre));
@@ -359,73 +361,32 @@ public:
       AbstractValue new_pre(std::move(new_pre_in));
       new_pre.join_loop_with(new_pre_back);
 
-      if (new_pre.leq(pre)) {
-        // Post-fixpoint reached
-        this->_iterator.set_pre(head, new_pre);
-        pre = std::move(new_pre);
-        break;
-      } else {
-        pre = this->_iterator.extrapolate(head,
-                                          iteration,
-                                          std::move(pre),
-                                          std::move(new_pre));
-      }
-    }
-
-    // Decreasing iteration sequence with narrowing
-    for (unsigned iteration = 1;
-         this->_iterator.refine_iteration(head, iteration);
-         ++iteration) {
-      this->_iterator.set_post(head, this->_iterator.analyze_node(head, pre));
-
-      for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it) {
-        it->accept(*this);
-      }
-
-      // Invariant from the head of the loop
-      AbstractValue new_pre_in = AbstractValue::bottom();
-
-      for (auto it = GraphTrait::predecessor_begin(head),
-                et = GraphTrait::predecessor_end(head);
-           it != et;
-           ++it) {
-        NodeRef pred = *it;
-        if (!(this->_iterator.wto().nesting(pred) > cycle_nesting)) {
-          new_pre_in.join_with(
-              this->_iterator.analyze_edge(pred,
-                                           head,
-                                           this->_iterator.post(pred)));
+      if (kind == Increasing) {
+        // Increasing iteration with widening
+        if (this->_iterator.is_increasing_iterations_fixpoint(pre, new_pre)) {
+          // Post-fixpoint reached
+          // Use this iteration as a decreasing iteration
+          kind = Decreasing;
+          iteration = 1;
+        } else {
+          pre = this->_iterator.extrapolate(head,
+                                            iteration,
+                                            std::move(pre),
+                                            std::move(new_pre));
         }
       }
 
-      // Invariant from the tail of the loop
-      AbstractValue new_pre_back = AbstractValue::bottom();
-
-      for (auto it = GraphTrait::predecessor_begin(head),
-                et = GraphTrait::predecessor_end(head);
-           it != et;
-           ++it) {
-        NodeRef pred = *it;
-        if (this->_iterator.wto().nesting(pred) > cycle_nesting) {
-          new_pre_back.join_with(
-              this->_iterator.analyze_edge(pred,
-                                           head,
-                                           this->_iterator.post(pred)));
+      if (kind == Decreasing) {
+        // Decreasing iteration with narrowing
+        new_pre =
+            this->_iterator.refine(head, iteration, pre, std::move(new_pre));
+        if (this->_iterator.is_decreasing_iterations_fixpoint(pre, new_pre)) {
+          // No more refinement possible
+          this->_iterator.set_pre(head, std::move(new_pre));
+          break;
+        } else {
+          pre = std::move(new_pre);
         }
-      }
-
-      AbstractValue new_pre(std::move(new_pre_in));
-      new_pre.join_loop_with(new_pre_back);
-
-      if (pre.leq(new_pre)) {
-        // No more refinement possible (pre == new_pre)
-        break;
-      } else {
-        pre = this->_iterator.refine(head,
-                                     iteration,
-                                     std::move(pre),
-                                     std::move(new_pre));
-        this->_iterator.set_pre(head, pre);
       }
     }
   }
