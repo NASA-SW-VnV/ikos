@@ -87,7 +87,7 @@ gmp_required_version="4.3.1"
 gmp_install_version="6.1.2"
 m4_install_version="1.4.18"
 sqlite_required_version="3.6.20"
-sqlite_install_version="3.25.3"
+sqlite_install_version="3.26.0"
 boost_required_version="1.55.0"
 boost_install_version="1.68.0"
 python2_required_version="2.7.3"
@@ -1560,7 +1560,7 @@ if (( ! found_sqlite )); then
     else
         progress "Installing ${cgreen}sqlite $sqlite_install_version"
 
-        download_extract "https://sqlite.org/2018/sqlite-autoconf-3250300.tar.gz" \
+        download_extract "https://sqlite.org/2018/sqlite-autoconf-3260000.tar.gz" \
             "$build_dir/sqlite-$sqlite_install_version"
 
         cd "$build_dir/sqlite-$sqlite_install_version"
