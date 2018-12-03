@@ -41,6 +41,7 @@
  *
  ******************************************************************************/
 
+#include <llvm/ADT/SmallPtrSet.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/DebugLoc.h>
 #include <llvm/IR/Instruction.h>
@@ -110,6 +111,7 @@ SourceLocation source_location(ar::Statement* stmt) {
 
   // No debug information: could be a phi or bitcast of a global value.
   // Find the next statement with debug info
+  llvm::SmallPtrSet< ar::BasicBlock*, 2 > seen;
   ar::BasicBlock* bb = stmt->parent();
   auto it = stmt->iterator() + 1;
   auto et = bb->end();
@@ -134,6 +136,11 @@ SourceLocation source_location(ar::Statement* stmt) {
     if (bb->num_successors() == 1) {
       // Visit the successor
       bb = *bb->successor_begin();
+
+      if (!seen.insert(bb).second) {
+        return {}; // Already seen
+      }
+
       it = bb->begin();
       et = bb->end();
       continue;
