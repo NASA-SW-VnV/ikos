@@ -1,7 +1,7 @@
-Install IKOS on CentOS 7.5
+Install IKOS on CentOS 7.6
 ==========================
 
-Here are the steps to install IKOS and its dependencies on **[CentOS 7.5](https://www.centos.org/)**
+Here are the steps to install IKOS and its dependencies on **[CentOS 7.6](https://www.centos.org/)**
 
 IKOS requires certain versions of cmake, boost and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
 
@@ -61,7 +61,7 @@ After installation, the install directory will contain the following structure:
 ├── boost-1.68.0
 │   ├── include
 │   └── lib
-├── cmake-3.12.3
+├── cmake-3.13.1
 │   ├── bin
 │   ├── doc
 │   └── share
@@ -70,7 +70,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-4.0.1
+└── llvm-7.0.0
     ├── bin
     ├── include
     ├── lib
