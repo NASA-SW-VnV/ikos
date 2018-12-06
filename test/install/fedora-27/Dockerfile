@@ -9,8 +9,8 @@ ARG build_type=Release
 # boost 1.64.0
 # python 2.7.15
 # sqlite 3.20.1
-# llvm 4.0.1
-# clang 4.0.1
+# llvm 7.0.0
+# clang 7.0.0
 # gcc 7.3.1
 
 # Upgrade
