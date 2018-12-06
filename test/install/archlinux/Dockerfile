@@ -4,14 +4,14 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.12.4
+# cmake 3.13.1
 # gmp 6.1.2
 # mpfr 4.0.1
 # ppl 1.2
 # apron 0.9.11
 # boost 1.68.0
 # python 3.7.1
-# sqlite 3.25.3
+# sqlite 3.26.0
 # llvm 7.0.0
 # clang 7.0.0
 # gcc 8.2.1
