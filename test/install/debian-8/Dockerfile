@@ -25,9 +25,9 @@ RUN echo "deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie-7 main" >> /etc/
 RUN apt-get update
 
 # Install all dependencies
-RUN apt-get install -y --force-yes gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
-        libboost-test-dev python python-pygments libsqlite3-dev libz-dev libedit-dev \
-        llvm-7 llvm-7-dev clang-7
+RUN apt-get install -y --force-yes gcc g++ cmake libgmp-dev libboost-dev \
+        libboost-filesystem-dev libboost-test-dev python python-pygments \
+        libsqlite3-dev libz-dev libedit-dev llvm-7 llvm-7-dev clang-7
 
 # Add ikos source code
 ADD . /root/ikos
