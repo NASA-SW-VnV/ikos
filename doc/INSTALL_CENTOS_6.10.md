@@ -61,7 +61,7 @@ After installation, the install directory will contain the following structure:
 ├── boost-1.68.0
 │   ├── include
 │   └── lib
-├── cmake-3.12.3
+├── cmake-3.13.1
 │   ├── bin
 │   ├── doc
 │   └── share
@@ -70,7 +70,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-4.0.1
+└── llvm-7.0.0
     ├── bin
     ├── include
     ├── lib
