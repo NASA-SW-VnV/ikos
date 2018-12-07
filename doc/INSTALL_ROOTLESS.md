@@ -67,7 +67,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-4.0.1
+└── llvm-7.0.0
     ├── bin
     ├── include
     ├── lib
