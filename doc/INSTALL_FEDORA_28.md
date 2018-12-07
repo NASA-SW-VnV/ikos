@@ -41,11 +41,11 @@ After installation, the install directory will contain the following structure:
 ├── activate-full
 ├── activate-minimal
 ├── ikos-2.0
-│   ├── bin
-│   ├── include
-│   ├── lib
-│   └── share
-└── llvm-4.0.1
+│   ├── bin
+│   ├── include
+│   ├── lib
+│   └── share
+└── llvm-7.0.0
     ├── bin
     ├── include
     ├── lib
