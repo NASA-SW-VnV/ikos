@@ -10,13 +10,13 @@ $ sudo apt-get update
 $ sudo apt-get upgrade
 ```
 
-Now, you will need to add the LLVM repositories to your apt `sources.list`:
+Now, you will need to add the LLVM repository to your apt `sources.list`:
 
 ```
 $ echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main" | sudo tee -a /etc/apt/sources.list
 ```
 
-Then, run the following command:
+Then, run the following commands:
 
 ```
 $ sudo apt-get update
