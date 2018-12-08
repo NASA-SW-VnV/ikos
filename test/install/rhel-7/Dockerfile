@@ -6,13 +6,13 @@ ARG rhel_username
 ARG rhel_password
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.12.3
+# cmake 3.13.1
 # gmp 6.0.0
 # boost 1.68.0
 # python 2.7.5
 # sqlite 3.7.17
-# llvm 4.0.1
-# clang 4.0.1
+# llvm 7.0.0
+# clang 7.0.0
 # gcc 8.2.0
 
 # Subscribe
