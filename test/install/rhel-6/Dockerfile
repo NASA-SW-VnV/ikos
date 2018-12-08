@@ -6,13 +6,13 @@ ARG rhel_username
 ARG rhel_password
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.12.3
+# cmake 3.13.1
 # gmp 4.3.1
 # boost 1.68.0
-# python 2.7.15
+# python 3.4.8
 # sqlite 3.6.20
-# llvm 4.0.1
-# clang 4.0.1
+# llvm 7.0.0
+# clang 7.0.0
 # gcc 8.2.0
 
 # Subscribe
@@ -22,7 +22,7 @@ RUN subscription-manager register --username=$rhel_username --password=$rhel_pas
 RUN yum -y update
 
 # Install dependencies
-RUN yum -y install which file patch tar bzip2 xz zlib-devel ncurses-devel gcc gcc-c++ make gmp-devel sqlite-devel
+RUN yum -y install which file patch tar bzip2 xz zlib-devel ncurses-devel gcc gcc-c++ make gmp-devel python34 python34-pygments sqlite-devel
 
 # Add ikos source code
 ADD . /root/ikos

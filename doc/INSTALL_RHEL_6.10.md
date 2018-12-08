@@ -3,7 +3,7 @@ Install IKOS on Red Hat Enterprise Linux 6.10
 
 Here are the steps to install IKOS and its dependencies on **[Red Hat Enterprise Linux 6.10](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)**
 
-IKOS requires certain versions of gcc, cmake, boost, python and llvm that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
+IKOS requires certain versions of gcc, cmake, boost and llvm that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
 
 **Warning**: You will need **at least 10 Gb** of disk space and a **few hours**.
 
@@ -17,10 +17,10 @@ Now, install the following packages using yum:
 
 ```
 $ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
-    gcc gcc-c++ make gmp-devel sqlite-devel
+    gcc gcc-c++ make gmp-devel python34 python34-pygments sqlite-devel
 ```
 
-In the next step, we will use the bootstrap script to build and install gcc, cmake, boost, python, llvm and IKOS.
+In the next step, we will use the bootstrap script to build and install gcc, cmake, boost, llvm and IKOS.
 Here, we will use `/path/to/ikos-install` as the installation directory and `/path/to/ikos-build` as the build directory. Replace it with the location where you want to put IKOS and its dependencies (for instance, `~/ikos-install` and `~/ikos-build`).
 
 In IKOS root directory, run:
@@ -45,7 +45,7 @@ After installation, the install directory will contain the following structure:
 ├── boost-1.68.0
 │   ├── include
 │   └── lib
-├── cmake-3.12.3
+├── cmake-3.13.1
 │   ├── bin
 │   ├── doc
 │   └── share
@@ -65,17 +65,14 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-├── llvm-4.0.1
+├── llvm-7.0.0
 │   ├── bin
 │   ├── include
 │   ├── lib
 │   ├── libexec
 │   └── share
-└── python-2.7.15
-    ├── bin
-    ├── include
-    ├── lib
-    └── share
+└── python-3.4.8
+    └── bin
 ```
 
 During its execution, the **bootstrap** script creates a special environment with all the required dependencies for IKOS. To enter that environment, simply run the following command (consider adding this in your `.bashrc`):
