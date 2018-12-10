@@ -710,6 +710,8 @@ int main(int argc, char** argv) {
     // This might throw DbError, see catch()
     analyzer::log::debug("Creating output database " + OutputFilename);
     analyzer::sqlite::DbConnection db(OutputFilename);
+    db.set_journal_mode(analyzer::sqlite::JournalMode::Off);
+    db.set_synchronous_flag(analyzer::sqlite::SynchronousFlag::Off);
     analyzer::OutputDatabase output_db(db);
 
     // Load the input module

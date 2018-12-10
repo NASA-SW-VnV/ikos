@@ -285,6 +285,46 @@ void DbConnection::create_index(StringRef index,
   this->exec_command(cmd.c_str());
 }
 
+void DbConnection::set_journal_mode(JournalMode mode) {
+  switch (mode) {
+    case JournalMode::Delete: {
+      this->exec_command("PRAGMA journal_mode = DELETE");
+    } break;
+    case JournalMode::Truncate: {
+      this->exec_command("PRAGMA journal_mode = TRUNCATE");
+    } break;
+    case JournalMode::Persist: {
+      this->exec_command("PRAGMA journal_mode = PERSIST");
+    } break;
+    case JournalMode::Memory: {
+      this->exec_command("PRAGMA journal_mode = MEMORY");
+    } break;
+    case JournalMode::WAL: {
+      this->exec_command("PRAGMA journal_mode = WAL");
+    } break;
+    case JournalMode::Off: {
+      this->exec_command("PRAGMA journal_mode = OFF");
+    } break;
+  }
+}
+
+void DbConnection::set_synchronous_flag(SynchronousFlag flag) {
+  switch (flag) {
+    case SynchronousFlag::Off: {
+      this->exec_command("PRAGMA synchronous = OFF");
+    } break;
+    case SynchronousFlag::Normal: {
+      this->exec_command("PRAGMA synchronous = NORMAL");
+    } break;
+    case SynchronousFlag::Full: {
+      this->exec_command("PRAGMA synchronous = FULL");
+    } break;
+    case SynchronousFlag::Extra: {
+      this->exec_command("PRAGMA synchronous = EXTRA");
+    } break;
+  }
+}
+
 // DbOstream
 
 DbOstream::DbOstream(DbConnection& db, StringRef table_name, int columns)

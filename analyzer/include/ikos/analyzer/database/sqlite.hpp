@@ -132,6 +132,12 @@ enum class DbColumnType { Text, Integer, Real, Blob };
 /// \brief Return the string representation of a column type
 const char* column_type_str(DbColumnType t);
 
+/// \brief Journal mode
+enum class JournalMode { Delete, Truncate, Persist, Memory, WAL, Off };
+
+/// \brief Synchronous mode
+enum class SynchronousFlag { Off, Normal, Full, Extra };
+
 /// \brief Commit policy for a DbConnection
 enum class CommitPolicy {
   /// \brief Call begin_transaction() and commit_transaction() manually
@@ -227,6 +233,12 @@ public:
 
   /// \brief Create an index on the given column of the given table
   void create_index(StringRef index, StringRef table, StringRef column);
+
+  /// \brief Set the journal mode
+  void set_journal_mode(JournalMode mode);
+
+  /// \brief Set the synchronous flag
+  void set_synchronous_flag(SynchronousFlag flag);
 
   // friends
   friend class DbOstream;
