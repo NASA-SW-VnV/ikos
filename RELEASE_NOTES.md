@@ -1,3 +1,31 @@
+IKOS version 2.1 release notes
+==============================
+
+Release date
+------------
+
+December 2018
+
+List of changes
+---------------
+
+### IKOS Core changes
+
+* Fixed a non-convergence issue in the fixpoint iterator
+
+### LLVM frontend changes
+
+* Upgraded LLVM from 4.0.x to 7.0.x
+
+### Ikos-Scan changes
+
+* Implemented ikos-scan, a tool to analyze a whole C/C++ project using IKOS
+
+### Overall changes
+
+* Added support for Windows using the MinGW compiler
+
+
 IKOS version 2.0 release notes
 ==============================
 
