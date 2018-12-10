@@ -62,7 +62,7 @@ After installation, the install directory will contain the following structure:
 ├── activate-full
 ├── activate-minimal
 ├── [...]
-├── ikos-2.0
+├── ikos-2.1
 │   ├── bin
 │   ├── include
 │   ├── lib
@@ -103,7 +103,7 @@ $ source /path/to/ikos-install/activate-full
 To run the tests:
 
 ```
-$ cd /path/to/ikos-build/ikos-2.0
+$ cd /path/to/ikos-build/ikos-2.1
 $ make check
 ```
 

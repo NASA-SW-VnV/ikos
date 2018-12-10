@@ -40,7 +40,7 @@ After installation, the install directory will contain the following structure:
 .
 ├── activate-full
 ├── activate-minimal
-├── ikos-2.0
+├── ikos-2.1
 │   ├── bin
 │   ├── include
 │   ├── lib

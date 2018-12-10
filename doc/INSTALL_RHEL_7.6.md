@@ -56,7 +56,7 @@ After installation, the install directory will contain the following structure:
 │   ├── lib64
 │   ├── libexec
 │   └── share
-├── ikos-2.0
+├── ikos-2.1
 │   ├── bin
 │   ├── include
 │   ├── lib

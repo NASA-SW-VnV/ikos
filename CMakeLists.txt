@@ -45,7 +45,7 @@ if (POLICY CMP0025)
 endif()
 
 project(ikos)
-set(PACKAGE_VERSION "2.0")
+set(PACKAGE_VERSION "2.1")
 
 #
 # Build settings

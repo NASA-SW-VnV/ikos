@@ -52,7 +52,7 @@ export PYTHONPATH=/path/to/ikos-python-module
 Analysis issues
 ---------------
 
-### Exited with signal 9
+### Exited with signal SIGKILL
 
 IKOS probably ran out of memory.
 
