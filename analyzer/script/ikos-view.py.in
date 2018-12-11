@@ -40,17 +40,19 @@
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
 ###############################################################################
-import glob
 import os.path
 import sys
 
 if __name__ == '__main__':
-    # Add ../lib/python*/site-packages at the beginning of the python path
+    # Add ../lib/pythonX.Y/site-packages at the beginning of the python path
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    site_pkgs = glob.glob(os.path.join(root_dir, 'lib', 'python*', 'site-packages'))
-
-    if len(site_pkgs) == 1:
-        sys.path.insert(1, site_pkgs[0])
+    site_pkg_dir = os.path.join(
+        root_dir,
+        'lib',
+        'python%d.%d' % (sys.version_info.major, sys.version_info.minor),
+        'site-packages',
+    )
+    sys.path.insert(1, site_pkg_dir)
 
     try:
         import ikos.view
