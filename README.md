@@ -191,13 +191,13 @@ If the analysis report is too big, you shall use:
 * `ikos-view output.db` to examine the report in a web interface
 
 Further information:
-* [Analyze a whole project](analyzer/README.md#analyze-a-whole-project)
+* [Analyze a whole project with ikos-scan](analyzer/README.md#analyze-a-whole-project-with-ikos-scan)
+* [Examine a report with ikos-view](analyzer/README.md#examine-a-report-with-ikos-view)
 * [Analysis options](analyzer/README.md#analysis-options)
 * [Report options](analyzer/README.md#report-options)
 * [Checks](analyzer/README.md#checks)
 * [Numerical abstract domains](analyzer/README.md#numerical-abstract-domains)
 * [APRON support](analyzer/README.md#apron-support)
-* [IKOS-VIEW](analyzer/README.md#ikos-view)
 
 Current and Past contributors
 -----------------------------

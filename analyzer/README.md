@@ -147,8 +147,8 @@ If the analysis report is too big, you shall use:
 * `ikos-report output.db` to examine the report in your terminal
 * `ikos-view output.db` to examine the report in a web interface
 
-Analyze a whole project
------------------------
+Analyze a whole project with ikos-scan
+--------------------------------------
 
 To run IKOS on a large project, you shall use ikos-scan.
 
@@ -342,7 +342,7 @@ Available formats are:
 
 By default, if the report is small, it will be printed out using the text format.
 
-We recommend to use [ikos-view](#ikos-view) to examine reports of large projects.
+We recommend to use [ikos-view](#examine-a-report-with-ikos-view) to examine reports of large projects.
 
 ### File
 
@@ -398,8 +398,8 @@ cmake \
 
 See [Numerical abstract domains](#numerical-abstract-domains) for the list of numerical abstract domains.
 
-IKOS-VIEW
----------
+Examine a report with ikos-view
+-------------------------------
 
 ikos-view provides a web interface to examine IKOS results. It is available directly in the analyzer.
 
