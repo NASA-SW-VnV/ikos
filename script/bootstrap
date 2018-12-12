@@ -658,7 +658,7 @@ function python_parse_version() {
 
     debug "'$1 --version':\n$version_output"
 
-    echo "$version_output" | match "^Python ($version_regex)$" 1
+    echo "$version_output" | match "^Python ($version_regex)(\+)?$" 1
 }
 
 # Check if a python version satisfies IKOS requirements
