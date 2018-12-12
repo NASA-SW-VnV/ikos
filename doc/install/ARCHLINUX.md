@@ -15,7 +15,7 @@ Now, install IKOS using your favorite **AUR** helper:
 $ yay -S ikos
 ```
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
 
 Build IKOS from source on Archlinux
 ===================================
@@ -34,4 +34,4 @@ Now, install the following packages using your favorite **AUR** helper:
 $ yay -S base-devel cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang apron-ppl-svn
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md

@@ -15,7 +15,7 @@ Now, install IKOS:
 $ brew install nasa-sw-vnv/core/ikos
 ```
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
 
 Build IKOS from source on Mac OS X
 ==================================
@@ -43,4 +43,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md

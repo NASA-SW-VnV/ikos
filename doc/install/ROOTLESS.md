@@ -87,7 +87,7 @@ For short, it adds the necessary directories to your `PATH` and your `[DY]LD_LIB
 
 The difference between `activate-minimal` and `activate-full` is that `activate-minimal` only adds the necessary directories to run IKOS. `activate-full` also adds the directories required to build IKOS (for instance, cmake).
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
 
 How to run the tests
 --------------------

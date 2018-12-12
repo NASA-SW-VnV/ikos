@@ -37,7 +37,7 @@ The following illustrates the content of the root directory:
 
 * [core](../core) contains the implementation of the theory of Abstract Interpretation, which includes the abstract domains, the fixpoint iterator, and various algorithms that support the implementation. More information can be found at [core/README.md](../core/README.md).
 
-* [doc](../doc) contains installation instructions for specific operating systems.
+* [doc/install](../doc/install) contains installation instructions for specific operating systems.
 
 * [frontend/llvm](../frontend/llvm) contains the implementation of the translation from LLVM to AR. More information can be found at [frontend/llvm/README.md](../frontend/llvm/README.md).
 

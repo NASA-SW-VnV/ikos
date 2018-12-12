@@ -86,6 +86,6 @@ source /path/to/ikos-install/activate-minimal
 
 For short, it adds the necessary directories to your `PATH` and your `LD_LIBRARY_PATH`.
 
-For more information about the **bootstrap** script and how to run the tests, see [INSTALL_ROOTLESS.md](INSTALL_ROOTLESS.md).
+For more information about the **bootstrap** script and how to run the tests, see [ROOTLESS.md](ROOTLESS.md).
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md

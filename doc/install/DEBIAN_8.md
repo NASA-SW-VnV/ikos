@@ -1,7 +1,7 @@
-Install IKOS dependencies on Ubuntu 16.04
-=========================================
+Install IKOS dependencies on Debian Jessie
+==========================================
 
-Here are the steps to install the required dependencies of IKOS on **[Ubuntu 16.04 (Xenial)](http://releases.ubuntu.com/16.04/)**.
+Here are the steps to install the required dependencies of IKOS on **[Debian 8 (Jessie)](https://www.debian.org/releases/jessie/)**.
 
 First, make sure your system is up-to-date:
 
@@ -13,7 +13,7 @@ $ sudo apt-get upgrade
 Now, you will need to add the LLVM repository to your apt `sources.list`:
 
 ```
-$ echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main" | sudo tee -a /etc/apt/sources.list
+$ echo "deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie-7 main" | sudo tee -a /etc/apt/sources.list
 ```
 
 Then, run the following commands:
@@ -34,4 +34,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md

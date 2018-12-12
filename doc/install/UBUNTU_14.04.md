@@ -45,4 +45,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md

@@ -1,7 +1,7 @@
-Install IKOS dependencies on Debian Jessie
-==========================================
+Install IKOS dependencies on Ubuntu 18.04
+=========================================
 
-Here are the steps to install the required dependencies of IKOS on **[Debian 8 (Jessie)](https://www.debian.org/releases/jessie/)**.
+Here are the steps to install the required dependencies of IKOS on **[Ubuntu 18.04 (Bionic Beaver)](http://releases.ubuntu.com/18.04/)**.
 
 First, make sure your system is up-to-date:
 
@@ -13,7 +13,13 @@ $ sudo apt-get upgrade
 Now, you will need to add the LLVM repository to your apt `sources.list`:
 
 ```
-$ echo "deb http://apt.llvm.org/jessie/ llvm-toolchain-jessie-7 main" | sudo tee -a /etc/apt/sources.list
+$ echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main" | sudo tee -a /etc/apt/sources.list
+```
+
+You also need to trust the LLVM repository key:
+
+```
+$ wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
 ```
 
 Then, run the following commands:
@@ -34,4 +40,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md
