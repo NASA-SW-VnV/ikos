@@ -654,11 +654,11 @@ function has_boost_unit_test_framework() {
 
 # Parse and detect the version of python, given the command name
 function python_parse_version() {
-    local version_output=$("$1" --version 2>&1)
+    local version_output=$("$1" -c "import sys; print('.'.join([str(i) for i in sys.version_info[:3]]))")
 
-    debug "'$1 --version':\n$version_output"
+    debug "'$1 -c \"import sys; print('.'.join([str(i) for i in sys.version_info[:3]]))\"':\n$version_output"
 
-    echo "$version_output" | match "^Python ($version_regex)$" 1
+    echo "$version_output"
 }
 
 # Check if a python version satisfies IKOS requirements
