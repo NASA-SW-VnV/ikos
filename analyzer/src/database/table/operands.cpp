@@ -399,7 +399,8 @@ llvm::DIType* remove_qualifiers(llvm::DIType* type) {
     if (derived_type->getTag() == llvm::dwarf::DW_TAG_typedef ||
         derived_type->getTag() == llvm::dwarf::DW_TAG_const_type ||
         derived_type->getTag() == llvm::dwarf::DW_TAG_volatile_type ||
-        derived_type->getTag() == llvm::dwarf::DW_TAG_restrict_type) {
+        derived_type->getTag() == llvm::dwarf::DW_TAG_restrict_type ||
+        derived_type->getTag() == llvm::dwarf::DW_TAG_atomic_type) {
       type = llvm::cast_or_null< llvm::DIType >(derived_type->getRawBaseType());
     } else {
       break;

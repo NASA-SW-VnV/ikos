@@ -249,6 +249,7 @@ ar::Type* TypeImporter::translate_derived_di_type(llvm::DIDerivedType* di_type,
       di_type->getTag() == dwarf::DW_TAG_const_type ||
       di_type->getTag() == dwarf::DW_TAG_volatile_type ||
       di_type->getTag() == dwarf::DW_TAG_restrict_type ||
+      di_type->getTag() == dwarf::DW_TAG_atomic_type ||
       di_type->getTag() == dwarf::DW_TAG_ptr_to_member_type) {
     return this->translate_qualified_di_type(di_type, llvm_type);
   } else if (di_type->getTag() == dwarf::DW_TAG_pointer_type) {
@@ -473,7 +474,8 @@ static llvm::DIType* remove_di_qualifiers(llvm::DIType* type) {
     if (derived_type->getTag() == dwarf::DW_TAG_typedef ||
         derived_type->getTag() == dwarf::DW_TAG_const_type ||
         derived_type->getTag() == dwarf::DW_TAG_volatile_type ||
-        derived_type->getTag() == dwarf::DW_TAG_restrict_type) {
+        derived_type->getTag() == dwarf::DW_TAG_restrict_type ||
+        derived_type->getTag() == dwarf::DW_TAG_atomic_type) {
       type = llvm::cast_or_null< llvm::DIType >(derived_type->getRawBaseType());
     } else {
       break;
@@ -1199,6 +1201,7 @@ bool TypeImporter::match_derived_di_type(llvm::DIDerivedType* di_type,
       di_type->getTag() == dwarf::DW_TAG_const_type ||
       di_type->getTag() == dwarf::DW_TAG_volatile_type ||
       di_type->getTag() == dwarf::DW_TAG_restrict_type ||
+      di_type->getTag() == dwarf::DW_TAG_atomic_type ||
       di_type->getTag() == dwarf::DW_TAG_ptr_to_member_type) {
     return this->match_qualified_di_type(di_type, type, seen);
   } else if (di_type->getTag() == dwarf::DW_TAG_pointer_type) {
