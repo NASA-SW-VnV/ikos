@@ -290,25 +290,9 @@ ar::Function* BundleImporter::translate_intrinsic_function(
     ar_fun = this->_bundle->intrinsic_function(ar::Intrinsic::EhTypeidFor);
   } else if (id == llvm::Intrinsic::trap) {
     ar_fun = this->_bundle->intrinsic_function(ar::Intrinsic::Trap);
-  } else if (id == llvm::Intrinsic::sqrt || id == llvm::Intrinsic::powi ||
-             id == llvm::Intrinsic::sin || id == llvm::Intrinsic::cos ||
-             id == llvm::Intrinsic::pow || id == llvm::Intrinsic::log ||
-             id == llvm::Intrinsic::log10 || id == llvm::Intrinsic::log2 ||
-             id == llvm::Intrinsic::exp || id == llvm::Intrinsic::exp2 ||
-             id == llvm::Intrinsic::fabs || id == llvm::Intrinsic::floor ||
-             id == llvm::Intrinsic::ceil || id == llvm::Intrinsic::trunc ||
-             id == llvm::Intrinsic::rint || id == llvm::Intrinsic::round ||
-             id == llvm::Intrinsic::minnum || id == llvm::Intrinsic::maxnum ||
-             id == llvm::Intrinsic::bswap ||
-             id == llvm::Intrinsic::objectsize ||
-             id == llvm::Intrinsic::returnaddress ||
-             id == llvm::Intrinsic::umul_with_overflow ||
-             id == llvm::Intrinsic::uadd_with_overflow) {
+  } else {
     // No equivalent AR intrinsic, translate into a normal external function
     ar_fun = nullptr;
-  } else {
-    throw ImportError("unsupported intrinsic function @" +
-                      fun->getName().str());
   }
 
   // sanity check (skip for memcpy, memmove and memset)
