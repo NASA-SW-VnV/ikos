@@ -8,7 +8,7 @@ ARG build_type=Release
 # gmp 6.1.2
 # mpfr 4.0.1
 # ppl 1.2
-# apron 0.9.11
+# apron 0.9.10
 # boost 1.68.0
 # python 3.7.1
 # sqlite 3.26.0
@@ -22,27 +22,21 @@ RUN pacman --noconfirm -Syu
 RUN pacman-db-upgrade
 
 # Install most dependencies
-RUN pacman -S --noconfirm base-devel cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang
+RUN pacman -S --noconfirm base-devel git cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang
 
 # Use -j$njobs when building packages
 RUN echo "MAKEFLAGS=\"-j$njobs\"" >> /etc/makepkg.conf
 
-# Create user 'yay' with sudo access
-RUN useradd -m yay
-RUN echo "yay ALL=(root) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
+# Create user 'makepkg' with sudo access
+RUN useradd -m makepkg
+RUN echo "makepkg ALL=(root) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
 
-# Install git, required to install yay
-RUN pacman -S --noconfirm git
-
-# Install yay
-USER yay
-WORKDIR /home/yay
-RUN git clone https://aur.archlinux.org/yay.git
-WORKDIR /home/yay/yay
+# Install apron using AUR
+USER makepkg
+WORKDIR /home/makepkg
+RUN git clone https://aur.archlinux.org/apron.git
+WORKDIR /home/makepkg/apron
 RUN makepkg -si --noconfirm
-
-# Install apron
-RUN yay -S --noconfirm apron-ppl-svn
 
 # Add ikos source code
 USER root
