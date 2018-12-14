@@ -171,72 +171,92 @@ ar::Type* TypeImporter::translate_basic_di_type(llvm::DIBasicType* di_type,
                                                 llvm::Type* llvm_type) {
   ar::Type* ar_type = nullptr;
 
-  auto encoding = static_cast< dwarf::TypeKind >(di_type->getEncoding());
+  if (di_type->getEncoding() != 0) {
+    auto encoding = static_cast< dwarf::TypeKind >(di_type->getEncoding());
 
-  switch (encoding) {
-    case dwarf::DW_ATE_signed:
-    case dwarf::DW_ATE_unsigned:
-    case dwarf::DW_ATE_signed_char:
-    case dwarf::DW_ATE_unsigned_char: {
-      check_import(llvm_type->isIntegerTy(),
-                   "llvm::DIBasicType with integer encoding, but llvm::Type is "
-                   "not an llvm::IntegerType");
-      auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
-      check_import(di_type->getSizeInBits() == int_type->getBitWidth(),
-                   "llvm::DIBasicType with integer encoding and "
-                   "llvm::IntegerType have a different bit-width");
+    switch (encoding) {
+      case dwarf::DW_ATE_signed:
+      case dwarf::DW_ATE_unsigned:
+      case dwarf::DW_ATE_signed_char:
+      case dwarf::DW_ATE_unsigned_char: {
+        check_import(llvm_type->isIntegerTy(),
+                     "llvm::DIBasicType with integer encoding, but llvm::Type "
+                     "is not an llvm::IntegerType");
+        auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
+        check_import(di_type->getSizeInBits() == int_type->getBitWidth(),
+                     "llvm::DIBasicType with integer encoding and "
+                     "llvm::IntegerType have a different bit-width");
 
-      ar::Signedness sign = (encoding == dwarf::DW_ATE_unsigned ||
-                             encoding == dwarf::DW_ATE_unsigned_char)
-                                ? ar::Unsigned
-                                : ar::Signed;
-      ar_type =
-          ar::IntegerType::get(this->_context, int_type->getBitWidth(), sign);
-    } break;
-    case dwarf::DW_ATE_boolean: {
-      check_import(llvm_type->isIntegerTy(),
-                   "llvm::DIBasicType with DW_ATE_boolean encoding, but "
-                   "llvm::Type is not an llvm::IntegerType");
-      auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
-      check_import(di_type->getSizeInBits() == int_type->getBitWidth() ||
-                       (di_type->getSizeInBits() == 8 &&
-                        int_type->getBitWidth() == 1),
-                   "llvm::DIBasicType with DW_ATE_boolean encoding and "
-                   "llvm::IntegerType have a different bit-width");
-      ar_type = ar::IntegerType::get(this->_context,
-                                     int_type->getBitWidth(),
-                                     ar::Unsigned);
-    } break;
-    case dwarf::DW_ATE_float: {
-      check_import(llvm_type->isFloatingPointTy(),
-                   "llvm::DIBasicType with float encoding, but llvm::Type is "
-                   "not a floating point type");
-      check_import(di_type->getSizeInBits() ==
-                           llvm_type->getPrimitiveSizeInBits() ||
-                       (di_type->getSizeInBits() == 128 &&
-                        llvm_type->isX86_FP80Ty()),
-                   "llvm::DIBasicType with float encoding and llvm::Type have "
-                   "a different bit-width");
+        ar::Signedness sign = (encoding == dwarf::DW_ATE_unsigned ||
+                               encoding == dwarf::DW_ATE_unsigned_char)
+                                  ? ar::Unsigned
+                                  : ar::Signed;
+        ar_type =
+            ar::IntegerType::get(this->_context, int_type->getBitWidth(), sign);
+      } break;
+      case dwarf::DW_ATE_boolean: {
+        check_import(llvm_type->isIntegerTy(),
+                     "llvm::DIBasicType with DW_ATE_boolean encoding, but "
+                     "llvm::Type is not an llvm::IntegerType");
+        auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
+        check_import(di_type->getSizeInBits() == int_type->getBitWidth() ||
+                         (di_type->getSizeInBits() == 8 &&
+                          int_type->getBitWidth() == 1),
+                     "llvm::DIBasicType with DW_ATE_boolean encoding and "
+                     "llvm::IntegerType have a different bit-width");
+        ar_type = ar::IntegerType::get(this->_context,
+                                       int_type->getBitWidth(),
+                                       ar::Unsigned);
+      } break;
+      case dwarf::DW_ATE_float: {
+        check_import(llvm_type->isFloatingPointTy(),
+                     "llvm::DIBasicType with float encoding, but llvm::Type is "
+                     "not a floating point type");
+        check_import(di_type->getSizeInBits() ==
+                             llvm_type->getPrimitiveSizeInBits() ||
+                         (di_type->getSizeInBits() == 128 &&
+                          llvm_type->isX86_FP80Ty()),
+                     "llvm::DIBasicType with float encoding and llvm::Type "
+                     "have a different bit-width");
 
-      if (llvm_type->isHalfTy()) {
-        ar_type = ar::FloatType::get(this->_context, ar::Half);
-      } else if (llvm_type->isFloatTy()) {
-        ar_type = ar::FloatType::get(this->_context, ar::Float);
-      } else if (llvm_type->isDoubleTy()) {
-        ar_type = ar::FloatType::get(this->_context, ar::Double);
-      } else if (llvm_type->isX86_FP80Ty()) {
-        ar_type = ar::FloatType::get(this->_context, ar::X86_FP80);
-      } else if (llvm_type->isFP128Ty()) {
-        ar_type = ar::FloatType::get(this->_context, ar::FP128);
-      } else if (llvm_type->isPPC_FP128Ty()) {
-        ar_type = ar::FloatType::get(this->_context, ar::PPC_FP128);
-      } else {
-        ikos_unreachable("unexpected float kind");
+        if (llvm_type->isHalfTy()) {
+          ar_type = ar::FloatType::get(this->_context, ar::Half);
+        } else if (llvm_type->isFloatTy()) {
+          ar_type = ar::FloatType::get(this->_context, ar::Float);
+        } else if (llvm_type->isDoubleTy()) {
+          ar_type = ar::FloatType::get(this->_context, ar::Double);
+        } else if (llvm_type->isX86_FP80Ty()) {
+          ar_type = ar::FloatType::get(this->_context, ar::X86_FP80);
+        } else if (llvm_type->isFP128Ty()) {
+          ar_type = ar::FloatType::get(this->_context, ar::FP128);
+        } else if (llvm_type->isPPC_FP128Ty()) {
+          ar_type = ar::FloatType::get(this->_context, ar::PPC_FP128);
+        } else {
+          ikos_unreachable("unexpected float kind");
+        }
+      } break;
+      default: {
+        throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
       }
-    } break;
-    default: {
-      throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
     }
+  } else if (di_type->getTag() != 0) {
+    auto tag = static_cast< dwarf::Tag >(di_type->getTag());
+
+    if (tag == dwarf::DW_TAG_unspecified_type &&
+        di_type->getName() == "decltype(nullptr)") {
+      check_import(llvm_type->isPointerTy() &&
+                       llvm::cast< llvm::PointerType >(llvm_type)
+                           ->getElementType()
+                           ->isIntegerTy(8),
+                   "unexpected llvm::Type for llvm::DIBasicType with name "
+                   "decltype(nullptr)");
+      ar_type = ar::PointerType::get(this->_context,
+                                     ar::IntegerType::si8(this->_context));
+    } else {
+      throw ImportError("unexpected dwarf tag for llvm::DIBasicType");
+    }
+  } else {
+    throw ImportError("unexpected llvm::DIBasicType without tag or encoding");
   }
 
   this->store_translation(di_type, llvm_type, ar_type);
@@ -1169,28 +1189,43 @@ bool TypeImporter::match_null_di_type(llvm::Type* type) {
 
 bool TypeImporter::match_basic_di_type(llvm::DIBasicType* di_type,
                                        llvm::Type* type) {
-  auto encoding = static_cast< dwarf::TypeKind >(di_type->getEncoding());
+  if (di_type->getEncoding() != 0) {
+    auto encoding = static_cast< dwarf::TypeKind >(di_type->getEncoding());
 
-  switch (encoding) {
-    case dwarf::DW_ATE_signed:
-    case dwarf::DW_ATE_unsigned:
-    case dwarf::DW_ATE_signed_char:
-    case dwarf::DW_ATE_unsigned_char:
-      return type->isIntegerTy() &&
-             di_type->getSizeInBits() ==
-                 llvm::cast< llvm::IntegerType >(type)->getBitWidth();
-    case dwarf::DW_ATE_boolean:
-      return type->isIntegerTy() &&
-             (di_type->getSizeInBits() ==
-                  llvm::cast< llvm::IntegerType >(type)->getBitWidth() ||
-              (di_type->getSizeInBits() == 8 &&
-               llvm::cast< llvm::IntegerType >(type)->getBitWidth() == 1));
-    case dwarf::DW_ATE_float:
-      return type->isFloatingPointTy() &&
-             (di_type->getSizeInBits() == type->getPrimitiveSizeInBits() ||
-              (di_type->getSizeInBits() == 128 && type->isX86_FP80Ty()));
-    default:
-      throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
+    switch (encoding) {
+      case dwarf::DW_ATE_signed:
+      case dwarf::DW_ATE_unsigned:
+      case dwarf::DW_ATE_signed_char:
+      case dwarf::DW_ATE_unsigned_char:
+        return type->isIntegerTy() &&
+               di_type->getSizeInBits() ==
+                   llvm::cast< llvm::IntegerType >(type)->getBitWidth();
+      case dwarf::DW_ATE_boolean:
+        return type->isIntegerTy() &&
+               (di_type->getSizeInBits() ==
+                    llvm::cast< llvm::IntegerType >(type)->getBitWidth() ||
+                (di_type->getSizeInBits() == 8 &&
+                 llvm::cast< llvm::IntegerType >(type)->getBitWidth() == 1));
+      case dwarf::DW_ATE_float:
+        return type->isFloatingPointTy() &&
+               (di_type->getSizeInBits() == type->getPrimitiveSizeInBits() ||
+                (di_type->getSizeInBits() == 128 && type->isX86_FP80Ty()));
+      default:
+        throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
+    }
+  } else if (di_type->getTag() != 0) {
+    auto tag = static_cast< dwarf::Tag >(di_type->getTag());
+
+    if (tag == dwarf::DW_TAG_unspecified_type &&
+        di_type->getName() == "decltype(nullptr)") {
+      return type->isPointerTy() && llvm::cast< llvm::PointerType >(type)
+                                        ->getElementType()
+                                        ->isIntegerTy(8);
+    } else {
+      throw ImportError("unexpected dwarf tag for llvm::DIBasicType");
+    }
+  } else {
+    throw ImportError("unexpected llvm::DIBasicType without tag or encoding");
   }
 }
 
