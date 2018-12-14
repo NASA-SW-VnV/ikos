@@ -44,7 +44,8 @@ from ikos import log
 
 
 class DummyLexer(object):
-    pass
+    def __init__(self, *args, **kwargs):
+        pass
 
 
 class DummyHtmlFormatter(object):

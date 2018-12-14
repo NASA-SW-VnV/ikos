@@ -246,7 +246,8 @@ class RequestHandler(BaseHTTPRequestHandler):
             return
 
         fmt = Formatter(file)
-        code = highlight(code, CppLexer(), fmt)
+        lexer = CppLexer(stripnl=False)
+        code = highlight(code, lexer, fmt)
         check_kinds_filter = self._check_kinds_filter(param=kinds_filter)
         self._write_template('report.html', {
             'filepath': html.escape(report.format_path(file.path)),
