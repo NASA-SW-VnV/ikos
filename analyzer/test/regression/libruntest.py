@@ -285,7 +285,7 @@ class Test:
         cmd += clang_ikos_flags()
         cmd += [fullpath, '-o', bc_path]
         if self.filename.endswith('.cpp'):
-            cmd.append('-std=c++14')
+            cmd.append('-std=c++17')
         subprocess.check_call(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)

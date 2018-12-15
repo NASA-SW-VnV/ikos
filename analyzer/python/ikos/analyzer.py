@@ -593,7 +593,7 @@ def clang(
         cmd.append('-fno-color-diagnostics')
 
     if cpp_path.endswith('.cpp'):
-        cmd.append('-std=c++14')  # available because clang >= 4.0
+        cmd.append('-std=c++17')  # available because clang >= 7.0
 
     log.info('Compiling %s' % cpp_path)
     log.debug('Running %s' % command_string(cmd))
