@@ -557,6 +557,9 @@ static bool has_no_member(Iterator begin, Iterator end) {
 /// \brief Return true if the given llvm::DICompositeType* is an empty
 /// structure or class (no non-static member field)
 static bool is_empty_composite(llvm::DICompositeType* di_type) {
+  if (di_type->isForwardDecl()) {
+    return false; // assume it's not empty
+  }
   check_import(di_type->getRawElements() != nullptr,
                "unexpected null pointer in llvm::DICompositeType with "
                "DW_TAG_structure_type or DW_TAG_class_type tag");
