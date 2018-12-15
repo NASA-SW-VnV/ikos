@@ -183,6 +183,25 @@ def parse_arguments(argv):
                           help='Specify a value for argc',
                           type=int)
 
+    # Compile options
+    compiler = parser.add_argument_group('Compile Options')
+    compiler.add_argument('-I',
+                          dest='compiler_include_flags',
+                          metavar='',
+                          help='Add the specified directory to the search '
+                               'path for include files',
+                          action='append')
+    compiler.add_argument('-D',
+                          dest='compiler_define_flags',
+                          metavar='',
+                          help='Add an implicit #define into the source file',
+                          action='append')
+    compiler.add_argument('-m',
+                          dest='compiler_machine_flags',
+                          metavar='',
+                          help='Use the specified machine options',
+                          action='append')
+
     # Preprocessing options
     preprocess = parser.add_argument_group('Preprocessing Options')
     preprocess.add_argument('--opt',
@@ -543,7 +562,14 @@ def clang_ikos_flags():
 # ikos toolchain #
 ##################
 
-def clang(bc_path, cpp_path, colors=True):
+def clang(
+    bc_path,
+    cpp_path,
+    include_flags=None,
+    define_flags=None,
+    machine_flags=None,
+    colors=True,
+):
     cmd = [settings.clang()]
     cmd += clang_emit_llvm_flags()
     cmd += clang_ikos_flags()
@@ -553,6 +579,13 @@ def clang(bc_path, cpp_path, colors=True):
 
     # For #include <ikos/analyzer/intrinsic.hpp>
     cmd += ['-isystem', settings.INCLUDE_DIR]
+
+    if include_flags:
+        cmd += ['-I%s' % i for i in include_flags]
+    if define_flags:
+        cmd += ['-D%s' % d for d in define_flags]
+    if machine_flags:
+        cmd += ['-m%s' % m for m in machine_flags]
 
     if colors:
         cmd.append('-fcolor-diagnostics')
@@ -785,7 +818,11 @@ def main(argv):
 
         try:
             with stats.timer('clang'):
-                clang(bc_path, input_path, colors.ENABLE)
+                clang(bc_path, input_path,
+                      opt.compiler_include_flags,
+                      opt.compiler_define_flags,
+                      opt.compiler_machine_flags,
+                      colors.ENABLE)
         except subprocess.CalledProcessError as e:
             printf('%s: error while compiling %s, abort.\n',
                    progname, input_path, file=sys.stderr)
