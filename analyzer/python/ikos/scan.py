@@ -805,7 +805,7 @@ def main(argv):
     os.environ['IKOS_SCAN_COLOR'] = 'yes' if colors.ENABLE else 'no'
     os.environ['IKOS_SCAN_LOG_LEVEL'] = opt.log_level
     os.environ['IKOS_SCAN_SERVER'] = 'http://localhost:%d' % server.port
-    os.environ['PATH'] = settings.BIN_DIR + os.path.pathsep + os.environ['PATH']
+    os.environ['PATH'] += os.path.pathsep + settings.BIN_DIR
     os.environ['CC'] = 'ikos-scan-cc'
     os.environ['CXX'] = 'ikos-scan-c++'
     os.environ['LD'] = 'ikos-scan-cc'
