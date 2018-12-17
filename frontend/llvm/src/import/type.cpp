@@ -374,7 +374,9 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
     auto count = subrange->getCount();
 
-    if (auto count_int = count.dyn_cast< llvm::ConstantInt* >()) {
+    if (count.is< llvm::ConstantInt* >() &&
+        !count.get< llvm::ConstantInt* >()->isMinusOne()) {
+      auto count_int = count.get< llvm::ConstantInt* >();
       check_import(!count_int->isNegative(),
                    "unexpected negative count for llvm::DICompositeType with "
                    "DW_TAG_array_type tag");
@@ -411,7 +413,7 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
             "llvm::StructType");
       }
       prev_no_count = false;
-    } else if (count.is< llvm::DIVariable* >()) {
+    } else {
       if (prev_no_count) {
         // Type T[][] is flattened into T*, so skip this element
         continue;
@@ -435,10 +437,6 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
             "llvm::DICompositeType with DW_TAG_array_type tag and count -1, "
             "but llvm::Type is not a llvm::PointerType or llvm::ArrayType");
       }
-    } else {
-      throw ImportError(
-          "unexpected count value for llvm::DICompositeType with "
-          "DW_TAG_array_type tag");
     }
   }
 
@@ -1329,7 +1327,9 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
     auto count = subrange->getCount();
 
-    if (auto count_int = count.dyn_cast< llvm::ConstantInt* >()) {
+    if (count.is< llvm::ConstantInt* >() &&
+        !count.get< llvm::ConstantInt* >()->isMinusOne()) {
+      auto count_int = count.get< llvm::ConstantInt* >();
       check_import(!count_int->isNegative(),
                    "unexpected negative count for llvm::DICompositeType with "
                    "DW_TAG_array_type tag");
@@ -1356,7 +1356,7 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
         return false;
       }
       prev_no_count = false;
-    } else if (count.is< llvm::DIVariable* >()) {
+    } else {
       if (prev_no_count) {
         // Type T[][] is flattened into T*, so skip this element
         continue;
@@ -1376,10 +1376,6 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
       } else {
         return false;
       }
-    } else {
-      throw ImportError(
-          "unexpected count value for llvm::DICompositeType with "
-          "DW_TAG_array_type tag");
     }
   }
 
