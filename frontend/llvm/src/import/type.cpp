@@ -880,6 +880,12 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
 
   // Find the first member matching the llvm::StructType
   for (llvm::DINode* di_member_node : di_members) {
+    // Skip methods and static members
+    if (llvm::isa< llvm::DISubprogram >(di_member_node) ||
+        llvm::cast< llvm::DIType >(di_member_node)->isStaticMember()) {
+      continue;
+    }
+
     auto di_member = llvm::cast< llvm::DIDerivedType >(di_member_node);
     check_import(di_member->getTag() == dwarf::DW_TAG_member,
                  "unexpected tag for union member of llvm::DICompositeType");
@@ -1622,6 +1628,12 @@ bool TypeImporter::match_union_di_type(llvm::DICompositeType* di_type,
 
   // Check if a member matches the llvm::StructType
   for (llvm::DINode* di_member_node : di_members) {
+    // Skip methods and static members
+    if (llvm::isa< llvm::DISubprogram >(di_member_node) ||
+        llvm::cast< llvm::DIType >(di_member_node)->isStaticMember()) {
+      continue;
+    }
+
     auto di_member = llvm::cast< llvm::DIDerivedType >(di_member_node);
     check_import(di_member->getTag() == dwarf::DW_TAG_member,
                  "unexpected tag for union member of llvm::DICompositeType");
