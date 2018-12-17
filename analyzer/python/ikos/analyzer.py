@@ -756,14 +756,14 @@ def ikos_analyzer(db_path, pp_path, opt):
     # special case for Windows, since it does not define WIFEXITED & co.
     if sys.platform.startswith('win'):
         if return_status != 0:
-            raise AnalyzerError('a run-time error occured', cmd, return_status)
+            raise AnalyzerError('a run-time error occurred', cmd, return_status)
         else:
             return
 
     # if it did not terminate properly, propagate this error code
     if os.WIFEXITED(return_status) and os.WEXITSTATUS(return_status) != 0:
         exit_status = os.WEXITSTATUS(return_status)
-        raise AnalyzerError('a run-time error occured', cmd, exit_status)
+        raise AnalyzerError('a run-time error occurred', cmd, exit_status)
 
     if os.WIFSIGNALED(return_status):
         signum = os.WTERMSIG(return_status)
