@@ -354,6 +354,12 @@ void FunctionImporter::translate_instruction(
     this->translate_extractvalue(bb_translation, extractvalue);
   } else if (auto insertvalue = llvm::dyn_cast< llvm::InsertValueInst >(inst)) {
     this->translate_insertvalue(bb_translation, insertvalue);
+  } else if (auto extractelement =
+                 llvm::dyn_cast< llvm::ExtractElementInst >(inst)) {
+    this->translate_extractelement(bb_translation, extractelement);
+  } else if (auto insertelement =
+                 llvm::dyn_cast< llvm::InsertElementInst >(inst)) {
+    this->translate_insertelement(bb_translation, insertelement);
   } else if (auto unreachable = llvm::dyn_cast< llvm::UnreachableInst >(inst)) {
     this->translate_unreachable(bb_translation, unreachable);
   } else if (auto landingpad = llvm::dyn_cast< llvm::LandingPadInst >(inst)) {
@@ -1531,6 +1537,74 @@ ar::IntegerConstant* FunctionImporter::translate_indexes(
                                                  size_type->sign()));
 }
 
+void FunctionImporter::translate_extractelement(
+    BasicBlockTranslation* bb_translation, llvm::ExtractElementInst* inst) {
+  // Translate result variable
+  ar::InternalVariable* var =
+      ar::InternalVariable::create(this->_body, this->infer_type(inst));
+  this->mark_variable_mapping(inst, var);
+
+  // Translate aggregate
+  ar::Value* aggregate =
+      this->translate_value(bb_translation, inst->getVectorOperand(), nullptr);
+
+  // Translate offset
+  auto index = llvm::dyn_cast< llvm::ConstantInt >(inst->getIndexOperand());
+  if (!index) {
+    throw ImportError("unexpected index operand to llvm::ExtractElementInst");
+  }
+  auto size_type = ar::IntegerType::size_type(this->_bundle);
+  ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
+      inst->getVectorOperandType()->getElementType()));
+  ar::ZNumber offset_value = index->getZExtValue() * element_size;
+  auto offset = ar::IntegerConstant::get(this->_context,
+                                         size_type,
+                                         ar::MachineInt(offset_value,
+                                                        size_type->bit_width(),
+                                                        size_type->sign()));
+
+  // Create statement
+  auto stmt = ar::ExtractElement::create(var, aggregate, offset);
+  stmt->set_frontend< llvm::Value >(inst);
+  bb_translation->add_statement(std::move(stmt));
+}
+
+void FunctionImporter::translate_insertelement(
+    BasicBlockTranslation* bb_translation, llvm::InsertElementInst* inst) {
+  // Translate result variable
+  ar::InternalVariable* var =
+      ar::InternalVariable::create(this->_body, this->infer_type(inst));
+  this->mark_variable_mapping(inst, var);
+
+  // Translate aggregate
+  ar::Value* aggregate =
+      this->translate_value(bb_translation, inst->getOperand(0), nullptr);
+
+  // Translate offset
+  auto index = llvm::dyn_cast< llvm::ConstantInt >(inst->getOperand(2));
+  if (!index) {
+    throw ImportError("unexpected index operand to llvm::InsertElementInst");
+  }
+  auto size_type = ar::IntegerType::size_type(this->_bundle);
+  ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
+      inst->getType()->getElementType()));
+  ar::ZNumber offset_value = index->getZExtValue() * element_size;
+  auto offset = ar::IntegerConstant::get(this->_context,
+                                         size_type,
+                                         ar::MachineInt(offset_value,
+                                                        size_type->bit_width(),
+                                                        size_type->sign()));
+
+  // Translate element
+  ar::Value* element =
+      this->translate_value(bb_translation, inst->getOperand(1), nullptr);
+
+  // Create statement
+  auto stmt = ar::InsertElement::create(var, aggregate, offset, element);
+  stmt->set_frontend< llvm::Value >(inst);
+  bb_translation->add_statement(std::move(stmt));
+}
+
 void FunctionImporter::translate_unreachable(
     BasicBlockTranslation* bb_translation, llvm::UnreachableInst* unreachable) {
   auto stmt = ar::Unreachable::create();
@@ -1871,6 +1945,10 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use(
   } else if (llvm::isa< llvm::ExtractValueInst >(user)) {
     return TypeHint(); // no hint
   } else if (llvm::isa< llvm::InsertValueInst >(user)) {
+    return TypeHint(); // no hint
+  } else if (llvm::isa< llvm::ExtractElementInst >(user)) {
+    return TypeHint(); // no hint
+  } else if (llvm::isa< llvm::InsertElementInst >(user)) {
     return TypeHint(); // no hint
   } else if (llvm::isa< llvm::ResumeInst >(user)) {
     return TypeHint(); // no hint

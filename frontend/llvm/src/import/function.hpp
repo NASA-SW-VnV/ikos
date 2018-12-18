@@ -383,6 +383,14 @@ private:
       llvm::ExtractValueInst::idx_iterator begin,
       llvm::ExtractValueInst::idx_iterator end);
 
+  /// \brief Translate a llvm::ExtractElementInst
+  void translate_extractelement(BasicBlockTranslation* bb_translation,
+                                llvm::ExtractElementInst* inst);
+
+  /// \brief Translate a llvm::InsertElementInst
+  void translate_insertelement(BasicBlockTranslation* bb_translation,
+                               llvm::InsertElementInst* inst);
+
   /// \brief Translate a llvm::UnreachableInst
   void translate_unreachable(BasicBlockTranslation* bb_translation,
                              llvm::UnreachableInst* unreachable);
