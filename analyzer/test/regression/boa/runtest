@@ -212,6 +212,10 @@ if __name__ == '__main__':
                expected='safe',
                domain='gauge-interval-congruence'))
     t.add(Test('test-54.c', 'test-54.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-55.cpp', 'test-55.cpp', 'boa', 'safe',
+               expected='unsafe',
+               line_checks=[(2, 'ok', 'warning'),
+                            (7, 'ok')]))
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe',
                line_checks=[(20, 'ok', 'warning')]))

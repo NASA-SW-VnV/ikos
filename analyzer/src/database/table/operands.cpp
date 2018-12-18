@@ -204,7 +204,7 @@ std::string escape_string(llvm::StringRef s) {
 }
 
 /// \brief Return the textual representation of a binary operator
-std::string repr(llvm::Instruction::BinaryOps op) {
+StringRef repr(llvm::Instruction::BinaryOps op) {
   switch (op) {
     case llvm::Instruction::Add:
       return "+";
@@ -248,7 +248,7 @@ std::string repr(llvm::Instruction::BinaryOps op) {
 }
 
 /// \brief Return the textual representation of a CmpInst predicate
-std::string repr(llvm::CmpInst::Predicate pred) {
+StringRef repr(llvm::CmpInst::Predicate pred) {
   switch (pred) {
     case llvm::CmpInst::FCMP_FALSE:
       return "false";
@@ -308,10 +308,13 @@ std::string repr(llvm::CmpInst::Predicate pred) {
 }
 
 /// \brief Set of types
-using SeenTypes = boost::container::flat_set< llvm::Type* >;
+using TypeSet = boost::container::flat_set< llvm::Type* >;
+
+/// \brief Set of values
+using ValueSet = boost::container::flat_set< llvm::Value* >;
 
 /// \brief Return the textual representation of a llvm::Type*
-std::string repr(llvm::Type* type, SeenTypes& seen) {
+std::string repr(llvm::Type* type, TypeSet& seen) {
   ikos_assert(type != nullptr);
 
   if (type->isVoidTy()) {
@@ -443,13 +446,13 @@ public:
 }; // end struct ReprResult
 
 // Forward declaration
-ReprResult repr(llvm::Constant*);
-ReprResult repr(llvm::Value*);
+ReprResult repr(llvm::Constant*, ValueSet& seen);
+ReprResult repr(llvm::Value*, ValueSet& seen);
 
 /// \brief Return the textual representation of a llvm::Constant*
-ReprResult repr(llvm::Constant* cst) {
+ReprResult repr(llvm::Constant* cst, ValueSet& seen) {
   if (auto gv_alias = llvm::dyn_cast< llvm::GlobalAlias >(cst)) {
-    return repr(gv_alias->getAliasee());
+    return repr(gv_alias->getAliasee(), seen);
   } else if (auto gv = llvm::dyn_cast< llvm::GlobalVariable >(cst)) {
     // Check for debug info
     llvm::SmallVector< llvm::DIGlobalVariableExpression*, 1 > dbgs;
@@ -463,7 +466,7 @@ ReprResult repr(llvm::Constant* cst) {
 
     // If it's a constant (e.g, a string)
     if (gv->isConstant() && gv->hasInitializer()) {
-      return ReprResult{"&" + repr(gv->getInitializer()).str};
+      return ReprResult{"&" + repr(gv->getInitializer(), seen).str};
     }
 
     // Last chance, use llvm variable name
@@ -483,7 +486,7 @@ ReprResult repr(llvm::Constant* cst) {
   } else if (auto cst_array = llvm::dyn_cast< llvm::ConstantArray >(cst)) {
     std::string r = "[";
     for (auto it = cst_array->op_begin(), et = cst_array->op_end(); it != et;) {
-      r += repr(*it).str;
+      r += repr(*it, seen).str;
       ++it;
       if (it != et) {
         r += ", ";
@@ -495,7 +498,7 @@ ReprResult repr(llvm::Constant* cst) {
     std::string r = "{";
     for (auto it = cst_struct->op_begin(), et = cst_struct->op_end();
          it != et;) {
-      r += repr(*it).str;
+      r += repr(*it, seen).str;
       ++it;
       if (it != et) {
         r += ", ";
@@ -507,7 +510,7 @@ ReprResult repr(llvm::Constant* cst) {
     std::string r = "[";
     for (auto it = cst_vector->op_begin(), et = cst_vector->op_end();
          it != et;) {
-      r += repr(*it).str;
+      r += repr(*it, seen).str;
       ++it;
       if (it != et) {
         r += ", ";
@@ -543,7 +546,7 @@ ReprResult repr(llvm::Constant* cst) {
     auto inst_deleter = [](llvm::Instruction* inst) { inst->deleteValue(); };
     std::unique_ptr< llvm::Instruction, decltype(inst_deleter) >
         inst(cst_expr->getAsInstruction(), inst_deleter);
-    return repr(inst.get());
+    return repr(inst.get(), seen);
   } else {
     throw LogicError("unexpected llvm::Constant");
   }
@@ -656,7 +659,7 @@ ReprResult add_array_access(ReprResult addr, ReprResult index) {
 }
 
 /// \brief Return the textual representation of a llvm::Value*
-ReprResult repr(llvm::Value* value) {
+ReprResult repr(llvm::Value* value, ValueSet& seen) {
   ikos_assert(value != nullptr);
 
   // Check for llvm.dbg.value
@@ -703,7 +706,7 @@ ReprResult repr(llvm::Value* value) {
   }
 
   if (auto cst = llvm::dyn_cast< llvm::Constant >(value)) {
-    return repr(cst);
+    return repr(cst, seen);
   }
 
   if (auto inst = llvm::dyn_cast< llvm::Instruction >(value)) {
@@ -733,13 +736,13 @@ ReprResult repr(llvm::Value* value) {
 
       return ReprResult{"&__unnamed_stack_var"};
     } else if (auto load = llvm::dyn_cast< llvm::LoadInst >(inst)) {
-      ReprResult r = repr(load->getPointerOperand());
+      ReprResult r = repr(load->getPointerOperand(), seen);
       return ReprResult{detail::add_deref(r.str), pointee_type(r.pointee_type)};
     } else if (auto call = llvm::dyn_cast< llvm::CallInst >(inst)) {
-      std::string r = detail::add_deref(repr(call->getCalledValue()).str);
+      std::string r = detail::add_deref(repr(call->getCalledValue(), seen).str);
       r += "(";
       for (auto it = call->arg_begin(), et = call->arg_end(); it != et;) {
-        r += repr(*it).str;
+        r += repr(*it, seen).str;
         ++it;
         if (it != et) {
           r += ", ";
@@ -748,10 +751,11 @@ ReprResult repr(llvm::Value* value) {
       r += ")";
       return ReprResult{r};
     } else if (auto invoke = llvm::dyn_cast< llvm::InvokeInst >(inst)) {
-      std::string r = detail::add_deref(repr(invoke->getCalledValue()).str);
+      std::string r =
+          detail::add_deref(repr(invoke->getCalledValue(), seen).str);
       r += "(";
       for (auto it = invoke->arg_begin(), et = invoke->arg_end(); it != et;) {
-        r += repr(*it).str;
+        r += repr(*it, seen).str;
         ++it;
         if (it != et) {
           r += ", ";
@@ -771,15 +775,15 @@ ReprResult repr(llvm::Value* value) {
         auto int_type = llvm::cast< llvm::IntegerType >(cast->getType());
         r += "(int" + std::to_string(int_type->getBitWidth()) + "_t)";
       } else {
-        SeenTypes seen;
-        std::string t = repr(cast->getType(), seen);
+        TypeSet types_seen;
+        std::string t = repr(cast->getType(), types_seen);
         r += "(" + t + ")";
       }
 
-      r += detail::add_parentheses(repr(cast->getOperand(0)).str);
+      r += detail::add_parentheses(repr(cast->getOperand(0), seen).str);
       return ReprResult{r};
     } else if (auto gep = llvm::dyn_cast< llvm::GetElementPtrInst >(inst)) {
-      ReprResult r = repr(gep->getPointerOperand());
+      ReprResult r = repr(gep->getPointerOperand(), seen);
 
       auto begin = llvm::gep_type_begin(gep);
       auto end = llvm::gep_type_end(gep);
@@ -796,31 +800,37 @@ ReprResult repr(llvm::Value* value) {
           if (it == begin && cst->isZero()) {
             continue; // skip
           } else {
-            r = detail::add_array_access(r, repr(op));
+            r = detail::add_array_access(r, repr(op, seen));
           }
         } else {
-          r = detail::add_array_access(r, repr(op));
+          r = detail::add_array_access(r, repr(op, seen));
         }
       }
 
       return r;
     } else if (auto bin_op = llvm::dyn_cast< llvm::BinaryOperator >(inst)) {
       std::string r;
-      r += detail::add_parentheses(repr(bin_op->getOperand(0)).str);
+      r += detail::add_parentheses(repr(bin_op->getOperand(0), seen).str);
       r += ' ';
       r += detail::repr(bin_op->getOpcode());
       r += ' ';
-      r += detail::add_parentheses(repr(bin_op->getOperand(1)).str);
+      r += detail::add_parentheses(repr(bin_op->getOperand(1), seen).str);
       return ReprResult{r};
     } else if (auto cmp = llvm::dyn_cast< llvm::CmpInst >(inst)) {
       std::string r;
-      r += detail::add_parentheses(repr(cmp->getOperand(0)).str);
+      r += detail::add_parentheses(repr(cmp->getOperand(0), seen).str);
       r += ' ';
       r += detail::repr(cmp->getPredicate());
       r += ' ';
-      r += detail::add_parentheses(repr(cmp->getOperand(1)).str);
+      r += detail::add_parentheses(repr(cmp->getOperand(1), seen).str);
       return ReprResult{r};
     } else if (auto phi = llvm::dyn_cast< llvm::PHINode >(inst)) {
+      // Avoid infinite recursion
+      auto p = seen.insert(phi);
+      if (!p.second) {
+        return ReprResult{"..."}; // already processing
+      }
+
       // Simple heuristic to detect a ternary `cond ? a : b`
       if (phi->getNumIncomingValues() == 2) {
         auto first = phi->getIncomingBlock(0);
@@ -833,11 +843,13 @@ ReprResult repr(llvm::Value* value) {
               first->getUniquePredecessor()->getTerminator());
           if (br != nullptr && br->isConditional()) {
             std::string r;
-            r += detail::add_parentheses(repr(br->getCondition()).str);
+            r += detail::add_parentheses(repr(br->getCondition(), seen).str);
             r += " ? ";
-            r += repr(phi->getIncomingValueForBlock(br->getSuccessor(0))).str;
+            r += repr(phi->getIncomingValueForBlock(br->getSuccessor(0)), seen)
+                     .str;
             r += " : ";
-            r += repr(phi->getIncomingValueForBlock(br->getSuccessor(1))).str;
+            r += repr(phi->getIncomingValueForBlock(br->getSuccessor(1)), seen)
+                     .str;
             return ReprResult{r};
           }
         }
@@ -853,7 +865,7 @@ ReprResult repr(llvm::Value* value) {
           r += std::to_string(i);
         }
         r += ": ";
-        r += repr(phi->getIncomingValue(i)).str;
+        r += repr(phi->getIncomingValue(i), seen).str;
         i++;
         if (i != n) {
           r += ", ";
@@ -865,7 +877,7 @@ ReprResult repr(llvm::Value* value) {
                    llvm::dyn_cast< llvm::ExtractValueInst >(inst)) {
       std::string r;
       r += detail::add_parentheses(
-          repr(extractvalue->getAggregateOperand()).str);
+          repr(extractvalue->getAggregateOperand(), seen).str);
       for (auto it = extractvalue->idx_begin(), et = extractvalue->idx_end();
            it != et;
            ++it) {
@@ -876,8 +888,8 @@ ReprResult repr(llvm::Value* value) {
     } else if (auto insertvalue =
                    llvm::dyn_cast< llvm::InsertValueInst >(inst)) {
       std::string r;
-      r +=
-          detail::add_parentheses(repr(insertvalue->getAggregateOperand()).str);
+      r += detail::add_parentheses(
+          repr(insertvalue->getAggregateOperand(), seen).str);
       r += '[';
       for (auto it = insertvalue->idx_begin(), et = insertvalue->idx_end();
            it != et;) {
@@ -888,7 +900,7 @@ ReprResult repr(llvm::Value* value) {
         }
       }
       r += ": ";
-      r += repr(insertvalue->getInsertedValueOperand()).str;
+      r += repr(insertvalue->getInsertedValueOperand(), seen).str;
       r += ']';
       return ReprResult{r};
     } else if (llvm::isa< llvm::LandingPadInst >(inst)) {
@@ -1046,16 +1058,18 @@ struct OperandReprVisitor {
 } // end namespace detail
 
 std::string OperandsTable::repr(llvm::Type* type) {
-  detail::SeenTypes seen;
+  detail::TypeSet seen;
   return detail::repr(type, seen);
 }
 
 std::string OperandsTable::repr(llvm::Constant* cst) {
-  return detail::repr(cst).str;
+  detail::ValueSet seen;
+  return detail::repr(cst, seen).str;
 }
 
 std::string OperandsTable::repr(llvm::Value* value) {
-  return detail::repr(value).str;
+  detail::ValueSet seen;
+  return detail::repr(value, seen).str;
 }
 
 std::string OperandsTable::repr(ar::Value* value) {
