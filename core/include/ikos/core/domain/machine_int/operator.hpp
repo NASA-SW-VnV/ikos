@@ -155,6 +155,25 @@ T apply_bin_operator(BinaryOperator op, const T& lhs, const T& rhs) {
   }
 }
 
+/// \brief Compare the given operands with the given predicate
+template < typename T >
+bool compare(Predicate pred, const T& lhs, const T& rhs) {
+  switch (pred) {
+    case Predicate::EQ:
+      return lhs == rhs;
+    case Predicate::NE:
+      return lhs != rhs;
+    case Predicate::GT:
+      return lhs > rhs;
+    case Predicate::GE:
+      return lhs >= rhs;
+    case Predicate::LT:
+      return lhs < rhs;
+    case Predicate::LE:
+      return lhs <= rhs;
+  }
+}
+
 } // end namespace machine_int
 } // end namespace core
 } // end namespace ikos

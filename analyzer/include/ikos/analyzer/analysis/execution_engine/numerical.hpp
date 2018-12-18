@@ -1447,7 +1447,9 @@ private:
                            const ScalarLit& right) {
     if (left.is_machine_int()) {
       if (right.is_machine_int()) {
-        // TODO(marthaud): check if `left pred right` for MachineInt
+        if (!compare(pred, left.machine_int(), right.machine_int())) {
+          this->_inv.set_normal_flow_to_bottom();
+        }
       } else if (right.is_machine_int_var()) {
         this->_inv.normal().integers().add(pred,
                                            left.machine_int(),
