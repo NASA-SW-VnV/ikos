@@ -40,6 +40,13 @@
 
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
+if (POLICY CMP0056)
+  cmake_policy(SET CMP0056 NEW)
+endif()
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 project(ikos-abstract-representation)
 
 #
@@ -74,14 +81,6 @@ macro(add_cxx_flag policy name flag)
     message(FATAL_ERROR "${flag} flag is not supported by ${CMAKE_CXX_COMPILER}")
   endif()
 endmacro()
-
-#
-# CMake policies
-#
-
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
 
 #
 # Dependency checks

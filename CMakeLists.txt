@@ -43,6 +43,9 @@ cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 if (POLICY CMP0025)
   cmake_policy(SET CMP0025 NEW) # recognize Apple Clang
 endif()
+if (POLICY CMP0056)
+  cmake_policy(SET CMP0056 NEW)
+endif()
 
 project(ikos)
 set(PACKAGE_VERSION "2.1")
