@@ -79,9 +79,9 @@ ar::Code* FunctionImporter::translate_body() {
 }
 
 void FunctionImporter::mark_special_blocks() {
-  llvm::SmallVector< llvm::BasicBlock*, 2 > llvm_return_blocks;
-  llvm::SmallVector< llvm::BasicBlock*, 2 > llvm_unreachable_blocks;
-  llvm::SmallVector< llvm::BasicBlock*, 2 > llvm_ehresume_blocks;
+  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_return_blocks;
+  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_unreachable_blocks;
+  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_ehresume_blocks;
 
   for (llvm::BasicBlock& bb : *this->_llvm_fun) {
     if (llvm::isa< llvm::ReturnInst >(bb.getTerminator())) {
@@ -1356,7 +1356,7 @@ void FunctionImporter::translate_branch(BasicBlockTranslation* bb_translation,
   if (br->isUnconditional()) {
     bb_translation->add_unconditional_branching(br, br->getSuccessor(0));
   } else {
-    // Translate condition (Get the associated ar::Variable)
+    // Translate condition (get the associated ar::Variable)
     llvm::Value* condition = br->getCondition();
 
     if (llvm::isa< llvm::Instruction >(condition) ||
@@ -1372,6 +1372,8 @@ void FunctionImporter::translate_branch(BasicBlockTranslation* bb_translation,
       bb_translation->add_unconditional_branching(br,
                                                   br->getSuccessor(
                                                       cst->isZero() ? 1 : 0));
+    } else if (llvm::isa< llvm::UndefValue >(condition)) {
+      bb_translation->add_nondeterministic_branching(br);
     } else {
       throw ImportError("unexpected condition for llvm::BranchInst");
     }
@@ -2352,6 +2354,20 @@ ar::BasicBlock* BasicBlockTranslation::input_basic_block(
   return ar_bb;
 }
 
+ar::BasicBlock* BasicBlockTranslation::add_output_basic_block(
+    ar::BasicBlock* ar_src, llvm::BasicBlock* llvm_dest) {
+  // Create basic block
+  ar::BasicBlock* ar_dest = ar::BasicBlock::create(ar_src->code());
+
+  // Add edge
+  ar_src->add_successor(ar_dest);
+
+  // Add in the output list
+  this->outputs.emplace_back(BasicBlockOutput(ar_dest, llvm_dest));
+
+  return ar_dest;
+}
+
 void BasicBlockTranslation::merge_outputs() {
   if (this->outputs.size() < 2) {
     return;
@@ -2429,8 +2445,8 @@ void BasicBlockTranslation::add_comparison_output_bb(
     bool value) {
   auto frontend = cmp->frontend< llvm::Value >();
 
-  // Create basic block
-  ar::BasicBlock* dest = ar::BasicBlock::create(src->code());
+  // Create output basic block
+  ar::BasicBlock* dest = this->add_output_basic_block(src);
 
   // Push comparison
   dest->push_back(std::move(cmp));
@@ -2440,12 +2456,6 @@ void BasicBlockTranslation::add_comparison_output_bb(
       create_bool_assignment(src->context(), var, value);
   assign->set_frontend(frontend);
   dest->push_back(std::move(assign));
-
-  // Add edge
-  src->add_successor(dest);
-
-  // Add in the output list
-  this->outputs.emplace_back(BasicBlockOutput(dest));
 }
 
 void BasicBlockTranslation::add_unconditional_branching(
@@ -2515,6 +2525,21 @@ void BasicBlockTranslation::add_conditional_branching(
   }
 }
 
+void BasicBlockTranslation::add_nondeterministic_branching(
+    llvm::BranchInst* br) {
+  std::vector< BasicBlockOutput > prev_outputs;
+  std::swap(prev_outputs, this->outputs);
+  this->outputs.reserve(2 * prev_outputs.size());
+
+  for (const auto& output : prev_outputs) {
+    ar::BasicBlock* bb = output.block;
+    this->internals.push_back(bb);
+
+    this->add_output_basic_block(bb, br->getSuccessor(0));
+    this->add_output_basic_block(bb, br->getSuccessor(1));
+  }
+}
+
 /// \brief Create an ar::Comparison `var == value`
 static std::unique_ptr< ar::Comparison > create_bool_cmp(
     ar::Context& ctx, ar::InternalVariable* var, bool value) {
@@ -2534,8 +2559,8 @@ void BasicBlockTranslation::add_conditional_output_bb(
     llvm::BasicBlock* llvm_dest,
     ar::InternalVariable* cond,
     bool value) {
-  // Create basic block
-  ar::BasicBlock* ar_dest = ar::BasicBlock::create(src->code());
+  // Create output basic block
+  ar::BasicBlock* ar_dest = this->add_output_basic_block(src, llvm_dest);
 
   // Remove assignment if the variable is only used for the branching statement
   llvm::Value* llvm_condition = br->getCondition();
@@ -2549,12 +2574,6 @@ void BasicBlockTranslation::add_conditional_output_bb(
     cmp->set_frontend< llvm::Value >(llvm_condition);
     ar_dest->push_back(std::move(cmp));
   }
-
-  // Add edge
-  src->add_successor(ar_dest);
-
-  // Add in the output list
-  this->outputs.emplace_back(BasicBlockOutput(ar_dest, llvm_dest));
 }
 
 void BasicBlockTranslation::add_invoke_branching(
@@ -2585,14 +2604,8 @@ void BasicBlockTranslation::add_invoke_branching(
 
 void BasicBlockTranslation::add_invoke_normal_output_bb(
     ar::BasicBlock* src, ar::Invoke* invoke, llvm::BasicBlock* llvm_dest) {
-  // Create basic block
-  ar::BasicBlock* ar_dest = ar::BasicBlock::create(src->code());
-
-  // Add edge
-  src->add_successor(ar_dest);
-
-  // Add in the output list
-  this->outputs.emplace_back(BasicBlockOutput(ar_dest, llvm_dest));
+  // Create output basic block
+  ar::BasicBlock* ar_dest = this->add_output_basic_block(src, llvm_dest);
 
   // Set invoke normal destination
   invoke->set_normal_dest(ar_dest);
@@ -2600,14 +2613,8 @@ void BasicBlockTranslation::add_invoke_normal_output_bb(
 
 void BasicBlockTranslation::add_invoke_exception_output_bb(
     ar::BasicBlock* src, ar::Invoke* invoke, llvm::BasicBlock* llvm_dest) {
-  // Create basic block
-  ar::BasicBlock* ar_dest = ar::BasicBlock::create(src->code());
-
-  // Add edge
-  src->add_successor(ar_dest);
-
-  // Add in the output list
-  this->outputs.emplace_back(BasicBlockOutput(ar_dest, llvm_dest));
+  // Create output basic block
+  ar::BasicBlock* ar_dest = this->add_output_basic_block(src, llvm_dest);
 
   // Set invoke exception destination
   invoke->set_exception_dest(ar_dest);

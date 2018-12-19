@@ -135,6 +135,10 @@ struct BasicBlockTranslation {
   /// \brief Get or create an input basic block for the given llvm BasicBlock
   ar::BasicBlock* input_basic_block(llvm::BasicBlock* bb);
 
+  /// \brief Create an output basic block
+  ar::BasicBlock* add_output_basic_block(ar::BasicBlock* ar_src,
+                                         llvm::BasicBlock* llvm_dest = nullptr);
+
   /// \brief Merge all output basic blocks into one basic block
   void merge_outputs();
 
@@ -160,6 +164,9 @@ public:
   /// \brief Add a conditional branching
   void add_conditional_branching(llvm::BranchInst* br,
                                  ar::InternalVariable* cond);
+
+  /// \brief Add a non-deterministic branching
+  void add_nondeterministic_branching(llvm::BranchInst* br);
 
 private:
   /// \brief Add an output basic block with a "cond == value" statement
