@@ -295,7 +295,8 @@ ar::Function* BundleImporter::translate_intrinsic_function(
     ar_fun = nullptr;
   }
 
-  // sanity check (skip for memcpy, memmove and memset)
+  // Sanity check, should never happen
+  // Skip for memcpy, memmove and memset because of the alignment parameter
   if (id != llvm::Intrinsic::memcpy && id != llvm::Intrinsic::memmove &&
       id != llvm::Intrinsic::memset && ar_fun != nullptr &&
       !_ctx.type_imp->match_extern_function_type(fun->getFunctionType(),
@@ -312,13 +313,26 @@ ar::Function* BundleImporter::translate_intrinsic_function(
 ar::Function* BundleImporter::translate_library_function(llvm::Function* fun) {
   ar::Function* ar_fun = _ctx.lib_fun_imp->function(fun->getName());
 
-  // sanity check
+  // Sanity check, can happen if the user uses C/C++ standard library names
   if (ar_fun != nullptr &&
       !_ctx.type_imp->match_extern_function_type(fun->getFunctionType(),
                                                  ar_fun->type())) {
     std::ostringstream buf;
-    buf << "llvm function @" << fun->getName().str() << " and ar intrinsic @"
-        << ar_fun->name() << " have a different type";
+
+    if (ar_fun->is_ikos_intrinsic()) {
+      buf << "function definition of " << fun->getName().str()
+          << " does not match the expected ikos intrinsic definition";
+    } else if (ar_fun->is_libc_intrinsic()) {
+      buf << "function definition of " << fun->getName().str()
+          << " does not match the expected C Standard Library definition";
+    } else if (ar_fun->is_libcpp_intrinsic()) {
+      buf << "function definition of " << fun->getName().str()
+          << " does not match the expected C++ Standard Library definition";
+    } else {
+      buf << "llvm function @" << fun->getName().str() << " and ar intrinsic @"
+          << ar_fun->name() << " have a different type";
+    }
+
     throw ImportError(buf.str());
   }
 

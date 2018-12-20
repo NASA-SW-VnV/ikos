@@ -157,6 +157,24 @@ public:
     return this->_intrinsic_id != Intrinsic::NotIntrinsic;
   }
 
+  /// \brief Is it an ikos intrinsic function?
+  bool is_ikos_intrinsic() const {
+    return this->_intrinsic_id >= Intrinsic::_BeginIkosIntrinsic &&
+           this->_intrinsic_id <= Intrinsic::_EndIkosIntrinsic;
+  }
+
+  /// \brief Is it a libc intrinsic function?
+  bool is_libc_intrinsic() const {
+    return this->_intrinsic_id >= Intrinsic::_BeginLibcIntrinsic &&
+           this->_intrinsic_id <= Intrinsic::_EndLibcIntrinsic;
+  }
+
+  /// \brief Is it a libc++ intrinsic function
+  bool is_libcpp_intrinsic() const {
+    return this->_intrinsic_id >= Intrinsic::_BeginLibcppIntrinsic &&
+           this->_intrinsic_id <= Intrinsic::_EndLibcppIntrinsic;
+  }
+
   /// \brief Get the intrinsic ID
   Intrinsic::ID intrinsic_id() const { return this->_intrinsic_id; }
 
