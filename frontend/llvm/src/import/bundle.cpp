@@ -335,8 +335,7 @@ bool BundleImporter::is_clang_generated_function(llvm::Function* fun) {
     return true;
   }
 
-  if (fun->getName().startswith("_ZTWL1") &&
-      fun->getCallingConv() == llvm::CallingConv::CXX_FAST_TLS) {
+  if (fun->getName().startswith("_ZTWL1")) {
     // Thread-local wrapper function
     return true;
   }
