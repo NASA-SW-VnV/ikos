@@ -481,6 +481,12 @@ private:
   /// signedness
   ar::Type* infer_type(llvm::Value*);
 
+  /// \brief Try to infer the correct type for the given `value` using llvm
+  /// debug info
+  ///
+  /// Returns nullptr if the type could not be deduced
+  ar::Type* infer_type_from_dbg(llvm::Value*);
+
   /// \brief Infer a default type, if no hints were found
   ar::Type* infer_default_type(llvm::Value*);
 

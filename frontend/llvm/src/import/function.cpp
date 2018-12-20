@@ -1084,9 +1084,7 @@ void FunctionImporter::translate_binary_operator(
         }
         sign = stmt_type->sign();
       } break;
-      default: {
-        ikos_unreachable("unreachable");
-      }
+      default: { ikos_unreachable("unreachable"); }
     }
 
     if (stmt_type == nullptr) {
@@ -1802,6 +1800,39 @@ ar::InternalVariable* FunctionImporter::add_integer_casts(
 }
 
 ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
+  // Use debug information if available
+  if (auto ar_type = this->infer_type_from_dbg(value)) {
+    return ar_type;
+  }
+
+  // Use heuristics to find a correct type
+  boost::container::flat_map< ar::Type*, unsigned > hints;
+
+  for (auto it = value->use_begin(), et = value->use_end(); it != et; ++it) {
+    llvm::Use& use = *it;
+    TypeHint hint = this->infer_type_hint_use(use);
+
+    if (hint.ignore()) {
+      continue;
+    }
+
+    hints[hint.type] += hint.score;
+  }
+
+  if (hints.empty()) {
+    // No hints
+    return this->infer_default_type(value);
+  } else {
+    // Find the type with the biggest score
+    auto it =
+        std::max_element(hints.begin(), hints.end(), [](auto& a, auto& b) {
+          return a.second < b.second;
+        });
+    return it->first;
+  }
+}
+
+ar::Type* FunctionImporter::infer_type_from_dbg(llvm::Value* value) {
   // Check for llvm.dbg.declare and llvm.dbg.addr
   if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
     llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
@@ -1836,63 +1867,41 @@ ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
   }
 
   // Check for llvm.dbg.value
-  llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
-  llvm::findDbgValues(dbg_values, value);
-  auto dbg_value =
-      std::find_if(dbg_values.begin(),
-                   dbg_values.end(),
-                   [](llvm::DbgValueInst* dbg) {
-                     return dbg->getExpression()->getNumElements() == 0;
-                   });
+  if (!llvm::isa< llvm::Constant >(value)) {
+    llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
+    llvm::findDbgValues(dbg_values, value);
+    auto dbg_value =
+        std::find_if(dbg_values.begin(),
+                     dbg_values.end(),
+                     [](llvm::DbgValueInst* dbg) {
+                       return dbg->getExpression()->getNumElements() == 0;
+                     });
 
-  if (dbg_value != dbg_values.end()) {
-    llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
-    auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
+    if (dbg_value != dbg_values.end()) {
+      llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
+      auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
-    if (!this->_allow_debug_info_mismatch) {
-      return _ctx.type_imp->translate_di_type(di_type, value->getType());
-    } else {
-      // Aggressive optimizations can mess debug information.
-      // Check TypeImporter::match_di_type() before using any debug info
-
-      if (_ctx.type_imp->match_di_type(di_type, value->getType())) {
+      if (!this->_allow_debug_info_mismatch) {
         return _ctx.type_imp->translate_di_type(di_type, value->getType());
-      } else if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
-        if (_ctx.type_imp->match_di_type(di_type, alloca->getAllocatedType())) {
-          ar::Type* pointee =
-              _ctx.type_imp->translate_di_type(di_type,
-                                               alloca->getAllocatedType());
-          return ar::PointerType::get(this->_context, pointee);
+      } else {
+        // Aggressive optimizations can mess debug information.
+        // Check TypeImporter::match_di_type() before using any debug info
+        if (_ctx.type_imp->match_di_type(di_type, value->getType())) {
+          return _ctx.type_imp->translate_di_type(di_type, value->getType());
+        } else if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
+          if (_ctx.type_imp->match_di_type(di_type,
+                                           alloca->getAllocatedType())) {
+            ar::Type* pointee =
+                _ctx.type_imp->translate_di_type(di_type,
+                                                 alloca->getAllocatedType());
+            return ar::PointerType::get(this->_context, pointee);
+          }
         }
       }
     }
   }
 
-  // Use a heuristic to find a correct type
-  boost::container::flat_map< ar::Type*, unsigned > hints;
-
-  for (auto it = value->use_begin(), et = value->use_end(); it != et; ++it) {
-    llvm::Use& use = *it;
-    TypeHint hint = this->infer_type_hint_use(use);
-
-    if (hint.ignore()) {
-      continue;
-    }
-
-    hints[hint.type] += hint.score;
-  }
-
-  if (hints.empty()) {
-    // No hints
-    return this->infer_default_type(value);
-  } else {
-    // Find the type with the biggest score
-    auto it =
-        std::max_element(hints.begin(), hints.end(), [](auto& a, auto& b) {
-          return a.second < b.second;
-        });
-    return it->first;
-  }
+  return nullptr;
 }
 
 ar::Type* FunctionImporter::infer_default_type(llvm::Value* value) {
@@ -2165,9 +2174,7 @@ FunctionImporter::TypeHint FunctionImporter::
     case llvm::Instruction::FDiv: {
       return TypeHint(); // no hint, sign is irrelevant
     }
-    default: {
-      ikos_unreachable("unreachable");
-    }
+    default: { ikos_unreachable("unreachable"); }
   }
 
   llvm::Type* llvm_type = inst->getOperand(use.getOperandNo())->getType();
@@ -2237,6 +2244,11 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_phi(
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand(
     llvm::Value* value) {
+  // Use debug information if available
+  if (auto ar_type = this->infer_type_from_dbg(value)) {
+    return TypeHint(ar_type, 1000);
+  }
+
   if (auto gv = llvm::dyn_cast< llvm::GlobalVariable >(value)) {
     return this->infer_type_hint_operand_global_variable(gv);
   } else if (auto gv_alias = llvm::dyn_cast< llvm::GlobalAlias >(value)) {
@@ -2289,11 +2301,21 @@ FunctionImporter::TypeHint FunctionImporter::
   auto it = this->_variables.find(inst);
   if (it != this->_variables.end()) {
     return TypeHint(it->second->type(), 2);
-  } else {
-    // TODO(marthaud): use this->infer_type() ? It could cause an infinite
-    // recursion.
-    return TypeHint(); // no hint
   }
+
+  // Use the type of the returned value, if it's a direct call
+  if (auto call = llvm::dyn_cast< llvm::CallInst >(inst)) {
+    llvm::Value* called = call->getCalledValue();
+    if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
+      return TypeHint(_ctx.bundle_imp->translate_function(fun)
+                          ->type()
+                          ->return_type(),
+                      5);
+    }
+  }
+
+  // Using this->infer_type() here would cause an infinite recursion.
+  return TypeHint(); // no hint
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand_argument(
