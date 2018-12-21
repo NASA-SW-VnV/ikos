@@ -235,6 +235,25 @@ ar::Type* TypeImporter::translate_basic_di_type(llvm::DIBasicType* di_type,
           ikos_unreachable("unexpected float kind");
         }
       } break;
+      case dwarf::DW_ATE_complex_float: {
+        check_import(llvm_type->isStructTy(),
+                     "llvm::DIBasicType with complex encoding, but llvm::Type "
+                     "is not a struct");
+        auto struct_type = llvm::cast< llvm::StructType >(llvm_type);
+        check_import(struct_type->getNumElements() == 2 &&
+                         struct_type->getElementType(0) ==
+                             struct_type->getElementType(1) &&
+                         struct_type->getElementType(0)->isFloatingPointTy(),
+                     "llvm::DIBasicType with complex encoding, but "
+                     "llvm::StructType does not contain 2 floating point "
+                     "types");
+        check_import(di_type->getSizeInBits() ==
+                         2 * struct_type->getElementType(0)
+                                 ->getPrimitiveSizeInBits(),
+                     "llvm::DIBasicType with complex encoding and "
+                     "llvm::StructType have a different bit-width");
+        ar_type = this->translate_type(llvm_type, ar::Signed);
+      } break;
       default: {
         throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
       }
@@ -1203,20 +1222,35 @@ bool TypeImporter::match_basic_di_type(llvm::DIBasicType* di_type,
       case dwarf::DW_ATE_signed:
       case dwarf::DW_ATE_unsigned:
       case dwarf::DW_ATE_signed_char:
-      case dwarf::DW_ATE_unsigned_char:
+      case dwarf::DW_ATE_unsigned_char: {
         return type->isIntegerTy() &&
                di_type->getSizeInBits() ==
                    llvm::cast< llvm::IntegerType >(type)->getBitWidth();
-      case dwarf::DW_ATE_boolean:
+      }
+      case dwarf::DW_ATE_boolean: {
         return type->isIntegerTy() &&
                (di_type->getSizeInBits() ==
                     llvm::cast< llvm::IntegerType >(type)->getBitWidth() ||
                 (di_type->getSizeInBits() == 8 &&
                  llvm::cast< llvm::IntegerType >(type)->getBitWidth() == 1));
-      case dwarf::DW_ATE_float:
+      }
+      case dwarf::DW_ATE_float: {
         return type->isFloatingPointTy() &&
                (di_type->getSizeInBits() == type->getPrimitiveSizeInBits() ||
                 (di_type->getSizeInBits() == 128 && type->isX86_FP80Ty()));
+      }
+      case dwarf::DW_ATE_complex_float: {
+        if (!type->isStructTy()) {
+          return false;
+        }
+        auto struct_type = llvm::cast< llvm::StructType >(type);
+        return struct_type->getNumElements() == 2 &&
+               struct_type->getElementType(0) ==
+                   struct_type->getElementType(1) &&
+               struct_type->getElementType(0)->isFloatingPointTy() &&
+               di_type->getSizeInBits() ==
+                   2 * struct_type->getElementType(0)->getPrimitiveSizeInBits();
+      }
       default:
         throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
     }
