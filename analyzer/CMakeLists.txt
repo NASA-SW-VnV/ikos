@@ -258,7 +258,13 @@ add_executable(ikos-analyzer
   src/util/source_location.cpp
   src/util/timer.cpp
 )
-llvm_map_components_to_libnames(IKOS_ANALYZER_LLVM_LIBS ipo)
+llvm_map_components_to_libnames(IKOS_ANALYZER_LLVM_LIBS
+  core
+  ipo
+  irreader
+  support
+  transformutils
+)
 target_link_libraries(ikos-analyzer
   ${FRONTEND_LLVM_TO_AR_LIB}
   ${IKOS_ANALYZER_LLVM_LIBS}

@@ -180,6 +180,7 @@ install(TARGETS ikos-pp-lib ARCHIVE DESTINATION lib)
 # ikos-pp binary
 add_executable(ikos-pp src/ikos_pp.cpp)
 llvm_map_components_to_libnames(IKOS_PP_LLVM_LIBS
+  aggressiveinstcombine
   analysis
   asmparser
   bitreader
@@ -221,7 +222,13 @@ install(TARGETS ikos-llvm-to-ar ARCHIVE DESTINATION lib)
 
 # ikos-import binary
 add_executable(ikos-import src/ikos_import.cpp)
-llvm_map_components_to_libnames(IKOS_IMPORT_LLVM_LIBS ipo)
+llvm_map_components_to_libnames(IKOS_IMPORT_LLVM_LIBS
+  core
+  ipo
+  irreader
+  support
+  transformutils
+)
 target_link_libraries(ikos-import
   ikos-llvm-to-ar
   ${IKOS_IMPORT_LLVM_LIBS}
