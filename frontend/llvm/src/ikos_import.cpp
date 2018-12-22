@@ -49,8 +49,7 @@
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Debug.h>
-#include <llvm/Support/PrettyStackTrace.h>
-#include <llvm/Support/Signals.h>
+#include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -141,17 +140,13 @@ static ar::Formatter::FormatOptions make_format_options() {
 
 /// \brief Main for ikos-import
 int main(int argc, char** argv) {
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
-  llvm::PrettyStackTraceProgram pstp(argc, argv);
+  llvm::InitLLVM X(argc, argv);
 
   // Program name
   std::string progname = boost::filesystem::path(argv[0]).filename().string();
 
   // Enable debug stream buffering
   llvm::EnableDebugBuffering = true;
-
-  // Call llvm_shutdown() on exit
-  llvm::llvm_shutdown_obj shutdown;
 
   // LLVM context
   llvm::LLVMContext llvm_context;
