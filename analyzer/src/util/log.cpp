@@ -52,10 +52,6 @@ namespace log {
 // Default global logging level
 LogLevel Level = LogLevel::All;
 
-bool out_isatty() {
-  return isatty(1) != 0;
-}
-
 } // end namespace log
 } // end namespace analyzer
 } // end namespace ikos

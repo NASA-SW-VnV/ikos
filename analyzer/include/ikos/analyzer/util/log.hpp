@@ -74,9 +74,6 @@ inline std::ostream& out() {
   return std::cout;
 }
 
-/// \brief Return true if the logging output stream is in a tty
-bool out_isatty();
-
 /// \brief Return true if a message of severity `level` would be displayed
 inline bool is_enabled_for(LogLevel user_level) {
   return Level <= user_level;

@@ -54,6 +54,7 @@
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/WithColor.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include <ikos/ar/format/dot.hpp>
@@ -125,20 +126,6 @@ static llvm::cl::opt< analyzer::LogLevel > LogLevel(
         clEnumValN(analyzer::LogLevel::Debug, "debug", "Debug level"),
         clEnumValN(analyzer::LogLevel::All, "all", "Show all messages")),
     llvm::cl::init(analyzer::LogLevel::Warning),
-    llvm::cl::cat(MainCategory));
-
-enum class ColorOpt { Yes, No, Auto };
-
-static llvm::cl::opt< ColorOpt > Color(
-    "color",
-    llvm::cl::desc("Enable terminal colors:"),
-    llvm::cl::values(
-        clEnumValN(ColorOpt::Yes, "yes", "Enable colors"),
-        clEnumValN(ColorOpt::Auto,
-                   "auto",
-                   "Enable colors if the output is a terminal (default)"),
-        clEnumValN(ColorOpt::No, "no", "Disable colors")),
-    llvm::cl::init(ColorOpt::Auto),
     llvm::cl::cat(MainCategory));
 
 /// @}
@@ -566,6 +553,24 @@ static llvm::cl::opt< bool > OrderGlobals(
 
 /// @}
 
+/// \brief Return true if colors are enabled
+static bool colors_enabled() {
+  // Use a function from llvm/lib/Support/WithColor.cpp so that the global
+  // constructors are called, and the 'color' option is registered.
+  llvm::WithColor X(llvm::outs(), llvm::HighlightColor::String);
+
+  llvm::StringMap< llvm::cl::Option* > opts = llvm::cl::getRegisteredOptions();
+  auto it = opts.find("color");
+  ikos_assert_msg(it != opts.end(), "Option 'color' is not registered");
+  auto opt =
+      static_cast< llvm::cl::opt< llvm::cl::boolOrDefault >* >(it->second);
+  if (opt->getValue() == llvm::cl::BOU_UNSET) {
+    return llvm::outs().has_colors();
+  } else {
+    return opt->getValue() == llvm::cl::BOU_TRUE;
+  }
+}
+
 /// \brief Build LLVM to AR import options from command line arguments
 static llvm_to_ar::Importer::ImportOptions make_import_options() {
   llvm_to_ar::Importer::ImportOptions opts;
@@ -691,9 +696,7 @@ int main(int argc, char** argv) {
   analyzer::log::Level = LogLevel;
 
   // Enable colors, if asked
-  analyzer::color::Enable =
-      (Color == ColorOpt::Yes ||
-       (Color == ColorOpt::Auto && analyzer::log::out_isatty()));
+  analyzer::color::Enable = colors_enabled();
 
   try {
 #ifndef NDEBUG

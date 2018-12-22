@@ -711,8 +711,12 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-name-values')
 
     # misc. options
-    cmd += ['-color=%s' % opt.color,
-            '-log=%s' % opt.log_level]
+    if opt.color == 'yes':
+        cmd.append('-color=1')
+    elif opt.color == 'no':
+        cmd.append('-color=0')
+
+    cmd.append('-log=%s' % opt.log_level)
 
     # input/output
     cmd += [pp_path, '-o', db_path]
