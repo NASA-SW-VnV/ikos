@@ -40,6 +40,9 @@
 
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
+if (POLICY CMP0042)
+  cmake_policy(SET CMP0042 NEW)
+endif()
 if (POLICY CMP0056)
   cmake_policy(SET CMP0056 NEW)
 endif()
@@ -133,7 +136,7 @@ install(DIRECTORY include/
   PATTERN "*.hpp"
 )
 
-add_library(ikos-ar STATIC
+add_library(ikos-ar
   src/format/dot.cpp
   src/format/namer.cpp
   src/format/text.cpp
@@ -158,8 +161,12 @@ add_library(ikos-ar STATIC
 )
 target_link_libraries(ikos-ar
   ${GMP_LIB}
-  ${GMPXX_LIB})
-install(TARGETS ikos-ar ARCHIVE DESTINATION lib)
+  ${GMPXX_LIB}
+)
+install(TARGETS ikos-ar
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
 
 #
 # Doxygen

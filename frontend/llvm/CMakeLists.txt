@@ -40,6 +40,9 @@
 
 cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
 
+if (POLICY CMP0042)
+  cmake_policy(SET CMP0042 NEW)
+endif()
 if (POLICY CMP0056)
   cmake_policy(SET CMP0056 NEW)
 endif()
@@ -118,6 +121,8 @@ if ((LLVM_VERSION VERSION_LESS "7") OR (NOT (LLVM_VERSION VERSION_LESS "8")))
   message(FATAL_ERROR "LLVM 7 is required.")
 endif()
 
+option(IKOS_LINK_LLVM_DYLIB "Link IKOS against the libLLVM dynamic library" OFF)
+
 set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")
 set(LLVM_LIBRARY_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib")
 set(LLVM_INSTALL_TOOLCHAIN_ONLY TRUE) # call install() by ourselves
@@ -164,7 +169,7 @@ install(DIRECTORY include/
 )
 
 # ikos-pp passes
-add_library(ikos-pp-lib STATIC
+add_library(ikos-pp-lib
   src/pass/initialize.cpp
   src/pass/lower_cst_expr.cpp
   src/pass/lower_select.cpp
@@ -174,40 +179,58 @@ add_library(ikos-pp-lib STATIC
   src/pass/remove_printf_calls.cpp
   src/pass/remove_unreachable_blocks.cpp
 )
+if (IKOS_LINK_LLVM_DYLIB)
+  set(IKOS_PP_LIB_LLVM_LIBS "LLVM")
+else()
+  llvm_map_components_to_libnames(IKOS_PP_LIB_LLVM_LIBS
+    core
+    support
+    transformutils
+  )
+endif()
+target_link_libraries(ikos-pp-lib ${IKOS_PP_LIB_LLVM_LIBS})
 set_target_properties(ikos-pp-lib PROPERTIES OUTPUT_NAME ikos-pp)
-install(TARGETS ikos-pp-lib ARCHIVE DESTINATION lib)
+install(TARGETS ikos-pp-lib
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
 
 # ikos-pp binary
 add_executable(ikos-pp src/ikos_pp.cpp)
-llvm_map_components_to_libnames(IKOS_PP_LLVM_LIBS
-  aggressiveinstcombine
-  analysis
-  asmparser
-  bitreader
-  bitwriter
-  codegen
-  core
-  coroutines
-  instcombine
-  instrumentation
-  ipo
-  irreader
-  mc
-  objcarcopts
-  scalaropts
-  support
-  target
-  transformutils
-  vectorize
-)
+if (IKOS_LINK_LLVM_DYLIB)
+  set(IKOS_PP_BIN_LLVM_LIBS "LLVM")
+else()
+  llvm_map_components_to_libnames(IKOS_PP_BIN_LLVM_LIBS
+    aggressiveinstcombine
+    analysis
+    asmparser
+    bitreader
+    bitwriter
+    codegen
+    core
+    coroutines
+    instcombine
+    instrumentation
+    ipo
+    irreader
+    mc
+    objcarcopts
+    scalaropts
+    support
+    target
+    transformutils
+    vectorize
+  )
+endif()
 target_link_libraries(ikos-pp
   ikos-pp-lib
-  ${IKOS_PP_LLVM_LIBS}
-  ${Boost_LIBRARIES})
+  ${IKOS_PP_BIN_LLVM_LIBS}
+  ${Boost_LIBRARIES}
+)
 install(TARGETS ikos-pp RUNTIME DESTINATION bin)
 
 # llvm-to-ar lib
-add_library(ikos-llvm-to-ar STATIC
+add_library(ikos-llvm-to-ar
   src/import/bundle.cpp
   src/import/constant.cpp
   src/import/data_layout.cpp
@@ -218,24 +241,48 @@ add_library(ikos-llvm-to-ar STATIC
   src/import/source_location.cpp
   src/import/type.cpp
 )
-install(TARGETS ikos-llvm-to-ar ARCHIVE DESTINATION lib)
+if (IKOS_LINK_LLVM_DYLIB)
+  set(IKOS_LLVM_TO_AR_LLVM_LIBS "LLVM")
+else()
+  llvm_map_components_to_libnames(IKOS_LLVM_TO_AR_LLVM_LIBS
+    core
+    support
+    transformutils
+  )
+endif()
+target_link_libraries(ikos-llvm-to-ar
+  ${IKOS_LLVM_TO_AR_LLVM_LIBS}
+  ${AR_LIB}
+  ${Boost_LIBRARIES}
+  ${GMP_LIB}
+  ${GMPXX_LIB}
+)
+install(TARGETS ikos-llvm-to-ar
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+)
 
 # ikos-import binary
 add_executable(ikos-import src/ikos_import.cpp)
-llvm_map_components_to_libnames(IKOS_IMPORT_LLVM_LIBS
-  core
-  ipo
-  irreader
-  support
-  transformutils
-)
+if (IKOS_LINK_LLVM_DYLIB)
+  set(IKOS_IMPORT_LLVM_LIBS "LLVM")
+else()
+  llvm_map_components_to_libnames(IKOS_IMPORT_LLVM_LIBS
+    core
+    ipo
+    irreader
+    support
+    transformutils
+  )
+endif()
 target_link_libraries(ikos-import
   ikos-llvm-to-ar
   ${IKOS_IMPORT_LLVM_LIBS}
   ${AR_LIB}
   ${Boost_LIBRARIES}
   ${GMP_LIB}
-  ${GMPXX_LIB})
+  ${GMPXX_LIB}
+)
 install(TARGETS ikos-import RUNTIME DESTINATION bin)
 
 #

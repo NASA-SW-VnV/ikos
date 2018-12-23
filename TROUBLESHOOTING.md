@@ -49,6 +49,14 @@ If the ikos python module is in another directory, make sure it is in your PYTHO
 export PYTHONPATH=/path/to/ikos-python-module
 ```
 
+### "Two passes with the same argument (-domtree) attempted to be registered!" while running ikos
+
+You are probably trying to build IKOS with shared libraries (using `-DBUILD_SHARED_LIBS=ON`) and LLVM was linked statically (using `libLLVMxxx.a`).
+
+Unfortunately, this doesn't work because LLVM uses global constructors to register command line options, and the global constructors end up being called twice.
+
+Compiling IKOS with both `-DBUILD_SHARED_LIBS=ON` and `-DIKOS_LINK_LLVM_DYLIB=ON` should fix the issue by linking against the libLLVM shared library.
+
 Analysis issues
 ---------------
 

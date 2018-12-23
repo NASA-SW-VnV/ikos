@@ -132,6 +132,8 @@ if ((LLVM_VERSION VERSION_LESS "7") OR (NOT (LLVM_VERSION VERSION_LESS "8")))
   message(FATAL_ERROR "LLVM 7 is required.")
 endif()
 
+option(IKOS_LINK_LLVM_DYLIB "Link IKOS against the libLLVM dynamic library" OFF)
+
 set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")
 set(LLVM_LIBRARY_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib")
 set(LLVM_INSTALL_TOOLCHAIN_ONLY TRUE) # call install() by ourselves
@@ -258,13 +260,17 @@ add_executable(ikos-analyzer
   src/util/source_location.cpp
   src/util/timer.cpp
 )
-llvm_map_components_to_libnames(IKOS_ANALYZER_LLVM_LIBS
-  core
-  ipo
-  irreader
-  support
-  transformutils
-)
+if (IKOS_LINK_LLVM_DYLIB)
+  set(IKOS_ANALYZER_LLVM_LIBS "LLVM")
+else()
+  llvm_map_components_to_libnames(IKOS_ANALYZER_LLVM_LIBS
+    core
+    ipo
+    irreader
+    support
+    transformutils
+  )
+endif()
 target_link_libraries(ikos-analyzer
   ${FRONTEND_LLVM_TO_AR_LIB}
   ${IKOS_ANALYZER_LLVM_LIBS}
@@ -272,7 +278,8 @@ target_link_libraries(ikos-analyzer
   ${Boost_LIBRARIES}
   ${GMP_LIB}
   ${GMPXX_LIB}
-  ${AR_LIB})
+  ${AR_LIB}
+)
 if (APRON_FOUND)
   target_link_libraries(ikos-analyzer ${APRON_LIBRARIES})
 endif()
