@@ -55,25 +55,22 @@ if (NOT PPL_FOUND)
   find_program(PPL_CONFIG_EXECUTABLE CACHE NAMES ppl-config DOC "Path to ppl-config binary")
 
   if (PPL_CONFIG_EXECUTABLE)
-    execute_process(
-      COMMAND ${PPL_CONFIG_EXECUTABLE} --includedir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE PPL_CONFIG_INCLUDE_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ppl-config failed with status: ${HAD_ERROR}")
-    endif()
+    function(run_ppl_config FLAG OUTPUT_VAR)
+      execute_process(
+        COMMAND "${PPL_CONFIG_EXECUTABLE}" "${FLAG}"
+        RESULT_VARIABLE HAD_ERROR
+        OUTPUT_VARIABLE ${OUTPUT_VAR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+      )
+      if (HAD_ERROR)
+        message(FATAL_ERROR "ppl-config failed with status: ${HAD_ERROR}")
+      endif()
+      set(${OUTPUT_VAR} "${${OUTPUT_VAR}}" PARENT_SCOPE)
+    endfunction()
 
-    execute_process(
-      COMMAND ${PPL_CONFIG_EXECUTABLE} --libdir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE PPL_CONFIG_LIB_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ppl-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_ppl_config("--includedir" PPL_CONFIG_INCLUDE_DIR)
+    run_ppl_config("--libdir" PPL_CONFIG_LIB_DIR)
 
     list(APPEND PPL_INCLUDE_SEARCH_DIRS ${PPL_CONFIG_INCLUDE_DIR})
     list(APPEND PPL_LIB_SEARCH_DIRS ${PPL_CONFIG_LIB_DIR})

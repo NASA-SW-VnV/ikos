@@ -44,116 +44,44 @@ if (NOT LLVM_FOUND)
   find_program(LLVM_CONFIG_EXECUTABLE CACHE NAMES llvm-config DOC "Path to llvm-config binary")
 
   if (LLVM_CONFIG_EXECUTABLE)
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --version
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_VERSION
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    function(run_llvm_config FLAG OUTPUT_VAR)
+      execute_process(
+        COMMAND "${LLVM_CONFIG_EXECUTABLE}" "${FLAG}"
+        RESULT_VARIABLE HAD_ERROR
+        OUTPUT_VARIABLE ${OUTPUT_VAR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+      )
+      if (HAD_ERROR)
+        message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
+      endif()
+      set(${OUTPUT_VAR} "${${OUTPUT_VAR}}" PARENT_SCOPE)
+    endfunction()
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --prefix
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_ROOT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--version" LLVM_VERSION)
+
+    run_llvm_config("--prefix" LLVM_ROOT)
     file(TO_CMAKE_PATH "${LLVM_ROOT}" LLVM_ROOT)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --includedir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_INCLUDE_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--includedir" LLVM_INCLUDE_DIR)
     file(TO_CMAKE_PATH "${LLVM_INCLUDE_DIR}" LLVM_INCLUDE_DIR)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --bindir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_TOOLS_BINARY_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--bindir" LLVM_TOOLS_BINARY_DIR)
     file(TO_CMAKE_PATH "${LLVM_TOOLS_BINARY_DIR}" LLVM_TOOLS_BINARY_DIR)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --libdir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_LIBRARY_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--libdir" LLVM_LIBRARY_DIR)
     file(TO_CMAKE_PATH "${LLVM_LIBRARY_DIR}" LLVM_LIBRARY_DIR)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --cppflags
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_CPPFLAGS
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--cppflags" LLVM_CPPFLAGS)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --cxxflags
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_CXXFLAGS
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--cxxflags" LLVM_CXXFLAGS)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --ldflags
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_LDFLAGS
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--ldflags" LLVM_LDFLAGS)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --obj-root
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_OBJ_ROOT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_llvm_config("--obj-root" LLVM_OBJ_ROOT)
     file(TO_CMAKE_PATH "${LLVM_OBJ_ROOT}" LLVM_OBJ_ROOT)
 
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core bitreader asmparser analysis
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE LLVM_MODULE_LIBS
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "llvm-config failed with status: ${HAD_ERROR}")
-    endif()
-
-    execute_process(
-      COMMAND ${LLVM_CONFIG_EXECUTABLE} --cmakedir
-      OUTPUT_VARIABLE LLVM_CMAKE_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    run_llvm_config("--cmakedir" LLVM_CMAKE_DIR)
     file(TO_CMAKE_PATH "${LLVM_CMAKE_DIR}" LLVM_CMAKE_DIR)
   endif()
 
@@ -168,7 +96,6 @@ if (NOT LLVM_FOUND)
       LLVM_CXXFLAGS
       LLVM_LDFLAGS
       LLVM_OBJ_ROOT
-      LLVM_MODULE_LIBS
       LLVM_VERSION
     VERSION_VAR
       LLVM_VERSION

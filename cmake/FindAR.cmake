@@ -56,25 +56,22 @@ if (NOT AR_FOUND)
   find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "Path to ikos-config binary")
 
   if (IKOS_CONFIG_EXECUTABLE)
-    execute_process(
-      COMMAND ${IKOS_CONFIG_EXECUTABLE} --includedir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE IKOS_CONFIG_INCLUDE_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
-    endif()
+    function(run_ikos_config FLAG OUTPUT_VAR)
+      execute_process(
+        COMMAND "${IKOS_CONFIG_EXECUTABLE}" "${FLAG}"
+        RESULT_VARIABLE HAD_ERROR
+        OUTPUT_VARIABLE ${OUTPUT_VAR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+      )
+      if (HAD_ERROR)
+        message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+      endif()
+      set(${OUTPUT_VAR} "${${OUTPUT_VAR}}" PARENT_SCOPE)
+    endfunction()
 
-    execute_process(
-      COMMAND ${IKOS_CONFIG_EXECUTABLE} --libdir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE IKOS_CONFIG_LIB_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_ikos_config("--includedir" IKOS_CONFIG_INCLUDE_DIR)
+    run_ikos_config("--libdir" IKOS_CONFIG_LIB_DIR)
 
     list(APPEND AR_INCLUDE_SEARCH_DIRS "${IKOS_CONFIG_INCLUDE_DIR}")
     list(APPEND AR_LIB_SEARCH_DIRS "${IKOS_CONFIG_LIB_DIR}")

@@ -58,35 +58,23 @@ if (NOT FRONTEND_LLVM_FOUND)
   find_program(IKOS_CONFIG_EXECUTABLE CACHE NAMES ikos-config DOC "Path to ikos-config binary")
 
   if (IKOS_CONFIG_EXECUTABLE)
-    execute_process(
-      COMMAND ${IKOS_CONFIG_EXECUTABLE} --includedir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE IKOS_CONFIG_INCLUDE_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
-    endif()
+    function(run_ikos_config FLAG OUTPUT_VAR)
+      execute_process(
+        COMMAND "${IKOS_CONFIG_EXECUTABLE}" "${FLAG}"
+        RESULT_VARIABLE HAD_ERROR
+        OUTPUT_VARIABLE ${OUTPUT_VAR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+      )
+      if (HAD_ERROR)
+        message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
+      endif()
+      set(${OUTPUT_VAR} "${${OUTPUT_VAR}}" PARENT_SCOPE)
+    endfunction()
 
-    execute_process(
-      COMMAND ${IKOS_CONFIG_EXECUTABLE} --libdir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE IKOS_CONFIG_LIB_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
-    endif()
-
-    execute_process(
-      COMMAND ${IKOS_CONFIG_EXECUTABLE} --bindir
-      RESULT_VARIABLE HAD_ERROR
-      OUTPUT_VARIABLE IKOS_CONFIG_BIN_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (HAD_ERROR)
-      message(FATAL_ERROR "ikos-config failed with status: ${HAD_ERROR}")
-    endif()
+    run_ikos_config("--includedir" IKOS_CONFIG_INCLUDE_DIR)
+    run_ikos_config("--libdir" IKOS_CONFIG_LIB_DIR)
+    run_ikos_config("--bindir" IKOS_CONFIG_BIN_DIR)
 
     list(APPEND FRONTEND_LLVM_INCLUDE_SEARCH_DIRS "${IKOS_CONFIG_INCLUDE_DIR}")
     list(APPEND FRONTEND_LLVM_LIB_SEARCH_DIRS "${IKOS_CONFIG_LIB_DIR}")
