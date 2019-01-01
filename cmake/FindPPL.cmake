@@ -94,9 +94,6 @@ if (NOT PPL_FOUND)
     DOC "Path to ppl_c library"
   )
 
-  set(PPL_LIBRARIES ${PPL_LIB} ${PPL_C_LIB})
-  mark_as_advanced(PPL_LIBRARIES)
-
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(PPL
     REQUIRED_VARS
@@ -106,3 +103,8 @@ if (NOT PPL_FOUND)
     FAIL_MESSAGE
       "Could NOT find PPL. Please provide -DPPL_ROOT=/path/to/ppl")
 endif()
+
+set(PPL_LIBRARIES
+  ${PPL_LIB}
+  ${PPL_C_LIB}
+)

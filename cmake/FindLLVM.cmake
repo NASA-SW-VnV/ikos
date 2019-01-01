@@ -62,27 +62,23 @@ if (NOT LLVM_FOUND)
 
     run_llvm_config("--prefix" LLVM_ROOT)
     file(TO_CMAKE_PATH "${LLVM_ROOT}" LLVM_ROOT)
+    set(LLVM_ROOT "${LLVM_ROOT}" CACHE PATH "Path to llvm install directory")
 
     run_llvm_config("--includedir" LLVM_INCLUDE_DIR)
     file(TO_CMAKE_PATH "${LLVM_INCLUDE_DIR}" LLVM_INCLUDE_DIR)
+    set(LLVM_INCLUDE_DIR "${LLVM_INCLUDE_DIR}" CACHE PATH "Path to llvm include directory")
 
     run_llvm_config("--bindir" LLVM_TOOLS_BINARY_DIR)
     file(TO_CMAKE_PATH "${LLVM_TOOLS_BINARY_DIR}" LLVM_TOOLS_BINARY_DIR)
+    set(LLVM_TOOLS_BINARY_DIR "${LLVM_TOOLS_BINARY_DIR}" CACHE PATH "Path to llvm binary directory")
 
     run_llvm_config("--libdir" LLVM_LIBRARY_DIR)
     file(TO_CMAKE_PATH "${LLVM_LIBRARY_DIR}" LLVM_LIBRARY_DIR)
-
-    run_llvm_config("--cppflags" LLVM_CPPFLAGS)
-
-    run_llvm_config("--cxxflags" LLVM_CXXFLAGS)
-
-    run_llvm_config("--ldflags" LLVM_LDFLAGS)
-
-    run_llvm_config("--obj-root" LLVM_OBJ_ROOT)
-    file(TO_CMAKE_PATH "${LLVM_OBJ_ROOT}" LLVM_OBJ_ROOT)
+    set(LLVM_LIBRARY_DIR "${LLVM_LIBRARY_DIR}" CACHE PATH "Path to llvm library directory")
 
     run_llvm_config("--cmakedir" LLVM_CMAKE_DIR)
     file(TO_CMAKE_PATH "${LLVM_CMAKE_DIR}" LLVM_CMAKE_DIR)
+    set(LLVM_CMAKE_DIR "${LLVM_CMAKE_DIR}" CACHE PATH "Path to llvm cmake directory")
   endif()
 
   include(FindPackageHandleStandardArgs)
@@ -92,10 +88,7 @@ if (NOT LLVM_FOUND)
       LLVM_INCLUDE_DIR
       LLVM_TOOLS_BINARY_DIR
       LLVM_LIBRARY_DIR
-      LLVM_CPPFLAGS
-      LLVM_CXXFLAGS
-      LLVM_LDFLAGS
-      LLVM_OBJ_ROOT
+      LLVM_CMAKE_DIR
       LLVM_VERSION
     VERSION_VAR
       LLVM_VERSION

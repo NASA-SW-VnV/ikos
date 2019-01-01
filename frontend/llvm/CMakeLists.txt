@@ -69,7 +69,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE STRING "Install directory" FORCE)
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "Install directory" FORCE)
 endif()
 message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
 
