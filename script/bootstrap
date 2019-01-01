@@ -94,7 +94,7 @@ python2_required_version="2.7.3"
 python3_required_version="3.3"
 python_install_version="2.7.15"
 llvm_required_version="7"
-llvm_install_version="7.0.0"
+llvm_install_version="7.0.1"
 
 # Default parameters
 install_dir=""

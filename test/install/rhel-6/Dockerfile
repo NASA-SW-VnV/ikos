@@ -11,8 +11,8 @@ ARG rhel_password
 # boost 1.68.0
 # python 3.4.8
 # sqlite 3.6.20
-# llvm 7.0.0
-# clang 7.0.0
+# llvm 7.0.1
+# clang 7.0.1
 # gcc 8.2.0
 
 # Subscribe
