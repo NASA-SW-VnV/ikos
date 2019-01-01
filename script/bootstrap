@@ -10,7 +10,7 @@
 #
 # Notices:
 #
-# Copyright (c) 2011-2018 United States Government as represented by the
+# Copyright (c) 2011-2019 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -168,7 +168,7 @@ function short_help() {
 
 function version() {
     echo "ikos $ikos_version"
-    echo "Copyright (c) 2011-2018 United States Government as represented by the"
+    echo "Copyright (c) 2011-2019 United States Government as represented by the"
     echo "Administrator of the National Aeronautics and Space Administration."
     echo "All Rights Reserved."
 }
