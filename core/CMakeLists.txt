@@ -59,11 +59,11 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 if (NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" FORCE)
 endif()
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE STRING "Install directory." FORCE)
+  set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE STRING "Install directory" FORCE)
 endif()
 message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
 
@@ -89,7 +89,7 @@ endmacro()
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
-set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation.")
+set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation")
 if (CUSTOM_BOOST_ROOT)
   set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
   set(Boost_NO_SYSTEM_PATHS TRUE)
