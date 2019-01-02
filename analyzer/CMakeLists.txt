@@ -132,6 +132,7 @@ find_package(FrontendLLVM REQUIRED)
 include_directories(${FRONTEND_LLVM_INCLUDE_DIR})
 
 find_package(LLVM REQUIRED)
+include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
 
 if ((LLVM_VERSION VERSION_LESS "7") OR (NOT (LLVM_VERSION VERSION_LESS "8")))
   message(FATAL_ERROR "LLVM 7 is required.")
@@ -139,14 +140,8 @@ endif()
 
 option(IKOS_LINK_LLVM_DYLIB "Link IKOS against the libLLVM dynamic library" OFF)
 
-set(LLVM_RUNTIME_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin")
-set(LLVM_LIBRARY_OUTPUT_INTDIR "${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib")
-set(LLVM_INSTALL_TOOLCHAIN_ONLY TRUE) # call install() by ourselves
 set(LLVM_REQUIRES_RTTI TRUE)
 set(LLVM_REQUIRES_EH TRUE)
-
-include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
-add_definitions(${LLVM_DEFINITIONS})
 
 # incorporate the cmake features provided by LLVM
 list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
@@ -154,6 +149,13 @@ list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
 include(LLVMConfig)
 include(HandleLLVMOptions)
 include(AddLLVM)
+
+if (NOT LLVM_ENABLE_RTTI)
+  message(FATAL_ERROR "LLVM was built without run-time type information (RTTI)")
+endif()
+if (NOT LLVM_ENABLE_EH)
+  message(FATAL_ERROR "LLVM was built without exception-handling support")
+endif()
 
 find_package(Clang REQUIRED)
 
