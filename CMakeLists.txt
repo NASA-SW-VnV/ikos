@@ -66,7 +66,10 @@ endif()
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "Install directory" FORCE)
 endif()
-message(STATUS "All libraries and binaries will be installed in ${CMAKE_INSTALL_PREFIX}")
+
+message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "CMake generator: ${CMAKE_GENERATOR}")
 
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
