@@ -127,24 +127,22 @@ if ((LLVM_VERSION VERSION_LESS "7") OR (NOT (LLVM_VERSION VERSION_LESS "8")))
   message(FATAL_ERROR "LLVM 7 is required.")
 endif()
 
-option(IKOS_LINK_LLVM_DYLIB "Link IKOS against the libLLVM dynamic library" OFF)
-
-set(LLVM_REQUIRES_RTTI TRUE)
-set(LLVM_REQUIRES_EH TRUE)
-
-# incorporate the cmake features provided by LLVM
+# Add path to llvm cmake modules
 list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
 
 include(LLVMConfig)
-include(HandleLLVMOptions)
-include(AddLLVM)
 
 if (NOT LLVM_ENABLE_RTTI)
   message(FATAL_ERROR "LLVM was built without run-time type information (RTTI)")
 endif()
-if (NOT LLVM_ENABLE_EH)
-  message(FATAL_ERROR "LLVM was built without exception-handling support")
-endif()
+
+set(LLVM_REQUIRES_RTTI TRUE)
+set(LLVM_REQUIRES_EH TRUE)
+
+include(HandleLLVMOptions)
+include(AddLLVM)
+
+option(IKOS_LINK_LLVM_DYLIB "Link IKOS against the libLLVM dynamic library" OFF)
 
 #
 # Compiler flags
