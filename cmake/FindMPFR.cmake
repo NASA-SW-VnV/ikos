@@ -56,15 +56,26 @@ if (NOT MPFR_FOUND)
   )
 
   if (MPFR_INCLUDE_DIR)
-    # Set MPFR_VERSION
-    file(READ "${MPFR_INCLUDE_DIR}/mpfr.h" _mpfr_version_header)
+    # Detect the version using mpfr.h
+    file(READ "${MPFR_INCLUDE_DIR}/mpfr.h" MPFR_HEADER)
 
-    string(REGEX MATCH "define[ \t]+MPFR_VERSION_MAJOR[ \t]+([0-9]+)" _mpfr_major_version_match "${_mpfr_version_header}")
-    set(MPFR_MAJOR_VERSION "${CMAKE_MATCH_1}")
-    string(REGEX MATCH "define[ \t]+MPFR_VERSION_MINOR[ \t]+([0-9]+)" _mpfr_minor_version_match "${_mpfr_version_header}")
-    set(MPFR_MINOR_VERSION "${CMAKE_MATCH_1}")
-    string(REGEX MATCH "define[ \t]+MPFR_VERSION_PATCHLEVEL[ \t]+([0-9]+)" _mpfr_patchlevel_version_match "${_mpfr_version_header}")
-    set(MPFR_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
+    if (MPFR_HEADER MATCHES "define[ \t]+MPFR_VERSION_MAJOR[ \t]+([0-9]+)")
+      set(MPFR_MAJOR_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find MPFR_VERSION_MAJOR in ${MPFR_INCLUDE_DIR}/mpfr.h")
+    endif()
+
+    if (MPFR_HEADER MATCHES "define[ \t]+MPFR_VERSION_MINOR[ \t]+([0-9]+)")
+      set(MPFR_MINOR_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find MPFR_VERSION_MINOR in ${MPFR_INCLUDE_DIR}/mpfr.h")
+    endif()
+
+    if (MPFR_HEADER MATCHES "define[ \t]+MPFR_VERSION_PATCHLEVEL[ \t]+([0-9]+)")
+      set(MPFR_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find MPFR_VERSION_PATCHLEVEL in ${MPFR_INCLUDE_DIR}/mpfr.h")
+    endif()
 
     set(MPFR_VERSION "${MPFR_MAJOR_VERSION}.${MPFR_MINOR_VERSION}.${MPFR_PATCHLEVEL_VERSION}")
   endif()

@@ -46,7 +46,7 @@ if (NOT CLANG_FOUND)
     DOC "Path to clang binary")
 
   if (CLANG_EXECUTABLE)
-    set(VERSION_REGEX "^clang version ([0-9]+(\\.[0-9]+)*)( |\n|-|$)(.*)$")
+    # Detect the version using `clang --version`
     execute_process(
       COMMAND ${CLANG_EXECUTABLE} --version
       RESULT_VARIABLE HAD_ERROR
@@ -56,10 +56,10 @@ if (NOT CLANG_FOUND)
     if (HAD_ERROR)
       message(FATAL_ERROR "clang failed with status: ${HAD_ERROR}")
     endif()
-    if (NOT (CLANG_VERSION_OUTPUT MATCHES "${VERSION_REGEX}"))
+    if (NOT (CLANG_VERSION_OUTPUT MATCHES "clang version ([0-9]+(\\.[0-9]+)*)"))
       message(FATAL_ERROR "unexpected output for `clang --version`: ${CLANG_VERSION_OUTPUT}")
     endif()
-    string(REGEX REPLACE "${VERSION_REGEX}" "\\1" CLANG_VERSION "${CLANG_VERSION_OUTPUT}")
+    set(CLANG_VERSION "${CMAKE_MATCH_1}")
   endif()
 
   include(FindPackageHandleStandardArgs)

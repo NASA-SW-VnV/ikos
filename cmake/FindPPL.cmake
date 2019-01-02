@@ -94,12 +94,45 @@ if (NOT PPL_FOUND)
     DOC "Path to ppl_c library"
   )
 
+  if (PPL_INCLUDE_DIR)
+    # Detect the version using ppl_c.h
+    file(READ "${PPL_INCLUDE_DIR}/ppl_c.h" PPL_HEADER)
+
+    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_MAJOR[ \t]+([0-9]+)")
+      set(PPL_MAJOR_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find PPL_VERSION_MAJOR in ${PPL_INCLUDE_DIR}/ppl_c.h")
+    endif()
+
+    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_MINOR[ \t]+([0-9]+)")
+      set(PPL_MINOR_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find PPL_VERSION_MINOR in ${PPL_INCLUDE_DIR}/ppl_c.h")
+    endif()
+
+    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_REVISION[ \t]+([0-9]+)")
+      set(PPL_REVISION_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find PPL_VERSION_REVISION in ${PPL_INCLUDE_DIR}/ppl_c.h")
+    endif()
+
+    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_BETA[ \t]+([0-9]+)")
+      set(PPL_BETA_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find PPL_VERSION_BETA in ${PPL_INCLUDE_DIR}/ppl_c.h")
+    endif()
+
+    set(PPL_VERSION "${PPL_MAJOR_VERSION}.${PPL_MINOR_VERSION}.${PPL_REVISION_VERSION}.${PPL_BETA_VERSION}")
+  endif()
+
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(PPL
     REQUIRED_VARS
       PPL_INCLUDE_DIR
       PPL_LIB
       PPL_C_LIB
+    VERSION_VAR
+      PPL_VERSION
     FAIL_MESSAGE
       "Could NOT find PPL. Please provide -DPPL_ROOT=/path/to/ppl")
 endif()

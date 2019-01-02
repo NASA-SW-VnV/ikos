@@ -55,11 +55,24 @@ if (NOT SQLITE3_FOUND)
     DOC "Path to sqlite3 library"
   )
 
+  if (SQLITE3_INCLUDE_DIR)
+    # Detect the version using sqlite3.h
+    file(READ "${SQLITE3_INCLUDE_DIR}/sqlite3.h" SQLITE3_HEADER)
+
+    if (SQLITE3_HEADER MATCHES "define[ \t]+SQLITE_VERSION[ \t]+\"([0-9]+(\\.[0-9]+)*)\"")
+      set(SQLITE3_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find SQLITE_VERSION in ${SQLITE3_INCLUDE_DIR}/sqlite3.h")
+    endif()
+  endif()
+
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(SQLite3
     REQUIRED_VARS
       SQLITE3_INCLUDE_DIR
       SQLITE3_LIB
+    VERSION_VAR
+      SQLITE3_VERSION
     FAIL_MESSAGE
       "Could NOT find SQLite3. Please provide -DSQLITE3_ROOT=/path/to/sqlite3")
 endif()

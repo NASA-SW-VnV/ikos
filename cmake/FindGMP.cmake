@@ -67,6 +67,31 @@ if (NOT GMP_FOUND)
     DOC "Path to gmpxx library"
   )
 
+  if (GMP_INCLUDE_DIR)
+    # Detect the version using gmp.h
+    file(READ "${GMP_INCLUDE_DIR}/gmp.h" GMP_HEADER)
+
+    if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION[ \t]+([0-9]+)")
+      set(GMP_MAJOR_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find __GNU_MP_VERSION in ${GMP_INCLUDE_DIR}/gmp.h")
+    endif()
+
+    if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION_MINOR[ \t]+([0-9]+)")
+      set(GMP_MINOR_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find __GNU_MP_VERSION_MINOR in ${GMP_INCLUDE_DIR}/gmp.h")
+    endif()
+
+    if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION_PATCHLEVEL[ \t]+([0-9]+)")
+      set(GMP_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
+    else()
+      message(FATAL_ERROR "could not find __GNU_MP_VERSION_PATCHLEVEL in ${GMP_INCLUDE_DIR}/gmp.h")
+    endif()
+
+    set(GMP_VERSION "${GMP_MAJOR_VERSION}.${GMP_MINOR_VERSION}.${GMP_PATCHLEVEL_VERSION}")
+  endif()
+
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(GMP
     REQUIRED_VARS
@@ -74,6 +99,8 @@ if (NOT GMP_FOUND)
       GMP_LIB
       GMPXX_INCLUDE_DIR
       GMPXX_LIB
+    VERSION_VAR
+      GMP_VERSION
     FAIL_MESSAGE
       "Could NOT find GMP. Please provide -DGMP_ROOT=/path/to/gmp")
 endif()
