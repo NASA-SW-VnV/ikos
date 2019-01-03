@@ -446,6 +446,14 @@ void FunctionImporter::translate_load(BasicBlockTranslation* bb_translation,
   bb_translation->add_statement(std::move(stmt));
 }
 
+/// \brief Eliminate any intermediate alias by returning the aliasee
+static llvm::Value* unalias(llvm::Value* value) {
+  while (auto alias = llvm::dyn_cast< llvm::GlobalAlias >(value)) {
+    value = alias->getAliasee();
+  }
+  return value;
+}
+
 void FunctionImporter::translate_call(BasicBlockTranslation* bb_translation,
                                       llvm::CallInst* call) {
   if (auto intrinsic = llvm::dyn_cast< llvm::IntrinsicInst >(call)) {
@@ -460,7 +468,7 @@ void FunctionImporter::translate_call(BasicBlockTranslation* bb_translation,
   // Otherwise, it's a call on a function pointer, we allow implicit casts
   // (signed/unsigned and between pointer types)
   const bool force_args_cast =
-      llvm::isa< llvm::Function >(call->getCalledValue());
+      llvm::isa< llvm::Function >(unalias(call->getCalledValue()));
 
   this->translate_call_helper(bb_translation,
                               call,
@@ -600,7 +608,7 @@ void FunctionImporter::translate_invoke(BasicBlockTranslation* bb_translation,
   // Otherwise, it's a call on a function pointer, we allow implicit casts
   // (signed/unsigned and between pointer types)
   const bool force_args_cast =
-      llvm::isa< llvm::Function >(invoke->getCalledValue());
+      llvm::isa< llvm::Function >(unalias(invoke->getCalledValue()));
 
   // Translate the invoke
   //
@@ -1084,7 +1092,9 @@ void FunctionImporter::translate_binary_operator(
         }
         sign = stmt_type->sign();
       } break;
-      default: { ikos_unreachable("unreachable"); }
+      default: {
+        ikos_unreachable("unreachable");
+      }
     }
 
     if (stmt_type == nullptr) {
@@ -1911,7 +1921,7 @@ ar::Type* FunctionImporter::infer_default_type(llvm::Value* value) {
 
   if (auto call = llvm::dyn_cast< llvm::CallInst >(value)) {
     // Use the type of the returned value, if it's a direct call
-    llvm::Value* called = call->getCalledValue();
+    llvm::Value* called = unalias(call->getCalledValue());
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
       return _ctx.bundle_imp->translate_function(fun)->type()->return_type();
     }
@@ -2174,7 +2184,9 @@ FunctionImporter::TypeHint FunctionImporter::
     case llvm::Instruction::FDiv: {
       return TypeHint(); // no hint, sign is irrelevant
     }
-    default: { ikos_unreachable("unreachable"); }
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 
   llvm::Type* llvm_type = inst->getOperand(use.getOperandNo())->getType();
@@ -2305,7 +2317,7 @@ FunctionImporter::TypeHint FunctionImporter::
 
   // Use the type of the returned value, if it's a direct call
   if (auto call = llvm::dyn_cast< llvm::CallInst >(inst)) {
-    llvm::Value* called = call->getCalledValue();
+    llvm::Value* called = unalias(call->getCalledValue());
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
       return TypeHint(_ctx.bundle_imp->translate_function(fun)
                           ->type()
