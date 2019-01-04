@@ -196,6 +196,11 @@ def parse_arguments(argv):
                           metavar='',
                           help='Add an implicit #define into the source file',
                           action='append')
+    compiler.add_argument('-W',
+                          dest='compiler_warning_flags',
+                          metavar='',
+                          help='Use the specified warning options',
+                          action='append')
     compiler.add_argument('-m',
                           dest='compiler_machine_flags',
                           metavar='',
@@ -567,6 +572,7 @@ def clang(
     cpp_path,
     include_flags=None,
     define_flags=None,
+    warning_flags=None,
     machine_flags=None,
     colors=True,
 ):
@@ -584,6 +590,8 @@ def clang(
         cmd += ['-I%s' % i for i in include_flags]
     if define_flags:
         cmd += ['-D%s' % d for d in define_flags]
+    if warning_flags:
+        cmd += ['-W%s' % w for w in warning_flags]
     if machine_flags:
         cmd += ['-m%s' % m for m in machine_flags]
 
@@ -825,6 +833,7 @@ def main(argv):
                 clang(bc_path, input_path,
                       opt.compiler_include_flags,
                       opt.compiler_define_flags,
+                      opt.compiler_warning_flags,
                       opt.compiler_machine_flags,
                       colors.ENABLE)
         except subprocess.CalledProcessError as e:
