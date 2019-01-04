@@ -90,8 +90,13 @@ private:
   // Libc FILE opaque type (used for intrinsics)
   OpaqueType _libc_file_ty;
 
+  // Using boost::container::flat_map with std::pair causes crashes on FreeBSD.
+  // As a workaround, we use std::tuple instead of std::pair here.
+  // see https://github.com/NASA-SW-VnV/ikos/issues/22
+  // see https://github.com/boostorg/container/issues/97
+
   // Integer types
-  boost::container::flat_map< std::pair< unsigned, Signedness >,
+  boost::container::flat_map< std::tuple< unsigned, Signedness >,
                               std::unique_ptr< IntegerType > >
       _integer_types;
 
@@ -100,12 +105,12 @@ private:
       _pointer_types;
 
   // Array types
-  boost::container::flat_map< std::pair< Type*, ZNumber >,
+  boost::container::flat_map< std::tuple< Type*, ZNumber >,
                               std::unique_ptr< ArrayType > >
       _array_types;
 
   // Vector types
-  boost::container::flat_map< std::pair< Type*, ZNumber >,
+  boost::container::flat_map< std::tuple< Type*, ZNumber >,
                               std::unique_ptr< VectorType > >
       _vector_types;
 
@@ -123,12 +128,12 @@ private:
       _undefined_constants;
 
   // Integer constants
-  boost::container::flat_map< std::pair< IntegerType*, MachineInt >,
+  boost::container::flat_map< std::tuple< IntegerType*, MachineInt >,
                               std::unique_ptr< IntegerConstant > >
       _integer_constants;
 
   // Float constants
-  boost::container::flat_map< std::pair< FloatType*, std::string >,
+  boost::container::flat_map< std::tuple< FloatType*, std::string >,
                               std::unique_ptr< FloatConstant > >
       _float_constants;
 
@@ -137,17 +142,17 @@ private:
       _null_constants;
 
   // Structure constants
-  boost::container::flat_map< std::pair< StructType*, StructConstant::Values >,
+  boost::container::flat_map< std::tuple< StructType*, StructConstant::Values >,
                               std::unique_ptr< StructConstant > >
       _struct_constants;
 
   // Array constants
-  boost::container::flat_map< std::pair< ArrayType*, ArrayConstant::Values >,
+  boost::container::flat_map< std::tuple< ArrayType*, ArrayConstant::Values >,
                               std::unique_ptr< ArrayConstant > >
       _array_constants;
 
   // Vector constants
-  boost::container::flat_map< std::pair< VectorType*, VectorConstant::Values >,
+  boost::container::flat_map< std::tuple< VectorType*, VectorConstant::Values >,
                               std::unique_ptr< VectorConstant > >
       _vector_constants;
 
@@ -162,7 +167,7 @@ private:
       _function_pointer_constants;
 
   // Inline assembly constants
-  boost::container::flat_map< std::pair< PointerType*, std::string >,
+  boost::container::flat_map< std::tuple< PointerType*, std::string >,
                               std::unique_ptr< InlineAssemblyConstant > >
       _inline_assembly_constants;
 

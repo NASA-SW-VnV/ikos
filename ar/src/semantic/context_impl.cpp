@@ -76,10 +76,10 @@ void ContextImpl::add_bundle(std::unique_ptr< Bundle > bundle) {
 }
 
 IntegerType* ContextImpl::integer_type(unsigned bit_width, Signedness sign) {
-  auto it = this->_integer_types.find(std::make_pair(bit_width, sign));
+  auto it = this->_integer_types.find(std::make_tuple(bit_width, sign));
   if (it == this->_integer_types.end()) {
     auto type = new IntegerType(bit_width, sign);
-    this->_integer_types.emplace(std::make_pair(bit_width, sign),
+    this->_integer_types.emplace(std::make_tuple(bit_width, sign),
                                  std::unique_ptr< IntegerType >(type));
     return type;
   } else {
@@ -99,10 +99,10 @@ PointerType* ContextImpl::pointer_type(Type* pointee) {
 }
 
 ArrayType* ContextImpl::array_type(Type* element_type, ZNumber num_element) {
-  auto it = this->_array_types.find(std::make_pair(element_type, num_element));
+  auto it = this->_array_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_array_types.end()) {
     auto type = new ArrayType(element_type, num_element);
-    this->_array_types.emplace(std::make_pair(element_type, num_element),
+    this->_array_types.emplace(std::make_tuple(element_type, num_element),
                                std::unique_ptr< ArrayType >(type));
     return type;
   } else {
@@ -111,10 +111,11 @@ ArrayType* ContextImpl::array_type(Type* element_type, ZNumber num_element) {
 }
 
 VectorType* ContextImpl::vector_type(Type* element_type, ZNumber num_element) {
-  auto it = this->_vector_types.find(std::make_pair(element_type, num_element));
+  auto it =
+      this->_vector_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_vector_types.end()) {
     auto type = new VectorType(element_type, num_element);
-    this->_vector_types.emplace(std::make_pair(element_type, num_element),
+    this->_vector_types.emplace(std::make_tuple(element_type, num_element),
                                 std::unique_ptr< VectorType >(type));
     return type;
   } else {
@@ -158,10 +159,10 @@ UndefinedConstant* ContextImpl::undefined_cst(Type* type) {
 }
 
 IntegerConstant* ContextImpl::integer_cst(IntegerType* type, MachineInt value) {
-  auto it = this->_integer_constants.find(std::make_pair(type, value));
+  auto it = this->_integer_constants.find(std::make_tuple(type, value));
   if (it == this->_integer_constants.end()) {
     auto cst = new IntegerConstant(type, value);
-    this->_integer_constants.emplace(std::make_pair(type, value),
+    this->_integer_constants.emplace(std::make_tuple(type, value),
                                      std::unique_ptr< IntegerConstant >(cst));
     return cst;
   } else {
@@ -171,10 +172,10 @@ IntegerConstant* ContextImpl::integer_cst(IntegerType* type, MachineInt value) {
 
 FloatConstant* ContextImpl::float_cst(FloatType* type,
                                       const std::string& value) {
-  auto it = this->_float_constants.find(std::make_pair(type, value));
+  auto it = this->_float_constants.find(std::make_tuple(type, value));
   if (it == this->_float_constants.end()) {
     auto cst = new FloatConstant(type, value);
-    this->_float_constants.emplace(std::make_pair(type, value),
+    this->_float_constants.emplace(std::make_tuple(type, value),
                                    std::unique_ptr< FloatConstant >(cst));
     return cst;
   } else {
@@ -195,10 +196,10 @@ NullConstant* ContextImpl::null_cst(PointerType* type) {
 
 StructConstant* ContextImpl::struct_cst(StructType* type,
                                         const StructConstant::Values& values) {
-  auto it = this->_struct_constants.find(std::make_pair(type, values));
+  auto it = this->_struct_constants.find(std::make_tuple(type, values));
   if (it == this->_struct_constants.end()) {
     auto cst = new StructConstant(type, values);
-    this->_struct_constants.emplace(std::make_pair(type, values),
+    this->_struct_constants.emplace(std::make_tuple(type, values),
                                     std::unique_ptr< StructConstant >(cst));
     return cst;
   } else {
@@ -208,10 +209,10 @@ StructConstant* ContextImpl::struct_cst(StructType* type,
 
 ArrayConstant* ContextImpl::array_cst(ArrayType* type,
                                       const ArrayConstant::Values& values) {
-  auto it = this->_array_constants.find(std::make_pair(type, values));
+  auto it = this->_array_constants.find(std::make_tuple(type, values));
   if (it == this->_array_constants.end()) {
     auto cst = new ArrayConstant(type, values);
-    this->_array_constants.emplace(std::make_pair(type, values),
+    this->_array_constants.emplace(std::make_tuple(type, values),
                                    std::unique_ptr< ArrayConstant >(cst));
     return cst;
   } else {
@@ -221,10 +222,10 @@ ArrayConstant* ContextImpl::array_cst(ArrayType* type,
 
 VectorConstant* ContextImpl::vector_cst(VectorType* type,
                                         const VectorConstant::Values& values) {
-  auto it = this->_vector_constants.find(std::make_pair(type, values));
+  auto it = this->_vector_constants.find(std::make_tuple(type, values));
   if (it == this->_vector_constants.end()) {
     auto cst = new VectorConstant(type, values);
-    this->_vector_constants.emplace(std::make_pair(type, values),
+    this->_vector_constants.emplace(std::make_tuple(type, values),
                                     std::unique_ptr< VectorConstant >(cst));
     return cst;
   } else {
@@ -260,11 +261,11 @@ FunctionPointerConstant* ContextImpl::function_pointer_cst(Function* function) {
 
 InlineAssemblyConstant* ContextImpl::inline_assembly_cst(
     PointerType* type, const std::string& code) {
-  auto it = this->_inline_assembly_constants.find(std::make_pair(type, code));
+  auto it = this->_inline_assembly_constants.find(std::make_tuple(type, code));
   if (it == this->_inline_assembly_constants.end()) {
     auto cst = new InlineAssemblyConstant(type, code);
     this->_inline_assembly_constants
-        .emplace(std::make_pair(type, code),
+        .emplace(std::make_tuple(type, code),
                  std::unique_ptr< InlineAssemblyConstant >(cst));
     return cst;
   } else {
