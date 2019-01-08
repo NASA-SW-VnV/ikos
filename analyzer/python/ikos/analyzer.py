@@ -65,7 +65,7 @@ from ikos.output_db import OutputDatabase
 
 
 def parse_arguments(argv):
-    usage = '%(prog)s [options] file[.c|.cpp|.bc]'
+    usage = '%(prog)s [options] file[.c|.cpp|.bc|.ll]'
     description = 'ikos static analyzer'
     formatter_class = argparse.RawTextHelpFormatter
     parser = argparse.ArgumentParser(usage=usage,
@@ -74,7 +74,7 @@ def parse_arguments(argv):
 
     # Positional arguments
     parser.add_argument('file',
-                        metavar='file[.c|.cpp|.bc]',
+                        metavar='file[.c|.cpp|.bc|.ll]',
                         help='File to analyze')
 
     # Optional arguments
@@ -843,7 +843,7 @@ def main(argv):
 
         input_path = bc_path
 
-    if path_ext(input_path) != '.bc':
+    if path_ext(input_path) not in ('.bc', '.ll'):
         printf('%s: error: unexpected file extension.\n',
                progname, file=sys.stderr)
         sys.exit(1)
