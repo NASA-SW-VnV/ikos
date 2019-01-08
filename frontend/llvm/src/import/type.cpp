@@ -408,6 +408,14 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
 
         llvm_elements.push_back(array_type);
         current_element = array_type->getElementType();
+      } else if (current_element->isVectorTy()) {
+        auto vector_type = llvm::cast< llvm::VectorType >(current_element);
+        check_import(vector_type->getNumElements() == count_int->getZExtValue(),
+                     "llvm::DICompositeType with DW_TAG_array_type tag and "
+                     "llvm::VectorType have a different number of elements");
+
+        llvm_elements.push_back(vector_type);
+        current_element = vector_type->getElementType();
       } else if (current_element->isStructTy()) {
         auto struct_type = llvm::cast< llvm::StructType >(current_element);
         check_import(!struct_type->isOpaque() && struct_type->isPacked(),
@@ -428,8 +436,8 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
       } else {
         throw ImportError(
             "llvm::DICompositeType with DW_TAG_array_type tag and positive "
-            "count, but llvm::Type is not a llvm::ArrayType or a "
-            "llvm::StructType");
+            "count, but llvm::Type is not a llvm::ArrayType, llvm::VectorType "
+            "or llvm::StructType");
       }
       prev_no_count = false;
     } else {
@@ -472,6 +480,10 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
       ar_type = ar::ArrayType::get(this->_context,
                                    ar_type,
                                    ar::ZNumber(array_type->getNumElements()));
+    } else if (auto vector_type = llvm::dyn_cast< llvm::VectorType >(*it)) {
+      ar_type = ar::VectorType::get(this->_context,
+                                    ar_type,
+                                    ar::ZNumber(vector_type->getNumElements()));
     } else if (auto struct_type = llvm::dyn_cast< llvm::StructType >(*it)) {
       // This is the last element of di_type->getElements()
       ar::StructType::Layout ar_layout;
@@ -1382,6 +1394,14 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
         }
 
         current_type = array_type->getElementType();
+      } else if (current_type->isVectorTy()) {
+        auto vector_type = llvm::cast< llvm::VectorType >(current_type);
+
+        if (vector_type->getNumElements() != count_int->getZExtValue()) {
+          return false;
+        }
+
+        current_type = vector_type->getElementType();
       } else if (current_type->isStructTy()) {
         auto struct_type = llvm::cast< llvm::StructType >(current_type);
 
