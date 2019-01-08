@@ -1838,6 +1838,21 @@ public:
     this->_inv.normal().forget_surface(write_ptr.var());
   }
 
+  /// \brief Execute a ShuffleVector statement
+  void exec(ar::ShuffleVector* s) override {
+    const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
+    ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
+
+    // Ignore the semantic while being sound
+    this->init_aggregate_memory(lhs);
+    ScalarLit lhs_ptr = this->aggregate_pointer(lhs);
+    this->_inv.normal().forget_reachable_mem(lhs_ptr.var());
+  }
+
   /// \brief Execute a LandingPad statement
   void exec(ar::LandingPad*) override {}
 

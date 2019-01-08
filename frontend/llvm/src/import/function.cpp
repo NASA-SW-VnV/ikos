@@ -360,6 +360,9 @@ void FunctionImporter::translate_instruction(
   } else if (auto insertelement =
                  llvm::dyn_cast< llvm::InsertElementInst >(inst)) {
     this->translate_insertelement(bb_translation, insertelement);
+  } else if (auto shufflevector =
+                 llvm::dyn_cast< llvm::ShuffleVectorInst >(inst)) {
+    this->translate_shufflevector(bb_translation, shufflevector);
   } else if (auto unreachable = llvm::dyn_cast< llvm::UnreachableInst >(inst)) {
     this->translate_unreachable(bb_translation, unreachable);
   } else if (auto landingpad = llvm::dyn_cast< llvm::LandingPadInst >(inst)) {
@@ -1615,6 +1618,31 @@ void FunctionImporter::translate_insertelement(
   bb_translation->add_statement(std::move(stmt));
 }
 
+void FunctionImporter::translate_shufflevector(
+    BasicBlockTranslation* bb_translation, llvm::ShuffleVectorInst* inst) {
+  // Translate result variable
+  ar::InternalVariable* var =
+      ar::InternalVariable::create(this->_body, this->infer_type(inst));
+  this->mark_variable_mapping(inst, var);
+
+  // Translate left
+  ar::Value* left =
+      this->translate_value(bb_translation, inst->getOperand(0), var->type());
+
+  // Translate right
+  ar::Value* right =
+      this->translate_value(bb_translation, inst->getOperand(1), var->type());
+
+  // Translate mask
+  ar::Value* mask =
+      this->translate_value(bb_translation, inst->getOperand(2), nullptr);
+
+  // Create statement
+  auto stmt = ar::ShuffleVector::create(var, left, right, mask);
+  stmt->set_frontend< llvm::Value >(inst);
+  bb_translation->add_statement(std::move(stmt));
+}
+
 void FunctionImporter::translate_unreachable(
     BasicBlockTranslation* bb_translation, llvm::UnreachableInst* unreachable) {
   auto stmt = ar::Unreachable::create();
@@ -1970,6 +1998,8 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use(
   } else if (llvm::isa< llvm::ExtractElementInst >(user)) {
     return TypeHint(); // no hint
   } else if (llvm::isa< llvm::InsertElementInst >(user)) {
+    return TypeHint(); // no hint
+  } else if (llvm::isa< llvm::ShuffleVectorInst >(user)) {
     return TypeHint(); // no hint
   } else if (llvm::isa< llvm::ResumeInst >(user)) {
     return TypeHint(); // no hint

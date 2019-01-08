@@ -80,6 +80,7 @@ public:
     StoreKind,
     ExtractElementKind,
     InsertElementKind,
+    ShuffleVectorKind,
     _BeginCallBaseKind,
     CallKind,
     InvokeKind,
@@ -1007,6 +1008,49 @@ public:
   }
 
 }; // end class InsertElement
+
+/// \brief Shuffle vector statement
+class ShuffleVector final : public Statement {
+private:
+  /// \brief Private constructor
+  ShuffleVector(InternalVariable* result,
+                Value* left,
+                Value* right,
+                Value* mask);
+
+public:
+  /// \brief Static constructor
+  static std::unique_ptr< ShuffleVector > create(InternalVariable* result,
+                                                 Value* left,
+                                                 Value* right,
+                                                 Value* mask);
+
+  /// \brief Get the result variable
+  InternalVariable* result() const {
+    return cast< InternalVariable >(this->_result);
+  }
+
+  /// \brief Get the left operand
+  Value* left() const { return this->_operands[0]; }
+
+  /// \brief Get the right operand
+  Value* right() const { return this->_operands[1]; }
+
+  /// \brief Get the mask operand
+  Value* mask() const { return this->_operands[2]; }
+
+  /// \brief Dump the statement for debugging purpose
+  void dump(std::ostream&) const override;
+
+  /// \brief Clone the statement
+  std::unique_ptr< Statement > clone() const override;
+
+  /// \brief Method for type support (isa, cast, dyn_cast)
+  static bool classof(const Statement* s) {
+    return s->kind() == ShuffleVectorKind;
+  }
+
+}; // end class ShuffleVector
 
 /// \brief Base class for Call and Invoke instructions
 class CallBase : public Statement {

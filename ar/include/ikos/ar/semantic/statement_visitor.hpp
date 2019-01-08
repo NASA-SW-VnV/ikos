@@ -70,6 +70,7 @@ namespace ar {
 ///   int operator()(Store* s) { ... }
 ///   int operator()(ExtractElement* s) { ... }
 ///   int operator()(InsertElement* s) { ... }
+///   int operator()(ShuffleVector* s) { ... }
 ///   int operator()(Call* s) { ... }
 ///   int operator()(Invoke* s) { ... }
 ///   int operator()(LandingPad* s) { ... }
@@ -103,6 +104,8 @@ typename Visitor::ResultType apply_visitor(Visitor& visitor, Statement* s) {
       return visitor(cast< ExtractElement >(s));
     case Statement::InsertElementKind:
       return visitor(cast< InsertElement >(s));
+    case Statement::ShuffleVectorKind:
+      return visitor(cast< ShuffleVector >(s));
     case Statement::CallKind:
       return visitor(cast< Call >(s));
     case Statement::InvokeKind:
@@ -136,6 +139,7 @@ typename Visitor::ResultType apply_visitor(Visitor& visitor, Statement* s) {
 ///   int operator()(Store* s) const { ... }
 ///   int operator()(ExtractElement* s) const { ... }
 ///   int operator()(InsertElement* s) const { ... }
+///   int operator()(ShuffleVector* s) const { ... }
 ///   int operator()(Call* s) const { ... }
 ///   int operator()(Invoke* s) const { ... }
 ///   int operator()(LandingPad* s) const { ... }
@@ -170,6 +174,8 @@ typename Visitor::ResultType apply_visitor(const Visitor& visitor,
       return visitor(cast< ExtractElement >(s));
     case Statement::InsertElementKind:
       return visitor(cast< InsertElement >(s));
+    case Statement::ShuffleVectorKind:
+      return visitor(cast< ShuffleVector >(s));
     case Statement::CallKind:
       return visitor(cast< Call >(s));
     case Statement::InvokeKind:

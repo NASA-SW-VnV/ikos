@@ -405,6 +405,16 @@ public:
     formatter.format(o, s->element(), namer, formatter.show_operand_types());
   }
 
+  void operator()(ShuffleVector* s) {
+    formatter.format(o, s->result(), namer, formatter.show_result_type());
+    o << " = shufflevector ";
+    formatter.format(o, s->left(), namer, formatter.show_operand_types());
+    o << ", ";
+    formatter.format(o, s->right(), namer, formatter.show_operand_types());
+    o << ", ";
+    formatter.format(o, s->mask(), namer, formatter.show_operand_types());
+  }
+
   void operator()(Call* s) {
     // result
     if (s->has_result()) {

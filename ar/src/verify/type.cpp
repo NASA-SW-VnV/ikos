@@ -217,6 +217,17 @@ private:
     return true;
   }
 
+  /// \brief Check that the given type is a vector type
+  bool check_vector(Statement* s, Type* ty, const char* desc) {
+    if (!ty->is_vector()) {
+      err << "error: " << desc << " of statement '";
+      TextFormatter().format(err, s);
+      err << "' is not a vector\n";
+      return false;
+    }
+    return true;
+  }
+
   /// \brief Check that the given types are equals
   bool check_type_match(Statement* s, Type* t1, Type* t2) {
     if (t1 != t2) {
@@ -634,6 +645,26 @@ public:
                               s->offset()->type(),
                               IntegerType::size_type(s->bundle()),
                               "offset operand");
+  }
+
+  bool operator()(ShuffleVector* s) {
+    if (!this->check_vector(s, s->left()->type(), "left operand") ||
+        !this->check_vector(s, s->right()->type(), "right operand") ||
+        !this->check_vector(s, s->mask()->type(), "mask operand") ||
+        !this->check_type_match(s, s->result()->type(), s->left()->type()) ||
+        !this->check_type_match(s, s->result()->type(), s->right()->type())) {
+      return false;
+    }
+    auto mask_element_ty =
+        cast< VectorType >(s->mask()->type())->element_type();
+    if (!mask_element_ty->is_integer() ||
+        cast< IntegerType >(mask_element_ty)->bit_width() != 32) {
+      err << "error: mask operand of statement '";
+      TextFormatter().format(err, s);
+      err << "' is not a vector of 32 bits integers\n";
+      return false;
+    }
+    return true;
   }
 
   bool operator()(CallBase* s) {

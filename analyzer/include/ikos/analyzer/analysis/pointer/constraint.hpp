@@ -592,6 +592,17 @@ private:
       }
     }
 
+    void operator()(ar::ShuffleVector* s) {
+      const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
+      const AggregateLit& left = this->_lit_factory.get_aggregate(s->left());
+      const AggregateLit& right = this->_lit_factory.get_aggregate(s->right());
+      ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
+
+      Variable* lhs_ptr = this->aggregate_pointer(lhs);
+      this->mem_write_aggregate(lhs_ptr, left);
+      this->mem_write_aggregate(lhs_ptr, right);
+    }
+
     void operator()(ar::LandingPad*) {}
 
     void operator()(ar::Resume*) {}

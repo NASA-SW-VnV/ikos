@@ -763,6 +763,46 @@ std::unique_ptr< Statement > InsertElement::clone() const {
   return stmt;
 }
 
+// ShuffleVector
+
+ShuffleVector::ShuffleVector(InternalVariable* result,
+                             Value* left,
+                             Value* right,
+                             Value* mask)
+    : Statement(ShuffleVectorKind, result, {left, right, mask}) {
+  ikos_assert_msg(result, "result is null");
+  ikos_assert_msg(left, "left is null");
+  ikos_assert_msg(right, "right is null");
+  ikos_assert_msg(mask, "mask is null");
+}
+
+std::unique_ptr< ShuffleVector > ShuffleVector::create(InternalVariable* result,
+                                                       Value* left,
+                                                       Value* right,
+                                                       Value* mask) {
+  return std::unique_ptr< ShuffleVector >(
+      new ShuffleVector(result, left, right, mask));
+}
+
+void ShuffleVector::dump(std::ostream& o) const {
+  this->result()->dump(o);
+  o << " = shufflevector ";
+  this->left()->dump(o);
+  o << ", ";
+  this->right()->dump(o);
+  o << ", ";
+  this->mask()->dump(o);
+}
+
+std::unique_ptr< Statement > ShuffleVector::clone() const {
+  std::unique_ptr< Statement > stmt(new ShuffleVector(this->result(),
+                                                      this->left(),
+                                                      this->right(),
+                                                      this->mask()));
+  stmt->set_frontend(*this);
+  return stmt;
+}
+
 // CallBase
 
 CallBase::CallBase(StatementKind kind,

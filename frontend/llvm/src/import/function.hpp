@@ -398,6 +398,10 @@ private:
   void translate_insertelement(BasicBlockTranslation* bb_translation,
                                llvm::InsertElementInst* inst);
 
+  /// \brief Translate a llvm::ShuffleVectorInst
+  void translate_shufflevector(BasicBlockTranslation* bb_translation,
+                               llvm::ShuffleVectorInst* inst);
+
   /// \brief Translate a llvm::UnreachableInst
   void translate_unreachable(BasicBlockTranslation* bb_translation,
                              llvm::UnreachableInst* unreachable);

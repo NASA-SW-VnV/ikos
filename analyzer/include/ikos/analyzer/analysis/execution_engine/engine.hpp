@@ -114,6 +114,9 @@ public:
   /// \brief Execute an InsertElement statement
   virtual void exec(ar::InsertElement* s) = 0;
 
+  /// \brief Execute a ShuffleVector statement
+  virtual void exec(ar::ShuffleVector* s) = 0;
+
   /// \brief Execute a LandingPad statement
   virtual void exec(ar::LandingPad* s) = 0;
 
@@ -197,6 +200,7 @@ inline void transfer_function(ExecEngine& exec_engine,
     void operator()(ar::Store* s) { exec_engine.exec(s); }
     void operator()(ar::ExtractElement* s) { exec_engine.exec(s); }
     void operator()(ar::InsertElement* s) { exec_engine.exec(s); }
+    void operator()(ar::ShuffleVector* s) { exec_engine.exec(s); }
     void operator()(ar::Call* s) { call_exec_engine.exec(s); }
     void operator()(ar::Invoke* s) { call_exec_engine.exec(s); }
     void operator()(ar::LandingPad* s) { exec_engine.exec(s); }
