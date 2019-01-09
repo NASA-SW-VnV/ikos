@@ -64,10 +64,8 @@ private:
   // Pointer to front-end object, or null
   void* _frontend = nullptr;
 
-#ifndef NDEBUG
   // Front-end object type info, or null
   const std::type_info* _frontend_type_info = nullptr;
-#endif
 
 public:
   /// \brief Default constructor
@@ -77,11 +75,9 @@ public:
   template <
       typename T,
       class = std::enable_if_t< !std::is_base_of< Traceable, T >::value > >
-  explicit Traceable(T* frontend) : _frontend(static_cast< void* >(frontend)) {
-#ifndef NDEBUG
-    this->_frontend_type_info = &typeid(T);
-#endif
-  }
+  explicit Traceable(T* frontend)
+      : _frontend(reinterpret_cast< void* >(frontend)),
+        _frontend_type_info(&typeid(T)) {}
 
   /// \brief Default copy constructor
   Traceable(const Traceable&) = default;
@@ -103,18 +99,14 @@ public:
       typename T,
       class = std::enable_if_t< !std::is_base_of< Traceable, T >::value > >
   void set_frontend(T* frontend) {
-    this->_frontend = static_cast< void* >(frontend);
-#ifndef NDEBUG
+    this->_frontend = reinterpret_cast< void* >(frontend);
     this->_frontend_type_info = &typeid(T);
-#endif
   }
 
   /// \brief Update the pointer to the front-end object
   void set_frontend(const Traceable& o) {
     this->_frontend = o._frontend;
-#ifndef NDEBUG
     this->_frontend_type_info = o._frontend_type_info;
-#endif
   }
 
   /// \brief Return true if this object has a pointer to a front-end object
@@ -126,21 +118,17 @@ public:
   template < typename T >
   T* frontend() const {
     ikos_assert_msg(this->_frontend, "no front-end pointer");
-#ifndef NDEBUG
     ikos_assert_msg(*this->_frontend_type_info == typeid(T),
                     "invalid front-end type");
-#endif
     return reinterpret_cast< T* >(this->_frontend); // NOLINT
   }
 
   /// \brief Return the pointer to the front-end object, or null
   template < typename T >
   T* frontend_or_null() const {
-#ifndef NDEBUG
     ikos_assert_msg(this->_frontend == nullptr ||
                         *this->_frontend_type_info == typeid(T),
                     "invalid front-end type");
-#endif
     return reinterpret_cast< T* >(this->_frontend); // NOLINT
   }
 
