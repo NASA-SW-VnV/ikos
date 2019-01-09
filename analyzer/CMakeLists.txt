@@ -143,8 +143,8 @@ list(APPEND CMAKE_MODULE_PATH ${LLVM_CMAKE_DIR})
 
 include(LLVMConfig)
 
-if (NOT LLVM_ENABLE_RTTI)
-  message(FATAL_ERROR "LLVM was built without run-time type information (RTTI)")
+if ((NOT LLVM_ENABLE_RTTI) AND (NOT WIN32))
+  message(WARNING "LLVM was built without run-time type information (RTTI)")
 endif()
 
 set(LLVM_REQUIRES_RTTI TRUE)
