@@ -226,12 +226,6 @@ void TextFormatter::format(std::ostream& o,
   if (code->exit_block_or_null() == bb) {
     o << " !exit";
   }
-  if (code->unreachable_block_or_null() == bb) {
-    o << " !unreachable";
-  }
-  if (code->ehresume_block_or_null() == bb) {
-    o << " !ehresume";
-  }
 
   // predecessors
   if (bb->num_predecessors() > 0) {

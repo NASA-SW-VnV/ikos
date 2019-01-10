@@ -120,18 +120,6 @@ struct BasicBlockTranslation {
   /// \brief Constructor
   BasicBlockTranslation(llvm::BasicBlock* source_, ar::BasicBlock* main_);
 
-  /// \brief Mark this basic block as the entry block
-  void mark_entry_block();
-
-  /// \brief Mark this basic block as the exit block
-  void mark_exit_block();
-
-  /// \brief Mark this basic block as the unreachable block
-  void mark_unreachable_block();
-
-  /// \brief Mark this basic block as the ehresume block
-  void mark_ehresume_block();
-
   /// \brief Get or create an input basic block for the given llvm BasicBlock
   ar::BasicBlock* input_basic_block(llvm::BasicBlock* bb);
 
@@ -218,18 +206,12 @@ private:
   // AR body
   ar::Code* _body;
 
-  // Map from llvm Value to AR internal variable
+  // Map from llvm Value to AR Variable
   llvm::DenseMap< llvm::Value*, ar::Variable* > _variables;
 
   // Map from llvm BasicBlock to BasicBlockTranslation
   llvm::DenseMap< llvm::BasicBlock*, std::unique_ptr< BasicBlockTranslation > >
       _blocks;
-
-  // LLVM special basic blocks
-  llvm::BasicBlock* _llvm_entry_bb;
-  llvm::BasicBlock* _llvm_return_bb;
-  llvm::BasicBlock* _llvm_unreachable_bb;
-  llvm::BasicBlock* _llvm_ehresume_bb;
 
   // Allow mismatch of llvm types (llvm::Type) and debug info types
   // (llvm::DIType)
@@ -249,12 +231,6 @@ public:
         _llvm_fun(llvm_fun),
         _ar_fun(ar_fun),
         _body(ar_fun->body()),
-        _variables(),
-        _blocks(),
-        _llvm_entry_bb(nullptr),
-        _llvm_return_bb(nullptr),
-        _llvm_unreachable_bb(nullptr),
-        _llvm_ehresume_bb(nullptr),
         _allow_debug_info_mismatch(
             ctx.opts.test(Importer::AllowMismatchDebugInfo)) {}
 
@@ -262,9 +238,6 @@ public:
   ar::Code* translate_body();
 
 private:
-  /// \brief Set _llvm_return_bb, _llvm_unreachable_bb and _llvm_ehresume_bb
-  void mark_special_blocks();
-
   /// \brief Store the mapping between a llvm::Value and an ar::Variable
   ///
   /// It also assigns a nice name to the ar::Variable and set the frontend
@@ -300,6 +273,9 @@ private:
 
   /// \brief Link the given basic block
   void link_basic_block(BasicBlockTranslation* bb_translation);
+
+  /// \brief Unify the exit blocks
+  void unify_exit_blocks();
 
   /// \brief Translate a llvm::Instruction
   void translate_instruction(BasicBlockTranslation* bb_translation,

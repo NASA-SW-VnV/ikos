@@ -66,67 +66,16 @@ namespace frontend {
 namespace import {
 
 ar::Code* FunctionImporter::translate_body() {
-  /// Set _llvm_return_bb, _llvm_unreachable_bb and _llvm_ehresume_bb
-  this->mark_special_blocks();
-
   // Translate parameters
   this->translate_parameters();
 
   // Translate control flow graph
   this->translate_control_flow_graph();
 
+  // Unify the exit blocks
+  this->unify_exit_blocks();
+
   return this->_body;
-}
-
-void FunctionImporter::mark_special_blocks() {
-  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_return_blocks;
-  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_unreachable_blocks;
-  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_ehresume_blocks;
-
-  for (llvm::BasicBlock& bb : *this->_llvm_fun) {
-    if (llvm::isa< llvm::ReturnInst >(bb.getTerminator())) {
-      llvm_return_blocks.push_back(&bb);
-    } else if (llvm::isa< llvm::UnreachableInst >(bb.getTerminator())) {
-      llvm_unreachable_blocks.push_back(&bb);
-    } else if (llvm::isa< llvm::ResumeInst >(bb.getTerminator())) {
-      llvm_ehresume_blocks.push_back(&bb);
-    }
-  }
-
-  this->_llvm_entry_bb = &this->_llvm_fun->getEntryBlock();
-
-  if (llvm_return_blocks.size() == 1) {
-    this->_llvm_return_bb = llvm_return_blocks[0];
-  } else if (llvm_return_blocks.empty()) {
-    this->_llvm_return_bb = nullptr;
-  } else {
-    std::ostringstream buf;
-    buf << "function @" << this->_ar_fun->name()
-        << " has more than one exit block (use the -mergereturn pass?)";
-    throw ImportError(buf.str());
-  }
-
-  if (llvm_unreachable_blocks.size() == 1) {
-    this->_llvm_unreachable_bb = llvm_unreachable_blocks[0];
-  } else if (llvm_unreachable_blocks.empty()) {
-    this->_llvm_unreachable_bb = nullptr;
-  } else {
-    std::ostringstream buf;
-    buf << "function @" << this->_ar_fun->name()
-        << " has more than one unreachable block (use the -mergereturn pass?)";
-    throw ImportError(buf.str());
-  }
-
-  if (llvm_ehresume_blocks.size() == 1) {
-    this->_llvm_ehresume_bb = llvm_ehresume_blocks[0];
-  } else if (llvm_ehresume_blocks.empty()) {
-    this->_llvm_ehresume_bb = nullptr;
-  } else {
-    std::ostringstream buf;
-    buf << "function @" << this->_ar_fun->name()
-        << " has more than one ehresume block (use the -mergereturn pass?)";
-    throw ImportError(buf.str());
-  }
 }
 
 void FunctionImporter::mark_variable_mapping(llvm::Value* llvm_val,
@@ -173,7 +122,7 @@ void FunctionImporter::translate_basic_blocks() {
   std::deque< llvm::BasicBlock* > worklist;
 
   // Start at the entry block
-  worklist.push_back(this->_llvm_entry_bb);
+  worklist.push_back(&this->_llvm_fun->getEntryBlock());
 
   while (!worklist.empty()) {
     // Pop the front element
@@ -214,24 +163,13 @@ void FunctionImporter::translate_basic_block(llvm::BasicBlock* llvm_bb) {
       std::make_unique< BasicBlockTranslation >(llvm_bb, ar_main_bb);
 
   // Set the entry block
-  if (llvm_bb == this->_llvm_entry_bb) {
-    bb_translation->mark_entry_block();
+  if (llvm_bb == &this->_llvm_fun->getEntryBlock()) {
+    this->_body->set_entry_block(ar_main_bb);
   }
 
   // Translate instructions
   for (llvm::Instruction& inst : *llvm_bb) {
     this->translate_instruction(bb_translation.get(), &inst);
-  }
-
-  // Set exit/unreachable/ehresume blocks
-  if (llvm_bb == this->_llvm_return_bb) {
-    bb_translation->mark_exit_block();
-  }
-  if (llvm_bb == this->_llvm_unreachable_bb) {
-    bb_translation->mark_unreachable_block();
-  }
-  if (llvm_bb == this->_llvm_ehresume_bb) {
-    bb_translation->mark_ehresume_block();
   }
 
   // Add it in the map
@@ -299,6 +237,67 @@ void FunctionImporter::link_basic_block(BasicBlockTranslation* bb_translation) {
       ar::BasicBlock* ar_succ = succ_translation->inputs[llvm_block];
       ar_block->add_successor(ar_succ);
     }
+  }
+}
+
+void FunctionImporter::unify_exit_blocks() {
+  // Check that there is at most one LLVM return block
+  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_return_blocks;
+
+  for (llvm::BasicBlock& bb : *this->_llvm_fun) {
+    if (llvm::isa< llvm::ReturnInst >(bb.getTerminator())) {
+      llvm_return_blocks.push_back(&bb);
+    }
+  }
+
+  if (llvm_return_blocks.size() > 1) {
+    // This should not happen if the 'mergereturn' pass was used
+    std::ostringstream buf;
+    buf << "llvm function @" << this->_ar_fun->name()
+        << " has more than one return block";
+    throw ImportError(buf.str());
+  }
+
+  // Check that there is at most one AR return block
+  llvm::SmallVector< ar::BasicBlock*, 1 > ar_return_blocks;
+
+  for (ar::BasicBlock* bb : *this->_body) {
+    if (!bb->empty() && ar::isa< ar::ReturnValue >(bb->back())) {
+      ar_return_blocks.push_back(bb);
+    }
+  }
+
+  if (ar_return_blocks.size() > 1) {
+    std::ostringstream buf;
+    buf << "ar function @" << this->_ar_fun->name()
+        << " has more than one return block";
+    throw ImportError(buf.str());
+  }
+
+  // Merge all the exit blocks
+  llvm::SmallVector< ar::BasicBlock*, 3 > ar_exit_blocks;
+
+  for (ar::BasicBlock* bb : *this->_body) {
+    if (!bb->empty() && (ar::isa< ar::ReturnValue >(bb->back()) ||
+                         ar::isa< ar::Unreachable >(bb->back()) ||
+                         ar::isa< ar::Resume >(bb->back()))) {
+      ar_exit_blocks.push_back(bb);
+    }
+  }
+
+  if (ar_exit_blocks.empty()) {
+    return;
+  } else if (ar_exit_blocks.size() == 1) {
+    this->_body->set_exit_block(ar_exit_blocks[0]);
+  } else {
+    ar::BasicBlock* unified_exit = ar::BasicBlock::create(this->_body);
+    unified_exit->set_name("unified-exit");
+
+    for (ar::BasicBlock* bb : ar_exit_blocks) {
+      bb->add_successor(unified_exit);
+    }
+
+    this->_body->set_exit_block(unified_exit);
   }
 }
 
@@ -2376,28 +2375,6 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand_argument(
 BasicBlockTranslation::BasicBlockTranslation(llvm::BasicBlock* source_,
                                              ar::BasicBlock* main_)
     : source(source_), main(main_), outputs{BasicBlockOutput(main)} {}
-
-void BasicBlockTranslation::mark_entry_block() {
-  this->main->code()->set_entry_block(this->main);
-}
-
-void BasicBlockTranslation::mark_exit_block() {
-  check_import(this->outputs.size() == 1,
-               "exit block has more than one output");
-  this->main->code()->set_exit_block(this->outputs[0].block);
-}
-
-void BasicBlockTranslation::mark_unreachable_block() {
-  check_import(this->outputs.size() == 1,
-               "unreachable block has more than one output");
-  this->main->code()->set_unreachable_block(this->outputs[0].block);
-}
-
-void BasicBlockTranslation::mark_ehresume_block() {
-  check_import(this->outputs.size() == 1,
-               "ehresume block has more than one output");
-  this->main->code()->set_ehresume_block(this->outputs[0].block);
-}
 
 ar::BasicBlock* BasicBlockTranslation::input_basic_block(
     llvm::BasicBlock* llvm_bb) {

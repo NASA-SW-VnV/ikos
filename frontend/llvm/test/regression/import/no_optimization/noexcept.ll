@@ -30,14 +30,16 @@ define i32 @_Z1gv() #0 personality i8* bitcast (i32 (...)* @__gxx_personality_v0
 ; CHECK: #1 !entry successors={#2, #3} {
 ; CHECK:   si32 %1 = invoke @_Z1fv() normal=#2 exc=#3
 ; CHECK: }
-; CHECK: #2 !exit predecessors={#1} {
+; CHECK: #2 predecessors={#1} successors={#unified-exit} {
 ; CHECK:   return %1
 ; CHECK: }
-; CHECK: #3 !unreachable predecessors={#1} {
+; CHECK: #3 predecessors={#1} successors={#unified-exit} {
 ; CHECK:   {0: si8*, 8: si32} %2 = landingpad
 ; CHECK:   si8* %3 = extractelement %2, 0
 ; CHECK:   call @__clang_call_terminate(%3)
 ; CHECK:   unreachable
+; CHECK: }
+; CHECK: #unified-exit !exit predecessors={#2, #3} {
 ; CHECK: }
 ; CHECK: }
 
@@ -51,7 +53,7 @@ define linkonce_odr hidden void @__clang_call_terminate(i8*) #2 {
   unreachable
 }
 ; CHECK: define void @__clang_call_terminate(si8* %1) {
-; CHECK: #1 !entry !unreachable {
+; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %2 = call @ar.libcpp.begincatch(%1)
 ; CHECK:   call @_ZSt9terminatev()
 ; CHECK:   unreachable

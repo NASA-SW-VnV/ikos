@@ -149,7 +149,6 @@ add_library(ikos-ar
   src/pass/name_values.cpp
   src/pass/pass.cpp
   src/pass/simplify_cfg.cpp
-  src/pass/unify_exit_nodes.cpp
   src/pass/simplify_upcast_comparison.cpp
   src/semantic/bundle.cpp
   src/semantic/code.cpp

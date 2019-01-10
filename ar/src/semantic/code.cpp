@@ -246,8 +246,6 @@ void BasicBlock::full_dump(std::ostream& o) const {
 Code::Code(Function* function)
     : _entry_block(nullptr),
       _exit_block(nullptr),
-      _unreachable_block(nullptr),
-      _ehresume_block(nullptr),
       _function(function),
       _global_var(nullptr),
       _bundle(function->bundle()) {
@@ -257,8 +255,6 @@ Code::Code(Function* function)
 Code::Code(GlobalVariable* gv)
     : _entry_block(nullptr),
       _exit_block(nullptr),
-      _unreachable_block(nullptr),
-      _ehresume_block(nullptr),
       _function(nullptr),
       _global_var(gv),
       _bundle(gv->bundle()) {
@@ -275,14 +271,6 @@ void Code::set_exit_block(BasicBlock* bb) {
   this->_exit_block = bb;
 }
 
-void Code::set_unreachable_block(BasicBlock* bb) {
-  this->_unreachable_block = bb;
-}
-
-void Code::set_ehresume_block(BasicBlock* bb) {
-  this->_ehresume_block = bb;
-}
-
 void Code::add_basic_block(std::unique_ptr< BasicBlock > bb) {
   this->_blocks.emplace_back(std::move(bb));
 }
@@ -290,10 +278,6 @@ void Code::add_basic_block(std::unique_ptr< BasicBlock > bb) {
 void Code::erase_basic_block(BasicBlock* bb) {
   ikos_assert_msg(this->_entry_block != bb, "cannot erase the entry block");
   ikos_assert_msg(this->_exit_block != bb, "cannot erase the exit block");
-  ikos_assert_msg(this->_unreachable_block != bb,
-                  "cannot erase the unreachable block");
-  ikos_assert_msg(this->_ehresume_block != bb,
-                  "cannot erase the ehresume block");
 
   bb->clear_statements();
   bb->clear_predecessors();

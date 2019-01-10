@@ -22,7 +22,7 @@ define i32 @_Z1fb(i1 zeroext) #0 !dbg !12 {
   unreachable, !dbg !18
 }
 ; CHECK: define si32 @_Z1fb(ui1 %1) {
-; CHECK: #1 !entry !unreachable {
+; CHECK: #1 !entry !exit {
 ; CHECK:   call @ar.trap()
 ; CHECK:   unreachable
 ; CHECK: }

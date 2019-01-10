@@ -29,7 +29,7 @@ define i32 @_Z1fb(i1 zeroext) #0 !dbg !12 {
   ret i32 %6, !dbg !19
 }
 ; CHECK: define si32 @_Z1fb(ui1 %1) {
-; CHECK: #1 !entry !unreachable {
+; CHECK: #1 !entry !exit {
 ; CHECK:   si32* $2 = allocate si32, 1, align 4
 ; CHECK:   ui8* $3 = allocate ui8, 1, align 1
 ; CHECK:   ui8 %4 = zext %1

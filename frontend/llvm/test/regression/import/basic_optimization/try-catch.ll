@@ -426,14 +426,16 @@ define i32 @main() #3 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 
 ; CHECK:   si8* %10 = call @ar.libcpp.begincatch(%6)
 ; CHECK:   call @ar.libcpp.endcatch()
 ; CHECK: }
-; CHECK: #9 !ehresume predecessors={#6} {
+; CHECK: #9 predecessors={#6} successors={#unified-exit} {
 ; CHECK:   %7 sine %9
 ; CHECK:   {0: si8*, 8: si32} %11 = insertelement undef, 0, %6
 ; CHECK:   {0: si8*, 8: si32} %12 = insertelement %11, 8, %7
 ; CHECK:   resume %12
 ; CHECK: }
-; CHECK: #7 !exit predecessors={#4, #8} {
+; CHECK: #7 predecessors={#4, #8} successors={#unified-exit} {
 ; CHECK:   return 0
+; CHECK: }
+; CHECK: #unified-exit !exit predecessors={#7, #9} {
 ; CHECK: }
 ; CHECK: }
 

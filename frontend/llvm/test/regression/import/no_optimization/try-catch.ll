@@ -569,7 +569,7 @@ define i32 @main() #3 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 
 ; CHECK:   store $6, %17, align 8
 ; CHECK:   call @ar.libcpp.endcatch()
 ; CHECK: }
-; CHECK: #9 !ehresume predecessors={#6} {
+; CHECK: #9 predecessors={#6} successors={#unified-exit} {
 ; CHECK:   %12 sine %14
 ; CHECK:   si8* %18 = load $4, align 8
 ; CHECK:   si32 %19 = load $5, align 4
@@ -577,8 +577,10 @@ define i32 @main() #3 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 
 ; CHECK:   {0: si8*, 8: si32} %21 = insertelement %20, 8, %19
 ; CHECK:   resume %21
 ; CHECK: }
-; CHECK: #7 !exit predecessors={#4, #8} {
+; CHECK: #7 predecessors={#4, #8} successors={#unified-exit} {
 ; CHECK:   return 0
+; CHECK: }
+; CHECK: #unified-exit !exit predecessors={#7, #9} {
 ; CHECK: }
 ; CHECK: }
 

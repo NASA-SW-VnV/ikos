@@ -284,14 +284,8 @@ private:
   // Entry block
   BasicBlock* _entry_block;
 
-  // Exit block
+  // Exit block, or null
   BasicBlock* _exit_block;
-
-  // Unreachable block
-  BasicBlock* _unreachable_block;
-
-  // Exception Handling Resume block
-  BasicBlock* _ehresume_block;
 
   // Parent function, or null
   Function* _function;
@@ -391,40 +385,6 @@ public:
 
   /// \brief Set the exit basic block
   void set_exit_block(BasicBlock* bb);
-
-  /// \brief Does it have an unreachable block?
-  bool has_unreachable_block() const {
-    return this->_unreachable_block != nullptr;
-  }
-
-  /// \brief Get the unreachable exit block
-  BasicBlock* unreachable_block() const {
-    ikos_assert_msg(this->_unreachable_block, "code has no unreachable block");
-    return this->_unreachable_block;
-  }
-
-  /// \brief Get the unreachable exit block, or null if there is none
-  BasicBlock* unreachable_block_or_null() const {
-    return this->_unreachable_block;
-  }
-
-  /// \brief Set the unreachable basic block
-  void set_unreachable_block(BasicBlock* bb);
-
-  /// \brief Does it have an ehresume basic block?
-  bool has_ehresume_block() const { return this->_ehresume_block != nullptr; }
-
-  /// \brief Get the Exception Handler Resume basic block
-  BasicBlock* ehresume_block() const {
-    ikos_assert_msg(this->_ehresume_block, "code has no ehresume block");
-    return this->_ehresume_block;
-  }
-
-  /// \brief Get the Exception Handler resume basic block, or null
-  BasicBlock* ehresume_block_or_null() const { return this->_ehresume_block; }
-
-  /// \brief Set the Exception Handler Resume basic block
-  void set_ehresume_block(BasicBlock* bb);
 
   /// \brief Is it the body of a function?
   bool is_function_body() const { return this->_function != nullptr; }

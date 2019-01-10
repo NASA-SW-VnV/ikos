@@ -20,7 +20,7 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   unreachable, !dbg !19
 }
 ; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !unreachable {
+; CHECK: #1 !entry !exit {
 ; CHECK:   call @ar.libc.exit(1)
 ; CHECK:   unreachable
 ; CHECK: }

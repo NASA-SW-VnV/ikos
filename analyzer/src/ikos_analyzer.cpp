@@ -64,7 +64,6 @@
 #include <ikos/ar/pass/name_values.hpp>
 #include <ikos/ar/pass/simplify_cfg.hpp>
 #include <ikos/ar/pass/simplify_upcast_comparison.hpp>
-#include <ikos/ar/pass/unify_exit_nodes.hpp>
 #include <ikos/ar/verify/frontend.hpp>
 #include <ikos/ar/verify/type.hpp>
 
@@ -821,14 +820,6 @@ int main(int argc, char** argv) {
       analyzer::ScopeTimerDatabase
           t(output_db.times, "ikos-analyzer.simplify-upcast-comparison");
       ar::SimplifyUpcastComparisonPass().run(bundle);
-    }
-
-    // Unify all exit nodes
-    {
-      analyzer::log::debug("Running unify-exit-nodes pass on AR");
-      analyzer::ScopeTimerDatabase t(output_db.times,
-                                     "ikos-analyzer.unify-exit-nodes");
-      ar::UnifyExitNodesPass().run(bundle);
     }
 
     // Name variables and basic block, for debugging purpose only

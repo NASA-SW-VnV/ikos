@@ -39,7 +39,7 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; CHECK: }
 ; CHECK: #2 predecessors={#1, #4} successors={#3, #4} {
 ; CHECK: }
-; CHECK: #3 !unreachable predecessors={#2} {
+; CHECK: #3 !exit predecessors={#2} {
 ; CHECK:   %.0 sieq 0
 ; CHECK:   call @ar.libc.exit(1)
 ; CHECK:   unreachable
