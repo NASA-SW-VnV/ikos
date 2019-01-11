@@ -216,6 +216,7 @@ if __name__ == '__main__':
                expected='unsafe',
                line_checks=[(2, 'ok', 'warning'),
                             (7, 'ok')]))
+    t.add(Test('test-56.cpp', 'test-56.cpp', 'boa', 'error'))
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe',
                line_checks=[(20, 'ok', 'warning')]))

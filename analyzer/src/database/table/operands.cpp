@@ -348,10 +348,10 @@ std::string repr(llvm::Type* type, TypeSet& seen) {
            std::to_string(seq_type->getNumElements()) + "]";
   } else if (auto struct_type = llvm::dyn_cast< llvm::StructType >(type)) {
     if (struct_type->hasName()) {
-      llvm::StringRef s = struct_type->getName();
-      s.consume_front("struct.");
-      s.consume_front("class.");
-      return s;
+      llvm::StringRef name = struct_type->getName();
+      name.consume_front("struct.");
+      name.consume_front("class.");
+      return name;
     }
 
     if (struct_type->isOpaque()) {
@@ -441,7 +441,9 @@ public:
 public:
   /// \brief Constructor
   explicit ReprResult(std::string str_, llvm::DIType* pointee_type_ = nullptr)
-      : str(std::move(str_)), pointee_type(pointee_type_) {}
+      : str(std::move(str_)), pointee_type(pointee_type_) {
+    ikos_assert(!this->str.empty());
+  }
 
 }; // end struct ReprResult
 
@@ -461,7 +463,11 @@ ReprResult repr(llvm::Constant* cst, ValueSet& seen) {
     if (!dbgs.empty()) {
       llvm::DIGlobalVariable* di_gv = dbgs[0]->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_gv->getRawType());
-      return ReprResult{"&" + demangle(di_gv->getName()), di_type};
+      llvm::StringRef name = di_gv->getName();
+
+      if (!name.empty()) {
+        return ReprResult{"&" + demangle(name), di_type};
+      }
     }
 
     // If it's a constant (e.g, a string)
@@ -470,7 +476,11 @@ ReprResult repr(llvm::Constant* cst, ValueSet& seen) {
     }
 
     // Last chance, use llvm variable name
-    return ReprResult{"&" + demangle(gv->getName())};
+    if (gv->hasName()) {
+      return ReprResult{"&" + demangle(gv->getName())};
+    }
+
+    return ReprResult{"&__unnamed_global_var"};
   } else if (auto fun = llvm::dyn_cast< llvm::Function >(cst)) {
     return ReprResult{"&" + demangle(FunctionsTable::name(fun))};
   } else if (auto cst_int = llvm::dyn_cast< llvm::ConstantInt >(cst)) {
@@ -676,7 +686,11 @@ ReprResult repr(llvm::Value* value, ValueSet& seen) {
     if (dbg_value != dbg_values.end()) {
       llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
-      return ReprResult{di_var->getName(), pointee_type(di_type)};
+      llvm::StringRef name = di_var->getName();
+
+      if (!name.empty()) {
+        return ReprResult{name, pointee_type(di_type)};
+      }
     }
   }
 
@@ -694,7 +708,11 @@ ReprResult repr(llvm::Value* value, ValueSet& seen) {
     if (dbg_addr != dbg_addrs.end()) {
       llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
-      return ReprResult{"&" + demangle(di_var->getName()), di_type};
+      llvm::StringRef name = di_var->getName();
+
+      if (!name.empty()) {
+        return ReprResult{"&" + demangle(name), di_type};
+      }
     }
 
     return ReprResult{"__arg" + std::to_string(arg->getArgNo())};
@@ -724,9 +742,13 @@ ReprResult repr(llvm::Value* value, ValueSet& seen) {
       if (dbg_addr != dbg_addrs.end()) {
         llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
         auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
-        return ReprResult{"&" + demangle(di_var->getName()),
-                          alloca->isArrayAllocation() ? pointee_type(di_type)
-                                                      : di_type};
+        llvm::StringRef name = di_var->getName();
+
+        if (!name.empty()) {
+          return ReprResult{"&" + demangle(name),
+                            alloca->isArrayAllocation() ? pointee_type(di_type)
+                                                        : di_type};
+        }
       }
 
       // Last chance, use llvm variable name
@@ -734,7 +756,7 @@ ReprResult repr(llvm::Value* value, ValueSet& seen) {
         return ReprResult{"&" + demangle(alloca->getName())};
       }
 
-      return ReprResult{"&__unnamed_stack_var"};
+      return ReprResult{"&__unnamed_local_var"};
     } else if (auto load = llvm::dyn_cast< llvm::LoadInst >(inst)) {
       ReprResult r = repr(load->getPointerOperand(), seen);
       return ReprResult{detail::add_deref(r.str), pointee_type(r.pointee_type)};
@@ -990,7 +1012,11 @@ struct OperandReprVisitor {
 
     if (!dbgs.empty()) {
       llvm::DIGlobalVariable* di_gv = dbgs[0]->getVariable();
-      return "&" + demangle(di_gv->getName());
+      llvm::StringRef name = di_gv->getName();
+
+      if (!name.empty()) {
+        return "&" + demangle(name);
+      }
     }
 
     // If it's a constant (e.g, a string)
@@ -1020,7 +1046,11 @@ struct OperandReprVisitor {
 
     if (dbg_addr != dbg_addrs.end()) {
       llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
-      return "&" + demangle(di_var->getName());
+      llvm::StringRef name = di_var->getName();
+
+      if (!name.empty()) {
+        return "&" + demangle(name);
+      }
     }
 
     // Check for llvm.dbg.value
@@ -1035,7 +1065,11 @@ struct OperandReprVisitor {
 
     if (dbg_value != dbg_values.end()) {
       llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
-      return "&" + demangle(di_var->getName());
+      llvm::StringRef name = di_var->getName();
+
+      if (!name.empty()) {
+        return "&" + demangle(name);
+      }
     }
 
     // Last chance, use ar variable name
@@ -1043,7 +1077,7 @@ struct OperandReprVisitor {
       return "&" + demangle(lv->name());
     }
 
-    return "&__unnamed_stack_var";
+    return "&__unnamed_local_var";
   }
 
   std::string operator()(ar::InternalVariable* iv) const {

@@ -112,7 +112,11 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
 
     if (dbg_addr != dbg_addrs.end()) {
       llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
-      return {{"name", di_var->getName()}};
+      llvm::StringRef name = di_var->getName();
+
+      if (!name.empty()) {
+        return {{"name", name}};
+      }
     }
 
     // Check for llvm.dbg.value
@@ -127,7 +131,11 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
 
     if (dbg_value != dbg_values.end()) {
       llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
-      return {{"name", di_var->getName()}};
+      llvm::StringRef name = di_var->getName();
+
+      if (!name.empty()) {
+        return {{"name", name}};
+      }
     }
 
     // Last chance, use ar variable name
@@ -147,7 +155,11 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
 
     if (!dbgs.empty()) {
       llvm::DIGlobalVariable* di_gv = dbgs[0]->getVariable();
-      return {{"name", di_gv->getName()}};
+      llvm::StringRef name = di_gv->getName();
+
+      if (!name.empty()) {
+        return {{"name", name}};
+      }
     }
 
     // If it's a constant (e.g, a string)
