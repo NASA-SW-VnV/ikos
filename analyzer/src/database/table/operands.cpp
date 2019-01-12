@@ -567,7 +567,10 @@ std::vector< llvm::DIDerivedType* > struct_fields(llvm::DICompositeType* type) {
   ikos_assert(type != nullptr);
   ikos_assert(type->getTag() == llvm::dwarf::DW_TAG_structure_type ||
               type->getTag() == llvm::dwarf::DW_TAG_class_type);
-  ikos_assert(type->getRawElements() != nullptr);
+
+  if (type->getRawElements() == nullptr) {
+    return {}; // e.g, a forward declaration
+  }
 
   std::vector< llvm::DIDerivedType* > fields;
 
