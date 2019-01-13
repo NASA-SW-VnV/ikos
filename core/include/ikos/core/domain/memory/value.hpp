@@ -798,8 +798,6 @@ public:
                  VariableRef ptr,
                  const LiteralT& rhs,
                  const MachineInt& size) override {
-    ikos_assert(size.is_strictly_positive());
-
     if (this->is_bottom()) {
       return;
     }
@@ -817,6 +815,11 @@ public:
     if (addrs.is_empty()) {
       // invalid dereference
       this->set_to_bottom();
+      return;
+    }
+
+    if (size.is_zero()) {
+      // does nothing
       return;
     }
 
@@ -1297,6 +1300,7 @@ private:
     if (this->is_bottom()) {
       return;
     }
+
     if (size.is_zero()) {
       return;
     }
@@ -1355,6 +1359,14 @@ public:
   void forget_mem(MemoryLocationRef addr,
                   VariableRef offset,
                   const MachineInt& size) override {
+    if (this->is_bottom()) {
+      return;
+    }
+
+    if (size.is_zero()) {
+      return;
+    }
+
     this->forget_cells(addr, offset, size);
     this->forget_pointer_set(addr);
   }
@@ -1391,6 +1403,10 @@ public:
       return;
     }
 
+    if (size.is_zero()) {
+      return;
+    }
+
     if (this->nullity().is_null(p)) {
       return;
     }
@@ -1410,6 +1426,10 @@ public:
 
   void abstract_reachable_mem(VariableRef p, const MachineInt& size) override {
     if (this->is_bottom()) {
+      return;
+    }
+
+    if (size.is_zero()) {
       return;
     }
 
