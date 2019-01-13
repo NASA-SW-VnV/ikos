@@ -1,4 +1,4 @@
-#include <ikos/analyzer/intrinsic.h>
+extern void __ikos_assert(int);
 
 struct {
   struct {
