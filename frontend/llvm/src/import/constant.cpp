@@ -131,6 +131,8 @@ ar::Value* ConstantImporter::translate_constant(llvm::Constant* cst,
     throw ImportError("unexpected llvm::BlockAddress");
   } else if (llvm::isa< llvm::ConstantTokenNone >(cst)) {
     throw ImportError("unexpected llvm::ConstantTokenNone");
+  } else if (llvm::isa< llvm::GlobalIFunc >(cst)) {
+    throw ImportError("indirect functions (ifunc) are not currently supported");
   } else if (auto gv_alias = llvm::dyn_cast< llvm::GlobalAlias >(cst)) {
     ar_cst = this->translate_global_alias(gv_alias, type, bb, exprs);
   } else if (auto gv = llvm::dyn_cast< llvm::GlobalVariable >(cst)) {
