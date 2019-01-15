@@ -23,6 +23,7 @@ addons:
     - libedit-dev
     - llvm-7
     - llvm-7-dev
+    - llvm-7-tools
     - clang-7
   homebrew:
     update: true

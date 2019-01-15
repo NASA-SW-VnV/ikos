@@ -27,7 +27,7 @@ RUN apt-get update
 # Install all dependencies
 RUN apt-get install -y --allow-unauthenticated gcc g++ cmake libgmp-dev libboost-dev \
         libboost-filesystem-dev libboost-test-dev python python-pygments \
-        libsqlite3-dev libz-dev libedit-dev llvm-7 llvm-7-dev clang-7
+        libsqlite3-dev libz-dev libedit-dev llvm-7 llvm-7-dev llvm-7-tools clang-7
 
 # Add ikos source code
 ADD . /root/ikos

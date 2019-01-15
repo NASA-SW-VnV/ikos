@@ -28,7 +28,7 @@ Then, run the following commands:
 $ sudo apt-get update
 $ sudo apt-get install gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
     libboost-test-dev python python-pygments libsqlite3-dev libz-dev libedit-dev \
-    llvm-7 llvm-7-dev clang-7
+    llvm-7 llvm-7-dev llvm-7-tools clang-7
 ```
 
 When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
