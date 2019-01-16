@@ -68,24 +68,30 @@ if (NOT GMP_FOUND)
   )
 
   if (GMP_INCLUDE_DIR)
-    # Detect the version using gmp.h
-    file(READ "${GMP_INCLUDE_DIR}/gmp.h" GMP_HEADER)
+    # Detect the version using gmp.h or gmp-xxx.h
+    file(GLOB GMP_HEADERS "${GMP_INCLUDE_DIR}/gmp.h" "${GMP_INCLUDE_DIR}/gmp-*.h")
 
-    if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION[ \t]+([0-9]+)")
-      set(GMP_MAJOR_VERSION "${CMAKE_MATCH_1}")
-    else()
+    foreach(GMP_HEADER_PATH ${GMP_HEADERS})
+      file(READ "${GMP_HEADER_PATH}" GMP_HEADER)
+
+      if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION[ \t]+([0-9]+)")
+        set(GMP_MAJOR_VERSION "${CMAKE_MATCH_1}")
+      endif()
+      if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION_MINOR[ \t]+([0-9]+)")
+        set(GMP_MINOR_VERSION "${CMAKE_MATCH_1}")
+      endif()
+      if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION_PATCHLEVEL[ \t]+([0-9]+)")
+        set(GMP_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
+      endif()
+    endforeach()
+
+    if (NOT DEFINED GMP_MAJOR_VERSION)
       message(FATAL_ERROR "could not find __GNU_MP_VERSION in ${GMP_INCLUDE_DIR}/gmp.h")
     endif()
-
-    if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION_MINOR[ \t]+([0-9]+)")
-      set(GMP_MINOR_VERSION "${CMAKE_MATCH_1}")
-    else()
+    if (NOT DEFINED GMP_MINOR_VERSION)
       message(FATAL_ERROR "could not find __GNU_MP_VERSION_MINOR in ${GMP_INCLUDE_DIR}/gmp.h")
     endif()
-
-    if (GMP_HEADER MATCHES "define[ \t]+__GNU_MP_VERSION_PATCHLEVEL[ \t]+([0-9]+)")
-      set(GMP_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
-    else()
+    if (NOT DEFINED GMP_PATCHLEVEL_VERSION)
       message(FATAL_ERROR "could not find __GNU_MP_VERSION_PATCHLEVEL in ${GMP_INCLUDE_DIR}/gmp.h")
     endif()
 
