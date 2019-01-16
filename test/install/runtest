@@ -152,7 +152,7 @@ if [[ $cmd = "all" ]]; then
           "ubuntu-14.04" "ubuntu-16.04" "ubuntu-18.04" \
           "archlinux" \
           "centos-6" "centos-7" \
-          "fedora-27" "fedora-28")
+          "fedora-27" "fedora-28" "fedora-29")
 fi
 
 if (( ${#args[@]} == 0 )); then
