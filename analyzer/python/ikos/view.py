@@ -104,12 +104,21 @@ class TemplateEngine:
         '''
         Format an HTML page with a given template and a dictionary of values
         '''
+        # read the template file
         fullpath = os.path.join(SHARE_DIR, 'template', path)
         data = self._read(fullpath)
+
+        # decode bytes as utf-8
+        for key in values:
+            if isinstance(values[key], bytes):
+                values[key] = values[key].decode('utf-8')
+
+        # substitute {xxx} placeholders
         try:
             data = data.format(**values)
         except KeyError:
             pass
+
         return data
 
 

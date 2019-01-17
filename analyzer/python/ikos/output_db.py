@@ -67,6 +67,10 @@ class OutputDatabase(object):
         self.path = path
         self.con = sqlite3.connect(path)
 
+        # Use 'str' as text factory since it's the type of string literals
+        # This is bytes in python 2 and unicode in python 3
+        self.con.text_factory = str
+
     def close(self):
         self.con.close()
 
