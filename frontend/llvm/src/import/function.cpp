@@ -1052,12 +1052,12 @@ void FunctionImporter::translate_binary_operator(
       ar::InternalVariable::create(this->_body, this->infer_type(inst));
   this->mark_variable_mapping(inst, var);
 
-  if (llvm_type->isIntegerTy()) {
+  if (llvm_type->isIntOrIntVectorTy()) {
     // Integer binary operation
     ar::Signedness sign = ar::Signed;
-    ar::IntegerType* stmt_type = nullptr; // type of the operands (or null)
-    ar::Value* left = nullptr;  // left operand (null if not yet translated)
-    ar::Value* right = nullptr; // right operand (null if not yet translated)
+    ar::Type* stmt_type = nullptr; // type of the operands (or null)
+    ar::Value* left = nullptr;     // left operand (null if not yet translated)
+    ar::Value* right = nullptr;    // right operand (null if not yet translated)
 
     // Guess the type
     switch (inst->getOpcode()) {
@@ -1085,14 +1085,19 @@ void FunctionImporter::translate_binary_operator(
           left = this->translate_value(bb_translation,
                                        inst->getOperand(0),
                                        nullptr);
-          stmt_type = ar::cast< ar::IntegerType >(left->type());
+          stmt_type = left->type();
         } else {
           right = this->translate_value(bb_translation,
                                         inst->getOperand(1),
                                         nullptr);
-          stmt_type = ar::cast< ar::IntegerType >(right->type());
+          stmt_type = right->type();
         }
-        sign = stmt_type->sign();
+
+        ar::Type* element_type = stmt_type;
+        if (stmt_type->is_vector()) {
+          element_type = ar::cast< ar::VectorType >(stmt_type)->element_type();
+        }
+        sign = ar::cast< ar::IntegerType >(element_type)->sign();
       } break;
       default: {
         ikos_unreachable("unreachable");
@@ -1100,8 +1105,7 @@ void FunctionImporter::translate_binary_operator(
     }
 
     if (stmt_type == nullptr) {
-      stmt_type = ar::cast< ar::IntegerType >(
-          _ctx.type_imp->translate_type(llvm_type, sign));
+      stmt_type = _ctx.type_imp->translate_type(llvm_type, sign);
     }
 
     // Translate operands
@@ -1151,7 +1155,7 @@ void FunctionImporter::translate_binary_operator(
     if (stmt_type != var->type()) {
       this->add_bitcast(bb_translation, var, result);
     }
-  } else if (llvm_type->isFloatingPointTy()) {
+  } else if (llvm_type->isFPOrFPVectorTy()) {
     ar::Value* left =
         this->translate_value(bb_translation, inst->getOperand(0), nullptr);
     ar::Value* right =

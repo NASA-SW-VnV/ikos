@@ -109,7 +109,7 @@ ShiftCountChecker::CheckResult ShiftCountChecker::check_shift_count(
     shift_count_interval =
         inv.normal().integers().to_interval(shift_count.var());
   } else {
-    log::error("unexpected pointer operand");
+    log::error("unexpected shit count operand");
     return {CheckKind::UnexpectedOperand, Result::Error, {}};
   }
 

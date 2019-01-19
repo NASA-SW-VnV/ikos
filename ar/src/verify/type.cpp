@@ -482,6 +482,11 @@ public:
       return false;
     }
 
+    // Allow vector types
+    if (result_ty->is_vector()) {
+      result_ty = cast< VectorType >(result_ty)->element_type();
+    }
+
     if (s->is_unsigned_op()) {
       return this->check_unsigned_int(s, result_ty, "result");
     } else if (s->is_signed_op()) {

@@ -1202,6 +1202,11 @@ private:
 public:
   /// \brief Execute a BinaryOperation statement
   void exec(ar::BinaryOperation* s) override {
+    if (s->result()->type()->is_vector()) {
+      this->exec_vector_bin_operation(s);
+      return;
+    }
+
     const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
     const ScalarLit& left = this->_lit_factory.get_scalar(s->left());
     const ScalarLit& right = this->_lit_factory.get_scalar(s->right());
@@ -1357,6 +1362,21 @@ private:
 
     // TODO(marthaud): floating point reasoning
     ikos_ignore(lhs);
+  }
+
+  /// \brief Execute a vector binary operation
+  void exec_vector_bin_operation(ar::BinaryOperation* s) {
+    const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
+    ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
+
+    // Ignore the semantic while being sound
+    this->init_aggregate_memory(lhs);
+    ScalarLit lhs_ptr = this->aggregate_pointer(lhs);
+    this->_inv.normal().forget_reachable_mem(lhs_ptr.var());
   }
 
 public:
