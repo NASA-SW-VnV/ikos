@@ -133,7 +133,7 @@ ar::Type* TypeImporter::translate_di_type(llvm::DIType* di_type,
                  llvm::dyn_cast< llvm::DISubroutineType >(di_type)) {
     return this->translate_subroutine_di_type(subroutine_type, llvm_type);
   } else {
-    throw ImportError("unexpected llvm::DIType");
+    throw ImportError("unsupported llvm DIType");
   }
 }
 
@@ -152,7 +152,7 @@ ar::Type* TypeImporter::translate_null_di_type(llvm::Type* llvm_type) {
   } else if (llvm_type->isIntegerTy(8)) {
     ar_type = ar::IntegerType::get(this->_context, 8, ar::Signed);
   } else {
-    throw ImportError("unexpected llvm::Type with no debug information");
+    throw ImportError("unexpected llvm type with no debug information");
   }
 
   this->store_translation(nullptr, llvm_type, ar_type);
@@ -180,12 +180,12 @@ ar::Type* TypeImporter::translate_basic_di_type(llvm::DIBasicType* di_type,
       case dwarf::DW_ATE_signed_char:
       case dwarf::DW_ATE_unsigned_char: {
         check_import(llvm_type->isIntegerTy(),
-                     "llvm::DIBasicType with integer encoding, but llvm::Type "
-                     "is not an llvm::IntegerType");
+                     "llvm DIBasicType with integer encoding, but llvm type is "
+                     "not an integer type");
         auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
         check_import(di_type->getSizeInBits() == int_type->getBitWidth(),
-                     "llvm::DIBasicType with integer encoding and "
-                     "llvm::IntegerType have a different bit-width");
+                     "llvm DIBasicType with integer encoding and llvm integer "
+                     "type have a different bit-width");
 
         ar::Signedness sign = (encoding == dwarf::DW_ATE_unsigned ||
                                encoding == dwarf::DW_ATE_unsigned_char)
@@ -196,28 +196,28 @@ ar::Type* TypeImporter::translate_basic_di_type(llvm::DIBasicType* di_type,
       } break;
       case dwarf::DW_ATE_boolean: {
         check_import(llvm_type->isIntegerTy(),
-                     "llvm::DIBasicType with DW_ATE_boolean encoding, but "
-                     "llvm::Type is not an llvm::IntegerType");
+                     "llvm DIBasicType with boolean encoding, but llvm type is "
+                     "not an integer type");
         auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
         check_import(di_type->getSizeInBits() == int_type->getBitWidth() ||
                          (di_type->getSizeInBits() == 8 &&
                           int_type->getBitWidth() == 1),
-                     "llvm::DIBasicType with DW_ATE_boolean encoding and "
-                     "llvm::IntegerType have a different bit-width");
+                     "llvm DIBasicType with boolean encoding and llvm integer "
+                     "type have a different bit-width");
         ar_type = ar::IntegerType::get(this->_context,
                                        int_type->getBitWidth(),
                                        ar::Unsigned);
       } break;
       case dwarf::DW_ATE_float: {
         check_import(llvm_type->isFloatingPointTy(),
-                     "llvm::DIBasicType with float encoding, but llvm::Type is "
+                     "llvm DIBasicType with float encoding, but llvm type is "
                      "not a floating point type");
         check_import(di_type->getSizeInBits() ==
                              llvm_type->getPrimitiveSizeInBits() ||
                          (di_type->getSizeInBits() == 128 &&
                           llvm_type->isX86_FP80Ty()),
-                     "llvm::DIBasicType with float encoding and llvm::Type "
-                     "have a different bit-width");
+                     "llvm DIBasicType with float encoding and llvm floating "
+                     "point type have a different bit-width");
 
         if (llvm_type->isHalfTy()) {
           ar_type = ar::FloatType::get(this->_context, ar::Half);
@@ -232,30 +232,29 @@ ar::Type* TypeImporter::translate_basic_di_type(llvm::DIBasicType* di_type,
         } else if (llvm_type->isPPC_FP128Ty()) {
           ar_type = ar::FloatType::get(this->_context, ar::PPC_FP128);
         } else {
-          ikos_unreachable("unexpected float kind");
+          throw ImportError("unsupported llvm floating point type");
         }
       } break;
       case dwarf::DW_ATE_complex_float: {
         check_import(llvm_type->isStructTy(),
-                     "llvm::DIBasicType with complex encoding, but llvm::Type "
-                     "is not a struct");
+                     "llvm DIBasicType with complex encoding, but llvm type is "
+                     "not a structure type");
         auto struct_type = llvm::cast< llvm::StructType >(llvm_type);
         check_import(struct_type->getNumElements() == 2 &&
                          struct_type->getElementType(0) ==
                              struct_type->getElementType(1) &&
                          struct_type->getElementType(0)->isFloatingPointTy(),
-                     "llvm::DIBasicType with complex encoding, but "
-                     "llvm::StructType does not contain 2 floating point "
-                     "types");
+                     "llvm DIBasicType with complex encoding, but llvm "
+                     "structure type does not contain 2 floating points");
         check_import(di_type->getSizeInBits() ==
                          2 * struct_type->getElementType(0)
                                  ->getPrimitiveSizeInBits(),
-                     "llvm::DIBasicType with complex encoding and "
-                     "llvm::StructType have a different bit-width");
+                     "llvm DIBasicType with complex encoding and llvm "
+                     "structure type have a different bit-width");
         ar_type = this->translate_type(llvm_type, ar::Signed);
       } break;
       default: {
-        throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
+        throw ImportError("unsupported dwarf encoding for llvm DIBasicType");
       }
     }
   } else if (di_type->getTag() != 0) {
@@ -267,15 +266,15 @@ ar::Type* TypeImporter::translate_basic_di_type(llvm::DIBasicType* di_type,
                        llvm::cast< llvm::PointerType >(llvm_type)
                            ->getElementType()
                            ->isIntegerTy(8),
-                   "unexpected llvm::Type for llvm::DIBasicType with name "
-                   "decltype(nullptr)");
+                   "unexpected llvm type for llvm DIBasicType with name "
+                   "'decltype(nullptr)'");
       ar_type = ar::PointerType::get(this->_context,
                                      ar::IntegerType::si8(this->_context));
     } else {
-      throw ImportError("unexpected dwarf tag for llvm::DIBasicType");
+      throw ImportError("unsupported dwarf tag for llvm DIBasicType");
     }
   } else {
-    throw ImportError("unexpected llvm::DIBasicType without tag or encoding");
+    throw ImportError("unexpected llvm DIBasicType without tag and encoding");
   }
 
   this->store_translation(di_type, llvm_type, ar_type);
@@ -297,7 +296,7 @@ ar::Type* TypeImporter::translate_derived_di_type(llvm::DIDerivedType* di_type,
              di_type->getTag() == dwarf::DW_TAG_rvalue_reference_type) {
     return this->translate_reference_di_type(di_type, llvm_type);
   } else {
-    throw ImportError("unexpected dwarf tag for llvm::DIDerivedType");
+    throw ImportError("unsupported dwarf tag for llvm DIDerivedType");
   }
 }
 
@@ -314,12 +313,12 @@ ar::Type* TypeImporter::translate_qualified_di_type(
 ar::PointerType* TypeImporter::translate_pointer_di_type(
     llvm::DIDerivedType* di_type, llvm::Type* llvm_type) {
   check_import(llvm_type->isPointerTy(),
-               "llvm::DIDerivedType with DW_TAG_pointer_type tag, but "
-               "llvm::Type is not a llvm::PointerType");
+               "llvm DIDerivedType with pointer tag, but llvm type is not a "
+               "pointer type");
   check_import(di_type->getSizeInBits() ==
                    this->_llvm_data_layout.getPointerSizeInBits(),
-               "llvm::DIDerivedType with DW_TAG_pointer_type tag and "
-               "llvm::Type have a different bit-width");
+               "llvm DIDerivedType with pointer tag and llvm pointer type have "
+               "a different bit-width");
   auto ptr_type = llvm::cast< llvm::PointerType >(llvm_type);
   llvm::Type* pointee_type = ptr_type->getElementType();
   auto di_pointee_type =
@@ -336,15 +335,13 @@ ar::PointerType* TypeImporter::translate_pointer_di_type(
 ar::PointerType* TypeImporter::translate_reference_di_type(
     llvm::DIDerivedType* di_type, llvm::Type* llvm_type) {
   check_import(llvm_type->isPointerTy(),
-               "llvm::DIDerivedType with DW_TAG_reference_type or "
-               "DW_TAG_rvalue_reference_type tag, but llvm::Type is not a "
-               "llvm::PointerType");
+               "llvm DIDerivedType with reference tag, but llvm type is not a "
+               "pointer type");
   check_import(di_type->getSizeInBits() == 0 ||
                    di_type->getSizeInBits() ==
                        this->_llvm_data_layout.getPointerSizeInBits(),
-               "llvm::DIDerivedType with DW_TAG_reference_type or "
-               "DW_TAG_rvalue_reference_type tag and llvm::Type have a "
-               "different bit-width");
+               "llvm DIDerivedType with reference tag and llvm pointer type "
+               "have a different bit-width");
   auto ptr_type = llvm::cast< llvm::PointerType >(llvm_type);
   llvm::Type* pointee_type = ptr_type->getElementType();
   auto di_referred_type =
@@ -372,7 +369,7 @@ ar::Type* TypeImporter::translate_composite_di_type(
   } else if (tag == dwarf::DW_TAG_enumeration_type) {
     return this->translate_enum_di_type(di_type, llvm_type);
   } else {
-    throw ImportError("unexpected dwarf tag for llvm::DICompositeType");
+    throw ImportError("unsupported dwarf tag for llvm DICompositeType");
   }
 }
 
@@ -388,8 +385,7 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
 
   for (llvm::DINode* di_element : di_type->getElements()) {
     check_import(llvm::isa< llvm::DISubrange >(di_element),
-                 "unexpected element in llvm::DICompositeType with "
-                 "DW_TAG_array_type tag");
+                 "unsupported element in llvm DICompositeType with array tag");
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
     auto count = subrange->getCount();
 
@@ -397,47 +393,46 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
         !count.get< llvm::ConstantInt* >()->isMinusOne()) {
       auto count_int = count.get< llvm::ConstantInt* >();
       check_import(!count_int->isNegative(),
-                   "unexpected negative count for llvm::DICompositeType with "
-                   "DW_TAG_array_type tag");
+                   "unexpected negative count for llvm DICompositeType with "
+                   "array tag");
 
       if (current_element->isArrayTy()) {
         auto array_type = llvm::cast< llvm::ArrayType >(current_element);
         check_import(array_type->getNumElements() == count_int->getZExtValue(),
-                     "llvm::DICompositeType with DW_TAG_array_type tag and "
-                     "llvm::ArrayType have a different number of elements");
+                     "llvm DICompositeType with array tag and llvm array type "
+                     "have a different number of elements");
 
         llvm_elements.push_back(array_type);
         current_element = array_type->getElementType();
       } else if (current_element->isVectorTy()) {
         auto vector_type = llvm::cast< llvm::VectorType >(current_element);
         check_import(vector_type->getNumElements() == count_int->getZExtValue(),
-                     "llvm::DICompositeType with DW_TAG_array_type tag and "
-                     "llvm::VectorType have a different number of elements");
+                     "llvm DICompositeType with array tag and llvm vector type "
+                     "have a different number of elements");
 
         llvm_elements.push_back(vector_type);
         current_element = vector_type->getElementType();
       } else if (current_element->isStructTy()) {
         auto struct_type = llvm::cast< llvm::StructType >(current_element);
         check_import(!struct_type->isOpaque() && struct_type->isPacked(),
-                     "llvm::DICompositeType with DW_TAG_array_type tag, but "
-                     "llvm::StructType is not packed");
+                     "llvm DICompositeType with array tag, but llvm structure "
+                     "type is not packed");
         check_import(struct_type->getNumElements() == count_int->getZExtValue(),
-                     "llvm::DICompositeType with DW_TAG_array_type tag and "
-                     "llvm::StructType have a different number of elements");
+                     "llvm DICompositeType with array tag and llvm structure "
+                     "type have a different number of elements");
         check_import(!count_int->isZero(),
-                     "llvm::DICompositeType with DW_TAG_array_type tag, but "
-                     "llvm::StructType is empty");
+                     "llvm DICompositeType with array tag, but llvm structure "
+                     "type is empty");
         check_import(llvm_elements.size() + 1 == di_type->getElements().size(),
-                     "llvm::DICompositeType with DW_TAG_array_type tag, but "
-                     "llvm::StructType is not the last element");
+                     "llvm DICompositeType with array tag, but llvm structure "
+                     "type is not the last element");
 
         llvm_elements.push_back(struct_type);
         current_element = struct_type->getElementType(0);
       } else {
         throw ImportError(
-            "llvm::DICompositeType with DW_TAG_array_type tag and positive "
-            "count, but llvm::Type is not a llvm::ArrayType, llvm::VectorType "
-            "or llvm::StructType");
+            "llvm DICompositeType with array tag and positive count, but llvm "
+            "type is not an array, vector or structure type");
       }
       prev_no_count = false;
     } else {
@@ -453,16 +448,16 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
       } else if (current_element->isArrayTy()) {
         auto array_type = llvm::cast< llvm::ArrayType >(current_element);
         check_import(array_type->getNumElements() == 0,
-                     "llvm::DICompositeType with DW_TAG_array_type tag and "
-                     "count -1, but llvm::ArrayType is not empty");
+                     "llvm DICompositeType with array tag and count -1, but "
+                     "llvm array type is not empty");
 
         llvm_elements.push_back(array_type);
         current_element = array_type->getElementType();
         prev_no_count = false;
       } else {
         throw ImportError(
-            "llvm::DICompositeType with DW_TAG_array_type tag and count -1, "
-            "but llvm::Type is not a llvm::PointerType or llvm::ArrayType");
+            "llvm DICompositeType with array tag and count -1, but llvm type "
+            "is not a pointer or array type");
       }
     }
   }
@@ -539,20 +534,19 @@ static llvm::DICompositeType* get_composite_parent(
   ikos_assert(di_member->getTag() == dwarf::DW_TAG_inheritance);
 
   check_import(di_member->getRawBaseType() != nullptr,
-               "unexpected null pointer in member of llvm::DICompositeType");
+               "unexpected null pointer in member of llvm DICompositeType");
   auto di_member_base = llvm::cast< llvm::DIType >(di_member->getRawBaseType());
   di_member_base = remove_di_qualifiers(di_member_base);
 
   check_import(llvm::isa< llvm::DICompositeType >(di_member_base),
-               "llvm::DIDerivedType with DW_TAG_inheritance tag, but the base "
-               "type is not a llvm::DICompositeType");
+               "llvm DIDerivedType with inheritance tag, but the base type is "
+               "not a DICompositeType");
   auto di_parent = llvm::cast< llvm::DICompositeType >(di_member_base);
 
   check_import(di_parent->getTag() == dwarf::DW_TAG_structure_type ||
                    di_parent->getTag() == dwarf::DW_TAG_class_type,
-               "llvm::DIDerivedType with DW_TAG_inheritance tag, but the base "
-               "type does not have tag DW_TAG_structure_type or "
-               "DW_TAG_class_type");
+               "llvm DIDerivedType with inheritance tag, but the base type "
+               "does not have structure or class tag");
 
   return di_parent;
 }
@@ -575,10 +569,10 @@ static bool has_no_member(Iterator begin, Iterator end) {
       } else if (di_member->getTag() == dwarf::DW_TAG_inheritance) {
         return is_empty_composite(get_composite_parent(di_member));
       } else {
-        throw ImportError("unexpected tag for member of llvm::DICompositeType");
+        throw ImportError("unexpected tag for member of llvm DICompositeType");
       }
     } else {
-      throw ImportError("unexpected element in llvm::DICompositeType");
+      throw ImportError("unexpected element in llvm DICompositeType");
     }
   });
 }
@@ -590,8 +584,8 @@ static bool is_empty_composite(llvm::DICompositeType* di_type) {
     return false; // assume it's not empty
   }
   check_import(di_type->getRawElements() != nullptr,
-               "unexpected null pointer in llvm::DICompositeType with "
-               "DW_TAG_structure_type or DW_TAG_class_type tag");
+               "unexpected null pointer in llvm DICompositeType with structure "
+               "or class tag");
   llvm::DINodeArray di_elements = di_type->getElements();
   return has_no_member(di_elements.begin(), di_elements.end());
 }
@@ -645,13 +639,14 @@ static bool is_base_subobject(llvm::DIDerivedType* di_member,
 ar::StructType* TypeImporter::translate_struct_di_type(
     llvm::DICompositeType* di_type, llvm::Type* llvm_type) {
   check_import(llvm_type->isStructTy(),
-               "llvm::DICompositeType with DW_TAG_structure_type or "
-               "DW_TAG_class_type tag, but llvm::Type is not a "
-               "llvm::StructType");
+               "llvm DICompositeType with structure or class tag, but llvm "
+               "type is not a structure type");
   auto struct_type = llvm::cast< llvm::StructType >(llvm_type);
 
-  check_import(!struct_type->isOpaque(), "unexpected opaque llvm::StructType");
-  check_import(struct_type->isSized(), "unexpected unsized llvm::StructType");
+  check_import(!struct_type->isOpaque(),
+               "unexpected opaque llvm structure type");
+  check_import(struct_type->isSized(),
+               "unexpected unsized llvm structure type");
 
   const llvm::StructLayout* struct_layout =
       this->_llvm_data_layout.getStructLayout(struct_type);
@@ -659,7 +654,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
                              static_cast< uint64_t >(
                                  struct_layout->getAlignment()) *
                                  8) == struct_layout->getSizeInBits(),
-               "llvm::DICompositeType and llvm::StructType have a different "
+               "llvm DICompositeType and llvm structure type have a different "
                "bit-width");
 
   // Structures can be recursive, so create it now, with an empty layout
@@ -674,8 +669,8 @@ ar::StructType* TypeImporter::translate_struct_di_type(
 
   // Collect debug info members
   check_import(di_type->getRawElements() != nullptr,
-               "unexpected null pointer in llvm::DICompositeType with "
-               "DW_TAG_structure_type or DW_TAG_class_type tag");
+               "unexpected null pointer in llvm DICompositeType with structure "
+               "or class tag");
   std::vector< llvm::DIDerivedType* > di_members;
   di_members.reserve(di_type->getElements().size());
 
@@ -687,7 +682,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
     }
 
     check_import(llvm::isa< llvm::DIDerivedType >(di_member),
-                 "unexpected element in llvm::DICompositeType");
+                 "unexpected element in llvm DICompositeType");
     di_members.push_back(llvm::cast< llvm::DIDerivedType >(di_member));
   }
 
@@ -742,7 +737,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
           continue;
         }
       } else {
-        throw ImportError("unexpected tag for member of llvm::DICompositeType");
+        throw ImportError("unsupported tag for member of llvm DICompositeType");
       }
 
       FieldPosition pos = get_relative_position(element_offset_bytes * 8,
@@ -782,8 +777,8 @@ ar::StructType* TypeImporter::translate_struct_di_type(
         break;
       } else {
         throw ImportError(
-            "structure member of llvm::DICompositeType does not match any "
-            "member in llvm::StructType");
+            "structure member of llvm DICompositeType does not match any "
+            "member in llvm structure type");
       }
     }
 
@@ -792,9 +787,8 @@ ar::StructType* TypeImporter::translate_struct_di_type(
       llvm::DIDerivedType* di_member = di_matching_members[0];
       ar::ZNumber di_offset_bits(di_member->getOffsetInBits());
       check_import(di_offset_bits == element_offset_bytes * 8,
-                   "llvm::DIDerivedType with DW_TAG_member or "
-                   "DW_TAG_class_type tag and llvm::Type have a different "
-                   "offset");
+                   "llvm DIDerivedType with member or class tag and llvm type "
+                   "have a different offset");
       auto di_member_base =
           llvm::cast< llvm::DIType >(di_member->getRawBaseType());
 
@@ -809,16 +803,16 @@ ar::StructType* TypeImporter::translate_struct_di_type(
                         llvm::cast< llvm::ArrayType >(element_type)
                             ->getElementType()
                             ->isIntegerTy(8)),
-                   "llvm::StructType member matches several bit-field "
-                   "llvm::DIDerivedType, but llvm::Type is not iX or [X x i8]");
+                   "llvm structure member matches several bit-field llvm "
+                   "DIDerivedType, but llvm type is not iX or [X x i8]");
 
       ar::Type* ar_element_type =
           this->translate_type(element_type, ar::Unsigned);
       ar_layout[element_offset_bytes] = ar_element_type;
     } else if (!di_matching_members.empty()) {
       throw ImportError(
-          "llvm::StructType member matches several llvm::DIDerivedType, and "
-          "none of them has a DIFlagBitField");
+          "llvm structure member matches several llvm DIDerivedType, and none "
+          "of them has a bitfield flag");
     } else {
       // di_matching_members is empty
       if (has_virtual_bases && element_type->isStructTy()) {
@@ -842,13 +836,13 @@ ar::StructType* TypeImporter::translate_struct_di_type(
         ar_layout[element_offset_bytes] = ar_element_type;
       } else {
         throw ImportError(
-            "no matching llvm::DIDerivedType for llvm::StructType member");
+            "no matching llvm DIDerivedType for llvm structure member");
       }
     }
   }
 
   check_import(has_no_member(di_member_it, di_members.end()),
-               "no matching llvm::StructType member for llvm::DIDerivedType");
+               "no matching llvm structure member for llvm DIDerivedType");
 
   ar_type->set_layout(ar_layout);
   this->_translation_depth--;
@@ -859,23 +853,25 @@ ar::StructType* TypeImporter::translate_struct_di_type(
 ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
                                                 llvm::Type* llvm_type) {
   check_import(di_type->getRawElements() != nullptr,
-               "unexpected null pointer in llvm::DICompositeType with "
-               "DW_TAG_union_type tag");
+               "unexpected null pointer in llvm DICompositeType with union "
+               "tag");
   llvm::DINodeArray di_members = di_type->getElements();
 
   check_import(llvm_type->isStructTy(),
-               "llvm::DICompositeType with DW_TAG_union_type tag, but "
-               "llvm::Type is not a llvm::StructType");
+               "llvm DICompositeType with union tag, but llvm type is not a "
+               "structure type");
   auto struct_type = llvm::cast< llvm::StructType >(llvm_type);
 
-  check_import(!struct_type->isOpaque(), "unexpected opaque llvm::StructType");
-  check_import(struct_type->isSized(), "unexpected unsized llvm::StructType");
+  check_import(!struct_type->isOpaque(),
+               "unexpected opaque llvm structure type");
+  check_import(struct_type->isSized(),
+               "unexpected unsized llvm structure type");
 
   if (struct_type->getNumElements() == 0) {
     // Empty union
     check_import(di_members.begin() == di_members.end(),
-                 "empty llvm::StructType, but llvm::DICompositeType with "
-                 "DW_TAG_union_type tag is not empty");
+                 "empty llvm structure type, but llvm DICompositeType with "
+                 "union tag is not empty");
 
     ar::StructType* ar_type =
         ar::StructType::create(this->_context, struct_type->isPacked());
@@ -884,8 +880,8 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
   }
 
   check_import(struct_type->getNumElements() <= 2,
-               "llvm::DICompositeType with DW_TAG_union_type tag, but "
-               "llvm::StructType has more than 2 members");
+               "llvm DICompositeType with union tag, but llvm structure type "
+               "has more than 2 members");
 
   llvm::Type* inner_type = struct_type->getElementType(0);
   llvm::Type* padding_type = nullptr;
@@ -895,9 +891,8 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
                      llvm::cast< llvm::ArrayType >(padding_type)
                          ->getElementType()
                          ->isIntegerTy(8),
-                 "llvm::DICompositeType with DW_TAG_union_type tag, but the "
-                 "second member of llvm::StructType does not correspond to "
-                 "padding");
+                 "llvm DICompositeType with union tag, but the second member "
+                 "of the llvm structure type does not correspond to padding");
   }
 
   const llvm::StructLayout* struct_layout =
@@ -906,7 +901,7 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
                              static_cast< uint64_t >(
                                  struct_layout->getAlignment()) *
                                  8) == struct_layout->getSizeInBits(),
-               "llvm::DICompositeType and llvm::StructType have a different "
+               "llvm DICompositeType and llvm structure type have a different "
                "bit-width");
 
   // Find the first member matching the llvm::StructType
@@ -919,10 +914,10 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
 
     auto di_member = llvm::cast< llvm::DIDerivedType >(di_member_node);
     check_import(di_member->getTag() == dwarf::DW_TAG_member,
-                 "unexpected tag for union member of llvm::DICompositeType");
+                 "unsupported tag for union member of llvm DICompositeType");
     check_import(di_member->getRawBaseType() != nullptr,
-                 "unexpected null pointer in union member of "
-                 "llvm::DICompositeType");
+                 "unexpected null pointer in union member of llvm "
+                 "DICompositeType");
     auto di_member_type =
         llvm::cast< llvm::DIType >(di_member->getRawBaseType());
 
@@ -966,19 +961,18 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
     }
   }
 
-  throw ImportError(
-      "could not translate llvm::DICompositeType with DW_TAG_union_type tag");
+  throw ImportError("could not translate llvm DICompositeType with union tag");
 }
 
 ar::Type* TypeImporter::translate_enum_di_type(llvm::DICompositeType* di_type,
                                                llvm::Type* llvm_type) {
   check_import(llvm_type->isIntegerTy(),
-               "llvm::DICompositeType with DW_TAG_enumeration_type tag, but "
-               "llvm::Type is not a llvm::IntegerType");
+               "llvm DICompositeType with enumeration tag, but llvm type is "
+               "not an integer type");
   auto int_type = llvm::cast< llvm::IntegerType >(llvm_type);
   check_import(di_type->getSizeInBits() == int_type->getBitWidth(),
-               "llvm::DICompositeType with DW_TAG_enumeration_type tag and "
-               "llvm::IntegerType have a different bit-width");
+               "llvm DICompositeType with enumeration tag and llvm integer "
+               "type have a different bit-width");
   ar::Type* ar_type = ar::IntegerType::get(this->_context,
                                            int_type->getBitWidth(),
                                            ar::Unsigned);
@@ -1016,8 +1010,8 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
     auto struct_type = llvm::cast< llvm::StructType >(llvm_type);
     check_import(!struct_type->isOpaque() && !struct_type->isPacked() &&
                      struct_type->getNumElements() == 0,
-                 "llvm::DISubroutineType, but llvm::Type is a non-empty "
-                 "llvm::StructType");
+                 "llvm DISubroutineType, but llvm type is a non-empty "
+                 "structure type");
     ar::StructType* ar_type = ar::StructType::create(this->_context, false);
     this->store_translation(di_type, llvm_type, ar_type);
     this->sanity_check_size(struct_type, ar_type);
@@ -1025,8 +1019,7 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
   }
 
   check_import(llvm_type->isFunctionTy(),
-               "llvm::DISubroutineType, but llvm::Type is not a "
-               "llvm::FunctionType");
+               "llvm DISubroutineType, but llvm type is not a function type");
   auto fun_type = llvm::cast< llvm::FunctionType >(llvm_type);
   llvm::DITypeRefArray di_params = di_type->getTypeArray();
 
@@ -1034,8 +1027,8 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
     // Empty debug info parameters
     check_import(fun_type->getReturnType()->isVoidTy() &&
                      fun_type->getNumParams() == 0 && !fun_type->isVarArg(),
-                 "llvm::DISubroutineType type array is empty but "
-                 "llvm::FunctionType is not void(*)()");
+                 "llvm DISubroutineType type array is empty but llvm function "
+                 "type is not void(*)()");
     ar::FunctionType* ar_type =
         ar::FunctionType::get(this->_context,
                               ar::VoidType::get(this->_context),
@@ -1092,13 +1085,13 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
     }
 
     check_import(di_param_it != di_param_et,
-                 "llvm::DISubroutineType and llvm::FunctionType have a "
+                 "llvm DISubroutineType and llvm function type have a "
                  "different number of parameters [1]");
     llvm::DIType* di_param_type = (*di_param_it).resolve();
     di_param_type = remove_di_qualifiers(di_param_type);
     check_import(di_param_type != nullptr,
-                 "unexpected null pointer in parameters of "
-                 "llvm::DISubroutineType");
+                 "unexpected null pointer in parameters of llvm "
+                 "DISubroutineType");
 
     if (split_struct != nullptr) {
       // Current di_param_type is a structure split into several arguments
@@ -1166,7 +1159,7 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
   }
 
   check_import(split_struct == nullptr,
-               "llvm::DISubroutineType and llvm::FunctionType have a different "
+               "llvm DISubroutineType and llvm function type have a different "
                "number of parameters [2]");
   check_import(di_param_it == di_param_et ||
                    std::all_of(di_param_it,
@@ -1174,7 +1167,7 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
                                [](llvm::DITypeRef di_param) {
                                  return di_param.resolve() == nullptr;
                                }),
-               "llvm::DISubroutineType and llvm::FunctionType have a different "
+               "llvm DISubroutineType and llvm function type have a different "
                "number of parameters [3]");
 
   ar::FunctionType* ar_type =
@@ -1186,8 +1179,8 @@ ar::Type* TypeImporter::translate_subroutine_di_type(
 ar::FunctionType* TypeImporter::translate_function_di_type(
     llvm::DISubroutineType* di_type, llvm::Function* fun) {
   check_import(di_type != nullptr,
-               "unexpected null pointer for llvm::DISubroutineType of "
-               "llvm::Function");
+               "unexpected null pointer for llvm DISubroutineType of llvm "
+               "function");
 
   return ar::cast< ar::FunctionType >(
       this->translate_subroutine_di_type(di_type, fun->getFunctionType()));
@@ -1217,7 +1210,7 @@ bool TypeImporter::match_di_type(llvm::DIType* di_type,
                  llvm::dyn_cast< llvm::DISubroutineType >(di_type)) {
     return this->match_subroutine_di_type(subroutine_type, type, seen);
   } else {
-    throw ImportError("unexpected llvm::DIType");
+    throw ImportError("unsupported llvm DIType");
   }
 }
 
@@ -1264,7 +1257,7 @@ bool TypeImporter::match_basic_di_type(llvm::DIBasicType* di_type,
                    2 * struct_type->getElementType(0)->getPrimitiveSizeInBits();
       }
       default:
-        throw ImportError("unexpected dwarf encoding for llvm::DIBasicType");
+        throw ImportError("unsupported dwarf encoding for llvm DIBasicType");
     }
   } else if (di_type->getTag() != 0) {
     auto tag = static_cast< dwarf::Tag >(di_type->getTag());
@@ -1275,10 +1268,10 @@ bool TypeImporter::match_basic_di_type(llvm::DIBasicType* di_type,
                                         ->getElementType()
                                         ->isIntegerTy(8);
     } else {
-      throw ImportError("unexpected dwarf tag for llvm::DIBasicType");
+      throw ImportError("unsupported dwarf tag for llvm DIBasicType");
     }
   } else {
-    throw ImportError("unexpected llvm::DIBasicType without tag or encoding");
+    throw ImportError("unexpected llvm DIBasicType without tag and encoding");
   }
 }
 
@@ -1298,7 +1291,7 @@ bool TypeImporter::match_derived_di_type(llvm::DIDerivedType* di_type,
              di_type->getTag() == dwarf::DW_TAG_rvalue_reference_type) {
     return this->match_reference_di_type(di_type, type, seen);
   } else {
-    throw ImportError("unexpected dwarf tag for llvm::DIDerivedType");
+    throw ImportError("unsupported dwarf tag for llvm DIDerivedType");
   }
 }
 
@@ -1360,7 +1353,7 @@ bool TypeImporter::match_composite_di_type(llvm::DICompositeType* di_type,
   } else if (tag == dwarf::DW_TAG_enumeration_type) {
     return this->match_enum_di_type(di_type, type);
   } else {
-    throw ImportError("unexpected dwarf tag for llvm::DICompositeType");
+    throw ImportError("unsupported dwarf tag for llvm DICompositeType");
   }
 }
 
@@ -1374,8 +1367,7 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
 
   for (llvm::DINode* di_element : di_type->getElements()) {
     check_import(llvm::isa< llvm::DISubrange >(di_element),
-                 "unexpected element in llvm::DICompositeType with "
-                 "DW_TAG_array_type tag");
+                 "unexpected element in llvm DICompositeType with array tag");
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
     auto count = subrange->getCount();
 
@@ -1383,8 +1375,8 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
         !count.get< llvm::ConstantInt* >()->isMinusOne()) {
       auto count_int = count.get< llvm::ConstantInt* >();
       check_import(!count_int->isNegative(),
-                   "unexpected negative count for llvm::DICompositeType with "
-                   "DW_TAG_array_type tag");
+                   "unexpected negative count for llvm DICompositeType with "
+                   "array tag");
 
       if (current_type->isArrayTy()) {
         auto array_type = llvm::cast< llvm::ArrayType >(current_type);
@@ -1454,8 +1446,10 @@ bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
   }
   auto struct_type = llvm::cast< llvm::StructType >(type);
 
-  check_import(!struct_type->isOpaque(), "unexpected opaque llvm::StructType");
-  check_import(struct_type->isSized(), "unexpected unsized llvm::StructType");
+  check_import(!struct_type->isOpaque(),
+               "unexpected opaque llvm structure type");
+  check_import(struct_type->isSized(),
+               "unexpected unsized llvm structure type");
 
   const llvm::StructLayout* struct_layout =
       this->_llvm_data_layout.getStructLayout(struct_type);
@@ -1473,8 +1467,8 @@ bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
 
   // Collect debug info members
   check_import(di_type->getRawElements() != nullptr,
-               "unexpected null pointer in llvm::DICompositeType with "
-               "DW_TAG_structure_type or DW_TAG_class_type tag");
+               "unexpected null pointer in llvm DICompositeType with structure "
+               "or class tag");
   std::vector< llvm::DIDerivedType* > di_members;
   di_members.reserve(di_type->getElements().size());
 
@@ -1486,7 +1480,7 @@ bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
     }
 
     check_import(llvm::isa< llvm::DIDerivedType >(di_member),
-                 "unexpected element in llvm::DICompositeType");
+                 "unsupported element in llvm DICompositeType");
     di_members.push_back(llvm::cast< llvm::DIDerivedType >(di_member));
   }
 
@@ -1541,7 +1535,7 @@ bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
           continue;
         }
       } else {
-        throw ImportError("unexpected tag for member of llvm::DICompositeType");
+        throw ImportError("unsupported tag for member of llvm DICompositeType");
       }
 
       FieldPosition pos = get_relative_position(element_offset_bytes * 8,
@@ -1640,8 +1634,8 @@ bool TypeImporter::match_union_di_type(llvm::DICompositeType* di_type,
                                        llvm::Type* type,
                                        SeenDITypes& seen) {
   check_import(di_type->getRawElements() != nullptr,
-               "unexpected null pointer in llvm::DICompositeType with "
-               "DW_TAG_union_type tag");
+               "unexpected null pointer in llvm DICompositeType with union "
+               "tag");
   llvm::DINodeArray di_members = di_type->getElements();
 
   if (!type->isStructTy()) {
@@ -1649,8 +1643,10 @@ bool TypeImporter::match_union_di_type(llvm::DICompositeType* di_type,
   }
   auto struct_type = llvm::cast< llvm::StructType >(type);
 
-  check_import(!struct_type->isOpaque(), "unexpected opaque llvm::StructType");
-  check_import(struct_type->isSized(), "unexpected unsized llvm::StructType");
+  check_import(!struct_type->isOpaque(),
+               "unexpected opaque llvm structure type");
+  check_import(struct_type->isSized(),
+               "unexpected unsized llvm structure type");
 
   if (struct_type->getNumElements() == 0) {
     // Empty union
@@ -1690,10 +1686,10 @@ bool TypeImporter::match_union_di_type(llvm::DICompositeType* di_type,
 
     auto di_member = llvm::cast< llvm::DIDerivedType >(di_member_node);
     check_import(di_member->getTag() == dwarf::DW_TAG_member,
-                 "unexpected tag for union member of llvm::DICompositeType");
+                 "unsupported tag for union member of llvm DICompositeType");
     check_import(di_member->getRawBaseType() != nullptr,
-                 "unexpected null pointer in union member of "
-                 "llvm::DICompositeType");
+                 "unexpected null pointer in union member of llvm "
+                 "DICompositeType");
     auto di_member_type =
         llvm::cast< llvm::DIType >(di_member->getRawBaseType());
 
@@ -1879,7 +1875,7 @@ ar::Type* TypeImporter::translate_type(llvm::Type* type,
   } else if (type->isFunctionTy()) {
     return this->translate_function_type(type, preferred);
   } else {
-    throw ImportError("unexpected llvm::Type");
+    throw ImportError("unsupported llvm type");
   }
 }
 
@@ -1916,7 +1912,7 @@ ar::FloatType* TypeImporter::translate_floating_point_type(
   } else if (type->isPPC_FP128Ty()) {
     ar_type = ar::FloatType::get(this->_context, ar::PPC_FP128);
   } else {
-    ikos_unreachable("unexpected float kind");
+    throw ImportError("unsupported llvm floating point type");
   }
 
   this->_types.try_emplace({type, preferred}, ar_type);
@@ -2046,7 +2042,7 @@ bool TypeImporter::match_ar_type(llvm::Type* llvm_type,
   } else if (llvm_type->isFunctionTy()) {
     return this->match_function_ar_type(llvm_type, ar_type, seen);
   } else {
-    throw ImportError("unexpected llvm::Type");
+    throw ImportError("unsupported llvm type");
   }
 }
 
@@ -2077,7 +2073,7 @@ bool TypeImporter::match_floating_point_ar_type(llvm::Type* llvm_type,
   } else if (llvm_type->isPPC_FP128Ty()) {
     return ar_float_type->float_semantic() == ar::PPC_FP128;
   } else {
-    ikos_unreachable("unexpected float kind");
+    throw ImportError("unsupported llvm floating point type");
   }
 }
 
@@ -2239,10 +2235,10 @@ void TypeImporter::sanity_check_size(llvm::Type* llvm_type, ar::Type* ar_type) {
   }
   check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type) >=
                    this->_ar_data_layout.size_in_bits(ar_type),
-               "llvm::Type size in bits is smaller than ar::Type size");
+               "llvm type size in bits is smaller than ar type size");
   check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type) ==
                    this->_ar_data_layout.alloc_size_in_bytes(ar_type),
-               "llvm::Type and ar::Type alloc size are different");
+               "llvm type and ar type alloc size are different");
 }
 
 } // end namespace import

@@ -128,11 +128,11 @@ ar::Value* ConstantImporter::translate_constant(llvm::Constant* cst,
   ar::Type* orig_type = type;
 
   if (llvm::isa< llvm::BlockAddress >(cst)) {
-    throw ImportError("unexpected llvm::BlockAddress");
+    throw ImportError("llvm blockaddress is not supported");
   } else if (llvm::isa< llvm::ConstantTokenNone >(cst)) {
-    throw ImportError("unexpected llvm::ConstantTokenNone");
+    throw ImportError("llvm token 'none' is not supported");
   } else if (llvm::isa< llvm::GlobalIFunc >(cst)) {
-    throw ImportError("indirect functions (ifunc) are not currently supported");
+    throw ImportError("indirect functions (ifunc) are not supported");
   } else if (auto gv_alias = llvm::dyn_cast< llvm::GlobalAlias >(cst)) {
     ar_cst = this->translate_global_alias(gv_alias, type, bb, exprs);
   } else if (auto gv = llvm::dyn_cast< llvm::GlobalVariable >(cst)) {
@@ -195,7 +195,7 @@ ar::Value* ConstantImporter::translate_constant(llvm::Constant* cst,
     } else if (auto cst_expr = llvm::dyn_cast< llvm::ConstantExpr >(cst)) {
       ar_cst = this->translate_constant_expr_to_var(cst_expr, type, bb, exprs);
     } else {
-      throw ImportError("unexpected llvm::Constant");
+      throw ImportError("unexpected llvm constant [1]");
     }
   }
 
@@ -437,10 +437,10 @@ std::unique_ptr< ar::Statement > ConstantImporter::
                    llvm::dyn_cast< llvm::PtrToIntInst >(inst.get())) {
       return this->translate_ptrtoint(result, ptrtoint, bb, exprs);
     } else {
-      throw ImportError("unhandled llvm::ConstantExpr");
+      throw ImportError("unexpected llvm constant expression");
     }
   } else {
-    throw ImportError("unexpected llvm::Constant");
+    throw ImportError("unexpected llvm constant [2]");
   }
 }
 
@@ -579,7 +579,7 @@ ar::Value* ConstantImporter::translate_cast_integer_constant(
   } else if (llvm::isa< llvm::UndefValue >(cst)) {
     ar_cst = ar::UndefinedConstant::get(this->_context, type);
   } else {
-    throw ImportError("unexpected llvm::Constant");
+    throw ImportError("unexpected llvm constant [3]");
   }
 
   ikos_assert(ar_cst != nullptr);

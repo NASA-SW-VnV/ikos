@@ -177,8 +177,10 @@ ar::Function* BundleImporter::translate_function(llvm::Function* fun) {
     ar_fun = this->translate_clang_generated_function(fun);
   } else {
     // No debug information on internal function
-    throw ImportError("no debug information for llvm function @" +
-                      fun->getName().str());
+    std::ostringstream buf;
+    buf << "missing debug information for llvm function "
+        << fun->getName().str();
+    throw ImportError(buf.str());
   }
 
   if (ar_fun != nullptr) {
@@ -302,7 +304,7 @@ ar::Function* BundleImporter::translate_intrinsic_function(
       !_ctx.type_imp->match_extern_function_type(fun->getFunctionType(),
                                                  ar_fun->type())) {
     std::ostringstream buf;
-    buf << "intrinsic functions @" << fun->getName().str() << " and @"
+    buf << "llvm intrinsic " << fun->getName().str() << " and ar intrinsic "
         << ar_fun->name() << " have a different type";
     throw ImportError(buf.str());
   }
@@ -329,7 +331,7 @@ ar::Function* BundleImporter::translate_library_function(llvm::Function* fun) {
       buf << "function definition of " << fun->getName().str()
           << " does not match the expected C++ Standard Library definition";
     } else {
-      buf << "llvm function @" << fun->getName().str() << " and ar intrinsic @"
+      buf << "llvm function " << fun->getName().str() << " and ar intrinsic "
           << ar_fun->name() << " have a different type";
     }
 

@@ -253,7 +253,7 @@ void FunctionImporter::unify_exit_blocks() {
   if (llvm_return_blocks.size() > 1) {
     // This should not happen if the 'mergereturn' pass was used
     std::ostringstream buf;
-    buf << "llvm function @" << this->_ar_fun->name()
+    buf << "llvm function " << this->_ar_fun->name()
         << " has more than one return block";
     throw ImportError(buf.str());
   }
@@ -269,7 +269,7 @@ void FunctionImporter::unify_exit_blocks() {
 
   if (ar_return_blocks.size() > 1) {
     std::ostringstream buf;
-    buf << "ar function @" << this->_ar_fun->name()
+    buf << "ar function " << this->_ar_fun->name()
         << " has more than one return block";
     throw ImportError(buf.str());
   }
@@ -369,15 +369,14 @@ void FunctionImporter::translate_instruction(
   } else if (auto resume = llvm::dyn_cast< llvm::ResumeInst >(inst)) {
     this->translate_resume(bb_translation, resume);
   } else if (llvm::isa< llvm::SelectInst >(inst)) {
-    throw ImportError(
-        "select instruction not supported (use the -lower-select pass?)");
+    // The preprocessor should use the -lower-select pass
+    throw ImportError("llvm select instructions are not supported");
   } else if (llvm::isa< llvm::SwitchInst >(inst)) {
-    throw ImportError(
-        "switch instruction not supported (use the -lowerswitch pass?)");
+    // The preprocessor should use the -lowerswitch pass
+    throw ImportError("llvm switch instructions are not supported");
   } else {
     std::ostringstream buf;
-    buf << "unsupported llvm::Instruction (opcode: " << inst->getOpcodeName()
-        << ")";
+    buf << "unsupported llvm instruction: " << inst->getOpcodeName() << " [1]";
     throw ImportError(buf.str());
   }
 }
@@ -387,7 +386,7 @@ void FunctionImporter::translate_alloca(BasicBlockTranslation* bb_translation,
   // Translate types
   check_import(alloca->getType()->getElementType() ==
                    alloca->getAllocatedType(),
-               "unexpected allocated type for llvm::AllocaInst");
+               "unexpected allocated type in llvm alloca");
   auto var_type = ar::cast< ar::PointerType >(this->infer_type(alloca));
   ar::Type* allocated_type = var_type->pointee();
 
@@ -724,7 +723,7 @@ void FunctionImporter::translate_bitcast(BasicBlockTranslation* bb_translation,
     stmt->set_frontend< llvm::Value >(bitcast);
     bb_translation->add_statement(std::move(stmt));
   } else {
-    throw ImportError("unexpected llvm::BitCastInst");
+    throw ImportError("unsupported llvm bitcast instruction");
   }
 }
 
@@ -768,9 +767,9 @@ static ar::UnaryOperation::Operator convert_unary_op(
     case llvm::Instruction::BitCast:
       return ar::UnaryOperation::Bitcast;
     case llvm::Instruction::AddrSpaceCast:
-      throw ImportError("unsupported cast llvm::Instruction::AddrSpaceCast");
+      throw ImportError("llvm addrspace casts are not supported");
     default:
-      ikos_unreachable("unreachable");
+      throw ImportError("unsupported llvm cast [1]");
   }
 }
 
@@ -846,8 +845,7 @@ void FunctionImporter::translate_cast(BasicBlockTranslation* bb_translation,
     } break;
     default: {
       std::ostringstream buf;
-      buf << "unexpected llvm::CastInst (opcode: " << cast->getOpcodeName()
-          << ")";
+      buf << "unsupported llvm cast: " << cast->getOpcodeName() << " [2]";
       throw ImportError(buf.str());
     }
   }
@@ -993,7 +991,7 @@ static ar::BinaryOperation::Operator convert_int_bin_op(
       case llvm::Instruction::Xor:
         return ar::BinaryOperation::UXor;
       default:
-        ikos_unreachable("unreachable");
+        throw ImportError("unsupported llvm binary operator [1]");
     }
   } else {
     switch (op) {
@@ -1020,7 +1018,7 @@ static ar::BinaryOperation::Operator convert_int_bin_op(
       case llvm::Instruction::Xor:
         return ar::BinaryOperation::SXor;
       default:
-        ikos_unreachable("unreachable");
+        throw ImportError("unsupported llvm binary operator [2]");
     }
   }
 }
@@ -1039,7 +1037,7 @@ static ar::BinaryOperation::Operator convert_float_bin_op(
     case llvm::Instruction::FRem:
       return ar::BinaryOperation::FRem;
     default:
-      ikos_unreachable("unreachable");
+      throw ImportError("unsupported llvm binary operator [3]");
   }
 }
 
@@ -1100,7 +1098,10 @@ void FunctionImporter::translate_binary_operator(
         sign = ar::cast< ar::IntegerType >(element_type)->sign();
       } break;
       default: {
-        ikos_unreachable("unreachable");
+        std::ostringstream buf;
+        buf << "unsupported llvm binary operator:" << inst->getOpcodeName()
+            << " [4]";
+        throw ImportError(buf.str());
       }
     }
 
@@ -1173,8 +1174,8 @@ void FunctionImporter::translate_binary_operator(
     bb_translation->add_statement(std::move(stmt));
   } else {
     std::ostringstream buf;
-    buf << "unexpected llvm::BinaryOperator (opcode: " << inst->getOpcodeName()
-        << ")";
+    buf << "unsupported llvm binary operator: " << inst->getOpcodeName()
+        << " [5]";
     throw ImportError(buf.str());
   }
 }
@@ -1195,8 +1196,12 @@ static ar::Comparison::Predicate convert_int_predicate(
         return ar::Comparison::SILT;
       case llvm::CmpInst::ICMP_SLE:
         return ar::Comparison::SILE;
-      default:
-        ikos_unreachable("unreachable");
+      default: {
+        std::ostringstream buf;
+        buf << "unsupported llvm cmp predicate: "
+            << llvm::CmpInst::getPredicateName(pred).str() << " [1]";
+        throw ImportError(buf.str());
+      }
     }
   } else {
     switch (pred) {
@@ -1212,8 +1217,12 @@ static ar::Comparison::Predicate convert_int_predicate(
         return ar::Comparison::UILT;
       case llvm::CmpInst::ICMP_ULE:
         return ar::Comparison::UILE;
-      default:
-        ikos_unreachable("unreachable");
+      default: {
+        std::ostringstream buf;
+        buf << "unsupported llvm cmp predicate: "
+            << llvm::CmpInst::getPredicateName(pred).str() << " [2]";
+        throw ImportError(buf.str());
+      }
     }
   }
 }
@@ -1233,8 +1242,12 @@ static ar::Comparison::Predicate convert_ptr_predicate(
       return ar::Comparison::PLT;
     case llvm::CmpInst::ICMP_ULE:
       return ar::Comparison::PLE;
-    default:
-      ikos_unreachable("unreachable");
+    default: {
+      std::ostringstream buf;
+      buf << "unsupported llvm cmp predicate: "
+          << llvm::CmpInst::getPredicateName(pred).str() << " [3]";
+      throw ImportError(buf.str());
+    }
   }
 }
 
@@ -1269,15 +1282,12 @@ static ar::Comparison::Predicate convert_float_predicate(
       return ar::Comparison::FULE;
     case llvm::CmpInst::FCMP_UNE:
       return ar::Comparison::FUNE;
-    case llvm::CmpInst::FCMP_FALSE:
-    case llvm::CmpInst::FCMP_TRUE: {
+    default: {
       std::ostringstream buf;
-      buf << "unsupported llvm::CmpInst predicate: "
-          << llvm::CmpInst::getPredicateName(pred).str() << ")";
+      buf << "unsupported llvm cmp predicate: "
+          << llvm::CmpInst::getPredicateName(pred).str() << " [4]";
       throw ImportError(buf.str());
     }
-    default:
-      ikos_unreachable("unreachable");
   }
 }
 
@@ -1359,8 +1369,8 @@ void FunctionImporter::translate_cmp(BasicBlockTranslation* bb_translation,
     bb_translation->add_comparison(result, std::move(stmt));
   } else {
     std::ostringstream buf;
-    buf << "unexpected llvm::CmpInst (predicate: "
-        << llvm::CmpInst::getPredicateName(cmp->getPredicate()).str() << ")";
+    buf << "unsupported llvm cmp instruction with predicate: "
+        << llvm::CmpInst::getPredicateName(cmp->getPredicate()).str() << " [1]";
     throw ImportError(buf.str());
   }
 }
@@ -1376,8 +1386,8 @@ void FunctionImporter::translate_branch(BasicBlockTranslation* bb_translation,
     if (llvm::isa< llvm::Instruction >(condition) ||
         llvm::isa< llvm::Argument >(condition)) {
       auto it = this->_variables.find(condition);
-      check_import(it != this->_variables.end(),
-                   "conditiof of llvm::BranchInst hasn't been translated");
+      ikos_assert_msg(it != this->_variables.end(),
+                      "condition hasn't been translated yet");
       auto var = ar::cast< ar::InternalVariable >(it->second);
 
       // Add branch
@@ -1389,7 +1399,7 @@ void FunctionImporter::translate_branch(BasicBlockTranslation* bb_translation,
     } else if (llvm::isa< llvm::UndefValue >(condition)) {
       bb_translation->add_nondeterministic_branching(br);
     } else {
-      throw ImportError("unexpected condition for llvm::BranchInst");
+      throw ImportError("unsupported condition for llvm branch instruction");
     }
   }
 }
@@ -1464,7 +1474,7 @@ void FunctionImporter::translate_phi_late(BasicBlockTranslation* bb_translation,
       stmt->set_frontend< llvm::Value >(phi);
       ar_bb->push_back(std::move(stmt));
     } else {
-      throw ImportError("unexpected ar::Type in translate_phi_late()");
+      throw ImportError("invalid ar bitcast for llvm phi instruction");
     }
   }
 }
@@ -1538,7 +1548,7 @@ ar::IntegerConstant* FunctionImporter::translate_indexes(
           this->_llvm_data_layout.getTypeAllocSize(seq_type->getElementType()));
       offset += element_size * idx;
     } else {
-      ikos_unreachable("unexpected indexed type");
+      throw ImportError("unsupported operand to llvm extractvalue");
     }
 
     auto comp_type = llvm::cast< llvm::CompositeType >(indexed_type);
@@ -1567,7 +1577,7 @@ void FunctionImporter::translate_extractelement(
   // Translate offset
   auto index = llvm::dyn_cast< llvm::ConstantInt >(inst->getIndexOperand());
   if (!index) {
-    throw ImportError("unexpected index operand to llvm::ExtractElementInst");
+    throw ImportError("unsupported operand to llvm extractelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
   ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
@@ -1599,7 +1609,7 @@ void FunctionImporter::translate_insertelement(
   // Translate offset
   auto index = llvm::dyn_cast< llvm::ConstantInt >(inst->getOperand(2));
   if (!index) {
-    throw ImportError("unexpected index operand to llvm::InsertElementInst");
+    throw ImportError("unsupported operand to llvm insertelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
   ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
@@ -1707,7 +1717,7 @@ ar::Value* FunctionImporter::translate_value(
   } else if (auto inline_asm = llvm::dyn_cast< llvm::InlineAsm >(value)) {
     return this->translate_inline_asm(inline_asm, type);
   } else {
-    throw ImportError("unexpected llvm::Value in translate_value()");
+    throw ImportError("unsupported llvm value [1]");
   }
 }
 
@@ -1739,7 +1749,7 @@ ar::InternalVariable* FunctionImporter::add_bitcast(
     ar::InternalVariable* result,
     ar::Variable* operand) {
   if (!is_valid_bitcast(operand->type(), result->type())) {
-    throw ImportError("unexpected ar::Type in add_bitcast()");
+    throw ImportError("invalid ar bitcast");
   }
 
   auto stmt =
@@ -1778,8 +1788,7 @@ ar::Value* FunctionImporter::translate_cast_integer_value(
       return this->add_integer_casts(bb_translation, var, type);
     }
   } else {
-    throw ImportError(
-        "unexpected llvm::Value in translate_cast_integer_value()");
+    throw ImportError("unsupported llvm value [2]");
   }
 }
 
@@ -2007,18 +2016,17 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use(
   } else if (llvm::isa< llvm::ResumeInst >(user)) {
     return TypeHint(); // no hint
   } else if (llvm::isa< llvm::SelectInst >(user)) {
-    throw ImportError(
-        "select instruction not supported (use the -lower-select pass?)");
+    // The preprocessor should use the -lower-select pass
+    throw ImportError("llvm select instructions are not supported");
   } else if (llvm::isa< llvm::SwitchInst >(user)) {
-    throw ImportError(
-        "switch instruction not supported (use the -lowerswitch pass?)");
+    // The preprocessor should use the -lowerswitch pass
+    throw ImportError("llvm switch instructions are not supported");
   } else if (auto inst = llvm::dyn_cast< llvm::Instruction >(user)) {
     std::ostringstream buf;
-    buf << "unsupported llvm::Instruction in infer_type_hint_use() (opcode: "
-        << inst->getOpcodeName() << ")";
+    buf << "unsupported llvm instruction " << inst->getOpcodeName() << " [2]";
     throw ImportError(buf.str());
   } else {
-    throw ImportError("unexpected user in infer_type_hint_use()");
+    throw ImportError("unsupported llvm user");
   }
 }
 
@@ -2049,7 +2057,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_store(
     }
     return hint;
   } else {
-    ikos_unreachable("unreachable");
+    throw ImportError("unexpected operand to llvm store");
   }
 }
 
@@ -2148,8 +2156,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cast(
     }
     default: {
       std::ostringstream buf;
-      buf << "unexpected llvm::CastInst (opcode: " << cast->getOpcodeName()
-          << ")";
+      buf << "unsupported llvm cast: " << cast->getOpcodeName() << " [3]";
       throw ImportError(buf.str());
     }
   }
@@ -2218,7 +2225,10 @@ FunctionImporter::TypeHint FunctionImporter::
       return TypeHint(); // no hint, sign is irrelevant
     }
     default: {
-      ikos_unreachable("unreachable");
+      std::ostringstream buf;
+      buf << "unsupported llvm binary operator: " << inst->getOpcodeName()
+          << " [6]";
+      throw ImportError(buf.str());
     }
   }
 
@@ -2258,8 +2268,8 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cmp(
     return TypeHint(); // no hint
   } else {
     std::ostringstream buf;
-    buf << "unexpected llvm::CmpInst (predicate: "
-        << llvm::CmpInst::getPredicateName(cmp->getPredicate()).str() << ")";
+    buf << "unsupported llvm cmp instruction with predicate: "
+        << llvm::CmpInst::getPredicateName(cmp->getPredicate()).str() << " [2]";
     throw ImportError(buf.str());
   }
 }
@@ -2308,7 +2318,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand(
     // Cannot deduce sign information from constants
     return TypeHint();
   } else {
-    throw ImportError("unexpected llvm::Value in infer_type_hint_operand()");
+    throw ImportError("unsupported llvm value [3]");
   }
 }
 
