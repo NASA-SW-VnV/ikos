@@ -265,7 +265,14 @@ AggregateType::AggregateType(TypeKind kind) : Type(kind) {}
 // StructType
 
 StructType::StructType(Layout layout, bool packed)
-    : AggregateType(StructKind), _layout(std::move(layout)), _packed(packed) {}
+    : AggregateType(StructKind), _layout(std::move(layout)), _packed(packed) {
+  ikos_assert_msg(std::is_sorted(this->_layout.begin(),
+                                 this->_layout.end(),
+                                 [](const Field& a, const Field& b) {
+                                   return a.offset < b.offset;
+                                 }),
+                  "layout is not sorted by offset");
+}
 
 StructType::StructType(bool packed)
     : AggregateType(StructKind), _packed(packed) {}
@@ -283,6 +290,12 @@ StructType* StructType::create(Context& ctx, bool packed) {
 }
 
 void StructType::set_layout(Layout layout) {
+  ikos_assert_msg(std::is_sorted(layout.begin(),
+                                 layout.end(),
+                                 [](const Field& a, const Field& b) {
+                                   return a.offset < b.offset;
+                                 }),
+                  "layout is not sorted by offset");
   this->_layout = std::move(layout);
 }
 
@@ -296,8 +309,8 @@ void StructType::dump(std::ostream& o) const {
   }
   o << "{";
   for (auto it = this->_layout.cbegin(), et = this->_layout.cend(); it != et;) {
-    o << it->first << ": ";
-    it->second->dump(o);
+    o << it->offset << ": ";
+    it->type->dump(o);
     ++it;
     if (it != et) {
       o << ", ";

@@ -374,7 +374,7 @@ private:
       for (auto it = struct_cst->field_begin(), et = struct_cst->field_end();
            it != et;
            ++it) {
-        this->init_global_operand(it->second);
+        this->init_global_operand(it->value);
       }
     } else if (auto seq_cst = dyn_cast< ar::SequentialConstant >(value)) {
       for (auto it = seq_cst->element_begin(), et = seq_cst->element_end();

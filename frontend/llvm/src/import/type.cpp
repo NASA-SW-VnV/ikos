@@ -489,7 +489,7 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
         ar::ZNumber offset(struct_layout->getElementOffset(i));
         ar_type = this->translate_di_type(di_final_element,
                                           struct_type->getElementType(i));
-        ar_layout[offset] = ar_type;
+        ar_layout.push_back({offset, ar_type});
       }
 
       ar_type = ar::StructType::create(this->_context, ar_layout, true);
@@ -794,7 +794,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
 
       ar::Type* ar_element_type =
           this->translate_di_type(di_member_base, element_type);
-      ar_layout[element_offset_bytes] = ar_element_type;
+      ar_layout.push_back({element_offset_bytes, ar_element_type});
     } else if (!di_matching_members.empty() && is_bit_field) {
       // One or more DIDerivedType matches the structure member, and
       // One of them has a DIFlagBitField.
@@ -808,7 +808,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
 
       ar::Type* ar_element_type =
           this->translate_type(element_type, ar::Unsigned);
-      ar_layout[element_offset_bytes] = ar_element_type;
+      ar_layout.push_back({element_offset_bytes, ar_element_type});
     } else if (!di_matching_members.empty()) {
       throw ImportError(
           "llvm structure member matches several llvm DIDerivedType, and none "
@@ -818,7 +818,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
       if (has_virtual_bases && element_type->isStructTy()) {
         ar::Type* ar_element_type =
             this->translate_type(element_type, ar::Signed);
-        ar_layout[element_offset_bytes] = ar_element_type;
+        ar_layout.push_back({element_offset_bytes, ar_element_type});
       } else if (element_type->isIntegerTy(8) ||
                  (element_type->isArrayTy() &&
                   llvm::cast< llvm::ArrayType >(element_type)
@@ -833,7 +833,7 @@ ar::StructType* TypeImporter::translate_struct_di_type(
         //   * Empty structure in C++, translated into { i8 }
         ar::Type* ar_element_type =
             this->translate_type(element_type, ar::Signed);
-        ar_layout[element_offset_bytes] = ar_element_type;
+        ar_layout.push_back({element_offset_bytes, ar_element_type});
       } else {
         throw ImportError(
             "no matching llvm DIDerivedType for llvm structure member");
@@ -944,14 +944,14 @@ ar::Type* TypeImporter::translate_union_di_type(llvm::DICompositeType* di_type,
       // inner type
       ar::Type* ar_inner_type =
           this->translate_di_type(di_member_type, inner_type);
-      ar_layout.insert(std::make_pair(0, ar_inner_type));
+      ar_layout.push_back({ar::ZNumber(0), ar_inner_type});
 
       // padding type, [n x i8]
       if (padding_type != nullptr) {
         ar::Type* ar_padding_type =
             this->translate_type(padding_type, ar::Signed);
         ar::ZNumber padding_offset_bytes(struct_layout->getElementOffset(1));
-        ar_layout.insert(std::make_pair(padding_offset_bytes, ar_padding_type));
+        ar_layout.push_back({padding_offset_bytes, ar_padding_type});
       }
 
       ar_type->set_layout(ar_layout);
@@ -1985,7 +1985,7 @@ ar::Type* TypeImporter::translate_struct_type(llvm::Type* type,
     llvm::Type* element_type = struct_type->getElementType(i);
     uint64_t element_offset = struct_layout->getElementOffset(i);
     ar::Type* ar_element_type = this->translate_type(element_type, preferred);
-    ar_layout[ar::ZNumber(element_offset)] = ar_element_type;
+    ar_layout.push_back({ar::ZNumber(element_offset), ar_element_type});
   }
 
   ar_type->set_layout(ar_layout);
@@ -2152,8 +2152,8 @@ bool TypeImporter::match_struct_ar_type(llvm::Type* llvm_type,
   for (unsigned i = 0; i < llvm_struct_type->getNumElements(); ++i, ++it) {
     llvm::Type* llvm_element_type = llvm_struct_type->getElementType(i);
     uint64_t llvm_element_offset = llvm_struct_layout->getElementOffset(i);
-    if (llvm_element_offset != it->first ||
-        !this->match_ar_type(llvm_element_type, it->second, seen)) {
+    if (llvm_element_offset != it->offset ||
+        !this->match_ar_type(llvm_element_type, it->type, seen)) {
       return false;
     }
   }

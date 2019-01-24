@@ -142,14 +142,15 @@ void NullConstant::dump(std::ostream& o) const {
 
 // StructConstant
 
-StructConstant::StructConstant(StructType* type, const Values& values)
-    : Constant(StructConstantKind, type), _values(values) {
+StructConstant::StructConstant(StructType* type, Values values)
+    : Constant(StructConstantKind, type), _values(std::move(values)) {
   ikos_assert_msg(std::equal(type->field_begin(),
                              type->field_end(),
-                             values.begin(),
-                             [](auto& l, auto& r) {
-                               return l.first == r.first &&
-                                      l.second == r.second->type();
+                             this->_values.begin(),
+                             this->_values.end(),
+                             [](const StructType::Field& l, const Field& r) {
+                               return l.offset == r.offset &&
+                                      l.type == r.value->type();
                              }),
                   "type does not match");
 }
@@ -163,8 +164,8 @@ StructConstant* StructConstant::get(Context& ctx,
 void StructConstant::dump(std::ostream& o) const {
   o << "{";
   for (auto it = this->_values.cbegin(), et = this->_values.cend(); it != et;) {
-    o << it->first << ": ";
-    it->second->dump(o);
+    o << it->offset << ": ";
+    it->value->dump(o);
     ++it;
     if (it != et) {
       o << ", ";

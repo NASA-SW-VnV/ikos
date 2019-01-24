@@ -48,8 +48,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/container/flat_map.hpp>
-
 #include <ikos/ar/semantic/bundle.hpp>
 #include <ikos/ar/semantic/context.hpp>
 #include <ikos/ar/semantic/type.hpp>
@@ -351,13 +349,29 @@ public:
 /// \brief Constant structure
 class StructConstant final : public Constant {
 public:
+  /// \brief Structure field
+  struct Field {
+    // Offset, in bytes
+    ZNumber offset;
+
+    // Value
+    Value* value;
+
+    bool operator<(const Field& o) const {
+      return offset < o.offset || (offset == o.offset && value < o.value);
+    }
+  };
+
   /// \brief Type of the value container
   ///
-  /// Associative map from offset (in bytes) to values
-  using Values = boost::container::flat_map< ZNumber, Value* >;
+  /// List of fields, ordered by offset
+  using Values = std::vector< Field >;
 
   /// \brief Iterator over the fields of the structure
   using FieldIterator = Values::const_iterator;
+
+  /// \brief Reverse iterator over the fields of the structure
+  using FieldReverseIterator = Values::const_reverse_iterator;
 
 private:
   // Values in the structure
@@ -365,7 +379,7 @@ private:
 
 private:
   /// \brief Private constructor
-  StructConstant(StructType* type, const Values& values);
+  StructConstant(StructType* type, Values values);
 
 public:
   /// \brief Static constructor
@@ -384,6 +398,12 @@ public:
 
   /// \brief End iterator over the fields of the structure
   FieldIterator field_end() const { return this->_values.cend(); }
+
+  /// \brief Begin reverse iterator over the fields of the structure
+  FieldReverseIterator field_rbegin() const { return this->_values.crbegin(); }
+
+  /// \brief End reverse iterator over the fields of the structure
+  FieldReverseIterator field_rend() const { return this->_values.crend(); }
 
   /// \brief Get the number of fields
   std::size_t num_fields() const { return this->_values.size(); }

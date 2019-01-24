@@ -958,7 +958,7 @@ struct OperandReprVisitor {
   std::string operator()(ar::StructConstant* c) const {
     std::string r = "{";
     for (auto it = c->field_begin(), et = c->field_end(); it != et;) {
-      r += ar::apply_visitor(*this, it->second);
+      r += ar::apply_visitor(*this, it->value);
       ++it;
       if (it != et) {
         r += ", ";

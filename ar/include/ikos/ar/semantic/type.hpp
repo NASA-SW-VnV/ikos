@@ -46,8 +46,6 @@
 #include <iosfwd>
 #include <vector>
 
-#include <boost/container/flat_map.hpp>
-
 #include <ikos/ar/semantic/bundle.hpp>
 #include <ikos/ar/semantic/context.hpp>
 #include <ikos/ar/support/assert.hpp>
@@ -381,19 +379,24 @@ public:
 /// to itself).
 class StructType final : public AggregateType {
 public:
+  /// \brief Structure field
+  struct Field {
+    // Offset, in bytes
+    ZNumber offset;
+
+    // Type
+    Type* type;
+  };
+
   /// \brief Type of the layout
   ///
-  /// Associative map from offset (in bytes) to types
-  using Layout = boost::container::flat_map< ZNumber, Type* >;
+  /// List of fields, ordered by offset
+  using Layout = std::vector< Field >;
 
   /// \brief Iterator over the fields of the structure
-  ///
-  /// Fields are ordered by offset in the structure
   using FieldIterator = Layout::const_iterator;
 
   /// \brief Reverse iterator over the fields of the structure
-  ///
-  /// Fields are ordered by offset in the structure
   using FieldReverseIterator = Layout::const_reverse_iterator;
 
 private:

@@ -197,14 +197,14 @@ public:
 
     for (auto it = c->field_begin(), et = c->field_end(); it != et; ++it) {
       // Translate element
-      Literal value = ar::apply_visitor(*this, it->second);
+      Literal value = ar::apply_visitor(*this, it->value);
 
       // Add in fields
       AddAggregateField vis(fields,
-                            /*offset = */ to_machine_int(it->first, _dl),
+                            /*offset = */ to_machine_int(it->offset, _dl),
                             /*size = */
                             to_machine_int(_dl.store_size_in_bytes(
-                                               it->second->type()),
+                                               it->value->type()),
                                            _dl));
       value.apply_visitor(vis);
     }

@@ -163,9 +163,9 @@ std::vector< std::pair< ar::Function*, MachineInt > > global_cdtors(
     }
 
     auto it = e->field_begin();
-    ar::Value* fst = it->second;
+    ar::Value* fst = it->value;
     ++it;
-    ar::Value* snd = it->second;
+    ar::Value* snd = it->value;
 
     if (!isa< ar::IntegerConstant >(fst) ||
         !isa< ar::FunctionPointerConstant >(snd)) {

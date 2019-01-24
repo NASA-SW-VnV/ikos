@@ -550,8 +550,8 @@ public:
     } else {
       seen.insert(t);
       for (auto it = t->field_begin(), et = t->field_end(); it != et;) {
-        o << it->first << ": ";
-        apply_visitor(*this, it->second);
+        o << it->offset << ": ";
+        apply_visitor(*this, it->type);
         ++it;
         if (it != et) {
           o << ", ";
@@ -633,8 +633,8 @@ public:
   void operator()(StructConstant* c) {
     o << "{";
     for (auto it = c->field_begin(), et = c->field_end(); it != et;) {
-      o << it->first << ": ";
-      apply_visitor(*this, it->second);
+      o << it->offset << ": ";
+      apply_visitor(*this, it->value);
       ++it;
       if (it != et) {
         o << ", ";

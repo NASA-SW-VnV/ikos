@@ -206,7 +206,7 @@ public:
 
     for (auto it = type->field_begin(), et = type->field_end(); it != et;
          ++it) {
-      alignment = std::max(alignment, apply_visitor(*this, it->second));
+      alignment = std::max(alignment, apply_visitor(*this, it->type));
     }
 
     if (alignment == 0) {
@@ -288,10 +288,10 @@ public:
     auto it = type->field_rbegin();
 
     // offset of last field (in bytes)
-    ZNumber size = it->first;
+    ZNumber size = it->offset;
 
     // size of last field type (in bytes)
-    size += data_layout.alloc_size_in_bytes(it->second);
+    size += data_layout.alloc_size_in_bytes(it->type);
 
     // in bits
     return size * 8;

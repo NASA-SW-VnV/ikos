@@ -269,8 +269,8 @@ ar::StructConstant* ConstantImporter::translate_constant_struct(
   for (; op_it != op_et && type_it != type_et; ++op_it, ++type_it) {
     auto element = llvm::cast< llvm::Constant >(*op_it);
     ar::Value* ar_element =
-        this->translate_constant(element, type_it->second, bb, exprs);
-    fields.emplace(type_it->first, ar_element);
+        this->translate_constant(element, type_it->type, bb, exprs);
+    fields.push_back({type_it->offset, ar_element});
   }
 
   return ar::StructConstant::get(this->_context, type, fields);

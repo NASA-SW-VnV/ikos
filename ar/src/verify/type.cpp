@@ -266,9 +266,9 @@ private:
       auto sty = cast< StructType >(ty);
       if (sty->num_fields() == 2) {
         auto it = sty->field_begin();
-        Type* first_ty = it->second;
+        Type* first_ty = it->type;
         ++it;
-        Type* second_ty = it->second;
+        Type* second_ty = it->type;
         if (first_ty == PointerType::get(s->context(),
                                          IntegerType::si8(s->context())) &&
             second_ty == IntegerType::si32(s->context())) {

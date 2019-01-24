@@ -75,7 +75,7 @@ public:
     }
   };
 
-  /// \brief Set of fields
+  /// \brief List of fields
   using Fields = std::vector< Field >;
 
 private:
