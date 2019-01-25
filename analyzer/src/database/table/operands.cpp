@@ -243,7 +243,7 @@ StringRef repr(llvm::Instruction::BinaryOps op) {
     case llvm::Instruction::Xor:
       return "^";
     default:
-      ikos_unreachable("unreachable");
+      throw FrontendError("unsupported llvm binary operator");
   }
 }
 
@@ -303,7 +303,7 @@ StringRef repr(llvm::CmpInst::Predicate pred) {
     case llvm::CmpInst::ICMP_SLE:
       return "<=";
     default:
-      ikos_unreachable("unreachable");
+      throw FrontendError("unsupported llvm cmp predicate");
   }
 }
 
@@ -339,7 +339,7 @@ std::string repr(llvm::Type* type, TypeSet& seen) {
     } else if (type->isPPC_FP128Ty()) {
       return "ppc_fp128_t";
     } else {
-      throw LogicError("unsupported llvm::Type");
+      throw FrontendError("unsupported llvm floating point type");
     }
   } else if (auto ptr_type = llvm::dyn_cast< llvm::PointerType >(type)) {
     return repr(ptr_type->getElementType(), seen) + "*";
@@ -390,7 +390,7 @@ std::string repr(llvm::Type* type, TypeSet& seen) {
     r += ")";
     return r;
   } else {
-    throw LogicError("unsupported llvm::Type");
+    throw FrontendError("unsupported llvm type");
   }
 }
 
@@ -558,7 +558,7 @@ ReprResult repr(llvm::Constant* cst, ValueSet& seen) {
         inst(cst_expr->getAsInstruction(), inst_deleter);
     return repr(inst.get(), seen);
   } else {
-    throw LogicError("unexpected llvm::Constant");
+    throw FrontendError("unsupported llvm constant");
   }
 }
 
@@ -932,13 +932,12 @@ ReprResult repr(llvm::Value* value, ValueSet& seen) {
       return ReprResult{"__current_exception"};
     } else {
       std::ostringstream buf;
-      buf << "unsupported llvm::Instruction (opcode: " << inst->getOpcodeName()
-          << ")";
-      throw LogicError(buf.str());
+      buf << "unsupported llvm instruction: " << inst->getOpcodeName();
+      throw FrontendError(buf.str());
     }
   }
 
-  throw LogicError("unsupported llvm::Value");
+  throw FrontendError("unsupported llvm value");
 }
 
 /// \brief ar::Value visitor returning a textual representation

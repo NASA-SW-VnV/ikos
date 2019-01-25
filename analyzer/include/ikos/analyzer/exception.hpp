@@ -164,5 +164,49 @@ public:
 
 }; // end class ArgumentError
 
+/// \brief Exception for frontend errors
+class FrontendError : public Exception {
+private:
+  /// \brief Explanatory message
+  ///
+  /// See https://clang.llvm.org/extra/clang-tidy/checks/cert-err60-cpp.html
+  std::shared_ptr< const std::string > _msg;
+
+public:
+  /// \brief Constructor
+  ///
+  /// \param msg Explanatory message
+  explicit FrontendError(const std::string& msg)
+      : _msg(std::make_shared< const std::string >(msg)) {}
+
+  /// \brief Constructor
+  ///
+  /// \param msg Explanatory message
+  explicit FrontendError(const char* msg)
+      : _msg(std::make_shared< const std::string >(msg)) {}
+
+  /// \brief Remove the default constructor
+  FrontendError() = delete;
+
+  /// \brief Copy constructor
+  FrontendError(const FrontendError&) noexcept = default;
+
+  /// \brief Move constructor
+  FrontendError(FrontendError&&) noexcept = default;
+
+  /// \brief Copy assignment operator
+  FrontendError& operator=(const FrontendError&) noexcept = default;
+
+  /// \brief Move assignment operator
+  FrontendError& operator=(FrontendError&&) noexcept = default;
+
+  /// \brief Get the explanatory string
+  const char* what() const noexcept override;
+
+  /// \brief Destructor
+  ~FrontendError() override;
+
+}; // end class FrontendError
+
 } // end namespace analyzer
 } // end namespace ikos

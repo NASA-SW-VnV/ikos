@@ -70,5 +70,13 @@ const char* ArgumentError::what() const noexcept {
 
 ArgumentError::~ArgumentError() = default;
 
+// FrontendError
+
+const char* FrontendError::what() const noexcept {
+  return this->_msg->c_str();
+}
+
+FrontendError::~FrontendError() = default;
+
 } // end namespace analyzer
 } // end namespace ikos
