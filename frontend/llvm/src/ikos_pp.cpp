@@ -294,10 +294,12 @@ int main(int argc, char** argv) {
         exclude_set.insert(entry_point);
       }
     }
-    pass_manager.add(
-        llvm::createInternalizePass([=](const llvm::GlobalValue& gv) {
-          return exclude_set.find(gv.getName()) != exclude_set.end();
-        }));
+    if (exclude_set.count("*") == 0) {
+      pass_manager.add(
+          llvm::createInternalizePass([=](const llvm::GlobalValue& gv) {
+            return exclude_set.find(gv.getName()) != exclude_set.end();
+          }));
+    }
 
     // Kill unused internal global (opt -globaldce)
     // note: unfortunately, it removes some debug info about global variables

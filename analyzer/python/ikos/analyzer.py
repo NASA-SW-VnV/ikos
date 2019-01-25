@@ -115,7 +115,7 @@ def parse_arguments(argv):
                                          args.default_domain),
                           choices=args.choices(args.domains),
                           default=args.default_domain)
-    analysis.add_argument('--entry-points',
+    analysis.add_argument('-e', '--entry-points',
                           dest='entry_points',
                           metavar='<function>',
                           help='List of program entry points (default: main)',

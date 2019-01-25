@@ -264,7 +264,7 @@ void IntraproceduralValueAnalysis::run() {
     // Insert the function in the database
     _ctx.output_db->functions.insert(function);
 
-    if (function->is_declaration()) {
+    if (!function->is_definition()) {
       continue;
     }
 

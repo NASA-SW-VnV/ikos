@@ -710,8 +710,9 @@ void InterproceduralValueAnalysis::run() {
 
   // Analyze each entry point
   for (ar::Function* entry_point : _ctx.opts.entry_points) {
-    if (entry_point->is_declaration()) {
-      log::error("Entry point " + entry_point->name() + " is extern");
+    if (!entry_point->is_definition()) {
+      log::error("missing implementation of function '" + entry_point->name() +
+                 "'");
       continue;
     }
 

@@ -46,7 +46,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/iterator/transform_iterator.hpp>
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>
@@ -590,33 +589,47 @@ static ar::Formatter::FormatOptions make_format_options() {
   return opts;
 }
 
-/// \brief Given a range of function names, return an iterator on the first
-/// undefined function, or the end iterator otherwise
-template < typename Iterator >
-inline Iterator find_undefined_functions(Iterator begin,
-                                         Iterator end,
-                                         ar::Bundle* bundle) {
-  return std::find_if(begin, end, [=](const auto& name) {
-    return bundle->function_or_null(name) == nullptr;
-  });
+/// \brief Parse a list of function names and return a list of functions
+static std::vector< ar::Function* > parse_function_names(
+    const llvm::cl::list< std::string >& opt, ar::Bundle* bundle) {
+  std::vector< ar::Function* > functions;
+
+  if (std::find(opt.begin(), opt.end(), "*") != opt.end()) {
+    // Wildcard: all functions
+    std::copy_if(bundle->function_begin(),
+                 bundle->function_end(),
+                 std::back_inserter(functions),
+                 [](ar::Function* fun) { return fun->is_definition(); });
+    return functions;
+  }
+
+  for (const auto& name : opt) {
+    ar::Function* fun = bundle->function_or_null(name);
+
+    if (fun == nullptr) {
+      std::ostringstream buf;
+      buf << "could not find function '" << name << "'";
+      throw analyzer::ArgumentError(buf.str());
+    }
+
+    if (!fun->is_definition()) {
+      std::ostringstream buf;
+      buf << "missing implementation for function '" << name << "'";
+      throw analyzer::ArgumentError(buf.str());
+    }
+
+    functions.push_back(fun);
+  }
+
+  return functions;
 }
 
 /// \brief Build analysis options from command line arguments
 static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
-  auto resolve_function = [=](const auto& name) {
-    return bundle->function_or_null(name);
-  };
-
   return analyzer::AnalysisOptions{
       .analyses = {Analyses.begin(), Analyses.end()},
-      .entry_points = {boost::make_transform_iterator(EntryPoints.begin(),
-                                                      resolve_function),
-                       boost::make_transform_iterator(EntryPoints.end(),
-                                                      resolve_function)},
-      .no_init_globals = {boost::make_transform_iterator(NoInitGlobals.begin(),
-                                                         resolve_function),
-                          boost::make_transform_iterator(NoInitGlobals.end(),
-                                                         resolve_function)},
+      .entry_points = parse_function_names(EntryPoints, bundle),
+      .no_init_globals = parse_function_names(NoInitGlobals, bundle),
       .machine_int_domain = Domain,
       .procedural = Procedural,
       .use_liveness = !NoLiveness,
@@ -758,27 +771,6 @@ int main(int argc, char** argv) {
                                      "ikos-analyzer.llvm-to-ar");
       llvm_to_ar::Importer importer(ar_context);
       bundle = importer.import(*module, make_import_options());
-    }
-
-    // Check that EntryPoints and NoInitGlobals have valid function names
-    {
-      auto it = find_undefined_functions(EntryPoints.begin(),
-                                         EntryPoints.end(),
-                                         bundle);
-      if (it != EntryPoints.end()) {
-        llvm::errs() << progname << ": " << InputFilename
-                     << ": error: could not find function '" << *it << "'\n";
-        return 6;
-      }
-
-      it = find_undefined_functions(NoInitGlobals.begin(),
-                                    NoInitGlobals.end(),
-                                    bundle);
-      if (it != NoInitGlobals.end()) {
-        llvm::errs() << progname << ": " << InputFilename
-                     << ": error: could not find function '" << *it << "'\n";
-        return 6;
-      }
     }
 
     // Run type checker

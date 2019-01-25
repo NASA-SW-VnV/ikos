@@ -62,5 +62,13 @@ const char* LogicError::what() const noexcept {
 
 LogicError::~LogicError() = default;
 
+// ArgumentError
+
+const char* ArgumentError::what() const noexcept {
+  return this->_msg->c_str();
+}
+
+ArgumentError::~ArgumentError() = default;
+
 } // end namespace analyzer
 } // end namespace ikos

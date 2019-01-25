@@ -120,5 +120,49 @@ public:
 
 }; // end class LogicError
 
+/// \brief Exception for errors in command line arguments
+class ArgumentError : public Exception {
+private:
+  /// \brief Explanatory message
+  ///
+  /// See https://clang.llvm.org/extra/clang-tidy/checks/cert-err60-cpp.html
+  std::shared_ptr< const std::string > _msg;
+
+public:
+  /// \brief Constructor
+  ///
+  /// \param msg Explanatory message
+  explicit ArgumentError(const std::string& msg)
+      : _msg(std::make_shared< const std::string >(msg)) {}
+
+  /// \brief Constructor
+  ///
+  /// \param msg Explanatory message
+  explicit ArgumentError(const char* msg)
+      : _msg(std::make_shared< const std::string >(msg)) {}
+
+  /// \brief Remove the default constructor
+  ArgumentError() = delete;
+
+  /// \brief Copy constructor
+  ArgumentError(const ArgumentError&) noexcept = default;
+
+  /// \brief Move constructor
+  ArgumentError(ArgumentError&&) noexcept = default;
+
+  /// \brief Copy assignment operator
+  ArgumentError& operator=(const ArgumentError&) noexcept = default;
+
+  /// \brief Move assignment operator
+  ArgumentError& operator=(ArgumentError&&) noexcept = default;
+
+  /// \brief Get the explanatory string
+  const char* what() const noexcept override;
+
+  /// \brief Destructor
+  ~ArgumentError() override;
+
+}; // end class ArgumentError
+
 } // end namespace analyzer
 } // end namespace ikos
