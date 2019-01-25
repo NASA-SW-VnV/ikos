@@ -140,10 +140,10 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   }
 
   if (!left_ptr.is_pointer_var()) {
-    log::error("unexpected operand to ar::Comparison");
+    log::error("unexpected operand to comparison");
     return {CheckKind::UnexpectedOperand, Result::Error, {stmt->left()}, {}};
   } else if (!right_ptr.is_pointer_var()) {
-    log::error("unexpected operand to ar::Comparison");
+    log::error("unexpected operand to comparison");
     return {CheckKind::UnexpectedOperand, Result::Error, {stmt->right()}, {}};
   }
 

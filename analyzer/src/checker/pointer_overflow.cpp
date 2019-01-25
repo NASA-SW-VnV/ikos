@@ -108,7 +108,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
     base_interval =
         inv.normal().integers().to_interval(offset_var).to_z_interval();
   } else {
-    log::error("unexpected operand to ar::PointerShift");
+    log::error("unexpected operand to ptrshift");
     return {CheckKind::UnexpectedOperand, Result::Error, {stmt->pointer()}};
   }
 
@@ -140,7 +140,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
       offset_interval =
           inv.normal().integers().to_interval(offset.var()).to_z_interval();
     } else {
-      log::error("unexpected operand to ar::PointerShift");
+      log::error("unexpected operand to ptrshift");
       return {CheckKind::UnexpectedOperand, Result::Error, {term.second}};
     }
 

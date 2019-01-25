@@ -109,7 +109,7 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
   } else if (lit.is_machine_int_var()) {
     divisor = inv.normal().integers().to_interval(lit.var());
   } else {
-    log::error("unexpected operand to ar::BinaryOperation");
+    log::error("unexpected operand to binary operation");
     return {CheckKind::UnexpectedOperand, Result::Error, {}};
   }
 

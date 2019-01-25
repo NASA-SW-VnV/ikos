@@ -249,8 +249,8 @@ void PointerAnalysis::run() {
     if (gv->is_definition()) {
       log::debug(
           "Generating intra-procedural numerical invariant for initializer of "
-          "global variable @" +
-          gv->name());
+          "global variable '" +
+          gv->name() + "'");
       NumericalCodeInvariants invariants(_ctx,
                                          _function_pointer,
                                          gv->initializer());
@@ -258,8 +258,8 @@ void PointerAnalysis::run() {
 
       log::debug(
           "Generating pointer constraints for initializer of global variable "
-          "@" +
-          gv->name());
+          "'" +
+          gv->name() + "'");
       visitor.process_global_var_def(gv, invariants);
     } else {
       visitor.process_global_var_decl(gv);
@@ -272,12 +272,13 @@ void PointerAnalysis::run() {
     ar::Function* fun = *it;
     if (fun->is_definition()) {
       log::debug(
-          "Generating intra-procedural numerical invariant for function @" +
-          fun->name());
+          "Generating intra-procedural numerical invariant for function '" +
+          fun->name() + "'");
       NumericalCodeInvariants invariants(_ctx, _function_pointer, fun->body());
       invariants.run();
 
-      log::debug("Generating pointer constraints for function @" + fun->name());
+      log::debug("Generating pointer constraints for function '" + fun->name() +
+                 "'");
       visitor.process_function_def(fun, invariants);
     } else {
       visitor.process_function_decl(fun);

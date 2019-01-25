@@ -127,7 +127,7 @@ IntOverflowCheckerBase::check_integer_overflow(
   } else if (left_lit.is_machine_int_var()) {
     left_interval = inv.normal().integers().to_interval(left_lit.var());
   } else {
-    log::error("unexpected operand to ar::BinaryOperation");
+    log::error("unexpected operand to binary operation");
     return {{CheckKind::UnexpectedOperand, Result::Error, {stmt->left()}, {}}};
   }
 
@@ -145,7 +145,7 @@ IntOverflowCheckerBase::check_integer_overflow(
   } else if (right_lit.is_machine_int_var()) {
     right_interval = inv.normal().integers().to_interval(right_lit.var());
   } else {
-    log::error("unexpected operand to ar::BinaryOperation");
+    log::error("unexpected operand to binary operation");
     return {{CheckKind::UnexpectedOperand, Result::Error, {stmt->right()}, {}}};
   }
 

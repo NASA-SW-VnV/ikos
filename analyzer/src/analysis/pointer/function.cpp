@@ -129,8 +129,8 @@ void FunctionPointerAnalysis::run() {
     if (gv->is_definition()) {
       log::debug(
           "Generating pointer constraints for initializer of global variable "
-          "@" +
-          gv->name());
+          "'" +
+          gv->name() + "'");
       visitor.process_global_var_def(gv, EmptyCodeInvariants());
     } else {
       visitor.process_global_var_decl(gv);
@@ -142,7 +142,8 @@ void FunctionPointerAnalysis::run() {
        ++it) {
     ar::Function* fun = *it;
     if (fun->is_definition()) {
-      log::debug("Generating pointer constraints for function @" + fun->name());
+      log::debug("Generating pointer constraints for function '" + fun->name() +
+                 "'");
       visitor.process_function_def(fun, EmptyCodeInvariants());
     } else {
       visitor.process_function_decl(fun);

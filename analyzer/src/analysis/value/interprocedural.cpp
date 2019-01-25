@@ -580,11 +580,11 @@ AbstractDomain init_main_invariant(Context& ctx,
   auto argv = ctx.lit_factory->get_scalar(main->param(1));
 
   if (!argc.is_machine_int_var()) {
-    log::warning("Unexpected type for first argument of main");
+    log::warning("unexpected type for first argument of main");
     return inv;
   }
   if (!argv.is_pointer_var()) {
-    log::warning("Unexpected type for second argument of main");
+    log::warning("unexpected type for second argument of main");
     return inv;
   }
 
@@ -652,7 +652,7 @@ void InterproceduralValueAnalysis::run() {
     ar::GlobalVariable* gv = *it;
     if (gv->is_definition() &&
         is_initialized(gv, _ctx.opts.globals_init_policy)) {
-      log::debug("Initializing global variable @" + gv->name());
+      log::debug("Initializing global variable '" + gv->name() + "'");
       GlobalVarInitializerFixpoint fixpoint(_ctx, gv);
       fixpoint.run(init_inv);
       init_inv = fixpoint.exit_invariant();
@@ -676,23 +676,23 @@ void InterproceduralValueAnalysis::run() {
       ar::Function* ctor = entry.first;
 
       if (ctor->is_declaration()) {
-        log::error("Global constructor " + ctor->name() + " is extern");
+        log::error("global constructor '" + ctor->name() + "' is extern");
         continue;
       }
 
       FunctionFixpoint fixpoint(_ctx, checkers, ctor);
 
       {
-        log::info("Analyzing global constructor: " + demangle(ctor->name()));
+        log::info("Analyzing global constructor '" + demangle(ctor->name()) +
+                  "'");
         ScopeTimerDatabase t(_ctx.output_db->times,
                              "ikos-analyzer.value." + ctor->name());
         fixpoint.run(init_inv);
       }
 
       {
-        log::info(
-            "Checking properties and writing results for global constructor: " +
-            demangle(ctor->name()));
+        log::info("Checking properties for global constructor '" +
+                  demangle(ctor->name()) + "'");
         ScopeTimerDatabase t(_ctx.output_db->times,
                              "ikos-analyzer.check." + ctor->name());
         fixpoint.run_checks();
@@ -736,15 +736,16 @@ void InterproceduralValueAnalysis::run() {
     FunctionFixpoint fixpoint(_ctx, checkers, entry_point);
 
     {
-      log::info("Analyzing entry point: " + demangle(entry_point->name()));
+      log::info("Analyzing entry point '" + demangle(entry_point->name()) +
+                "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
                            "ikos-analyzer.value." + entry_point->name());
       fixpoint.run(entry_inv);
     }
 
     {
-      log::info("Checking properties and writing results for entry point: " +
-                demangle(entry_point->name()));
+      log::info("Checking properties for entry point '" +
+                demangle(entry_point->name()) + "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
                            "ikos-analyzer.check." + entry_point->name());
       fixpoint.run_checks();
@@ -762,14 +763,15 @@ void InterproceduralValueAnalysis::run() {
       ar::Function* dtor = entry.first;
 
       if (dtor->is_declaration()) {
-        log::error("Global destructor " + dtor->name() + " is extern");
+        log::error("global destructor '" + dtor->name() + "' is extern");
         continue;
       }
 
       FunctionFixpoint fixpoint(_ctx, checkers, dtor);
 
       {
-        log::info("Analyzing global destructor: " + demangle(dtor->name()));
+        log::info("Analyzing global destructor '" + demangle(dtor->name()) +
+                  "'");
         ScopeTimerDatabase t(_ctx.output_db->times,
                              "ikos-analyzer.value." + dtor->name());
         // Note: We currently analyze destructors with the initial invariant
@@ -777,9 +779,8 @@ void InterproceduralValueAnalysis::run() {
       }
 
       {
-        log::info(
-            "Checking properties and writing results for global destructor: " +
-            demangle(dtor->name()));
+        log::info("Checking properties for global destructor: '" +
+                  demangle(dtor->name()) + "'");
         ScopeTimerDatabase t(_ctx.output_db->times,
                              "ikos-analyzer.check." + dtor->name());
         fixpoint.run_checks();

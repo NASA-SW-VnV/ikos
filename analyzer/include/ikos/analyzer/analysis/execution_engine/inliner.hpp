@@ -373,7 +373,7 @@ private:
         callee_inliner = &callee_analyzer->inliner();
 
         // Run analysis on callee
-        log::debug("Analyzing function: " + demangle(callee->name()));
+        log::debug("Analyzing function '" + demangle(callee->name()) + "'");
         callee_analyzer->run(engine.inv());
 
         // insert in the callee map

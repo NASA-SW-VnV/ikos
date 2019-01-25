@@ -144,8 +144,8 @@ You shall see the following output. IKOS reports two occurrences of buffer overf
 [*] Running liveness analysis
 [*] Running fixpoint profile analysis
 [*] Running interprocedural value analysis
-[*] Analyzing entry point: main
-[*] Checking properties and writing results for entry point: main
+[*] Analyzing entry point 'main'
+[*] Checking properties for entry point 'main'
 
 # Time stats:
 clang        : 0.037 sec

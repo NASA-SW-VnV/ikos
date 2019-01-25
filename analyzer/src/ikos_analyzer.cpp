@@ -656,7 +656,7 @@ static void generate_dot(ar::Bundle* bundle,
     }
   }
   if (!boost::filesystem::is_directory(directory, err)) {
-    analyzer::log::error(directory.string() + ": Not a directory");
+    analyzer::log::error(directory.string() + ": not a directory");
     return;
   }
 
@@ -718,7 +718,7 @@ int main(int argc, char** argv) {
 
     // Initialize output database
     // This might throw DbError, see catch()
-    analyzer::log::debug("Creating output database " + OutputFilename);
+    analyzer::log::debug("Creating output database '" + OutputFilename + "'");
     analyzer::sqlite::DbConnection db(OutputFilename);
     db.set_journal_mode(analyzer::sqlite::JournalMode::Off);
     db.set_synchronous_flag(analyzer::sqlite::SynchronousFlag::Off);

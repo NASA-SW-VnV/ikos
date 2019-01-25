@@ -117,7 +117,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
   } else if (cond.is_machine_int_var()) {
     flag = inv.normal().integers().to_interval(cond.var());
   } else {
-    log::error("unexpected parameter to __ikos_assert()");
+    log::error("unexpected argument to __ikos_assert()");
     return {CheckKind::UnexpectedOperand, Result::Error};
   }
 
@@ -208,7 +208,7 @@ void AssertProverChecker::exec_print_values(ar::IntrinsicCall* call,
           out() << " may be null\n";
         }
       } else {
-        log::error("__ikos_print_values() operand is not a variable");
+        log::error("__ikos_print_values() argument is not a variable");
         continue;
       }
 

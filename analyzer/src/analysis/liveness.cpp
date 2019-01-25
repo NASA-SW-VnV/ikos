@@ -414,8 +414,8 @@ void LivenessAnalysis::run() {
     ar::GlobalVariable* gv = *it;
     if (gv->is_definition()) {
       log::debug(
-          "Running liveness analysis on initializer of global variable @" +
-          gv->name());
+          "Running liveness analysis on initializer of global variable '" +
+          gv->name() + "'");
       this->run(gv->initializer());
     }
   }
@@ -425,7 +425,7 @@ void LivenessAnalysis::run() {
        ++it) {
     ar::Function* fun = *it;
     if (fun->is_definition()) {
-      log::debug("Running liveness analysis on function @" + fun->name());
+      log::debug("Running liveness analysis on function '" + fun->name() + "'");
       this->run(fun->body());
     }
   }

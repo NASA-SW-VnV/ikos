@@ -271,15 +271,15 @@ void IntraproceduralValueAnalysis::run() {
     FunctionFixpoint fixpoint(_ctx, function);
 
     {
-      log::info("Analyzing function: " + demangle(function->name()));
+      log::info("Analyzing function '" + demangle(function->name()) + "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
                            "ikos-analyzer.value." + function->name());
       fixpoint.run(init_inv);
     }
 
     {
-      log::info("Checking properties and writing results for function: " +
-                demangle(function->name()));
+      log::info("Checking properties for function '" +
+                demangle(function->name()) + "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
                            "ikos-analyzer.check." + function->name());
       fixpoint.run_checks(checkers);
