@@ -62,6 +62,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        ikos.scan.compile('clang++', sys.argv)
+        ikos.scan.compile('c++', sys.argv)
     except KeyboardInterrupt:
         pass

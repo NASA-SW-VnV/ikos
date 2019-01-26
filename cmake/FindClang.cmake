@@ -46,6 +46,13 @@ if (NOT CLANG_FOUND)
     DOC "Path to clang binary")
 
   if (CLANG_EXECUTABLE)
+    get_filename_component(CLANG_BINARY_DIR "${CLANG_EXECUTABLE}" DIRECTORY)
+    find_program(CLANGXX_EXECUTABLE CACHE NAMES clang++
+      HINTS ${CLANG_BINARY_DIR} ${LLVM_TOOLS_BINARY_DIR}
+      DOC "Path to clang++ binary")
+  endif()
+
+  if (CLANG_EXECUTABLE)
     # Detect the version using `clang --version`
     execute_process(
       COMMAND ${CLANG_EXECUTABLE} --version
@@ -66,6 +73,7 @@ if (NOT CLANG_FOUND)
   find_package_handle_standard_args(Clang
     REQUIRED_VARS
       CLANG_EXECUTABLE
+      CLANGXX_EXECUTABLE
       CLANG_VERSION
     VERSION_VAR
       CLANG_VERSION

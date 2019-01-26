@@ -484,12 +484,12 @@ class ClangArgumentParser:
         return False
 
 
-def run(cmd, executable=None):
+def run(cmd):
     ''' Run the given command and return the exit code '''
     log.debug('Running %s' % command_string(cmd))
 
     try:
-        proc = subprocess.Popen(cmd, executable=executable)
+        proc = subprocess.Popen(cmd)
         rc = proc.wait()
     except OSError as e:
         printf('error: %s: %s\n', cmd[0], e.strerror, file=sys.stderr)
@@ -501,51 +501,61 @@ def run(cmd, executable=None):
     return rc
 
 
-def check_output(cmd, executable=None):
+def check_output(cmd):
     ''' Run the given command and return the standard output, in bytes '''
     log.debug('Running %s' % command_string(cmd))
 
     try:
-        return subprocess.check_output(cmd, executable=executable)
+        return subprocess.check_output(cmd)
     except OSError as e:
         printf('error: %s: %s\n', cmd[0], e.strerror, file=sys.stderr)
         sys.exit(e.errno)
 
 
+def compiler(mode):
+    ''' Return the full path to the compiler for the given mode '''
+    if mode == 'cc':
+        return settings.clang()
+    elif mode == 'c++':
+        return settings.clangxx()
+    else:
+        assert False, 'unexpected mode'
+
+
 def build_bitcode(mode, parser, src_path, bc_path):
     ''' Compile the given source file to llvm bitcode '''
-    cmd = [mode]
+    cmd = [compiler(mode)]
     cmd += analyzer.clang_emit_llvm_flags()
     cmd += parser.compile_args
     cmd += analyzer.clang_ikos_flags()
     cmd += [src_path,
             '-o',
             bc_path]
-    run(cmd, executable=settings.clang())
+    run(cmd)
 
 
 def link_bitcodes(input_paths, output_path):
     ''' Link the given bitcode files to a single llvm bitcode '''
-    cmd = ['llvm-link']
+    cmd = [settings.llvm_link()]
     cmd += input_paths
     cmd += ['-o', output_path]
-    run(cmd, executable=settings.llvm_link())
+    run(cmd)
 
 
 def build_object(mode, parser, src_path, obj_path):
     ''' Compile the given source file to an object file '''
-    cmd = [mode, '-c']
+    cmd = [compiler(mode), '-c']
     cmd += parser.compile_args
     cmd += [src_path, '-o', obj_path]
-    run(cmd, executable=settings.clang())
+    run(cmd)
 
 
 def link_objects(mode, parser, input_paths, output_path):
-    cmd = [mode]
+    cmd = [compiler(mode)]
     cmd += input_paths
     cmd += parser.link_args
     cmd += ['-o', output_path]
-    run(cmd, executable=settings.clang())
+    run(cmd)
 
 
 DARWIN_SEGMENT_NAME = '__WLLVM'
@@ -587,11 +597,11 @@ def attach_bitcode_path(obj_path, bc_path):
                obj_path]
         run(cmd)
     elif sys.platform.startswith('linux') or sys.platform.startswith('freebsd'):
-        cmd = ['llvm-objcopy',
+        cmd = [settings.llvm_objcopy(),
                '--add-section',
                '%s=%s' % (ELF_SECTION_NAME, f.name),
                obj_path]
-        run(cmd, executable=settings.llvm_objcopy())
+        run(cmd)
     elif sys.platform.startswith('win'):
         # TODO: use llvm-objcopy when they start supporting COFF/PE
         cmd = ['objcopy',
@@ -609,7 +619,7 @@ def extract_bitcode(exe_path, bc_path):
     ''' Extract the llvm bitcode for the given executable file '''
 
     # first, extract the llvm bitcode paths
-    cmd = ['llvm-objdump', '-s']
+    cmd = [settings.llvm_objdump(), '-s']
     if sys.platform.startswith('darwin'):
         cmd.append('-section=%s' % DARWIN_SECTION_NAME)
     elif sys.platform.startswith('linux') or sys.platform.startswith('freebsd'):
@@ -620,7 +630,7 @@ def extract_bitcode(exe_path, bc_path):
         assert False, 'unsupported platform'
     cmd.append(exe_path)
 
-    output = check_output(cmd, executable=settings.llvm_objdump())
+    output = check_output(cmd)
     section_content = b''
 
     for line in itertools.islice(output.splitlines(), 4, None):
@@ -708,8 +718,6 @@ class ScanServer(threading.Thread):
 ###########################################
 
 def compile(mode, argv):
-    assert mode in ('clang', 'clang++')
-
     progname = os.path.basename(argv[0])
 
     if 'IKOS_SCAN_SERVER' not in os.environ:
@@ -723,7 +731,7 @@ def compile(mode, argv):
     log.setup(os.environ.get('IKOS_SCAN_LOG_LEVEL', args.default_log_level))
 
     # first step, run the actual command
-    run([mode] + argv[1:], executable=settings.clang())
+    run([compiler(mode)] + argv[1:])
 
     # second step, parse the command line and compile to llvm bitcode
     parser = ClangArgumentParser(argv[1:])

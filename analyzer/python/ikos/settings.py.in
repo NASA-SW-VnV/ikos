@@ -88,6 +88,8 @@ LLVM_LIB_DIR = '@LLVM_LIBRARY_DIR@'
 
 CLANG = '@CLANG_EXECUTABLE@'
 
+CLANGXX = '@CLANGXX_EXECUTABLE@'
+
 CLANG_VERSION = '@CLANG_VERSION@'
 
 HAS_APRON = @HAS_APRON@
@@ -106,6 +108,13 @@ def clang():
     path = CLANG
     assert os.path.isabs(path)
     assert is_executable(path), 'could not find clang executable'
+    return path
+
+
+def clangxx():
+    path = CLANGXX
+    assert os.path.isabs(path)
+    assert is_executable(path), 'could not find clang++ executable'
     return path
 
 
