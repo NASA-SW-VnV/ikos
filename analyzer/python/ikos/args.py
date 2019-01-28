@@ -302,7 +302,7 @@ display_summary_choices = (
 )
 
 report_formats = (
-    ('auto', 'Generate a text report on the terminal, if possible'),
+    ('auto', 'Generate a text report, if less than 15 entries'),
     ('text', 'Generate a text report'),
     ('json', 'Generate a json report'),
     ('csv', 'Generate a csv report'),

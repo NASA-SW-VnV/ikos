@@ -340,7 +340,7 @@ Available formats are:
 * **web**: Web interface, using ikos-view.
 * **no**: Disable the report.
 
-By default, if the report is small, it will be printed out using the text format.
+By default, if the report has less than 15 entries, it will be printed out using the text format.
 
 We recommend to use [ikos-view](#examine-a-report-with-ikos-view) to examine reports of large projects.
 
