@@ -383,7 +383,11 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
   // True if the previous element has count = -1
   bool prev_no_count = false;
 
-  for (llvm::DINode* di_element : di_type->getElements()) {
+  for (auto it = di_type->getElements().begin(),
+            et = di_type->getElements().end();
+       it != et;
+       ++it) {
+    llvm::DINode* di_element = *it;
     check_import(llvm::isa< llvm::DISubrange >(di_element),
                  "unsupported element in llvm DICompositeType with array tag");
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
@@ -414,7 +418,10 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
         current_element = vector_type->getElementType();
       } else if (current_element->isStructTy()) {
         auto struct_type = llvm::cast< llvm::StructType >(current_element);
-        check_import(!struct_type->isOpaque() && struct_type->isPacked(),
+        check_import(!struct_type->isOpaque(),
+                     "llvm DICompositeType with array tag, but llvm structure "
+                     "type is opaque");
+        check_import(struct_type->isPacked(),
                      "llvm DICompositeType with array tag, but llvm structure "
                      "type is not packed");
         check_import(struct_type->getNumElements() == count_int->getZExtValue(),
@@ -423,7 +430,7 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
         check_import(!count_int->isZero(),
                      "llvm DICompositeType with array tag, but llvm structure "
                      "type is empty");
-        check_import(llvm_elements.size() + 1 == di_type->getElements().size(),
+        check_import(std::next(it) == et,
                      "llvm DICompositeType with array tag, but llvm structure "
                      "type is not the last element");
 
@@ -1365,7 +1372,11 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
   // True if the previous element has count = -1
   bool prev_no_count = false;
 
-  for (llvm::DINode* di_element : di_type->getElements()) {
+  for (auto it = di_type->getElements().begin(),
+            et = di_type->getElements().end();
+       it != et;
+       ++it) {
+    llvm::DINode* di_element = *it;
     check_import(llvm::isa< llvm::DISubrange >(di_element),
                  "unexpected element in llvm DICompositeType with array tag");
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
@@ -1399,7 +1410,7 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
 
         if (struct_type->isOpaque() || !struct_type->isPacked() ||
             struct_type->getNumElements() != count_int->getZExtValue() ||
-            count_int->isZero()) {
+            count_int->isZero() || std::next(it) != et) {
           return false;
         }
 
