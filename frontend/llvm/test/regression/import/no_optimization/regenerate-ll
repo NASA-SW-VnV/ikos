@@ -8,7 +8,7 @@ opt_level="none"
 cflags="-c -emit-llvm -Wall -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone"
 cxxflags="$cflags -std=c++17"
 ikos_import="ikos-import"
-ikos_import_opts="-format=text -order-globals"
+ikos_import_opts="-format=text -order-globals -allow-dbg-mismatch"
 
 set -e
 

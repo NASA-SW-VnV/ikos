@@ -670,16 +670,13 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-argc=%d' % opt.argc)
 
     # import options
+    cmd.append('-allow-dbg-mismatch')
     if opt.no_libc:
         cmd.append('-no-libc')
     if opt.no_libcpp:
         cmd.append('-no-libcpp')
     if opt.no_libikos:
         cmd.append('-no-libikos')
-
-    # add -allow-dbg-mismatch if necessary
-    if opt.opt_level in ('basic', 'aggressive'):
-        cmd.append('-allow-dbg-mismatch')
 
     # AR passes options
     if opt.disable_type_check:

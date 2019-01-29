@@ -78,14 +78,15 @@ public:
     /// (llvm::DIType).
     ///
     /// For instance, the associated llvm::DIType of a llvm.dbg.value might not
-    /// match the llvm::Type of the associated llvm::Value. This happens if
-    /// aggressive optimizations have been used (e.g, ikos-pp -opt=aggressive).
+    /// match the llvm::Type of the associated llvm::Value. This happens because
+    /// of aggressive optimizations or ABI requirements.
     ///
     /// Enable this option if `ikos-pp -opt=aggressive` was used.
     AllowMismatchDebugInfo = 0x8,
 
     /// \brief Default options
-    DefaultOptions = EnableLibIkos | EnableLibc | EnableLibcpp,
+    DefaultOptions =
+        EnableLibIkos | EnableLibc | EnableLibcpp | AllowMismatchDebugInfo,
   };
 
   /// \brief Import options
