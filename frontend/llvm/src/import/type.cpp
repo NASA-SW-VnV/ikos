@@ -90,23 +90,25 @@ TypeImporter::TypeImporter(ImportContext& ctx)
       _ar_data_layout(ctx.ar_data_layout),
       _translation_depth(0) {
   // Get all source languages
+  llvm::SmallSet< llvm::dwarf::SourceLanguage, 2 > languages;
+
   for (auto it = ctx.module.debug_compile_units_begin(),
             et = ctx.module.debug_compile_units_end();
        it != et;
        ++it) {
     unsigned lang = it->getSourceLanguage();
-    _languages.insert(static_cast< dwarf::SourceLanguage >(lang));
+    languages.insert(static_cast< dwarf::SourceLanguage >(lang));
   }
 
-  _is_c = _languages.count(dwarf::DW_LANG_C) != 0 ||
-          _languages.count(dwarf::DW_LANG_C89) != 0 ||
-          _languages.count(dwarf::DW_LANG_C99) != 0 ||
-          _languages.count(dwarf::DW_LANG_C11) != 0;
+  _is_c = languages.count(dwarf::DW_LANG_C) != 0 ||
+          languages.count(dwarf::DW_LANG_C89) != 0 ||
+          languages.count(dwarf::DW_LANG_C99) != 0 ||
+          languages.count(dwarf::DW_LANG_C11) != 0;
 
-  _is_cpp = _languages.count(dwarf::DW_LANG_C_plus_plus) != 0 ||
-            _languages.count(dwarf::DW_LANG_C_plus_plus_03) != 0 ||
-            _languages.count(dwarf::DW_LANG_C_plus_plus_11) != 0 ||
-            _languages.count(dwarf::DW_LANG_C_plus_plus_14) != 0;
+  _is_cpp = languages.count(dwarf::DW_LANG_C_plus_plus) != 0 ||
+            languages.count(dwarf::DW_LANG_C_plus_plus_03) != 0 ||
+            languages.count(dwarf::DW_LANG_C_plus_plus_11) != 0 ||
+            languages.count(dwarf::DW_LANG_C_plus_plus_14) != 0;
 }
 
 ar::Type* TypeImporter::translate_di_type(llvm::DIType* di_type,
@@ -1194,13 +1196,12 @@ ar::FunctionType* TypeImporter::translate_function_di_type(
 }
 
 bool TypeImporter::match_di_type(llvm::DIType* di_type, llvm::Type* type) {
-  SeenDITypes seen;
-  return this->match_di_type(di_type, type, seen);
+  return this->match_di_type(di_type, type, DITypeSet{});
 }
 
 bool TypeImporter::match_di_type(llvm::DIType* di_type,
                                  llvm::Type* type,
-                                 SeenDITypes& seen) {
+                                 DITypeSet seen) {
   if (di_type == nullptr) {
     return this->match_null_di_type(type);
   } else if (di_type->isForwardDecl()) {
@@ -1284,7 +1285,7 @@ bool TypeImporter::match_basic_di_type(llvm::DIBasicType* di_type,
 
 bool TypeImporter::match_derived_di_type(llvm::DIDerivedType* di_type,
                                          llvm::Type* type,
-                                         SeenDITypes& seen) {
+                                         DITypeSet seen) {
   if (di_type->getTag() == dwarf::DW_TAG_typedef ||
       di_type->getTag() == dwarf::DW_TAG_const_type ||
       di_type->getTag() == dwarf::DW_TAG_volatile_type ||
@@ -1304,7 +1305,7 @@ bool TypeImporter::match_derived_di_type(llvm::DIDerivedType* di_type,
 
 bool TypeImporter::match_qualified_di_type(llvm::DIDerivedType* di_type,
                                            llvm::Type* type,
-                                           SeenDITypes& seen) {
+                                           DITypeSet seen) {
   auto qualified_type =
       llvm::cast_or_null< llvm::DIType >(di_type->getRawBaseType());
   return this->match_di_type(qualified_type, type, seen);
@@ -1312,7 +1313,7 @@ bool TypeImporter::match_qualified_di_type(llvm::DIDerivedType* di_type,
 
 bool TypeImporter::match_pointer_di_type(llvm::DIDerivedType* di_type,
                                          llvm::Type* type,
-                                         SeenDITypes& seen) {
+                                         DITypeSet seen) {
   if (!type->isPointerTy()) {
     return false;
   }
@@ -1329,7 +1330,7 @@ bool TypeImporter::match_pointer_di_type(llvm::DIDerivedType* di_type,
 
 bool TypeImporter::match_reference_di_type(llvm::DIDerivedType* di_type,
                                            llvm::Type* type,
-                                           SeenDITypes& seen) {
+                                           DITypeSet seen) {
   if (!type->isPointerTy()) {
     return false;
   }
@@ -1347,7 +1348,7 @@ bool TypeImporter::match_reference_di_type(llvm::DIDerivedType* di_type,
 
 bool TypeImporter::match_composite_di_type(llvm::DICompositeType* di_type,
                                            llvm::Type* type,
-                                           SeenDITypes& seen) {
+                                           DITypeSet seen) {
   auto tag = static_cast< dwarf::Tag >(di_type->getTag());
 
   if (tag == dwarf::DW_TAG_array_type) {
@@ -1366,7 +1367,7 @@ bool TypeImporter::match_composite_di_type(llvm::DICompositeType* di_type,
 
 bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
                                        llvm::Type* type,
-                                       SeenDITypes& seen) {
+                                       DITypeSet seen) {
   llvm::Type* current_type = type;
 
   // True if the previous element has count = -1
@@ -1451,7 +1452,7 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
 
 bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
                                         llvm::Type* type,
-                                        SeenDITypes& seen) {
+                                        DITypeSet seen) {
   if (!type->isStructTy()) {
     return false;
   }
@@ -1643,7 +1644,7 @@ bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
 
 bool TypeImporter::match_union_di_type(llvm::DICompositeType* di_type,
                                        llvm::Type* type,
-                                       SeenDITypes& seen) {
+                                       DITypeSet seen) {
   check_import(di_type->getRawElements() != nullptr,
                "unexpected null pointer in llvm DICompositeType with union "
                "tag");
@@ -1730,7 +1731,7 @@ bool TypeImporter::match_enum_di_type(llvm::DICompositeType* di_type,
 
 bool TypeImporter::match_subroutine_di_type(llvm::DISubroutineType* di_type,
                                             llvm::Type* type,
-                                            SeenDITypes& seen) {
+                                            DITypeSet seen) {
   if (ikos_unlikely(type->isStructTy())) {
     // This should be very rare, but we can have a function pointer type
     // translated into a pointer on an empty structure.
@@ -2029,13 +2030,12 @@ ar::FunctionType* TypeImporter::translate_function_type(
 }
 
 bool TypeImporter::match_ar_type(llvm::Type* llvm_type, ar::Type* ar_type) {
-  SeenARTypes seen;
-  return this->match_ar_type(llvm_type, ar_type, seen);
+  return this->match_ar_type(llvm_type, ar_type, ARTypeSet{});
 }
 
 bool TypeImporter::match_ar_type(llvm::Type* llvm_type,
                                  ar::Type* ar_type,
-                                 SeenARTypes& seen) {
+                                 ARTypeSet seen) {
   if (llvm_type->isVoidTy()) {
     return ar_type->is_void();
   } else if (llvm_type->isIntegerTy()) {
@@ -2090,7 +2090,7 @@ bool TypeImporter::match_floating_point_ar_type(llvm::Type* llvm_type,
 
 bool TypeImporter::match_pointer_ar_type(llvm::Type* llvm_type,
                                          ar::Type* ar_type,
-                                         SeenARTypes& seen) {
+                                         ARTypeSet seen) {
   if (!ar_type->is_pointer()) {
     return false;
   }
@@ -2103,7 +2103,7 @@ bool TypeImporter::match_pointer_ar_type(llvm::Type* llvm_type,
 
 bool TypeImporter::match_array_ar_type(llvm::Type* llvm_type,
                                        ar::Type* ar_type,
-                                       SeenARTypes& seen) {
+                                       ARTypeSet seen) {
   if (!ar_type->is_array()) {
     return false;
   }
@@ -2118,7 +2118,7 @@ bool TypeImporter::match_array_ar_type(llvm::Type* llvm_type,
 
 bool TypeImporter::match_vector_ar_type(llvm::Type* llvm_type,
                                         ar::Type* ar_type,
-                                        SeenARTypes& seen) {
+                                        ARTypeSet seen) {
   if (!ar_type->is_vector()) {
     return false;
   }
@@ -2133,7 +2133,7 @@ bool TypeImporter::match_vector_ar_type(llvm::Type* llvm_type,
 
 bool TypeImporter::match_struct_ar_type(llvm::Type* llvm_type,
                                         ar::Type* ar_type,
-                                        SeenARTypes& seen) {
+                                        ARTypeSet seen) {
   auto llvm_struct_type = llvm::cast< llvm::StructType >(llvm_type);
 
   if (llvm_struct_type->isOpaque()) {
@@ -2174,7 +2174,7 @@ bool TypeImporter::match_struct_ar_type(llvm::Type* llvm_type,
 
 bool TypeImporter::match_function_ar_type(llvm::Type* llvm_type,
                                           ar::Type* ar_type,
-                                          SeenARTypes& seen) {
+                                          ARTypeSet seen) {
   auto llvm_fun_type = llvm::cast< llvm::FunctionType >(llvm_type);
 
   if (!ar_type->is_function()) {

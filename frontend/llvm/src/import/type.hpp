@@ -109,9 +109,6 @@ private:
   // Map from llvm type + signedness to AR type
   llvm::DenseMap< std::pair< llvm::Type*, ar::Signedness >, ar::Type* > _types;
 
-  // Input source languages
-  llvm::SmallSet< llvm::dwarf::SourceLanguage, 2 > _languages;
-
   // Is C one of the input source languages?
   bool _is_c;
 
@@ -190,11 +187,11 @@ public:
   bool match_di_type(llvm::DIType*, llvm::Type*);
 
 private:
-  using SeenDITypes =
+  using DITypeSet =
       boost::container::flat_set< std::pair< llvm::DIType*, llvm::Type* > >;
 
   /// \brief Check whether a llvm::DIType matches a llvm::Type
-  bool match_di_type(llvm::DIType*, llvm::Type*, SeenDITypes&);
+  bool match_di_type(llvm::DIType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a null llvm::DIType matches a llvm::Type
   bool match_null_di_type(llvm::Type*);
@@ -203,30 +200,28 @@ private:
   bool match_basic_di_type(llvm::DIBasicType*, llvm::Type*);
 
   /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_derived_di_type(llvm::DIDerivedType*, llvm::Type*, SeenDITypes&);
+  bool match_derived_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_qualified_di_type(llvm::DIDerivedType*, llvm::Type*, SeenDITypes&);
+  bool match_qualified_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_pointer_di_type(llvm::DIDerivedType*, llvm::Type*, SeenDITypes&);
+  bool match_pointer_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_reference_di_type(llvm::DIDerivedType*, llvm::Type*, SeenDITypes&);
+  bool match_reference_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_composite_di_type(llvm::DICompositeType*,
-                               llvm::Type*,
-                               SeenDITypes&);
+  bool match_composite_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_array_di_type(llvm::DICompositeType*, llvm::Type*, SeenDITypes&);
+  bool match_array_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_struct_di_type(llvm::DICompositeType*, llvm::Type*, SeenDITypes&);
+  bool match_struct_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_union_di_type(llvm::DICompositeType*, llvm::Type*, SeenDITypes&);
+  bool match_union_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
 
   /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
   bool match_enum_di_type(llvm::DICompositeType*, llvm::Type*);
@@ -234,7 +229,7 @@ private:
   /// \brief Check whether a llvm::DISubroutineType matches a llvm::Type
   bool match_subroutine_di_type(llvm::DISubroutineType*,
                                 llvm::Type*,
-                                SeenDITypes&);
+                                DITypeSet);
 
 public:
   /// \brief Translate a pair (llvm::Type*, ar::Signedness) into an ar::Type
@@ -276,11 +271,11 @@ public:
   bool match_ar_type(llvm::Type*, ar::Type*);
 
 private:
-  using SeenARTypes =
+  using ARTypeSet =
       boost::container::flat_set< std::pair< llvm::Type*, ar::Type* > >;
 
   /// \brief Check whether a llvm::Type matches an ar::Type
-  bool match_ar_type(llvm::Type*, ar::Type*, SeenARTypes&);
+  bool match_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::IntegerType matches an ar::Type
   bool match_integer_ar_type(llvm::Type*, ar::Type*);
@@ -289,19 +284,19 @@ private:
   bool match_floating_point_ar_type(llvm::Type*, ar::Type*);
 
   /// \brief Check whether a llvm::PointerType matches an ar::Type
-  bool match_pointer_ar_type(llvm::Type*, ar::Type*, SeenARTypes&);
+  bool match_pointer_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::ArrayType matches an ar::Type
-  bool match_array_ar_type(llvm::Type*, ar::Type*, SeenARTypes&);
+  bool match_array_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::VectorType matches an ar::Type
-  bool match_vector_ar_type(llvm::Type*, ar::Type*, SeenARTypes&);
+  bool match_vector_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::StructType matches an ar::Type
-  bool match_struct_ar_type(llvm::Type*, ar::Type*, SeenARTypes&);
+  bool match_struct_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::FunctionType matches an ar::Type
-  bool match_function_ar_type(llvm::Type*, ar::Type*, SeenARTypes&);
+  bool match_function_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
 
 public:
   /// \brief Check whether an extern llvm::FunctionType matches an
