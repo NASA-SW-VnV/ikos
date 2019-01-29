@@ -1415,6 +1415,17 @@ bool TypeImporter::match_array_di_type(llvm::DICompositeType* di_type,
           return false;
         }
 
+        auto di_final_type =
+            llvm::cast_or_null< llvm::DIType >(di_type->getRawBaseType());
+        llvm::SmallPtrSet< llvm::Type*, 2 > matches;
+
+        for (llvm::Type* element : struct_type->elements()) {
+          if (matches.insert(element).second &&
+              !this->match_di_type(di_final_type, element, seen)) {
+            return false;
+          }
+        }
+
         current_type = struct_type->getElementType(0);
       } else {
         return false;
