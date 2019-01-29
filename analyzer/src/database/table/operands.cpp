@@ -314,7 +314,7 @@ using TypeSet = boost::container::flat_set< llvm::Type* >;
 using ValueSet = boost::container::flat_set< llvm::Value* >;
 
 /// \brief Return the textual representation of a llvm::Type*
-std::string repr(llvm::Type* type, TypeSet& seen) {
+std::string repr(llvm::Type* type, TypeSet seen) {
   ikos_assert(type != nullptr);
 
   if (type->isVoidTy()) {
@@ -448,11 +448,11 @@ public:
 }; // end struct ReprResult
 
 // Forward declaration
-ReprResult repr(llvm::Constant*, ValueSet& seen);
-ReprResult repr(llvm::Value*, ValueSet& seen);
+ReprResult repr(llvm::Constant*, ValueSet seen);
+ReprResult repr(llvm::Value*, ValueSet seen);
 
 /// \brief Return the textual representation of a llvm::Constant*
-ReprResult repr(llvm::Constant* cst, ValueSet& seen) {
+ReprResult repr(llvm::Constant* cst, ValueSet seen) {
   if (auto gv_alias = llvm::dyn_cast< llvm::GlobalAlias >(cst)) {
     return repr(gv_alias->getAliasee(), seen);
   } else if (auto gv = llvm::dyn_cast< llvm::GlobalVariable >(cst)) {
@@ -672,7 +672,7 @@ ReprResult add_array_access(ReprResult addr, ReprResult index) {
 }
 
 /// \brief Return the textual representation of a llvm::Value*
-ReprResult repr(llvm::Value* value, ValueSet& seen) {
+ReprResult repr(llvm::Value* value, ValueSet seen) {
   ikos_assert(value != nullptr);
 
   // Check for llvm.dbg.value
@@ -1094,18 +1094,15 @@ struct OperandReprVisitor {
 } // end namespace detail
 
 std::string OperandsTable::repr(llvm::Type* type) {
-  detail::TypeSet seen;
-  return detail::repr(type, seen);
+  return detail::repr(type, detail::TypeSet{});
 }
 
 std::string OperandsTable::repr(llvm::Constant* cst) {
-  detail::ValueSet seen;
-  return detail::repr(cst, seen).str;
+  return detail::repr(cst, detail::ValueSet{}).str;
 }
 
 std::string OperandsTable::repr(llvm::Value* value) {
-  detail::ValueSet seen;
-  return detail::repr(value, seen).str;
+  return detail::repr(value, detail::ValueSet{}).str;
 }
 
 std::string OperandsTable::repr(ar::Value* value) {

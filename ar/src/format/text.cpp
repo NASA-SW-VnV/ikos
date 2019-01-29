@@ -486,6 +486,9 @@ void TextFormatter::format(std::ostream& o,
 
 namespace {
 
+/// \brief Set of types
+using TypeSet = boost::container::flat_set< Type* >;
+
 /// \brief Visitor to format a type into text format
 class FormatTextType {
 public:
@@ -493,12 +496,12 @@ public:
 
 public:
   std::ostream& o;
-  boost::container::flat_set< Type* > seen;
+  TypeSet seen;
 
 public:
   explicit FormatTextType(std::ostream& o_) : o(o_) {}
 
-  FormatTextType(std::ostream& o_, boost::container::flat_set< Type* > seen_)
+  FormatTextType(std::ostream& o_, TypeSet seen_)
       : o(o_), seen(std::move(seen_)) {}
 
   void operator()(VoidType* /*t*/) { o << "void"; }
