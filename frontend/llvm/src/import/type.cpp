@@ -1458,10 +1458,9 @@ bool TypeImporter::match_struct_di_type(llvm::DICompositeType* di_type,
   }
   auto struct_type = llvm::cast< llvm::StructType >(type);
 
-  check_import(!struct_type->isOpaque(),
-               "unexpected opaque llvm structure type");
-  check_import(struct_type->isSized(),
-               "unexpected unsized llvm structure type");
+  if (struct_type->isOpaque() || !struct_type->isSized()) {
+    return false;
+  }
 
   const llvm::StructLayout* struct_layout =
       this->_llvm_data_layout.getStructLayout(struct_type);
@@ -1655,10 +1654,9 @@ bool TypeImporter::match_union_di_type(llvm::DICompositeType* di_type,
   }
   auto struct_type = llvm::cast< llvm::StructType >(type);
 
-  check_import(!struct_type->isOpaque(),
-               "unexpected opaque llvm structure type");
-  check_import(struct_type->isSized(),
-               "unexpected unsized llvm structure type");
+  if (struct_type->isOpaque() || !struct_type->isSized()) {
+    return false;
+  }
 
   if (struct_type->getNumElements() == 0) {
     // Empty union
