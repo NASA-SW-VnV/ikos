@@ -94,7 +94,7 @@ define i32 @main() #0 !dbg !8 {
 ; CHECK:   si8* %3 = ptrshift @.str, 10 * 0, 1 * 0
 ; CHECK:   si8* %4 = ptrshift @.str.1, 3 * 0, 1 * 0
 ; CHECK:   opaque* %5 = call @ar.libc.fopen(%3, %4)
-; CHECK:   {0: ui8*, 8: si32, 12: si32, 16: si16, 18: si16, 24: {0: ui8*, 8: si32}, 40: si32, 48: si8*, 56: si32 (si8*)*, 64: si32 (si8*, si8*, si32)*, 72: si64 (si8*, si64, si32)*, 80: si32 (si8*, si8*, si32)*, 88: {...}, 104: opaque*, 112: si32, 116: [3 x ui8], 119: [1 x ui8], 120: {...}, 136: si32, 144: si64}* %6 = bitcast %5
+; CHECK:   {0: ui8*, 8: si32, 12: si32, 16: si16, 18: si16, 24: {0: ui8*, 8: si32}, 40: si32, 48: si8*, 56: si32 (si8*)*, 64: si32 (si8*, si8*, si32)*, 72: si64 (si8*, si64, si32)*, 80: si32 (si8*, si8*, si32)*, 88: {0: ui8*, 8: si32}, 104: opaque*, 112: si32, 116: [3 x ui8], 119: [1 x ui8], 120: {0: ui8*, 8: si32}, 136: si32, 144: si64}* %6 = bitcast %5
 ; CHECK:   si8* %7 = ptrshift $1, 1025 * 0, 1 * 0
 ; CHECK:   opaque* %8 = bitcast %6
 ; CHECK:   si8* %9 = call @ar.libc.fgets(%7, 1024, %8)

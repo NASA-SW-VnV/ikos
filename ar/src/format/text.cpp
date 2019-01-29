@@ -493,11 +493,13 @@ public:
 
 public:
   std::ostream& o;
-  boost::container::flat_set< Type* >& seen;
+  boost::container::flat_set< Type* > seen;
 
 public:
-  FormatTextType(std::ostream& o_, boost::container::flat_set< Type* >& seen_)
-      : o(o_), seen(seen_) {}
+  explicit FormatTextType(std::ostream& o_) : o(o_) {}
+
+  FormatTextType(std::ostream& o_, boost::container::flat_set< Type* > seen_)
+      : o(o_), seen(std::move(seen_)) {}
 
   void operator()(VoidType* /*t*/) { o << "void"; }
 
@@ -551,7 +553,8 @@ public:
       seen.insert(t);
       for (auto it = t->field_begin(), et = t->field_end(); it != et;) {
         o << it->offset << ": ";
-        apply_visitor(*this, it->type);
+        FormatTextType field_visitor(o, seen);
+        apply_visitor(field_visitor, it->type);
         ++it;
         if (it != et) {
           o << ", ";
@@ -602,8 +605,7 @@ public:
 } // end anonymous namespace
 
 void TextFormatter::format(std::ostream& o, Type* type) const {
-  boost::container::flat_set< Type* > seen;
-  FormatTextType vis(o, seen);
+  FormatTextType vis(o);
   apply_visitor(vis, type);
 }
 

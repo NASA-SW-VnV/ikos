@@ -11,7 +11,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 %struct.anon = type { i8, i32 }
 
 @b = global <{ [1 x { [4 x i8], i32 }], [1 x %struct.anon], [1 x %struct.anon], [1 x %struct.anon], [1 x %struct.anon], [1 x %struct.anon] }> <{ [1 x { [4 x i8], i32 }] [{ [4 x i8], i32 } { [4 x i8] undef, i32 0 }], [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer }>, align 16, !dbg !0
-; CHECK: define <{0: [1 x {0: [4 x si8], 4: si32}], 8: [1 x {0: si8, 4: si32}], 16: [1 x {...}], 24: [1 x {...}], 32: [1 x {...}], 40: [1 x {...}]}>* @b, align 16, init {
+; CHECK: define <{0: [1 x {0: [4 x si8], 4: si32}], 8: [1 x {0: si8, 4: si32}], 16: [1 x {0: si8, 4: si32}], 24: [1 x {0: si8, 4: si32}], 32: [1 x {0: si8, 4: si32}], 40: [1 x {0: si8, 4: si32}]}>* @b, align 16, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @b, {0: [{0: undef, 4: 0}], 8: aggregate_zero, 16: aggregate_zero, 24: aggregate_zero, 32: aggregate_zero, 40: aggregate_zero}, align 1
 ; CHECK: }

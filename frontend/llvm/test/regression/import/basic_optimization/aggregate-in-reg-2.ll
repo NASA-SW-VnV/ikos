@@ -38,7 +38,7 @@ define { <2 x float>, <2 x float> } @_Z1ff(float) #0 !dbg !8 {
 }
 ; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
 ; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float}, 8: {...}}* $2 = allocate {0: {0: float, 4: float}, 8: {...}}, 1, align 4
+; CHECK:   {0: {0: float, 4: float}, 8: {0: float, 4: float}}* $2 = allocate {0: {0: float, 4: float}, 8: {0: float, 4: float}}, 1, align 4
 ; CHECK:   {0: float, 4: float}* %3 = ptrshift $2, 16 * 0, 1 * 0
 ; CHECK:   float* %4 = ptrshift %3, 8 * 0, 1 * 0
 ; CHECK:   store %4, 0.0E+0, align 4
@@ -79,7 +79,7 @@ define i32 @main() #1 !dbg !28 {
 }
 ; CHECK: define si32 @main() {
 ; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float}, 8: {...}}* $1 = allocate {0: {0: float, 4: float}, 8: {...}}, 1, align 4
+; CHECK:   {0: {0: float, 4: float}, 8: {0: float, 4: float}}* $1 = allocate {0: {0: float, 4: float}, 8: {0: float, 4: float}}, 1, align 4
 ; CHECK:   {0: <2 x float>, 8: <2 x float>} %2 = call @_Z1ff(2.0E+0)
 ; CHECK:   {0: <2 x float>, 8: <2 x float>}* %3 = bitcast $1
 ; CHECK:   <2 x float>* %4 = ptrshift %3, 16 * 0, 1 * 0
