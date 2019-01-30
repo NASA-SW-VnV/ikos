@@ -56,19 +56,18 @@ const char* SimplifyUpcastComparisonPass::description() const {
 }
 
 bool SimplifyUpcastComparisonPass::run_on_code(Code* code) {
-  bool modified = false;
+  bool change = false;
 
   for (BasicBlock* bb : *code) {
     if (!bb->empty()) {
-      modified = this->run_on_statement(bb->front()) || modified;
+      change = this->run_on_statement(bb->front()) || change;
     }
   }
 
-  return modified;
+  return change;
 }
 
 bool SimplifyUpcastComparisonPass::run_on_statement(Statement* stmt) {
-  // it's a comparison
   if (auto cmp = dyn_cast< Comparison >(stmt)) {
     if (cmp->is_integer_predicate()) {
       if (cmp->left()->is_integer_constant() &&
@@ -84,28 +83,28 @@ bool SimplifyUpcastComparisonPass::run_on_statement(Statement* stmt) {
       }
     }
   }
+
   return false;
 }
 
 bool SimplifyUpcastComparisonPass::run_on_comparison(Comparison* cmp,
                                                      IntegerConstant* constant,
                                                      Value* var) {
-  auto bb = cmp->parent();
-
-  UnaryOperation* upcast = nullptr;
+  BasicBlock* bb = cmp->parent();
   auto it = bb->rend();
   auto et = bb->rend();
 
   // track variable if bitcast occurs
-  bool bitcast = false;
   Value* tracked_variable = var;
+  bool bitcast = false;
+  UnaryOperation* upcast = nullptr;
 
   // backtrace and find the upcast
   while (true) {
-    // begin of a block
+    // beginning of a block
     if (it == et) {
-      // get the parent if we can
       if (bb->num_predecessors() == 1) {
+        // move to the parent
         bb = *bb->predecessor_begin();
         it = bb->rbegin();
         et = bb->rend();
@@ -114,6 +113,7 @@ bool SimplifyUpcastComparisonPass::run_on_comparison(Comparison* cmp,
         return false;
       }
     }
+
     auto stmt = *it;
 
     if (stmt->result_or_null() == tracked_variable) {
@@ -134,8 +134,10 @@ bool SimplifyUpcastComparisonPass::run_on_comparison(Comparison* cmp,
         return false;
       }
     }
+
     it++;
   }
+
   if (auto new_constant =
           this->run_on_upcast(cmp->context(), upcast->operand(), constant)) {
     // add assert
