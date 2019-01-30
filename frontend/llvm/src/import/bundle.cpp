@@ -351,7 +351,7 @@ bool BundleImporter::is_clang_generated_function(llvm::Function* fun) {
     return true;
   }
 
-  if (fun->getName().startswith("_ZTWL1")) {
+  if (fun->getName().startswith("_ZTW")) {
     // Thread-local wrapper function
     return true;
   }
