@@ -49,6 +49,7 @@
 #include <ikos/ar/semantic/bundle.hpp>
 #include <ikos/ar/semantic/context.hpp>
 #include <ikos/ar/support/assert.hpp>
+#include <ikos/ar/support/cast.hpp>
 #include <ikos/ar/support/number.hpp>
 
 namespace ikos {
@@ -166,6 +167,18 @@ public:
 
   /// \brief Is it a function type?
   bool is_function() const { return this->_kind == FunctionKind; }
+
+  /// \brief Is it a primitive type?
+  ///
+  /// A primitive type has a fixed bit-width and is target-independent. This is
+  /// either an integer, a floating point or a vector of integers or floating
+  /// points.
+  bool is_primitive() const;
+
+  /// \brief Return the bit width of a primitive type
+  ///
+  /// Returns zero for non-primitive type.
+  unsigned primitive_bit_width() const;
 
 protected:
   /// \brief Get the context implementation
@@ -466,7 +479,7 @@ public:
 
 /// \brief Base class for sequential types, such as ArrayType and VectorType
 class SequentialType : public AggregateType {
-private:
+protected:
   // Element type
   Type* _element_type;
 
@@ -521,17 +534,24 @@ public:
 ///
 /// Represents the vector type.
 ///
-/// This is similar to ArrayType, but does not add padding between elements.
-/// This is mostly used to represent return types of C function returning small
-/// structures.
+/// This is similar to ArrayType, but can only hold scalars and does not add
+/// padding between elements. This is mostly used to represent return types of C
+/// function returning small structures.
 class VectorType final : public SequentialType {
 private:
   /// \brief Private constructor
-  VectorType(Type* element_type, ZNumber num_element);
+  VectorType(ScalarType* element_type, ZNumber num_element);
 
 public:
   /// \brief Static constructor
-  static VectorType* get(Context& ctx, Type* element_type, ZNumber num_element);
+  static VectorType* get(Context& ctx,
+                         ScalarType* element_type,
+                         ZNumber num_element);
+
+  /// \brief Get the element type
+  ScalarType* element_type() const {
+    return cast< ScalarType >(this->_element_type);
+  }
 
   /// \brief Dump the type for debugging purpose
   void dump(std::ostream&) const override;

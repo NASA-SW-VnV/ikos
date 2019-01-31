@@ -702,29 +702,20 @@ void FunctionImporter::translate_call_helper(
 
 void FunctionImporter::translate_bitcast(BasicBlockTranslation* bb_translation,
                                          llvm::BitCastInst* bitcast) {
-  if ((bitcast->getSrcTy()->isPointerTy() &&
-       bitcast->getDestTy()->isPointerTy()) ||
-      (bitcast->getSrcTy()->isFloatingPointTy() &&
-       bitcast->getDestTy()->isIntegerTy()) ||
-      (bitcast->getSrcTy()->isIntegerTy() &&
-       bitcast->getDestTy()->isFloatingPointTy())) {
-    // Translate result variable
-    ar::InternalVariable* var =
-        ar::InternalVariable::create(this->_body, this->infer_type(bitcast));
-    this->mark_variable_mapping(bitcast, var);
+  // Translate result variable
+  ar::InternalVariable* var =
+      ar::InternalVariable::create(this->_body, this->infer_type(bitcast));
+  this->mark_variable_mapping(bitcast, var);
 
-    // Translate operand
-    ar::Value* operand =
-        this->translate_value(bb_translation, bitcast->getOperand(0), nullptr);
+  // Translate operand
+  ar::Value* operand =
+      this->translate_value(bb_translation, bitcast->getOperand(0), nullptr);
 
-    // Create statement
-    auto stmt =
-        ar::UnaryOperation::create(ar::UnaryOperation::Bitcast, var, operand);
-    stmt->set_frontend< llvm::Value >(bitcast);
-    bb_translation->add_statement(std::move(stmt));
-  } else {
-    throw ImportError("unsupported llvm bitcast instruction");
-  }
+  // Create statement
+  auto stmt =
+      ar::UnaryOperation::create(ar::UnaryOperation::Bitcast, var, operand);
+  stmt->set_frontend< llvm::Value >(bitcast);
+  bb_translation->add_statement(std::move(stmt));
 }
 
 static ar::UnaryOperation::Operator convert_unary_op(
@@ -1434,9 +1425,8 @@ void FunctionImporter::translate_phi(BasicBlockTranslation* /*bb_translation*/,
 
 static bool is_valid_bitcast(ar::Type* from, ar::Type* to) {
   return (from->is_pointer() && to->is_pointer()) ||
-         (from->is_integer() && to->is_integer() &&
-          ar::cast< ar::IntegerType >(from)->bit_width() ==
-              ar::cast< ar::IntegerType >(to)->bit_width());
+         (from->is_primitive() && to->is_primitive() &&
+          from->primitive_bit_width() == to->primitive_bit_width());
 }
 
 void FunctionImporter::translate_phi_late(BasicBlockTranslation* bb_translation,

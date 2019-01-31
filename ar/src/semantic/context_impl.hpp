@@ -110,7 +110,7 @@ private:
       _array_types;
 
   // Vector types
-  boost::container::flat_map< std::tuple< Type*, ZNumber >,
+  boost::container::flat_map< std::tuple< ScalarType*, ZNumber >,
                               std::unique_ptr< VectorType > >
       _vector_types;
 
@@ -229,7 +229,7 @@ public:
   ArrayType* array_type(Type* element_type, ZNumber num_element);
 
   /// \brief Get or create a vector type
-  VectorType* vector_type(Type* element_type, ZNumber num_element);
+  VectorType* vector_type(ScalarType* element_type, ZNumber num_element);
 
   /// \brief Get or create a function type
   FunctionType* function_type(Type* return_type,

@@ -486,7 +486,7 @@ ar::Type* TypeImporter::translate_array_di_type(llvm::DICompositeType* di_type,
                                    ar::ZNumber(array_type->getNumElements()));
     } else if (auto vector_type = llvm::dyn_cast< llvm::VectorType >(*it)) {
       ar_type = ar::VectorType::get(this->_context,
-                                    ar_type,
+                                    ar::cast< ar::ScalarType >(ar_type),
                                     ar::ZNumber(vector_type->getNumElements()));
     } else if (auto struct_type = llvm::dyn_cast< llvm::StructType >(*it)) {
       // This is the last element of di_type->getElements()
@@ -1972,7 +1972,7 @@ ar::VectorType* TypeImporter::translate_vector_type(llvm::Type* type,
       this->translate_type(vector_type->getElementType(), preferred);
   ar::VectorType* ar_type =
       ar::VectorType::get(this->_context,
-                          ar_element_type,
+                          ar::cast< ar::ScalarType >(ar_element_type),
                           ar::ZNumber(vector_type->getNumElements()));
   this->_types.try_emplace({type, preferred}, ar_type);
   this->sanity_check_size(type, ar_type);

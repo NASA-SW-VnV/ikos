@@ -440,20 +440,15 @@ public:
       }
       case UnaryOperation::Bitcast: {
         // Valid bitcasts are:
-        //   * pointer cast: A* to B*
-        //   * sign cast: (u|s)iN to (u|s)iN
-        //   * integer to float: (u|s)iN to (float|double|...)
-        //   * float to integer: (float|double|...) to (u|s)iN
+        //   * pointer casts: A* to B*
+        //   * primitive type casts with the same bit-width
+        //
+        // A primitive type is either an integer, a floating point or a vector
+        // of integers or floating points.
         if ((result_ty->is_pointer() && operand_ty->is_pointer()) ||
-            (result_ty->is_integer() && operand_ty->is_integer() &&
-             cast< IntegerType >(result_ty)->bit_width() ==
-                 cast< IntegerType >(operand_ty)->bit_width()) ||
-            (result_ty->is_integer() && operand_ty->is_float() &&
-             cast< IntegerType >(result_ty)->bit_width() ==
-                 cast< FloatType >(operand_ty)->bit_width()) ||
-            (result_ty->is_float() && operand_ty->is_integer() &&
-             cast< FloatType >(result_ty)->bit_width() ==
-                 cast< IntegerType >(operand_ty)->bit_width())) {
+            (result_ty->is_primitive() && operand_ty->is_primitive() &&
+             result_ty->primitive_bit_width() ==
+                 operand_ty->primitive_bit_width())) {
           return true;
         } else {
           err << "error: invalid bitcast '";

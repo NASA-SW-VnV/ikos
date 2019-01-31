@@ -271,8 +271,14 @@ public:
 
   /// \brief Initial value for a memory block
   enum class MemoryInitialValue {
+    // Memory is initialized with zeros
     Zero,
+
+    // Memory is uninitialized, reading it is an error
     Uninitialized,
+
+    // Memory is unknown, reading it returns a non-deterministic value
+    Unknown,
   };
 
   /// \brief Allocate a new memory object `addr` with unknown size
@@ -301,6 +307,8 @@ public:
       this->_inv.normal().zero_reachable_mem(ptr);
     } else if (init_val == MemoryInitialValue::Uninitialized) {
       this->_inv.normal().uninitialize_reachable_mem(ptr);
+    } else if (init_val == MemoryInitialValue::Unknown) {
+      this->_inv.normal().forget_reachable_mem(ptr);
     } else {
       ikos_unreachable("unreachable");
     }
@@ -733,7 +741,9 @@ private:
   ///
   /// Internal variables of aggregate types are modeled as if they were in
   /// memory, at a symbolic location.
-  void init_aggregate_memory(const AggregateLit& aggregate) {
+  ///
+  /// Returns a pointer to the symbolic location of the aggregate in memory.
+  ScalarLit init_aggregate_memory(const AggregateLit& aggregate) {
     ikos_assert_msg(aggregate.is_var(), "aggregate is not a variable");
 
     auto var = cast< InternalVariable >(aggregate.var());
@@ -742,7 +752,8 @@ private:
                           Nullity::non_null(),
                           Uninitialized::initialized(),
                           Lifetime::top(),
-                          MemoryInitialValue::Uninitialized);
+                          MemoryInitialValue::Zero);
+    return ScalarLit::pointer_var(var);
   }
 
   /// \brief Return a pointer to the symbolic location of the aggregate in
@@ -831,8 +842,8 @@ public:
       return;
     }
 
-    this->init_aggregate_memory(lhs);
-    this->mem_write_aggregate(this->aggregate_pointer(lhs), rhs);
+    ScalarLit ptr = this->init_aggregate_memory(lhs);
+    this->mem_write_aggregate(ptr, rhs);
   }
 
   /// \brief Assignment `lhs = rhs`
@@ -991,52 +1002,56 @@ public:
 
   /// \brief Execute an UnaryOperation statement
   void exec(ar::UnaryOperation* s) override {
-    const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
-    const ScalarLit& rhs = this->_lit_factory.get_scalar(s->operand());
-    ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
-
-    if (rhs.is_undefined()) {
+    if (s->operand()->is_undefined_constant()) {
       this->_inv.set_normal_flow_to_bottom();
       return;
     }
 
+    const Literal& lhs = this->_lit_factory.get(s->result());
+    const Literal& rhs = this->_lit_factory.get(s->operand());
+
     switch (s->op()) {
       case ar::UnaryOperation::UTrunc:
       case ar::UnaryOperation::STrunc: {
-        this->exec_int_conv(IntUnaryOperator::Trunc, lhs, rhs);
+        this->exec_int_conv(IntUnaryOperator::Trunc,
+                            lhs.scalar(),
+                            rhs.scalar());
       } break;
       case ar::UnaryOperation::ZExt: {
-        this->exec_int_conv(IntUnaryOperator::Ext, lhs, rhs);
+        this->exec_int_conv(IntUnaryOperator::Ext, lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::SExt: {
-        this->exec_int_conv(IntUnaryOperator::Ext, lhs, rhs);
+        this->exec_int_conv(IntUnaryOperator::Ext, lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::FPTrunc:
       case ar::UnaryOperation::FPExt: {
-        this->exec_float_conv(lhs, rhs);
+        this->exec_float_conv(lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::FPToUI:
       case ar::UnaryOperation::FPToSI: {
-        this->exec_float_to_int_conv(lhs, rhs);
+        this->exec_float_to_int_conv(lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::UIToFP:
       case ar::UnaryOperation::SIToFP: {
-        this->exec_int_to_float_conv(lhs, rhs);
+        this->exec_int_to_float_conv(lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::PtrToUI:
       case ar::UnaryOperation::PtrToSI: {
-        this->exec_ptr_to_int_conv(s, lhs, rhs);
+        this->exec_ptr_to_int_conv(s, lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::UIToPtr:
       case ar::UnaryOperation::SIToPtr: {
-        this->exec_int_to_ptr_conv(lhs, rhs);
+        this->exec_int_to_ptr_conv(lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::Bitcast: {
         this->exec_bitcast(s, lhs, rhs);
       } break;
     }
 
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+    if (lhs.is_scalar()) {
+      this->_inv.normal().uninitialized().assign_initialized(
+          lhs.scalar().var());
+    }
   }
 
 private:
@@ -1163,8 +1178,21 @@ private:
 
   /// \brief Execute a bitcast
   void exec_bitcast(ar::UnaryOperation* s,
+                    const Literal& lhs,
+                    const Literal& rhs) {
+    if (lhs.is_scalar()) {
+      this->exec_bitcast(s, lhs.scalar(), rhs);
+    } else if (lhs.is_aggregate()) {
+      this->exec_bitcast(s, lhs.aggregate(), rhs);
+    } else {
+      ikos_unreachable("unreachable");
+    }
+  }
+
+  /// \brief Execute a bitcast with a scalar left hand side
+  void exec_bitcast(ar::UnaryOperation* s,
                     const ScalarLit& lhs,
-                    const ScalarLit& rhs) {
+                    const Literal& rhs) {
     if (lhs.is_pointer_var()) {
       // pointer cast: A* to B*
       if (this->_precision < Precision::Pointer) {
@@ -1172,36 +1200,58 @@ private:
       }
 
       this->init_global_operand(s->operand());
-      this->assign(lhs, rhs);
+      this->assign(lhs, rhs.scalar());
     } else if (lhs.is_machine_int_var()) {
-      // sign cast: (u|s)iN to (u|s)iN
-      // float to integer: (float|double|..) to (u|s)iN
-
-      if (rhs.is_machine_int()) {
-        auto type = ar::cast< ar::IntegerType >(lhs.var()->type());
+      if (rhs.is_scalar() && rhs.scalar().is_machine_int()) {
+        // sign cast: (u|s)iN to (u|s)iN
+        auto type = ar::cast< ar::IntegerType >(s->result()->type());
         this->_inv.normal()
             .integers()
             .assign(lhs.var(),
-                    rhs.machine_int().cast(type->bit_width(), type->sign()));
-      } else if (rhs.is_floating_point()) {
-        this->_inv.normal().integers().forget(lhs.var());
-      } else if (rhs.is_machine_int_var()) {
+                    rhs.scalar().machine_int().cast(type->bit_width(),
+                                                    type->sign()));
+      } else if (rhs.is_scalar() && rhs.scalar().is_machine_int_var()) {
+        // sign cast: (u|s)iN to (u|s)iN
         this->_inv.normal().integers().apply(IntUnaryOperator::SignCast,
                                              lhs.var(),
-                                             rhs.var());
-      } else if (rhs.is_floating_point_var()) {
-        this->_inv.normal().integers().forget(lhs.var());
+                                             rhs.scalar().var());
       } else {
-        ikos_unreachable("unexpected literal");
+        this->_inv.normal().integers().forget(lhs.var());
       }
     } else {
-      ikos_unreachable("left hand side is not a variable");
+      ikos_unreachable("unexpected left hand side");
+    }
+  }
+
+  /// \brief Execute a bitcast with an aggregate left hand side
+  void exec_bitcast(ar::UnaryOperation* /*s*/,
+                    const AggregateLit& lhs,
+                    const Literal& rhs) {
+    ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
+
+    if (rhs.is_scalar()) {
+      ScalarLit ptr = this->init_aggregate_memory(lhs);
+      this->_inv.normal().forget_reachable_mem(ptr.var());
+    } else if (rhs.is_aggregate()) {
+      this->assign(lhs, rhs.aggregate());
+    } else {
+      ikos_unreachable("unreachable");
     }
   }
 
 public:
   /// \brief Execute a BinaryOperation statement
   void exec(ar::BinaryOperation* s) override {
+    if (s->left()->is_undefined_constant() ||
+        s->right()->is_undefined_constant()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
     if (s->result()->type()->is_vector()) {
       this->exec_vector_bin_operation(s);
       return;
@@ -1210,11 +1260,6 @@ public:
     const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
     const ScalarLit& left = this->_lit_factory.get_scalar(s->left());
     const ScalarLit& right = this->_lit_factory.get_scalar(s->right());
-
-    if (left.is_undefined() || right.is_undefined()) {
-      this->_inv.set_normal_flow_to_bottom();
-      return;
-    }
 
     switch (s->op()) {
       case ar::BinaryOperation::UAdd:
@@ -1374,9 +1419,8 @@ private:
     }
 
     // Ignore the semantic while being sound
-    this->init_aggregate_memory(lhs);
-    ScalarLit lhs_ptr = this->aggregate_pointer(lhs);
-    this->_inv.normal().forget_reachable_mem(lhs_ptr.var());
+    ScalarLit ptr = this->init_aggregate_memory(lhs);
+    this->_inv.normal().forget_reachable_mem(ptr.var());
   }
 
 public:
@@ -1697,8 +1741,7 @@ public:
       const AggregateLit& lhs = result.aggregate();
       ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
-      this->init_aggregate_memory(lhs);
-      ScalarLit lhs_ptr = this->aggregate_pointer(lhs);
+      ScalarLit lhs_ptr = this->init_aggregate_memory(lhs);
 
       if (!s->is_volatile()) {
         // perform memory read in the value domain
@@ -1800,8 +1843,7 @@ public:
       ikos_assert_msg(lhs.aggregate().is_var(),
                       "left hand side is not a variable");
 
-      this->init_aggregate_memory(lhs.aggregate());
-      ScalarLit lhs_ptr = this->aggregate_pointer(lhs.aggregate());
+      ScalarLit lhs_ptr = this->init_aggregate_memory(lhs.aggregate());
       this->_inv.normal().mem_copy(this->_var_factory,
                                    lhs_ptr.var(),
                                    read_ptr.var(),
@@ -1826,8 +1868,7 @@ public:
       return;
     }
 
-    this->init_aggregate_memory(lhs);
-    ScalarLit lhs_ptr = this->aggregate_pointer(lhs);
+    ScalarLit lhs_ptr = this->init_aggregate_memory(lhs);
 
     // first, copy the aggregate value
     this->mem_write_aggregate(lhs_ptr, rhs);
@@ -1868,9 +1909,8 @@ public:
     }
 
     // Ignore the semantic while being sound
-    this->init_aggregate_memory(lhs);
-    ScalarLit lhs_ptr = this->aggregate_pointer(lhs);
-    this->_inv.normal().forget_reachable_mem(lhs_ptr.var());
+    ScalarLit ptr = this->init_aggregate_memory(lhs);
+    this->_inv.normal().forget_reachable_mem(ptr.var());
   }
 
   /// \brief Execute a LandingPad statement

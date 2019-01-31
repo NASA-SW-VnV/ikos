@@ -65,6 +65,37 @@ bool Type::is_signed_integer() const {
   return isa< IntegerType >(this) && cast< IntegerType >(this)->is_signed();
 }
 
+bool Type::is_primitive() const {
+  switch (this->_kind) {
+    case IntegerKind:
+      return true;
+    case FloatKind:
+      return true;
+    case VectorKind: {
+      Type* element = cast< VectorType >(this)->element_type();
+      return element->is_integer() || element->is_float();
+    }
+    default:
+      return false;
+  }
+}
+
+unsigned Type::primitive_bit_width() const {
+  switch (this->_kind) {
+    case IntegerKind:
+      return cast< IntegerType >(this)->bit_width();
+    case FloatKind:
+      return cast< FloatType >(this)->bit_width();
+    case VectorKind: {
+      auto vector = cast< VectorType >(this);
+      return vector->num_elements().to< unsigned >() *
+             vector->element_type()->primitive_bit_width();
+    }
+    default:
+      return 0;
+  }
+}
+
 ContextImpl& Type::ctx_impl(Context& ctx) {
   return *(ctx._impl);
 }
@@ -353,11 +384,11 @@ void ArrayType::dump(std::ostream& o) const {
 
 // VectorType
 
-VectorType::VectorType(Type* element_type, ZNumber num_element)
+VectorType::VectorType(ScalarType* element_type, ZNumber num_element)
     : SequentialType(VectorKind, element_type, std::move(num_element)) {}
 
 VectorType* VectorType::get(Context& ctx,
-                            Type* element_type,
+                            ScalarType* element_type,
                             ZNumber num_element) {
   return ctx_impl(ctx).vector_type(element_type, std::move(num_element));
 }

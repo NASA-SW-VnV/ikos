@@ -110,7 +110,8 @@ ArrayType* ContextImpl::array_type(Type* element_type, ZNumber num_element) {
   }
 }
 
-VectorType* ContextImpl::vector_type(Type* element_type, ZNumber num_element) {
+VectorType* ContextImpl::vector_type(ScalarType* element_type,
+                                     ZNumber num_element) {
   auto it =
       this->_vector_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_vector_types.end()) {

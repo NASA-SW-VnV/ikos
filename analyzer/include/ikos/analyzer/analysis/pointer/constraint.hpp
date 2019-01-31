@@ -403,9 +403,12 @@ private:
           }
         } break;
         case ar::UnaryOperation::Bitcast: {
-          // If pointer cast
-          this->assign(this->_lit_factory.get_scalar(s->result()),
-                       this->_lit_factory.get_scalar(s->operand()));
+          if (s->result()->type()->is_pointer()) {
+            // Pointer cast
+            ikos_assert(s->operand()->type()->is_pointer());
+            this->assign(this->_lit_factory.get_scalar(s->result()),
+                         this->_lit_factory.get_scalar(s->operand()));
+          }
         } break;
         default:
           break;
