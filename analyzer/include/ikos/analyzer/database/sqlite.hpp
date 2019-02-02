@@ -77,7 +77,7 @@ private:
   std::shared_ptr< const std::string > _what;
 
 public:
-  /// \brief Remove the default constructor
+  /// \brief Deleted default constructor
   DbError() = delete;
 
   /// \brief Constructor

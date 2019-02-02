@@ -90,8 +90,8 @@ namespace ikos {
 namespace frontend {
 namespace import {
 
-/// \brief Helper class to translate types
-class TypeImporter {
+/// \brief Helper class to translate types with a given signedness
+class TypeWithSignImporter {
 private:
   // AR context
   ar::Context& _context;
@@ -102,12 +102,89 @@ private:
   // AR data layout
   const ar::DataLayout& _ar_data_layout;
 
-  // Map from debug info + llvm type to AR type
-  llvm::DenseMap< std::pair< llvm::DIType*, llvm::Type* >, ar::Type* >
-      _di_types;
+  // Current call depth of translation
+  //
+  // This is used to know if some types (e.g, structures) are still being build.
+  unsigned _translation_depth;
 
-  // Map from llvm type + signedness to AR type
-  llvm::DenseMap< std::pair< llvm::Type*, ar::Signedness >, ar::Type* > _types;
+  // Map from LLVM type + signedness to AR type
+  llvm::DenseMap< std::pair< llvm::Type*, ar::Signedness >, ar::Type* > _map;
+
+public:
+  /// \brief Public constructor
+  explicit TypeWithSignImporter(ImportContext& ctx);
+
+  /// \brief Deleted default constructor
+  TypeWithSignImporter() = delete;
+
+  /// \brief Deleted copy constructor
+  TypeWithSignImporter(const TypeWithSignImporter&) = delete;
+
+  /// \brief Deleted move constructor
+  TypeWithSignImporter(TypeWithSignImporter&&) = delete;
+
+  /// \brief Deleted copy assignment operator
+  TypeWithSignImporter& operator=(const TypeWithSignImporter&) = delete;
+
+  /// \brief Deleted move assignment operator
+  TypeWithSignImporter& operator=(TypeWithSignImporter&&) = delete;
+
+  /// \brief Destructor
+  ~TypeWithSignImporter();
+
+  /// \brief Translate a pair (llvm::Type*, ar::Signedness) into an ar::Type
+  ///
+  /// \param type LLVM type
+  /// \param preferred Preferred signedness
+  ///
+  /// \throws ImportError for unsupported types
+  ar::Type* translate_type(llvm::Type* type, ar::Signedness preferred);
+
+private:
+  /// \brief Store the translation result from (llvm::Type*, ar::Signedness) to
+  /// ar::Type*
+  void store_translation(llvm::Type*, ar::Signedness, ar::Type*);
+
+  /// \brief Check that the llvm::Type and ar::Type have the same size
+  void sanity_check_size(llvm::Type*, ar::Type*);
+
+  /// \brief Translate a llvm::Type* into an ar::VoidType
+  ar::VoidType* translate_void_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::IntegerType
+  ar::IntegerType* translate_integer_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::FloatType
+  ar::FloatType* translate_floating_point_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::PointerType
+  ar::PointerType* translate_pointer_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::ArrayType
+  ar::ArrayType* translate_array_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::VectorType
+  ar::VectorType* translate_vector_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::StructType
+  ar::Type* translate_struct_type(llvm::Type*, ar::Signedness);
+
+  /// \brief Translate a llvm::Type* into an ar::FunctionType
+  ar::FunctionType* translate_function_type(llvm::Type*, ar::Signedness);
+
+}; // end class TypeWithSignImporter
+
+/// \brief Helper class to translate types with debug info
+class TypeWithDebugInfoImporter {
+private:
+  // AR context
+  ar::Context& _context;
+
+  // LLVM data layout
+  const llvm::DataLayout& _llvm_data_layout;
+
+  // AR data layout
+  const ar::DataLayout& _ar_data_layout;
 
   // Is C one of the input source languages?
   bool _is_c;
@@ -120,17 +197,80 @@ private:
   // This is used to know if some types (e.g, structures) are still being build.
   unsigned _translation_depth;
 
-public:
-  /// \brief Public constructor
-  explicit TypeImporter(ImportContext& ctx);
+  // Helper class to translate types with a given signedness
+  TypeWithSignImporter& _type_sign_imp;
 
-  /// \brief Translate a pair (llvm::DIType*, llvm::Type*) into an ar::Type
-  ar::Type* translate_di_type(llvm::DIType*, llvm::Type*);
+  // Parent importer, or nullptr
+  //
+  // This contains a map with already translated types
+  const TypeWithDebugInfoImporter* _parent;
+
+  // Map from LLVM type + LLVM debug info to AR type
+  //
+  // This map might have incomplete types during the translation because of
+  // recursive types (struct or union). If a mismatch occurs, this map should be
+  // discarded.
+  llvm::DenseMap< std::pair< llvm::Type*, llvm::DIType* >, ar::Type* > _map;
 
 private:
-  /// \brief Store the translation result from (llvm::DIType*, llvm::Type*)
+  /// \brief Private constructor
+  TypeWithDebugInfoImporter(ar::Context& context,
+                            const llvm::DataLayout& llvm_data_layout,
+                            const ar::DataLayout& ar_data_layout,
+                            bool is_c,
+                            bool is_cpp,
+                            unsigned translation_depth,
+                            TypeWithSignImporter& type_sign_imp,
+                            const TypeWithDebugInfoImporter* parent);
+
+public:
+  /// \brief Public constructor
+  explicit TypeWithDebugInfoImporter(ImportContext& ctx,
+                                     TypeWithSignImporter& type_sign_imp);
+
+  /// \brief Deleted default constructor
+  TypeWithDebugInfoImporter() = delete;
+
+private:
+  /// \brief Private copy constructor
+  TypeWithDebugInfoImporter(const TypeWithDebugInfoImporter&) = default;
+
+public:
+  /// \brief Default move constructor
+  TypeWithDebugInfoImporter(TypeWithDebugInfoImporter&&) = default;
+
+  /// \brief Deleted copy assignment operator
+  TypeWithDebugInfoImporter& operator=(const TypeWithDebugInfoImporter&) =
+      delete;
+
+  /// \brief Deleted move assignment operator
+  TypeWithDebugInfoImporter& operator=(TypeWithDebugInfoImporter&&) = delete;
+
+  /// \brief Destructor
+  ~TypeWithDebugInfoImporter();
+
+  /// \brief Translate a pair (llvm::Type*, llvm::DIType*) into an ar::Type
+  ///
+  /// \param type LLVM type
+  /// \param di_type LLVM Debug Info type
+  ///
+  /// \throws TypeDebugInfoMismatch for a mismatch between debug info and type
+  /// \throws ImportError for unsupported types
+  ar::Type* translate_type(llvm::Type* type, llvm::DIType* di_type);
+
+  /// \brief Create a child
+  TypeWithDebugInfoImporter fork() const;
+
+  /// \brief Join with a child, saving the internal translation map
+  void join(const TypeWithDebugInfoImporter&);
+
+private:
+  /// \brief Store the translation result from (llvm::Type*, llvm::DIType*)
   /// to ar::Type*
-  void store_translation(llvm::DIType*, llvm::Type*, ar::Type*);
+  void store_translation(llvm::Type*, llvm::DIType*, ar::Type*);
+
+  /// \brief Check that the llvm::Type and ar::Type have the same size
+  void sanity_check_size(llvm::Type*, ar::Type*);
 
   /// \brief Translate a llvm::Type* with no debug info into an ar::Type
   ar::Type* translate_null_di_type(llvm::Type*);
@@ -169,8 +309,7 @@ private:
   /// \brief Translate (llvm::DICompositeType*, llvm::Type*) into an ar::Type
   ar::Type* translate_enum_di_type(llvm::DICompositeType*, llvm::Type*);
 
-  /// \brief Translate (llvm::DISubroutineType*, llvm::Type*) into an
-  /// ar::Type
+  /// \brief Translate (llvm::DISubroutineType*, llvm::Type*) into an ar::Type
   ar::Type* translate_subroutine_di_type(llvm::DISubroutineType*, llvm::Type*);
 
 public:
@@ -179,134 +318,89 @@ public:
   /// This is similar to translate_subroutine_di_type() but it takes the
   /// llvm::Function* rather than the llvm::Type*, to handle special attributes
   /// on arguments (e.g, byval).
-  ar::FunctionType* translate_function_di_type(llvm::DISubroutineType*,
-                                               llvm::Function*);
-
-public:
-  /// \brief Check whether a llvm::DIType matches a llvm::Type
-  bool match_di_type(llvm::DIType*, llvm::Type*);
-
-private:
-  using DITypeSet =
-      boost::container::flat_set< std::pair< llvm::DIType*, llvm::Type* > >;
-
-  /// \brief Check whether a llvm::DIType matches a llvm::Type
-  bool match_di_type(llvm::DIType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a null llvm::DIType matches a llvm::Type
-  bool match_null_di_type(llvm::Type*);
-
-  /// \brief Check whether a llvm::DIBasicType matches a llvm::Type
-  bool match_basic_di_type(llvm::DIBasicType*, llvm::Type*);
-
-  /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_derived_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_qualified_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_pointer_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DIDerivedType matches a llvm::Type
-  bool match_reference_di_type(llvm::DIDerivedType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_composite_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_array_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_struct_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_union_di_type(llvm::DICompositeType*, llvm::Type*, DITypeSet);
-
-  /// \brief Check whether a llvm::DICompositeType matches a llvm::Type
-  bool match_enum_di_type(llvm::DICompositeType*, llvm::Type*);
-
-  /// \brief Check whether a llvm::DISubroutineType matches a llvm::Type
-  bool match_subroutine_di_type(llvm::DISubroutineType*,
-                                llvm::Type*,
-                                DITypeSet);
-
-public:
-  /// \brief Translate a pair (llvm::Type*, ar::Signedness) into an ar::Type
   ///
-  /// \param preferred Preferred signedness
-  ar::Type* translate_type(llvm::Type*, ar::Signedness preferred);
+  /// \param fun LLVM function
+  /// \param di_type LLVM Debug Info type
+  ///
+  /// \throws TypeDebugInfoMismatch for a mismatch between debug info and type
+  /// \throws ImportError for unsupported types
+  ar::FunctionType* translate_function_di_type(llvm::Function* fun,
+                                               llvm::DISubroutineType* di_type);
 
+}; // end class TypeWithDebugInfoImporter
+
+/// \brief Helper class to check if a LLVM type matches an AR type
+class TypeMatcher {
 private:
-  /// \brief Translate a llvm::Type* into an ar::VoidType
-  ar::VoidType* translate_void_type(llvm::Type*, ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::IntegerType
-  ar::IntegerType* translate_integer_type(llvm::Type*,
-                                          ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::FloatType
-  ar::FloatType* translate_floating_point_type(llvm::Type*,
-                                               ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::PointerType
-  ar::PointerType* translate_pointer_type(llvm::Type*,
-                                          ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::ArrayType
-  ar::ArrayType* translate_array_type(llvm::Type*, ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::VectorType
-  ar::VectorType* translate_vector_type(llvm::Type*, ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::StructType
-  ar::Type* translate_struct_type(llvm::Type*, ar::Signedness preferred);
-
-  /// \brief Translate a llvm::Type* into an ar::FunctionType
-  ar::FunctionType* translate_function_type(llvm::Type*,
-                                            ar::Signedness preferred);
+  // LLVM data layout
+  const llvm::DataLayout& _llvm_data_layout;
 
 public:
-  /// \brief Check whether a llvm::Type matches an ar::Type
-  bool match_ar_type(llvm::Type*, ar::Type*);
+  /// \brief Public constructor
+  explicit TypeMatcher(ImportContext& ctx);
+
+  /// \brief Deleted default constructor
+  TypeMatcher() = delete;
+
+  /// \brief Deleted copy constructor
+  TypeMatcher(const TypeMatcher&) = delete;
+
+  /// \brief Deleted move constructor
+  TypeMatcher(TypeMatcher&&) = delete;
+
+  /// \brief Deleted copy assignment operator
+  TypeMatcher& operator=(const TypeMatcher&) = delete;
+
+  /// \brief Deleted move assignment operator
+  TypeMatcher& operator=(TypeMatcher&&) = delete;
+
+  /// \brief Destructor
+  ~TypeMatcher();
+
+  /// \brief Return true if the llvm::Type matches the ar::Type
+  ///
+  /// \throws ImportError for unsupported types
+  bool match_type(llvm::Type*, ar::Type*);
 
 private:
   using ARTypeSet =
       boost::container::flat_set< std::pair< llvm::Type*, ar::Type* > >;
 
   /// \brief Check whether a llvm::Type matches an ar::Type
-  bool match_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
+  bool match_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::IntegerType matches an ar::Type
-  bool match_integer_ar_type(llvm::Type*, ar::Type*);
+  bool match_integer_type(llvm::Type*, ar::Type*);
 
   /// \brief Check whether a llvm::Type matches an ar::Type
-  bool match_floating_point_ar_type(llvm::Type*, ar::Type*);
+  bool match_floating_point_type(llvm::Type*, ar::Type*);
 
   /// \brief Check whether a llvm::PointerType matches an ar::Type
-  bool match_pointer_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
+  bool match_pointer_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::ArrayType matches an ar::Type
-  bool match_array_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
+  bool match_array_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::VectorType matches an ar::Type
-  bool match_vector_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
+  bool match_vector_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::StructType matches an ar::Type
-  bool match_struct_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
+  bool match_struct_type(llvm::Type*, ar::Type*, ARTypeSet);
 
   /// \brief Check whether a llvm::FunctionType matches an ar::Type
-  bool match_function_ar_type(llvm::Type*, ar::Type*, ARTypeSet);
+  bool match_function_type(llvm::Type*, ar::Type*, ARTypeSet);
 
 public:
   /// \brief Check whether an extern llvm::FunctionType matches an
   /// ar::FunctionType
   ///
-  /// This is similar to match_ar_type, but it accepts to match even if a
-  /// parameter is a pointer to a structure on one hand, and a pointer to an
-  /// opaque type on the other hand.
+  /// This is similar to match_type, but it accepts to match even if a parameter
+  /// is a pointer to a structure on one hand, and a pointer to an opaque type
+  /// on the other hand.
   ///
   /// The opaque type is used to model libc parameters such as FILE.
+  ///
+  /// \throws ImportError for unsupported types
   bool match_extern_function_type(llvm::FunctionType*, ar::FunctionType*);
 
 private:
@@ -315,9 +409,71 @@ private:
   /// See `match_extern_function_type`
   bool match_extern_function_param_type(llvm::Type*, ar::Type*);
 
+}; // end class TypeMatcher
+
+/// \brief Helper class to translate types
+class TypeImporter {
+private:
+  // Helper class to translate types with a given signedness
+  TypeWithSignImporter _type_sign_imp;
+
+  // Helper class to translate types with debug info
+  TypeWithDebugInfoImporter _type_di_imp;
+
+  // Helper class to check if a LLVM type matches an AR type
+  TypeMatcher _type_match;
+
 public:
-  /// \brief Check that the llvm::Type and ar::Type have a matching size
-  void sanity_check_size(llvm::Type*, ar::Type*);
+  /// \brief Public constructor
+  explicit TypeImporter(ImportContext& ctx);
+
+  /// \brief Translate a pair (llvm::Type*, ar::Signedness) into an ar::Type
+  ///
+  /// \param type LLVM type
+  /// \param preferred Preferred signedness
+  ///
+  /// \throws ImportError for unsupported types
+  ar::Type* translate_type(llvm::Type* type, ar::Signedness preferred);
+
+  /// \brief Translate a pair (llvm::Type*, llvm::DIType*) into an ar::Type
+  ///
+  /// \param type LLVM type
+  /// \param di_type LLVM Debug Info type
+  ///
+  /// \throws TypeDebugInfoMismatch for a mismatch between debug info and type
+  /// \throws ImportError for unsupported types
+  ar::Type* translate_type(llvm::Type* type, llvm::DIType* di_type);
+
+  /// \brief Translate a llvm::Function's type with debug info into an ar::Type*
+  ///
+  /// This is similar to translate_subroutine_di_type() but it takes the
+  /// llvm::Function* rather than the llvm::Type*, to handle special attributes
+  /// on arguments (e.g, byval).
+  ///
+  /// \param fun LLVM function
+  /// \param di_type LLVM Debug Info type
+  ///
+  /// \throws TypeDebugInfoMismatch for a mismatch between debug info and type
+  /// \throws ImportError for unsupported types
+  ar::FunctionType* translate_function_type(llvm::Function* fun,
+                                            llvm::DISubroutineType* di_type);
+
+  /// \brief Return true if the llvm::Type matches the ar::Type
+  ///
+  /// \throws ImportError for unsupported types
+  bool match_type(llvm::Type*, ar::Type*);
+
+  /// \brief Check whether an extern llvm::FunctionType matches an
+  /// ar::FunctionType
+  ///
+  /// This is similar to match_type, but it accepts to match even if a parameter
+  /// is a pointer to a structure on one hand, and a pointer to an opaque type
+  /// on the other hand.
+  ///
+  /// The opaque type is used to model libc parameters such as FILE.
+  ///
+  /// \throws ImportError for unsupported types
+  bool match_extern_function_type(llvm::FunctionType*, ar::FunctionType*);
 
 }; // end class TypeImporter
 

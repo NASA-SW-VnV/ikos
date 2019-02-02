@@ -47,11 +47,17 @@ namespace ikos {
 namespace frontend {
 namespace import {
 
+// ImportError
+
 const char* ImportError::what() const noexcept {
   return this->_msg->c_str();
 }
 
 ImportError::~ImportError() = default;
+
+// TypeDebugInfoMismatch
+
+TypeDebugInfoMismatch::~TypeDebugInfoMismatch() = default;
 
 } // end namespace import
 } // end namespace frontend

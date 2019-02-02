@@ -93,7 +93,7 @@ struct BasicBlockTranslation {
   /// input basic blocks.
   ar::BasicBlock* main;
 
-  /// \brief Map from llvm predecessors to AR basic block
+  /// \brief Map from LLVM predecessors to AR basic block
   ///
   /// This is only necessary to translate PHI nodes.
   ///
@@ -206,14 +206,14 @@ private:
   // AR body
   ar::Code* _body;
 
-  // Map from llvm Value to AR Variable
+  // Map from LLVM Value to AR Variable
   llvm::DenseMap< llvm::Value*, ar::Variable* > _variables;
 
-  // Map from llvm BasicBlock to BasicBlockTranslation
+  // Map from LLVM BasicBlock to BasicBlockTranslation
   llvm::DenseMap< llvm::BasicBlock*, std::unique_ptr< BasicBlockTranslation > >
       _blocks;
 
-  // Allow mismatch of llvm types (llvm::Type) and debug info types
+  // Allow mismatch of LLVM types (llvm::Type) and Debug Info types
   // (llvm::DIType)
   //
   // See `Importer::ImportOption`.

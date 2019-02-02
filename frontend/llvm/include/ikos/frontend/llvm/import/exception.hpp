@@ -73,7 +73,7 @@ public:
   explicit ImportError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Remove the default constructor
+  /// \brief Deleted default constructor
   ImportError() = delete;
 
   /// \brief Default copy constructor
@@ -96,10 +96,51 @@ public:
 
 }; // end class ImportError
 
+/// \brief Exception for a mismatch between LLVM type and LLVM debug info
+class TypeDebugInfoMismatch : public ImportError {
+public:
+  /// \brief Constructor
+  ///
+  /// \param msg Explanatory message
+  explicit TypeDebugInfoMismatch(const std::string& msg) : ImportError(msg) {}
+
+  /// \brief Constructor
+  ///
+  /// \param msg Explanatory message
+  explicit TypeDebugInfoMismatch(const char* msg) : ImportError(msg) {}
+
+  /// \brief Deleted default constructor
+  TypeDebugInfoMismatch() = delete;
+
+  /// \brief Default copy constructor
+  TypeDebugInfoMismatch(const TypeDebugInfoMismatch&) noexcept = default;
+
+  /// \brief Default move constructor
+  TypeDebugInfoMismatch(TypeDebugInfoMismatch&&) noexcept = default;
+
+  /// \brief Default copy assignment operator
+  TypeDebugInfoMismatch& operator=(const TypeDebugInfoMismatch&) noexcept =
+      default;
+
+  /// \brief Default move assignment operator
+  TypeDebugInfoMismatch& operator=(TypeDebugInfoMismatch&&) noexcept = default;
+
+  /// \brief Destructor
+  ~TypeDebugInfoMismatch() override;
+
+}; // end class TypeDebugInfoMismatch
+
 /// \brief Check that a condition holds, otherwise throw ImportError
 inline void check_import(bool condition, const char* msg) {
   if (ikos_unlikely(!condition)) {
     throw ImportError(msg);
+  }
+}
+
+/// \brief Check that a condition holds, otherwise throw TypeDebugInfoMismatch
+inline void check_match(bool condition, const char* msg) {
+  if (ikos_unlikely(!condition)) {
+    throw TypeDebugInfoMismatch(msg);
   }
 }
 

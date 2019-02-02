@@ -65,7 +65,7 @@ namespace ikos {
 namespace frontend {
 namespace import {
 
-/// \brief Helper class to translate values
+/// \brief Helper class to translate constants
 class ConstantImporter {
 private:
   // Import context
@@ -80,7 +80,7 @@ private:
   // LLVM data layout
   const llvm::DataLayout& _llvm_data_layout;
 
-  // Map from llvm Constant + AR type to AR value
+  // Map from LLVM Constant + AR type to AR value
   llvm::DenseMap< std::pair< llvm::Constant*, ar::Type* >, ar::Value* >
       _constants;
 

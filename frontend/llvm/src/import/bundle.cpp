@@ -98,14 +98,13 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
     llvm::DIGlobalVariable* di_gv = dbgs[0]->getVariable();
     auto di_type = llvm::cast_or_null< llvm::DIType >(di_gv->getRawType());
 
-    // Aggressive optimizations can mess debug information.
-    // If _allow_debug_info_mismatch is true, check
-    // TypeImporter::match_di_type() before using any debug info.
-    if (!this->_allow_debug_info_mismatch ||
-        _ctx.type_imp->match_di_type(di_type, type->getElementType())) {
+    try {
       ar_pointee_type =
-          _ctx.type_imp->translate_di_type(di_type, type->getElementType());
-    } else {
+          _ctx.type_imp->translate_type(type->getElementType(), di_type);
+    } catch (const TypeDebugInfoMismatch&) {
+      if (!this->_allow_debug_info_mismatch) {
+        throw;
+      }
       ar_pointee_type =
           _ctx.type_imp->translate_type(type->getElementType(), ar::Signed);
     }
@@ -201,13 +200,12 @@ ar::Function* BundleImporter::translate_function_di(llvm::Function* fun,
   // Translate the function type
   ar::FunctionType* type = nullptr;
 
-  // Aggressive optimizations can mess debug information.
-  // If _allow_debug_info_mismatch is true, check
-  // TypeImporter::match_di_type() before using any debug info.
-  if (!this->_allow_debug_info_mismatch ||
-      _ctx.type_imp->match_di_type(di_type, fun->getFunctionType())) {
-    type = _ctx.type_imp->translate_function_di_type(di_type, fun);
-  } else {
+  try {
+    type = _ctx.type_imp->translate_function_type(fun, di_type);
+  } catch (const TypeDebugInfoMismatch&) {
+    if (!this->_allow_debug_info_mismatch) {
+      throw;
+    }
     type = ar::cast< ar::FunctionType >(
         _ctx.type_imp->translate_type(fun->getFunctionType(), ar::Signed));
   }

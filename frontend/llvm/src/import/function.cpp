@@ -1888,20 +1888,25 @@ ar::Type* FunctionImporter::infer_type_from_dbg(llvm::Value* value) {
       llvm::DILocalVariable* di_var = (*dbg_addr)->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
-      // Aggressive optimizations can mess debug information.
-      // If _allow_debug_info_mismatch is true, check
-      // TypeImporter::match_di_type() before using any debug info.
-      if (!alloca->isArrayAllocation() &&
-          (!this->_allow_debug_info_mismatch ||
-           _ctx.type_imp->match_di_type(di_type, alloca->getAllocatedType()))) {
-        ar::Type* pointee =
-            _ctx.type_imp->translate_di_type(di_type,
-                                             alloca->getAllocatedType());
-        return ar::PointerType::get(this->_context, pointee);
-      } else if (alloca->isArrayAllocation() &&
-                 (!this->_allow_debug_info_mismatch ||
-                  _ctx.type_imp->match_di_type(di_type, alloca->getType()))) {
-        return _ctx.type_imp->translate_di_type(di_type, alloca->getType());
+      if (!alloca->isArrayAllocation()) {
+        try {
+          ar::Type* pointee =
+              _ctx.type_imp->translate_type(alloca->getAllocatedType(),
+                                            di_type);
+          return ar::PointerType::get(this->_context, pointee);
+        } catch (const TypeDebugInfoMismatch&) {
+          if (!this->_allow_debug_info_mismatch) {
+            throw;
+          }
+        }
+      } else {
+        try {
+          return _ctx.type_imp->translate_type(alloca->getType(), di_type);
+        } catch (const TypeDebugInfoMismatch&) {
+          if (!this->_allow_debug_info_mismatch) {
+            throw;
+          }
+        }
       }
     }
   }
@@ -1921,20 +1926,19 @@ ar::Type* FunctionImporter::infer_type_from_dbg(llvm::Value* value) {
       llvm::DILocalVariable* di_var = (*dbg_value)->getVariable();
       auto di_type = llvm::cast_or_null< llvm::DIType >(di_var->getRawType());
 
-      if (!this->_allow_debug_info_mismatch) {
-        return _ctx.type_imp->translate_di_type(di_type, value->getType());
-      } else {
-        // Aggressive optimizations can mess debug information.
-        // Check TypeImporter::match_di_type() before using any debug info
-        if (_ctx.type_imp->match_di_type(di_type, value->getType())) {
-          return _ctx.type_imp->translate_di_type(di_type, value->getType());
-        } else if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
-          if (_ctx.type_imp->match_di_type(di_type,
-                                           alloca->getAllocatedType())) {
+      try {
+        return _ctx.type_imp->translate_type(value->getType(), di_type);
+      } catch (const TypeDebugInfoMismatch&) {
+        if (!this->_allow_debug_info_mismatch) {
+          throw;
+        }
+        if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
+          try {
             ar::Type* pointee =
-                _ctx.type_imp->translate_di_type(di_type,
-                                                 alloca->getAllocatedType());
+                _ctx.type_imp->translate_type(alloca->getAllocatedType(),
+                                              di_type);
             return ar::PointerType::get(this->_context, pointee);
+          } catch (const TypeDebugInfoMismatch&) {
           }
         }
       }

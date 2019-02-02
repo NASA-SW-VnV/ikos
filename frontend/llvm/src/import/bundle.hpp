@@ -80,7 +80,7 @@ private:
   // Map from LLVM functions to AR functions
   llvm::DenseMap< llvm::Function*, ar::Function* > _functions;
 
-  // Allow mismatch of llvm types (llvm::Type) and debug info types
+  // Allow mismatch of LLVM types (llvm::Type) and Debug Info types
   // (llvm::DIType)
   //
   // See `Importer::ImportOption`.
