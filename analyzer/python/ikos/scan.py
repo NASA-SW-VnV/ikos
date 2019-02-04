@@ -819,7 +819,7 @@ def main(argv):
     os.environ['LD'] = 'ikos-scan-cc'
 
     # add -e to make commands, to avoid makefiles overriding CC/CXX/LD
-    if os.path.basename(opt.args[0]) == 'make':
+    if os.path.basename(opt.args[0]) in ('make', 'gmake'):
         opt.args.insert(1, '-e')
 
     # run the build command
