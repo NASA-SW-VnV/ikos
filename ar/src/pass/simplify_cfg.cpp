@@ -116,20 +116,30 @@ static bool merge_single_blocks(Code* code) {
 }
 
 /// \brief Remove unreachable basic blocks
-static void remove_unreachable_blocks(Code* code) {
-  std::vector< BasicBlock* > to_remove;
+static bool remove_unreachable_blocks(Code* code) {
+  bool change = false;
+  bool done = false;
 
-  for (auto it = code->begin(), et = code->end(); it != et; ++it) {
-    BasicBlock* bb = *it;
+  while (!done) {
+    std::vector< BasicBlock* > to_remove;
+    done = true;
 
-    if (bb->num_predecessors() == 0 && code->entry_block() != bb) {
-      to_remove.push_back(bb);
+    for (auto it = code->begin(), et = code->end(); it != et; ++it) {
+      BasicBlock* bb = *it;
+
+      if (bb->num_predecessors() == 0 && code->entry_block() != bb) {
+        to_remove.push_back(bb);
+      }
+    }
+
+    for (BasicBlock* bb : to_remove) {
+      code->erase_basic_block(bb);
+      change = true;
+      done = false;
     }
   }
 
-  for (BasicBlock* bb : to_remove) {
-    code->erase_basic_block(bb);
-  }
+  return change;
 }
 
 const char* SimplifyCFGPass::name() const {
@@ -141,8 +151,9 @@ const char* SimplifyCFGPass::description() const {
 }
 
 bool SimplifyCFGPass::run_on_code(Code* code) {
-  bool change = merge_single_blocks(code);
-  remove_unreachable_blocks(code);
+  bool change = false;
+  change |= merge_single_blocks(code);
+  change |= remove_unreachable_blocks(code);
   return change;
 }
 
