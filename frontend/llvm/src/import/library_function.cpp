@@ -52,6 +52,7 @@ namespace import {
 ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
   // ikos functions
   if (this->_enable_ikos) {
+    // <ikos/analyzer/intrinsic.h>
     if (name == "__ikos_assert") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosAssert);
     } else if (name == "__ikos_assume") {
@@ -70,6 +71,7 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
 
   // libc functions
   if (this->_enable_libc) {
+    // <stdlib.h>
     if (name == "malloc") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcMalloc);
     } else if (name == "calloc") {
@@ -80,15 +82,31 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcRealloc);
     } else if (name == "free") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcFree);
-    } else if (name == "open") {
+    } else if (name == "abs") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAbs);
+    } else if (name == "rand") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcRand);
+    } else if (name == "srand") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcSrand);
+    } else if (name == "exit") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcExit);
+    } else if (name == "abort") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAbort);
+    }
+    // <fcntl.h>
+    if (name == "open") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcOpen);
-    } else if (name == "close") {
+    }
+    // <unistd.h>
+    if (name == "close") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcClose);
     } else if (name == "read") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcRead);
     } else if (name == "write") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcWrite);
-    } else if (name == "gets") {
+    }
+    // <stdio.h>
+    if (name == "gets") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcGets);
     } else if (name == "fgets") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcFgets);
@@ -126,7 +144,9 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcFclose);
     } else if (name == "fflush") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcFflush);
-    } else if (name == "strlen") {
+    }
+    // <string.h>
+    if (name == "strlen") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcStrlen);
     } else if (name == "strnlen") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcStrnlen);
@@ -163,16 +183,6 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
           ar::Intrinsic::LibcMemorySetCheck);
     } else if (name == "__strcat_chk") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcStrcatCheck);
-    } else if (name == "abs") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAbs);
-    } else if (name == "rand") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcRand);
-    } else if (name == "srand") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcSrand);
-    } else if (name == "exit") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcExit);
-    } else if (name == "abort") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAbort);
     }
   }
 

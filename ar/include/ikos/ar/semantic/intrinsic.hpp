@@ -72,6 +72,7 @@ public:
     EhTypeidFor,
     Trap,
     _BeginIkosIntrinsic,
+    // <ikos/analyzer/intrinsic.h>
     IkosAssert,
     IkosAssume,
     IkosNonDetSi32,
@@ -82,15 +83,24 @@ public:
     IkosPrintValues,
     _EndIkosIntrinsic,
     _BeginLibcIntrinsic,
+    // <stdlib.h>
     LibcMalloc,
     LibcCalloc,
     LibcValloc,
     LibcRealloc,
     LibcFree,
+    LibcAbs,
+    LibcRand,
+    LibcSrand,
+    LibcExit,
+    LibcAbort,
+    // <fcntl.h>
     LibcOpen,
+    // <unistd.h>
     LibcClose,
     LibcRead,
     LibcWrite,
+    // <stdio.h>
     LibcGets,
     LibcFgets,
     LibcGetc,
@@ -110,6 +120,7 @@ public:
     LibcFopen,
     LibcFclose,
     LibcFflush,
+    // <string.h>
     LibcStrlen,
     LibcStrnlen,
     LibcStrcpy,
@@ -127,11 +138,6 @@ public:
     LibcMemoryMoveCheck,
     LibcMemorySetCheck,
     LibcStrcatCheck,
-    LibcAbs,
-    LibcRand,
-    LibcSrand,
-    LibcExit,
-    LibcAbort,
     _EndLibcIntrinsic,
     _BeginLibcppIntrinsic,
     LibcppNew,

@@ -139,6 +139,7 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
     case Trap: {
       ret_ty = void_ty; // ret
     } break;
+    // <ikos/analyzer/intrinsic.h>
     case IkosAssert: {
       ret_ty = void_ty;          // ret
       params.push_back(ui32_ty); // condition
@@ -170,6 +171,7 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(char_ptr_ty); // dest
       var_arg = true;
     } break;
+    // <stdlib.h>
     case LibcMalloc: {
       ret_ty = void_ptr_ty;      // ret
       params.push_back(size_ty); // size
@@ -192,12 +194,32 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       ret_ty = void_ty;              // ret
       params.push_back(void_ptr_ty); // ptr
     } break;
+    case LibcAbs: {
+      ret_ty = si32_ty;          // ret
+      params.push_back(si32_ty); // i
+    } break;
+    case LibcRand: {
+      ret_ty = si32_ty; // ret
+    } break;
+    case LibcSrand: {
+      ret_ty = void_ty;          // ret
+      params.push_back(ui32_ty); // seed
+    } break;
+    case LibcExit: {
+      ret_ty = void_ty;          // ret
+      params.push_back(si32_ty); // status
+    } break;
+    case LibcAbort: {
+      ret_ty = void_ty; // ret
+    } break;
+    // <fcntl.h>
     case LibcOpen: {
       ret_ty = si32_ty;              // ret
       params.push_back(char_ptr_ty); // path
       params.push_back(si32_ty);     // oflags
       var_arg = true;
     } break;
+    // <unistd.h>
     case LibcClose: {
       ret_ty = si32_ty;          // ret
       params.push_back(si32_ty); // fildes
@@ -214,6 +236,7 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(void_ptr_ty); // buffer
       params.push_back(size_ty);     // nbytes
     } break;
+    // <stdio.h>
     case LibcGets: {
       ret_ty = char_ptr_ty;          // ret
       params.push_back(char_ptr_ty); // str
@@ -308,6 +331,7 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       ret_ty = si32_ty;              // ret
       params.push_back(file_ptr_ty); // stream
     } break;
+    // <string.h>
     case LibcStrlen: {
       ret_ty = size_ty;              // ret
       params.push_back(char_ptr_ty); // s
@@ -401,24 +425,6 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(char_ptr_ty); // s1
       params.push_back(char_ptr_ty); // s2
       params.push_back(size_ty);     // maxlen
-    } break;
-    case LibcAbs: {
-      ret_ty = si32_ty;          // ret
-      params.push_back(si32_ty); // i
-    } break;
-    case LibcRand: {
-      ret_ty = si32_ty; // ret
-    } break;
-    case LibcSrand: {
-      ret_ty = void_ty;          // ret
-      params.push_back(ui32_ty); // seed
-    } break;
-    case LibcExit: {
-      ret_ty = void_ty;          // ret
-      params.push_back(si32_ty); // status
-    } break;
-    case LibcAbort: {
-      ret_ty = void_ty; // ret
     } break;
     case LibcppNew: {
       ret_ty = void_ptr_ty;      // ret
