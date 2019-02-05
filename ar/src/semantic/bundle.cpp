@@ -76,18 +76,17 @@ Bundle* Bundle::create(Context& ctx,
 Function* Bundle::intrinsic_function(Intrinsic::ID id) {
   std::string name = Intrinsic::long_name(id);
 
-  auto it = this->_functions.find(name);
-  if (it != this->_functions.end()) {
-    return it->second.get();
-  } else {
-    ar::FunctionType* type = Intrinsic::type(this, id);
-    return Function::create(this, type, name, /*is_definition = */ false, id);
+  Function* fun = this->_functions.find(name);
+  if (fun != nullptr) {
+    return fun;
   }
+
+  ar::FunctionType* type = Intrinsic::type(this, id);
+  return Function::create(this, type, name, /*is_definition = */ false, id);
 }
 
 bool Bundle::is_name_available(const std::string& name) const {
-  return this->_globals.find(name) == this->_globals.end() &&
-         this->_functions.find(name) == this->_functions.end();
+  return !this->_globals.contains(name) && !this->_functions.contains(name);
 }
 
 std::string Bundle::find_available_name(StringRef prefix) const {
@@ -114,37 +113,23 @@ std::string Bundle::find_available_name(StringRef prefix) const {
 }
 
 void Bundle::add_global_variable(std::unique_ptr< GlobalVariable > gv) {
-  ikos_assert_msg(!gv->name().empty(), "name is empty");
-  ikos_assert_msg(this->is_name_available(gv->name()), "name already taken");
-  this->_globals.emplace(gv->name(), std::move(gv));
+  this->_globals.add(std::move(gv));
 }
 
-void Bundle::rename_global_variable(GlobalVariable* /*v*/,
+void Bundle::rename_global_variable(GlobalVariable* gv,
                                     const std::string& prev_name,
                                     const std::string& new_name) {
-  ikos_assert_msg(!new_name.empty(), "name is empty");
-  ikos_assert_msg(this->is_name_available(new_name), "name already taken");
-  std::unique_ptr< GlobalVariable > gv_ptr =
-      std::move(this->_globals.at(prev_name));
-  this->_globals.erase(prev_name);
-  this->_globals.emplace(new_name, std::move(gv_ptr));
+  this->_globals.rename(gv, prev_name, new_name);
 }
 
-void Bundle::add_function(std::unique_ptr< Function > f) {
-  ikos_assert_msg(!f->name().empty(), "name is empty");
-  ikos_assert_msg(this->is_name_available(f->name()), "name already taken");
-  this->_functions.emplace(f->name(), std::move(f));
+void Bundle::add_function(std::unique_ptr< Function > fun) {
+  this->_functions.add(std::move(fun));
 }
 
-void Bundle::rename_function(Function* /*f*/,
+void Bundle::rename_function(Function* fun,
                              const std::string& prev_name,
                              const std::string& new_name) {
-  ikos_assert_msg(!new_name.empty(), "name is empty");
-  ikos_assert_msg(this->is_name_available(new_name), "name already taken");
-  std::unique_ptr< Function > fun_ptr =
-      std::move(this->_functions.at(prev_name));
-  this->_functions.erase(prev_name);
-  this->_functions.emplace(new_name, std::move(fun_ptr));
+  this->_functions.rename(fun, prev_name, new_name);
 }
 
 } // end namespace ar

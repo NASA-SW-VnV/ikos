@@ -45,15 +45,11 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
-
-#include <boost/iterator/transform_iterator.hpp>
 
 #include <ikos/ar/semantic/context.hpp>
 #include <ikos/ar/semantic/data_layout.hpp>
 #include <ikos/ar/semantic/intrinsic.hpp>
-#include <ikos/ar/support/iterator.hpp>
-#include <ikos/ar/support/number.hpp>
+#include <ikos/ar/semantic/symbol_table.hpp>
 #include <ikos/ar/support/string_ref.hpp>
 #include <ikos/ar/support/traceable.hpp>
 
@@ -81,23 +77,17 @@ private:
   std::string _target_triple;
 
   // List of global variables
-  std::unordered_map< std::string, std::unique_ptr< GlobalVariable > > _globals;
+  SymbolTable< GlobalVariable > _globals;
 
   // List of functions
-  std::unordered_map< std::string, std::unique_ptr< Function > > _functions;
+  SymbolTable< Function > _functions;
 
 public:
   /// \brief Iterator over a list of global variables
-  using GlobalVariableIterator = boost::transform_iterator<
-      MapExposeRawPtr< std::string, GlobalVariable >,
-      std::unordered_map< std::string,
-                          std::unique_ptr< GlobalVariable > >::const_iterator >;
+  using GlobalVariableIterator = SymbolTable< GlobalVariable >::Iterator;
 
   /// \brief Iterator over a list of functions
-  using FunctionIterator = boost::transform_iterator<
-      MapExposeRawPtr< std::string, Function >,
-      std::unordered_map< std::string,
-                          std::unique_ptr< Function > >::const_iterator >;
+  using FunctionIterator = SymbolTable< Function >::Iterator;
 
 private:
   /// \brief Private constructor
@@ -139,41 +129,24 @@ public:
   const std::string& target_triple() const { return this->_target_triple; }
 
   /// \brief Begin iterator over the list of global variables
-  GlobalVariableIterator global_begin() const {
-    return boost::make_transform_iterator(this->_globals.cbegin(),
-                                          MapExposeRawPtr< std::string,
-                                                           GlobalVariable >());
-  }
+  GlobalVariableIterator global_begin() const { return this->_globals.begin(); }
 
   /// \brief End iterator over the list of global variables
-  GlobalVariableIterator global_end() const {
-    return boost::make_transform_iterator(this->_globals.cend(),
-                                          MapExposeRawPtr< std::string,
-                                                           GlobalVariable >());
-  }
+  GlobalVariableIterator global_end() const { return this->_globals.end(); }
 
   /// \brief Return the number of global variables
   std::size_t num_globals() const { return this->_globals.size(); }
 
   /// \brief Get the global variable with the given name, or nullptr
   GlobalVariable* global_or_null(const std::string& name) const {
-    auto it = this->_globals.find(name);
-    return it != this->_globals.end() ? it->second.get() : nullptr;
+    return this->_globals.find(name);
   }
 
   /// \brief Begin iterator over the list of functions
-  FunctionIterator function_begin() const {
-    return boost::make_transform_iterator(this->_functions.cbegin(),
-                                          MapExposeRawPtr< std::string,
-                                                           Function >());
-  }
+  FunctionIterator function_begin() const { return this->_functions.begin(); }
 
   /// \brief End iterator over the list of functions
-  FunctionIterator function_end() const {
-    return boost::make_transform_iterator(this->_functions.cend(),
-                                          MapExposeRawPtr< std::string,
-                                                           Function >());
-  }
+  FunctionIterator function_end() const { return this->_functions.end(); }
 
   /// \brief Return the number of functions
   std::size_t num_functions() const { return this->_functions.size(); }
@@ -183,8 +156,7 @@ public:
 
   /// \brief Get the function with the given name, or nullptr
   Function* function_or_null(const std::string& name) const {
-    auto it = this->_functions.find(name);
-    return it != this->_functions.end() ? it->second.get() : nullptr;
+    return this->_functions.find(name);
   }
 
 private:
@@ -208,7 +180,7 @@ private:
   void add_function(std::unique_ptr< Function >);
 
   /// \brief Rename a function
-  void rename_function(Function* f,
+  void rename_function(Function* fun,
                        const std::string& prev_name,
                        const std::string& new_name);
 
