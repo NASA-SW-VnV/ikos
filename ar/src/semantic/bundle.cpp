@@ -90,17 +90,10 @@ bool Bundle::is_name_available(const std::string& name) const {
 }
 
 std::string Bundle::find_available_name(StringRef prefix) const {
-  std::string name = prefix.to_string();
-
-  if (name.empty()) {
-    name += "g";
-  }
-
-  if (this->is_name_available(name)) {
-    return name;
-  }
+  ikos_assert_msg(!prefix.empty(), "empty prefix");
 
   // Add a numerical suffix, e.g, ".1"
+  std::string name = prefix.to_string();
   name += ".";
   std::size_t idx = 1;
 

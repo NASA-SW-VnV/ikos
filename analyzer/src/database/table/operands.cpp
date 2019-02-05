@@ -1026,8 +1026,12 @@ struct OperandReprVisitor {
       return "&" + OperandsTable::repr(llvm_gv->getInitializer());
     }
 
-    // Last chance, use ar variable name
-    return "&" + demangle(gv->name());
+    // Last chance, use llvm variable name
+    if (llvm_gv->hasName()) {
+      return "&" + demangle(llvm_gv->getName());
+    }
+
+    return "&__unnamed_global_var";
   }
 
   std::string operator()(ar::LocalVariable* lv) const {
@@ -1057,7 +1061,7 @@ struct OperandReprVisitor {
 
     // Check for llvm.dbg.value
     llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
-    llvm::findDbgValues(dbg_values, value);
+    llvm::findDbgValues(dbg_values, alloca);
     auto dbg_value =
         std::find_if(dbg_values.begin(),
                      dbg_values.end(),
@@ -1074,9 +1078,9 @@ struct OperandReprVisitor {
       }
     }
 
-    // Last chance, use ar variable name
-    if (lv->has_name()) {
-      return "&" + demangle(lv->name());
+    // Last chance, use llvm variable name
+    if (alloca->hasName()) {
+      return "&" + demangle(alloca->getName());
     }
 
     return "&__unnamed_local_var";

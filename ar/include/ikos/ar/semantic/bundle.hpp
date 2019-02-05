@@ -159,15 +159,13 @@ public:
     return this->_functions.find(name);
   }
 
-private:
-  /// \brief Check whether a name is available or not
-  ///
-  /// Returns true if the name isn't taken by a function or a global variable.
+  /// \brief Return true if the given name is available
   bool is_name_available(const std::string& name) const;
 
-  /// \brief Find an available name, using the given prefix
+  /// \brief Find an available name with the given prefix
   std::string find_available_name(StringRef prefix) const;
 
+private:
   /// \brief Add a global variable in the bundle
   void add_global_variable(std::unique_ptr< GlobalVariable >);
 

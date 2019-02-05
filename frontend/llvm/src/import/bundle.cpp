@@ -69,13 +69,15 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
 
   // Build the ar::GlobalVariable
 
-  if (!gv->hasName()) {
-    throw ImportError("llvm global variable has no name");
+  std::string name;
+  if (gv->hasName()) {
+    name = gv->getName();
+  } else {
+    name = this->_bundle->find_available_name("__unnamed_global_var");
   }
 
   // Special names for intrinsic global variables (such as llvm.global_ctors)
-  std::string name = gv->getName();
-  if (gv->getName().startswith("llvm.")) {
+  if (name.rfind("llvm.", 0) == 0) {
     name = "ar." + name.substr(5);
   }
 

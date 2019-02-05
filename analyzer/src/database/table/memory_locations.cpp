@@ -121,7 +121,7 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
 
     // Check for llvm.dbg.value
     llvm::SmallVector< llvm::DbgValueInst*, 1 > dbg_values;
-    llvm::findDbgValues(dbg_values, value);
+    llvm::findDbgValues(dbg_values, alloca);
     auto dbg_value =
         std::find_if(dbg_values.begin(),
                      dbg_values.end(),
@@ -138,9 +138,9 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
       }
     }
 
-    // Last chance, use ar variable name
-    if (lv->has_name()) {
-      return {{"name", lv->name()}};
+    // Last chance, use llvm variable name
+    if (alloca->hasName()) {
+      return {{"name", alloca->getName()}};
     }
 
     return {};
@@ -167,13 +167,17 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
       return {{"cst", OperandsTable::repr(llvm_gv->getInitializer())}};
     }
 
-    // Last chance, use ar variable name
-    const std::string& name = gv->name();
-    if (is_mangled(name)) {
-      return {{"name", name}, {"demangle", demangle(name)}};
-    } else {
-      return {{"name", name}};
+    // Last chance, use llvm variable name
+    if (llvm_gv->hasName()) {
+      std::string name = llvm_gv->getName();
+      if (is_mangled(name)) {
+        return {{"name", name}, {"demangle", demangle(name)}};
+      } else {
+        return {{"name", name}};
+      }
     }
+
+    return {};
   } else if (auto fun_mem_loc = dyn_cast< FunctionMemoryLocation >(mem_loc)) {
     ar::Function* fun = fun_mem_loc->function();
     return {{"id", this->_functions.insert(fun)}};
