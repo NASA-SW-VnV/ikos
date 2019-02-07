@@ -397,19 +397,19 @@ private:
   /// \brief Prepare a memory access (read/write) on the given pointer
   ///
   /// Return true if the memory access can be performed, i.e the pointer is
-  /// non-null, well defined, and `_precision == Precision::Memory`
+  /// non-null and well defined
   bool prepare_mem_access(const ScalarLit& ptr) {
-    if (ptr.is_null() || ptr.is_undefined()) {
-      // null/undefined dereference
+    if (ptr.is_undefined()) {
+      // undefined pointer dereference
+      this->_inv.set_normal_flow_to_bottom();
+      return false;
+    } else if (ptr.is_null()) {
+      // null pointer dereference
       this->_inv.set_normal_flow_to_bottom();
       return false;
     }
 
     ikos_assert_msg(ptr.is_pointer_var(), "unexpected parameter");
-
-    if (this->_precision < Precision::Pointer) {
-      return false;
-    }
 
     // reduction between value and pointer analysis
     this->refine_addresses_offset(ptr.var());
@@ -418,14 +418,17 @@ private:
       return false;
     }
 
-    if (this->_inv.normal().nullity().is_null(ptr.var()) ||
-        this->_inv.normal().uninitialized().is_uninitialized(ptr.var())) {
-      // null/undefined dereference
+    if (this->_inv.normal().uninitialized().is_uninitialized(ptr.var())) {
+      // undefined pointer dereference
+      this->_inv.set_normal_flow_to_bottom();
+      return false;
+    } else if (this->_inv.normal().nullity().is_null(ptr.var())) {
+      // null pointer dereference
       this->_inv.set_normal_flow_to_bottom();
       return false;
     }
 
-    return this->_precision == Precision::Memory; // ready for read/write
+    return true; // ready for read/write
   }
 
 private:
@@ -480,12 +483,13 @@ private:
 
 private:
   /// \brief Normalize the nullity domain
+  ///
+  /// Check if the given pointer variable points to AbsoluteZeroMemoryLocation.
+  /// If so, check if the offset interval contains zero, and update the nullity
+  /// domain accordingly.
   void normalize_absolute_zero_nullity(Variable* var) {
-    // Check if AbsoluteZeroMemoryLocation could be the base of the pointer
-    // if so, we have to check if zero is contained in the offset interval of
-    // the pointer.
-
-    if (this->_inv.normal().nullity().is_bottom() ||
+    if (this->_precision < Precision::Pointer ||
+        this->_inv.normal().nullity().is_bottom() ||
         this->_inv.normal().nullity().get(var).is_top()) {
       return;
     }
@@ -526,7 +530,6 @@ private:
     if (this->_precision < Precision::Pointer) {
       return;
     }
-
     if (!this->_pointer_info) {
       return;
     }
@@ -542,7 +545,6 @@ private:
     if (this->_precision < Precision::Pointer) {
       return;
     }
-
     if (!this->_pointer_info) {
       return;
     }
