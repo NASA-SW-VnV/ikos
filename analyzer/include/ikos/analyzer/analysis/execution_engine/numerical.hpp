@@ -1933,54 +1933,260 @@ public:
     }
 
     if (fun->is_intrinsic()) {
-      this->exec_intrinsic_call(call, fun);
+      this->exec_intrinsic_call(call, fun->intrinsic_id());
     } else {
       this->exec_unknown_extern_call(call);
     }
   }
 
-private:
   /// \brief Execute a call to the given intrinsic function
-  void exec_intrinsic_call(ar::CallBase* call, ar::Function* fun) {
-    switch (fun->intrinsic_id()) {
-      case ar::Intrinsic::MemoryCopy: {
-        this->exec_memcpy_or_memmove(call);
-      } break;
+  void exec_intrinsic_call(ar::CallBase* call, ar::Intrinsic::ID id) override {
+    switch (id) {
+      case ar::Intrinsic::MemoryCopy:
       case ar::Intrinsic::MemoryMove: {
         this->exec_memcpy_or_memmove(call);
       } break;
       case ar::Intrinsic::MemorySet: {
         this->exec_memset(call);
       } break;
+      case ar::Intrinsic::VarArgStart:
+      case ar::Intrinsic::VarArgEnd:
+      case ar::Intrinsic::VarArgGet:
+      case ar::Intrinsic::VarArgCopy: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ true,
+                                /* ignore_unknown_write = */ true,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::StackSave:
+      case ar::Intrinsic::StackRestore: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LifetimeStart:
+      case ar::Intrinsic::LifetimeEnd: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::EhTypeidFor: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::Trap: {
+        this->exec_abort(call);
+      } break;
+      // <ikos/analyzer/intrinsic.h>
+      case ar::Intrinsic::IkosAssert:
+      case ar::Intrinsic::IkosAssume:
+      case ar::Intrinsic::IkosNonDetSi32:
+      case ar::Intrinsic::IkosNonDetUi32: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::IkosCounterInit: {
+        this->exec_ikos_counter_init(call);
+      } break;
+      case ar::Intrinsic::IkosCounterIncr: {
+        this->exec_ikos_counter_incr(call);
+      } break;
+      case ar::Intrinsic::IkosPrintInvariant:
+      case ar::Intrinsic::IkosPrintValues: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      // <stdlib.h>
       case ar::Intrinsic::LibcMalloc: {
         this->exec_malloc(call);
       } break;
       case ar::Intrinsic::LibcCalloc: {
         this->exec_calloc(call);
       } break;
-      case ar::Intrinsic::LibcppNew:
-      case ar::Intrinsic::LibcppNewArray: {
-        this->exec_new(call);
+      case ar::Intrinsic::LibcValloc: {
+        this->exec_valloc(call);
       } break;
-      case ar::Intrinsic::LibcppAllocateException: {
-        this->exec_allocate_exception(call);
+      case ar::Intrinsic::LibcAlignedAlloc: {
+        this->exec_aligned_alloc(call);
       } break;
-      case ar::Intrinsic::LibcFree:
-      case ar::Intrinsic::LibcppDelete:
-      case ar::Intrinsic::LibcppDeleteArray:
-      case ar::Intrinsic::LibcppFreeException: {
-        // TODO(marthaud): delete[] also calls the destructor on each element
+      case ar::Intrinsic::LibcRealloc: {
+        this->exec_realloc(call);
+      } break;
+      case ar::Intrinsic::LibcFree: {
         this->exec_free(call);
+      } break;
+      case ar::Intrinsic::LibcAbs: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcRand:
+      case ar::Intrinsic::LibcSrand: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcExit: {
+        this->exec_exit(call);
+      } break;
+      case ar::Intrinsic::LibcAbort: {
+        this->exec_abort(call);
+      } break;
+      // <fcntl.h>
+      case ar::Intrinsic::LibcOpen: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      // <unistd.h>
+      case ar::Intrinsic::LibcClose: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
       } break;
       case ar::Intrinsic::LibcRead: {
         this->exec_read(call);
       } break;
-      case ar::Intrinsic::LibcppThrow: {
-        this->exec_throw(call);
+      case ar::Intrinsic::LibcWrite: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
       } break;
-      case ar::Intrinsic::LibcppBeginCatch: {
-        this->exec_begin_catch(call);
+      // <stdio.h>
+      case ar::Intrinsic::LibcGets: {
+        this->exec_gets(call);
       } break;
+      case ar::Intrinsic::LibcFgets: {
+        this->exec_fgets(call);
+      } break;
+      case ar::Intrinsic::LibcGetc: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcFgetc: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcGetchar: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcPuts: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcFputs: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcPutc: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcFputc: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcPrintf: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcFprintf: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcSprintf: {
+        this->exec_sprintf(call);
+      } break;
+      case ar::Intrinsic::LibcSnprintf: {
+        this->exec_snprintf(call);
+      } break;
+      case ar::Intrinsic::LibcScanf: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ true,
+                                /* ignore_unknown_write = */ true,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcFscanf: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ true,
+                                /* ignore_unknown_write = */ true,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcSscanf: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ true,
+                                /* ignore_unknown_write = */ true,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::LibcFopen: {
+        this->exec_fopen(call);
+      } break;
+      case ar::Intrinsic::LibcFclose: {
+        this->exec_fclose(call);
+      } break;
+      case ar::Intrinsic::LibcFflush: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      // <string.h>
       case ar::Intrinsic::LibcStrlen: {
         this->exec_strlen(call);
       } break;
@@ -1999,74 +2205,170 @@ private:
       case ar::Intrinsic::LibcStrncat: {
         this->exec_strncat(call);
       } break;
-      case ar::Intrinsic::IkosAssert:
-      case ar::Intrinsic::IkosAssume:
-      case ar::Intrinsic::IkosPrintInvariant:
-      case ar::Intrinsic::IkosPrintValues: {
-        // Nothing to do
-        ikos_assert(!call->has_result());
+      case ar::Intrinsic::LibcStrcmp: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
       } break;
-      case ar::Intrinsic::IkosNonDetSi32:
-      case ar::Intrinsic::IkosNonDetUi32: {
-        this->exec_ikos_non_det(call);
+      case ar::Intrinsic::LibcStrncmp: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
       } break;
-      case ar::Intrinsic::IkosCounterInit: {
-        this->exec_ikos_counter_init(call);
+      case ar::Intrinsic::LibcStrstr: {
+        this->exec_strstr(call);
       } break;
-      case ar::Intrinsic::IkosCounterIncr: {
-        this->exec_ikos_counter_incr(call);
+      case ar::Intrinsic::LibcStrchr: {
+        this->exec_strchr(call);
+      } break;
+      case ar::Intrinsic::LibcStrdup: {
+        this->exec_strdup(call);
+      } break;
+      case ar::Intrinsic::LibcStrndup: {
+        this->exec_strndup(call);
+      } break;
+      case ar::Intrinsic::LibcStrcpyCheck: {
+        this->exec_strcpy(call);
+      } break;
+      case ar::Intrinsic::LibcMemoryCopyCheck: {
+        this->exec_memcpy_or_memmove(call);
+      } break;
+      case ar::Intrinsic::LibcMemoryMoveCheck: {
+        this->exec_memcpy_or_memmove(call);
+      } break;
+      case ar::Intrinsic::LibcMemorySetCheck: {
+        this->exec_memset(call);
+      } break;
+      case ar::Intrinsic::LibcStrcatCheck: {
+        this->exec_strcat(call);
+      } break;
+      case ar::Intrinsic::LibcppNew:
+      case ar::Intrinsic::LibcppNewArray: {
+        this->exec_new(call);
+      } break;
+      case ar::Intrinsic::LibcppDelete: {
+        this->exec_free(call);
+      } break;
+      case ar::Intrinsic::LibcppDeleteArray: {
+        // TODO(marthaud): delete[] also calls the destructor on each element
+        this->exec_free(call);
+      } break;
+      case ar::Intrinsic::LibcppAllocateException: {
+        this->exec_allocate_exception(call);
+      } break;
+      case ar::Intrinsic::LibcppFreeException: {
+        this->exec_free(call);
+      } break;
+      case ar::Intrinsic::LibcppThrow: {
+        this->exec_throw(call);
+      } break;
+      case ar::Intrinsic::LibcppBeginCatch: {
+        this->exec_begin_catch(call);
+      } break;
+      case ar::Intrinsic::LibcppEndCatch: {
+        this->exec_end_catch(call);
       } break;
       default: {
-        this->exec_unknown_extern_call(call);
+        ikos_unreachable("unreachable");
       } break;
     }
-
-    // TODO(marthaud): support va_start, va_end, va_copy
   }
 
-public:
   /// \brief Execute a call to an unknown extern function
   void exec_unknown_extern_call(ar::CallBase* call) override {
+    this->exec_unknown_call(call,
+                            /* may_write_params = */ true,
+                            /* ignore_unknown_write = */ true,
+                            /* may_write_globals = */ false,
+                            /* may_throw_exc = */ true);
+  }
+
+  /// \brief Execute a call to an unknown internal function
+  void exec_unknown_intern_call(ar::CallBase* call) override {
+    this->exec_unknown_call(call,
+                            /* may_write_params = */ true,
+                            /* ignore_unknown_write = */ false,
+                            /* may_write_globals = */ true,
+                            /* may_throw_exc = */ true);
+  }
+
+  /// \brief Execute a call to an unknown function
+  ///
+  /// \param call
+  ///   The call statement
+  /// \param may_write_params
+  ///   True if the function call might write on a pointer parameter
+  /// \param ignore_unknown_write
+  ///   True to ignore writes on unknown pointer parameters (unsound)
+  /// \param may_write_globals
+  ///   True if the function call might update a global variable
+  /// \param may_throw_exc
+  ///   True if the function call might throw an exception
+  void exec_unknown_call(ar::CallBase* call,
+                         bool may_write_params,
+                         bool ignore_unknown_write,
+                         bool may_write_globals,
+                         bool may_throw_exc) override {
     if (this->_inv.is_normal_flow_bottom()) {
       return;
     }
 
-    // Forget all parameters of pointer type (very conservative)
-    if (this->_precision >= Precision::Memory) {
-      for (auto it = call->arg_begin(), et = call->arg_end(); it != et; ++it) {
-        ar::Value* arg = *it;
-        if (!arg->type()->is_pointer()) {
-          continue;
-        }
+    // Check for uninitialized variables
+    for (auto it = call->arg_begin(), et = call->arg_end(); it != et; ++it) {
+      ar::Value* arg = *it;
 
-        const ScalarLit& ptr = this->_lit_factory.get_scalar(arg);
-        if (!ptr.is_pointer_var()) {
-          continue;
-        }
+      if (isa< ar::UndefinedConstant >(arg)) {
+        this->_inv.set_normal_flow_to_bottom(); // undefined behavior
+        return;
+      } else if (auto iv = dyn_cast< ar::InternalVariable >(arg)) {
+        Variable* var = this->_var_factory.get_internal(iv);
 
-        this->init_global_operand(arg);
-        this->refine_addresses(ptr.var());
-
-        if (this->_inv.normal().uninitialized().is_uninitialized(ptr.var())) {
+        if (this->_inv.normal().uninitialized().is_uninitialized(var)) {
           this->_inv.set_normal_flow_to_bottom(); // undefined behavior
           return;
-        } else if (this->_inv.normal().nullity().is_null(ptr.var())) {
-          continue; // safe
-        } else if (this->_inv.normal()
-                       .pointers()
-                       .points_to(ptr.var())
-                       .is_top()) {
-          // Ignore side effect on the memory, analysis could be unsound.
-          // See CheckKind::IgnoredCallSideEffect
-          continue;
-        } else {
-          this->_inv.normal().forget_reachable_mem(ptr.var());
         }
       }
     }
 
-    // Forget the result
+    if (this->_precision >= Precision::Memory) {
+      if (may_write_globals) {
+        // Forget all memory contents
+        this->_inv.normal().forget_mem();
+      } else if (may_write_params) {
+        // Forget all memory contents pointed by pointer parameters
+        for (auto it = call->arg_begin(), et = call->arg_end(); it != et;
+             ++it) {
+          ar::Value* arg = *it;
+
+          if (!isa< ar::InternalVariable >(arg) ||
+              !isa< ar::PointerType >(arg->type())) {
+            continue;
+          }
+
+          auto iv = cast< ar::InternalVariable >(arg);
+          Variable* ptr = this->_var_factory.get_internal(iv);
+
+          this->init_global_operand(arg);
+          this->refine_addresses(ptr);
+
+          if (this->_inv.normal().nullity().is_null(ptr)) {
+            continue; // safe
+          } else if (ignore_unknown_write &&
+                     this->_inv.normal().pointers().points_to(ptr).is_top()) {
+            continue; // Ignore side effect on the memory
+          } else {
+            this->_inv.normal().forget_reachable_mem(ptr);
+          }
+        }
+      }
+    }
+
     if (call->has_result()) {
+      // Forget the result
       const Literal& ret = this->_lit_factory.get(call->result());
 
       if (ret.is_scalar()) {
@@ -2087,11 +2389,13 @@ public:
       }
     }
 
-    // The external call can throw exceptions
-    this->throw_unknown_exceptions();
+    if (may_throw_exc) {
+      // The call can throw exceptions
+      this->throw_unknown_exceptions();
+    }
 
-    // Initialize the result
     if (call->has_result()) {
+      // Initialize the result
       const Literal& ret = this->_lit_factory.get(call->result());
 
       if (ret.is_scalar()) {
@@ -2107,39 +2411,7 @@ public:
     }
   }
 
-  /// \brief Execute a call to an unknown internal function
-  void exec_unknown_intern_call(ar::CallBase* call) override {
-    if (this->_inv.is_normal_flow_bottom()) {
-      return;
-    }
-
-    if (this->_precision >= Precision::Memory) {
-      // Forget all memory contents
-      this->_inv.normal().forget_mem();
-    }
-
-    // Forget the result
-    if (call->has_result()) {
-      const Literal& ret = this->_lit_factory.get(call->result());
-
-      if (ret.is_scalar()) {
-        ikos_assert_msg(ret.scalar().is_var(),
-                        "left hand side is not a variable");
-
-        this->_inv.normal().forget_surface(ret.scalar().var());
-      } else if (ret.is_aggregate()) {
-        // Nothing to do, because we already forgot all memory contents
-      } else {
-        ikos_unreachable("unexpected left hand side");
-      }
-    }
-
-    // Might throw exceptions
-    this->throw_unknown_exceptions();
-  }
-
 private:
-  ///
   /// @}
   /// \name Execution of intrinsic functions
   /// @{
@@ -2184,6 +2456,13 @@ private:
       }
       this->_inv.normal().forget_reachable_mem(dest.var(), s.ub());
     }
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->assign(lhs, dest);
+    }
   }
 
   /// \brief Execute a call to memset(dest, byte, len)
@@ -2211,6 +2490,46 @@ private:
     }
 
     this->_inv.normal().mem_set(this->_var_factory, dest.var(), value, size);
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->assign(lhs, dest);
+    }
+  }
+
+  /// \brief Execute a call to ikos.counter.init
+  void exec_ikos_counter_init(ar::CallBase* call) {
+    ikos_assert(call->has_result());
+    ikos_assert(call->num_arguments() == 1);
+
+    const ScalarLit& ret = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& init = this->_lit_factory.get_scalar(call->argument(0));
+
+    ikos_assert_msg(ret.is_machine_int_var(),
+                    "left hand side is not an integer variable");
+    ikos_assert_msg(init.is_machine_int(), "operand is not a machine integer");
+
+    this->_inv.normal().integers().init_counter(ret.var(), init.machine_int());
+    this->_inv.normal().uninitialized().assign_initialized(ret.var());
+  }
+
+  /// \brief Execute a call to ikos.counter.incr
+  void exec_ikos_counter_incr(ar::CallBase* call) {
+    ikos_assert(call->has_result());
+    ikos_assert(call->num_arguments() == 2);
+    ikos_assert(call->result() == call->argument(0));
+
+    const ScalarLit& ret = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& incr = this->_lit_factory.get_scalar(call->argument(1));
+
+    ikos_assert_msg(ret.is_machine_int_var(),
+                    "left hand side is not an integer variable");
+    ikos_assert_msg(incr.is_machine_int(), "operand is not a machine integer");
+
+    this->_inv.normal().integers().incr_counter(ret.var(), incr.machine_int());
+    this->_inv.normal().uninitialized().assign_initialized(ret.var());
   }
 
   /// \brief Execute a dynamic allocation
@@ -2219,6 +2538,10 @@ private:
                           bool may_return_null,
                           bool may_throw_exc,
                           MemoryInitialValue init_val) {
+    if (may_throw_exc) {
+      this->throw_unknown_exceptions();
+    }
+
     if (this->_precision < Precision::Pointer) {
       return;
     }
@@ -2231,12 +2554,6 @@ private:
     const ScalarLit& size_l = this->_lit_factory.get_scalar(size);
     ikos_assert_msg(lhs.is_pointer_var(),
                     "left hand side is not a pointer variable");
-
-    this->_inv.normal().forget_surface(lhs.var());
-
-    if (may_throw_exc) {
-      this->throw_unknown_exceptions();
-    }
 
     Nullity null_val = may_return_null ? Nullity::top() : Nullity::non_null();
 
@@ -2264,13 +2581,13 @@ private:
     }
   }
 
-  /// \brief Execute a libc malloc call
+  /// \brief Execute a call to libc malloc
   ///
   /// #include <stdlib.h>
-  /// void* malloc(size_t size)
+  /// void* malloc(size_t size);
   ///
-  /// This function returns a pointer to a newly allocated block size bytes
-  /// long, or a null pointer if the block could not be allocated.
+  /// The malloc() function returns a pointer to a newly allocated block size
+  /// bytes long, or a null pointer if the block could not be allocated.
   void exec_malloc(ar::CallBase* call) {
     this->exec_dynamic_alloc(call,
                              call->argument(0),
@@ -2279,10 +2596,10 @@ private:
                              MemoryInitialValue::Uninitialized);
   }
 
-  /// \brief Execute a libc calloc call
+  /// \brief Execute a call to libc calloc
   ///
   /// #include <stdlib.h>
-  /// void* calloc(size_t count, size_t size)
+  /// void* calloc(size_t count, size_t size);
   ///
   /// The calloc() function contiguously allocates enough space for count
   /// objects that are size bytes of memory each and returns a pointer to the
@@ -2351,44 +2668,121 @@ private:
     }
   }
 
-  /// \brief Execute a libcpp new or new[]
+  /// \brief Execute a call to libc valloc
   ///
-  /// operator new(size_t)
-  /// operator new[](size_t)
+  /// #include <stdlib.h>
+  /// void* valloc(size_t size);
   ///
-  /// Allocates requested number of bytes. These allocation functions are called
-  /// by new-expressions to allocate memory in which new object would then be
-  /// initialized. They may also be called using regular function call syntax.
-  void exec_new(ar::CallBase* call) {
+  /// The valloc() function allocates size bytes of memory and returns a pointer
+  /// to the allocated memory.  The allocated memory is aligned on a page
+  /// boundary.
+  void exec_valloc(ar::CallBase* call) {
     this->exec_dynamic_alloc(call,
                              call->argument(0),
-                             /* may_return_null = */ false,
-                             /* may_throw_exc = */ true,
-                             MemoryInitialValue::Uninitialized);
-  }
-
-  /// \brief Execute a libcpp allocate exception
-  ///
-  /// void* __cxa_allocate_exception(size_t thrown_size) throw();
-  ///
-  /// Allocates memory to hold the exception to be thrown. thrown_size is the
-  /// size of the exception object. Can allocate additional memory to hold
-  /// private data. If memory can not be allocated, call std::terminate().
-  void exec_allocate_exception(ar::CallBase* call) {
-    this->exec_dynamic_alloc(call,
-                             call->argument(0),
-                             /* may_return_null = */ false,
+                             /* may_return_null = */ true,
                              /* may_throw_exc = */ false,
                              MemoryInitialValue::Uninitialized);
   }
 
-  /// \brief Execute a libc free, libcpp delete or delete[], etc.
+  /// \brief Execute a call to libc aligned_alloc
   ///
   /// #include <stdlib.h>
-  /// void free(void* ptr)
+  /// void* aligned_alloc(size_t alignment, size_t size);
   ///
-  /// This function deallocates the memory allocated via a previous call to
-  /// malloc().
+  /// The function posix_memalign() allocates size bytes and places the address
+  /// of the allocated memory in *memptr. The address of the allocated memory
+  /// will be a multiple of alignment, which must be a power of two and a
+  /// multiple of sizeof(void *). If size is 0, then posix_memalign() returns
+  /// either NULL, or a unique pointer value that can later be successfully
+  /// passed to free(3).
+  ///
+  /// The function aligned_alloc() is the same as memalign(), except for the
+  /// added restriction that size should be a multiple of alignment.
+  void exec_aligned_alloc(ar::CallBase* call) {
+    this->exec_dynamic_alloc(call,
+                             call->argument(1),
+                             /* may_return_null = */ true,
+                             /* may_throw_exc = */ false,
+                             MemoryInitialValue::Uninitialized);
+  }
+
+  /// \brief Execute a call to libc realloc
+  ///
+  /// #include <stdlib.h>
+  /// void* realloc(void* ptr, size_t size);
+  ///
+  /// The realloc() function tries to change the size of the allocation pointed
+  /// to by ptr to size, and returns ptr.  If there is not enough room to
+  /// enlarge the memory allocation pointed to by ptr, realloc() creates a new
+  /// allocation, copies as much of the old data pointed to by ptr as will fit
+  /// to the new allocation, frees the old allocation, and returns a pointer to
+  /// the allocated memory.  If ptr is NULL, realloc() is identical to a call to
+  /// malloc() for size bytes.  If size is zero and ptr is not NULL, a new,
+  /// minimum sized object is allocated and the original object is freed.  When
+  /// extending a region allocated with calloc(3), realloc(3) does not guarantee
+  /// that the additional memory is also zero-filled.
+  void exec_realloc(ar::CallBase* call) {
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    // Allocate the memory
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+
+      MemoryLocation* addr =
+          this->_mem_factory.get_dyn_alloc(call, this->_call_context);
+      if (size.is_machine_int_var()) {
+        this->allocate_memory(lhs.var(),
+                              addr,
+                              Nullity::top(),
+                              Uninitialized::initialized(),
+                              Lifetime::allocated(),
+                              MemoryInitialValue::Uninitialized,
+                              size.var());
+      } else if (size.is_machine_int()) {
+        this->allocate_memory(lhs.var(),
+                              addr,
+                              Nullity::top(),
+                              Uninitialized::initialized(),
+                              Lifetime::allocated(),
+                              MemoryInitialValue::Uninitialized,
+                              size.machine_int());
+      } else {
+        ikos_unreachable("unexpected size operand");
+      }
+    }
+
+    // Copy data
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+
+      if (ptr.is_pointer_var() &&
+          !this->_inv.normal().nullity().is_null(ptr.var())) {
+        // This should be the size of `ptr` instead of `size`
+        this->_inv.normal().mem_copy(this->_var_factory,
+                                     lhs.var(),
+                                     ptr.var(),
+                                     size);
+      }
+    }
+
+    // Free the pointer
+    this->exec_free(call);
+  }
+
+  /// \brief Execute a call to libc free, libc++ delete or delete[], etc.
+  ///
+  /// #include <stdlib.h>
+  /// void free(void* ptr);
+  ///
+  /// The free() function deallocates the memory allocation pointed to by ptr.
+  /// If ptr is a NULL pointer, no operation is performed.
   void exec_free(ar::CallBase* call) {
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
 
@@ -2448,10 +2842,39 @@ private:
     }
   }
 
-  /// \brief Execute a libc read call
+  /// \brief Execute a call to libc exit
   ///
-  /// #include <fcntl.h>
-  /// int read(int handle, void* buffer, int nbyte);
+  /// #include <stdlib.h>
+  /// void exit(int status);
+  ///
+  /// The exit() functions terminate a process.
+  ///
+  /// It also performs the following functions in the order listed:
+  ///   1. Call the functions registered with the atexit(3) function, in the
+  /// reverse order of their registration.
+  ///   2. Flush all open output streams.
+  ///   3. Close all open streams.
+  ///   4. Unlink all files created with the tmpfile(3) function.
+  void exec_exit(ar::CallBase* /*call*/) {
+    // TODO(marthaud): analyze functions registered by atexit()
+    this->_inv.set_normal_flow_to_bottom();
+  }
+
+  /// \brief Execute a call to libc abort
+  ///
+  /// #include <stdlib.h>
+  /// void abort(void);
+  ///
+  /// The abort() function causes abnormal program termination to occur, unless
+  /// the signal SIGABRT is being caught and the signal handler does not return.
+  void exec_abort(ar::CallBase* /*call*/) {
+    this->_inv.set_normal_flow_to_bottom();
+  }
+
+  /// \brief Execute a call to libc read
+  ///
+  /// #include <unistd.h>
+  /// ssize_t read(int handle, void* buffer, size_t nbyte);
   ///
   /// The read() function attempts to read nbytes from the file associated with
   /// handle, and places the characters read into buffer. If the file is opened
@@ -2461,19 +2884,6 @@ private:
   /// returned, on error it returns -1, setting errno to indicate the type of
   /// error that occurred.
   void exec_read(ar::CallBase* call) {
-    if (call->has_result()) {
-      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
-      ikos_assert_msg(lhs.is_machine_int_var(),
-                      "left hand side is not an integer variable");
-
-      this->_inv.normal().integers().forget(lhs.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
-    }
-
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
     // Initialize lazily global objects
     this->init_global_operand(call->argument(1));
 
@@ -2493,36 +2903,238 @@ private:
     } else {
       ikos_unreachable("unreachable");
     }
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_machine_int_var(),
+                      "left hand side is not an integer variable");
+
+      this->_inv.normal().integers().forget(lhs.var());
+      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+    }
   }
 
-  /// \brief Execute a libcpp throw call
+  /// \brief Execute a call to libc gets
   ///
-  /// __cxa_throw(void* exception, std::type_info* tinfo, void (*dest)(void*))
+  /// #include <stdio.h>
+  /// char* gets(char* str);
   ///
-  /// After constructing the exception object with the throw argument value, the
-  /// generated code calls the __cxa_throw runtime library routine. This routine
-  /// never returns.
-  void exec_throw(ar::CallBase* /*call*/) { this->_inv.throw_exception(); }
+  /// The gets() function is equivalent to fgets() with an infinite size and a
+  /// stream of stdin, except that the newline character (if any) is not stored
+  /// in the string.  It is the caller's responsibility to ensure that the input
+  /// line, if any, is sufficiently short to fit in the string.
+  void exec_gets(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
 
-  /// \brief Execute a libcpp begin catch
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    this->_inv.normal().abstract_reachable_mem(ptr.var());
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+
+      this->_inv.normal().pointers().assign(lhs.var(), ptr.var());
+      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+      this->_inv.normal().nullity().forget(lhs.var()); // can return NULL
+    }
+  }
+
+  /// \brief Execute a call to libc fgets
   ///
-  /// void* __cxa_begin_catch(void* exceptionObject) throw();
+  /// #include <stdio.h>
+  /// char* fgets(char* str, int size, FILE* stream);
   ///
-  /// When entering a catch scope, __cxa_begin_catch is called with the
-  /// exceptionObject. This routine returns the adjusted pointer to the
-  /// exception object.
-  /// We assume that it doesn't modify exceptionObject, and the return value
-  /// is equals to exceptionObject.
-  void exec_begin_catch(ar::CallBase* call) {
+  /// The fgets() function reads at most one less than the number of characters
+  /// specified by size from the given stream and stores them in the string str.
+  /// Reading stops when a newline character is found, at end-of-file or error.
+  /// The newline, if any, is retained.  If any characters are read and there is
+  /// no error, a `\0' character is appended to end the string.
+  void exec_fgets(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    // size is a ui32, we need a size_t
+    auto size_type = ar::IntegerType::size_type(this->_ctx.bundle);
+    if (size.is_machine_int()) {
+      this->_inv.normal()
+          .abstract_reachable_mem(ptr.var(),
+                                  size.machine_int()
+                                      .cast(size_type->bit_width(),
+                                            ar::Unsigned));
+    } else if (size.is_machine_int_var()) {
+      IntInterval size_intv = this->_inv.normal()
+                                  .integers()
+                                  .to_interval(size.var())
+                                  .cast(size_type->bit_width(), ar::Unsigned);
+      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+    } else {
+      ikos_unreachable("unreachable");
+    }
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+
+      this->_inv.normal().pointers().assign(lhs.var(), ptr.var());
+      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+      this->_inv.normal().nullity().forget(lhs.var()); // can return NULL
+    }
+  }
+
+  /// \brief Execute a call to libc sprintf
+  ///
+  /// #include <stdio.h>
+  /// int sprintf(char* str, const char* format, ...);
+  ///
+  /// The snprintf() and vsnprintf() functions will write at most size-1 of the
+  /// characters printed into the output string (the size'th character then gets
+  /// the terminating `\0'); if the return value is greater than or equal to the
+  /// size argument, the string was too short and some of the printed characters
+  /// were discarded.  The output is always null-terminated, unless size is 0.
+  ///
+  /// The sprintf() and vsprintf() functions effectively assume a size of
+  /// INT_MAX + 1.
+  void exec_sprintf(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    this->_inv.normal().abstract_reachable_mem(ptr.var());
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_machine_int_var(),
+                      "left hand side is not an integer variable");
+
+      this->_inv.normal().integers().forget(lhs.var());
+      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+    }
+  }
+
+  /// \brief Execute a call to libc snprintf
+  ///
+  /// #include <stdio.h>
+  /// int snprintf(char* str, size_t size, const char* format, ...);
+  ///
+  /// The snprintf() and vsnprintf() functions will write at most size-1 of the
+  /// characters printed into the output string (the size'th character then gets
+  /// the terminating `\0'); if the return value is greater than or equal to the
+  /// size argument, the string was too short and some of the printed characters
+  /// were discarded.  The output is always null-terminated, unless size is 0.
+  void exec_snprintf(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    if (size.is_machine_int()) {
+      this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
+    } else if (size.is_machine_int_var()) {
+      IntInterval size_intv =
+          this->_inv.normal().integers().to_interval(size.var());
+      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+    } else {
+      ikos_unreachable("unreachable");
+    }
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_machine_int_var(),
+                      "left hand side is not an integer variable");
+
+      this->_inv.normal().integers().forget(lhs.var());
+      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+    }
+  }
+
+  /// \brief Execute a call to libc fopen
+  ///
+  /// #include <stdio.h>
+  /// FILE* fopen(const char* path, const char* mode);
+  ///
+  /// The fopen() function opens the file whose name is the string pointed to by
+  /// path and associates a stream with it.
+  void exec_fopen(ar::CallBase* call) {
+    if (this->_precision < Precision::Pointer) {
+      return;
+    }
+
     if (!call->has_result()) {
       return;
     }
-    const ScalarLit& exception_obj =
-        this->_lit_factory.get_scalar(call->argument(0));
-    this->assign(this->_lit_factory.get_scalar(call->result()), exception_obj);
+
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    ikos_assert_msg(lhs.is_pointer_var(),
+                    "left hand side is not a pointer variable");
+
+    MemoryLocation* addr =
+        this->_mem_factory.get_dyn_alloc(call, this->_call_context);
+
+    this->allocate_memory(lhs.var(),
+                          addr,
+                          Nullity::top(),
+                          Uninitialized::initialized(),
+                          Lifetime::allocated(),
+                          MemoryInitialValue::Unknown);
   }
 
-  /// \brief Execute a libc strlen call
+  /// \brief Execute a call to libc fclose
+  ///
+  /// #include <stdio.h>
+  /// int fclose(FILE* stream);
+  ///
+  /// The fclose() function dissociates the named stream from its underlying
+  /// file or set of functions.  If the stream was being used for output, any
+  /// buffered data is written first, using fflush(3).
+  void exec_fclose(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+
+    // fclose(NULL) is undefined behavior
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    this->exec_free(call);
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_machine_int_var(),
+                      "left hand side is not an integer variable");
+
+      this->_inv.normal().integers().forget(lhs.var());
+      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+    }
+  }
+
+  /// \brief Execute a call to libc strlen
   ///
   /// #include <string.h>
   /// size_t strlen(const char* s);
@@ -2585,7 +3197,7 @@ private:
     this->_inv = std::move(inv);
   }
 
-  /// \brief Execute a libc strlen call
+  /// \brief Execute a call to libc strlen
   ///
   /// #include <string.h>
   /// size_t strnlen(const char* s, size_t maxlen);
@@ -2609,6 +3221,8 @@ private:
     // lhs <= maxlen
     const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
     const ScalarLit& maxlen = this->_lit_factory.get_scalar(call->argument(1));
+    ikos_assert_msg(lhs.is_machine_int_var(),
+                    "left hand side is not an integer variable");
 
     if (maxlen.is_machine_int()) {
       this->_inv.normal().integers().add(IntPredicate::LE,
@@ -2623,7 +3237,7 @@ private:
     }
   }
 
-  /// \brief Execute a libc strcpy call
+  /// \brief Execute a call to libc strcpy
   ///
   /// #include <string.h>
   /// char* strcpy(char* dst, const char* src);
@@ -2648,11 +3262,14 @@ private:
     this->_inv.normal().forget_reachable_mem(dest.var());
 
     if (call->has_result()) {
-      this->assign(this->_lit_factory.get_scalar(call->result()), dest);
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->assign(lhs, dest);
     }
   }
 
-  /// \brief Execute a libc strncpy call
+  /// \brief Execute a call to libc strncpy
   ///
   /// #include <string.h>
   /// char* strncpy(char* dst, const char* src, size_t n);
@@ -2664,7 +3281,7 @@ private:
   /// The strncpy() function returns dst.
   void exec_strncpy(ar::CallBase* call) { this->exec_strcpy(call); }
 
-  /// \brief Execute a libc strcat call
+  /// \brief Execute a call to libc strcat
   ///
   /// #include <string.h>
   /// char* strcat(char* s1, const char* s2);
@@ -2690,11 +3307,14 @@ private:
     this->_inv.normal().forget_reachable_mem(s1.var());
 
     if (call->has_result()) {
-      this->assign(this->_lit_factory.get_scalar(call->result()), s1);
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->assign(lhs, s1);
     }
   }
 
-  /// \brief Execute a libc strcat call
+  /// \brief Execute a call to libc strcat
   ///
   /// #include <string.h>
   /// char* strncat(char* s1, const char* s2, size_t n);
@@ -2709,52 +3329,234 @@ private:
   /// The strncat() function returns the pointer s1.
   void exec_strncat(ar::CallBase* call) { this->exec_strcat(call); }
 
-  /// \brief Execute a __ikos_nondet_X function call
-  void exec_ikos_non_det(ar::CallBase* call) {
-    // No side effects
+  /// \brief Execute a call to libc strstr
+  ///
+  /// #include <string.h>
+  /// char* strstr(const char* haystack, const char* needle);
+  ///
+  /// The strstr() function locates the first occurrence of the null-terminated
+  /// string needle in the null-terminated string haystack.
+  void exec_strstr(ar::CallBase* call) {
+    if (!call->has_result()) {
+      return;
+    }
 
-    if (call->has_result()) {
-      const ScalarLit& ret = this->_lit_factory.get_scalar(call->result());
-      ikos_assert_msg(ret.is_machine_int_var(),
-                      "left hand side is not an integer variable");
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& haystack =
+        this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& needle = this->_lit_factory.get_scalar(call->argument(1));
+    ikos_assert_msg(lhs.is_pointer_var(),
+                    "left hand side is not a pointer variable");
 
-      this->_inv.normal().integers().forget(ret.var());
-      this->_inv.normal().uninitialized().assign_initialized(ret.var());
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+    this->init_global_operand(call->argument(1));
+
+    if (!this->prepare_mem_access(haystack) ||
+        !this->prepare_mem_access(needle)) {
+      return;
+    }
+
+    this->_inv.normal().pointers().assign(lhs.var(), haystack.var());
+    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+
+    this->_inv.normal().nullity().set(lhs.var(), Nullity::top());
+    auto offset_var = this->_inv.normal().pointers().offset_var(lhs.var());
+    this->_inv.normal().integers().forget(offset_var);
+  }
+
+  /// \brief Execute a call to libc strchr
+  ///
+  /// #include <string.h>
+  /// char* strchr(const char* s, int c);
+  ///
+  /// The strchr() function locates the first occurrence of c (converted to a
+  /// char) in the string pointed to by s.  The terminating null character is
+  /// considered to be part of the string; therefore if c is `\0', the functions
+  /// locate the terminating `\0'.
+  void exec_strchr(ar::CallBase* call) {
+    if (!call->has_result()) {
+      return;
+    }
+
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
+    ikos_assert_msg(lhs.is_pointer_var(),
+                    "left hand side is not a pointer variable");
+
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    if (!this->prepare_mem_access(s)) {
+      return;
+    }
+
+    this->_inv.normal().pointers().assign(lhs.var(), s.var());
+    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+
+    this->_inv.normal().nullity().set(lhs.var(), Nullity::top());
+    auto offset_var = this->_inv.normal().pointers().offset_var(lhs.var());
+    this->_inv.normal().integers().forget(offset_var);
+  }
+
+  /// \brief Execute a call to libc strdup
+  ///
+  /// #include <string.h>
+  /// char* strdup(const char* s1);
+  ///
+  /// The strdup() function allocates sufficient memory for a copy of the string
+  /// s1, does the copy, and returns a pointer to it.  The pointer may
+  /// subsequently be used as an argument to the function free(3).
+  void exec_strdup(ar::CallBase* call) {
+    if (!call->has_result()) {
+      return;
+    }
+
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
+    ikos_assert_msg(lhs.is_pointer_var(),
+                    "left hand side is not a pointer variable");
+
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    if (!this->prepare_mem_access(s)) {
+      return;
+    }
+
+    MemoryLocation* addr =
+        this->_mem_factory.get_dyn_alloc(call, this->_call_context);
+    this->allocate_memory(lhs.var(),
+                          addr,
+                          Nullity::top(),
+                          Uninitialized::initialized(),
+                          Lifetime::allocated(),
+                          MemoryInitialValue::Unknown);
+  }
+
+  /// \brief Execute a call to libc strndup
+  ///
+  /// #include <string.h>
+  /// char* strndup(const char* s1, size_t n);
+  ///
+  /// The strndup() function copies at most n characters from the string s1
+  /// always NUL terminating the copied string.
+  void exec_strndup(ar::CallBase* call) {
+    if (!call->has_result()) {
+      return;
+    }
+
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& n = this->_lit_factory.get_scalar(call->argument(1));
+    ikos_assert_msg(lhs.is_pointer_var(),
+                    "left hand side is not a pointer variable");
+
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    if (!this->prepare_mem_access(s)) {
+      return;
+    }
+
+    MemoryLocation* addr =
+        this->_mem_factory.get_dyn_alloc(call, this->_call_context);
+    this->allocate_memory(lhs.var(),
+                          addr,
+                          Nullity::top(),
+                          Uninitialized::initialized(),
+                          Lifetime::allocated(),
+                          MemoryInitialValue::Unknown);
+
+    // sizeof(addr) <= n
+    Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
+
+    if (n.is_machine_int()) {
+      this->_inv.normal().integers().add(IntPredicate::LE,
+                                         alloc_size_var,
+                                         n.machine_int());
+    } else if (n.is_machine_int_var()) {
+      this->_inv.normal().integers().add(IntPredicate::LE,
+                                         alloc_size_var,
+                                         n.var());
+    } else {
+      ikos_unreachable("unexpected size operand");
     }
   }
 
-  /// \brief Execute a ikos.counter.init function call
-  void exec_ikos_counter_init(ar::CallBase* call) {
-    ikos_assert(call->has_result());
-    ikos_assert(call->num_arguments() == 1);
-
-    const ScalarLit& ret = this->_lit_factory.get_scalar(call->result());
-    const ScalarLit& init = this->_lit_factory.get_scalar(call->argument(0));
-
-    ikos_assert_msg(ret.is_machine_int_var(),
-                    "left hand side is not an integer variable");
-    ikos_assert_msg(init.is_machine_int(), "operand is not a machine integer");
-
-    this->_inv.normal().integers().init_counter(ret.var(), init.machine_int());
-    this->_inv.normal().uninitialized().assign_initialized(ret.var());
+  /// \brief Execute a call to libc++ new or new[]
+  ///
+  /// operator new(size_t)
+  /// operator new[](size_t)
+  ///
+  /// Allocates requested number of bytes. These allocation functions are called
+  /// by new-expressions to allocate memory in which new object would then be
+  /// initialized. They may also be called using regular function call syntax.
+  void exec_new(ar::CallBase* call) {
+    this->exec_dynamic_alloc(call,
+                             call->argument(0),
+                             /* may_return_null = */ false,
+                             /* may_throw_exc = */ true,
+                             MemoryInitialValue::Uninitialized);
   }
 
-  /// \brief Execute a ikos.counter.incr function call
-  void exec_ikos_counter_incr(ar::CallBase* call) {
-    ikos_assert(call->has_result());
-    ikos_assert(call->num_arguments() == 2);
-    ikos_assert(call->result() == call->argument(0));
-
-    const ScalarLit& ret = this->_lit_factory.get_scalar(call->result());
-    const ScalarLit& incr = this->_lit_factory.get_scalar(call->argument(1));
-
-    ikos_assert_msg(ret.is_machine_int_var(),
-                    "left hand side is not an integer variable");
-    ikos_assert_msg(incr.is_machine_int(), "operand is not a machine integer");
-
-    this->_inv.normal().integers().incr_counter(ret.var(), incr.machine_int());
-    this->_inv.normal().uninitialized().assign_initialized(ret.var());
+  /// \brief Execute a call to libc++ allocate exception
+  ///
+  /// void* __cxa_allocate_exception(size_t thrown_size) noexcept;
+  ///
+  /// Allocates memory to hold the exception to be thrown. thrown_size is the
+  /// size of the exception object. Can allocate additional memory to hold
+  /// private data. If memory can not be allocated, call std::terminate().
+  void exec_allocate_exception(ar::CallBase* call) {
+    this->exec_dynamic_alloc(call,
+                             call->argument(0),
+                             /* may_return_null = */ false,
+                             /* may_throw_exc = */ false,
+                             MemoryInitialValue::Uninitialized);
   }
+
+  /// \brief Execute a call to libc++ throw
+  ///
+  /// __cxa_throw(void* exception, std::type_info* tinfo, void (*dest)(void*))
+  ///
+  /// After constructing the exception object with the throw argument value, the
+  /// generated code calls the __cxa_throw runtime library routine. This routine
+  /// never returns.
+  void exec_throw(ar::CallBase* /*call*/) { this->_inv.throw_exception(); }
+
+  /// \brief Execute a call to libc++ begin catch
+  ///
+  /// void* __cxa_begin_catch(void* exc_obj) noexcept;
+  ///
+  /// When entering a catch scope, __cxa_begin_catch is called with the
+  /// exception object `exc_obj`. This routine returns the adjusted pointer to
+  /// the exception object.
+  ///
+  /// Assume that it returns `exc_obj` unchanged.
+  void exec_begin_catch(ar::CallBase* call) {
+    if (!call->has_result()) {
+      return;
+    }
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    const ScalarLit& exc_obj = this->_lit_factory.get_scalar(call->argument(0));
+    this->assign(lhs, exc_obj);
+  }
+
+  /// \brief Execute a call to libc++ end catch
+  ///
+  /// void __cxa_end_catch();
+  ///
+  /// Locates the most recently caught exception and decrements its handler
+  /// count. Removes the exception from the caughtÃ“exception stack, if the
+  /// handler count goes to zero. Destroys the exception if the handler count
+  /// goes to zero, and the exception was not re-thrown by throw. Collaboration
+  /// between __cxa_rethrow() and __cxa_end_catch() is necessary to handle the
+  /// last point. Though implementation-defined, one possibility is for
+  /// __cxa_rethrow() to set a flag in the handlerCount member of the exception
+  /// header to mark an exception being rethrown.
+  void exec_end_catch(ar::CallBase* /*call*/) {}
+
+  /// @}
 
 public:
   void match_down(ar::CallBase* call, ar::Function* called) override {
@@ -2767,8 +3569,6 @@ public:
       this->init_global_operand(*ait);
       this->assign(this->_lit_factory.get(*fit), this->_lit_factory.get(*ait));
     }
-
-    // TODO(marthaud): support va_arg
   }
 
   void match_up(ar::CallBase* call, ar::ReturnValue* ret) override {
@@ -2795,8 +3595,6 @@ public:
         ikos_unreachable("unreachable");
       }
     }
-
-    // TODO(marthaud): support va_arg
   }
 
 }; // end class NumericalExecutionEngine

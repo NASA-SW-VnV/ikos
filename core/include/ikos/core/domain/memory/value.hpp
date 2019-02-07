@@ -1293,7 +1293,7 @@ private:
   }
 
   /// \brief Forget the synthetic cells in range
-  /// [addr + offset, addr + offset + size - 1]
+  /// `[addr + offset, addr + offset + size - 1]`
   void forget_cells(MemoryLocationRef addr,
                     VariableRef offset,
                     const MachineInt& size) {
@@ -1316,7 +1316,7 @@ private:
   }
 
   /// \brief Forget the synthetic cells in
-  /// [addr + range.lb(), addr + range.ub()]
+  /// `[addr + range.lb(), addr + range.ub()]`
   void forget_cells(MemoryLocationRef addr, const Interval& range) {
     ikos_assert(!range.is_bottom());
 
@@ -1421,6 +1421,28 @@ public:
 
     for (MemoryLocationRef addr : addrs) {
       this->forget_mem(addr, this->offset_var(p), size);
+    }
+  }
+
+  void abstract_reachable_mem(VariableRef p) override {
+    if (this->is_bottom()) {
+      return;
+    }
+
+    if (this->nullity().is_null(p)) {
+      return;
+    }
+
+    // memory locations pointed by the pointer
+    PointsToSetT addrs = this->_pointer.points_to(p);
+
+    if (addrs.is_top()) {
+      this->forget_cells(); // very conservative, but sound
+      return;
+    }
+
+    for (MemoryLocationRef addr : addrs) {
+      this->forget_cells(addr);
     }
   }
 

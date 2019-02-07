@@ -87,6 +87,7 @@ public:
     LibcMalloc,
     LibcCalloc,
     LibcValloc,
+    LibcAlignedAlloc,
     LibcRealloc,
     LibcFree,
     LibcAbs,

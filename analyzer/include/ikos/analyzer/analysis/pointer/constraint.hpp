@@ -656,41 +656,155 @@ private:
 
         if (fun->is_declaration()) {
           // External call
-          this->process_extern_call(fun, s);
+          this->process_extern_call(s, fun);
         } else if (fun->is_definition()) {
-          this->process_intern_call(fun, s);
+          this->process_intern_call(s, fun);
         } else {
           ikos_unreachable("unreachable");
         }
       }
     }
 
-    void process_extern_call(ar::Function* fun, ar::CallBase* s) {
+    void process_extern_call(ar::CallBase* s, ar::Function* fun) {
       if (fun->is_intrinsic()) {
-        this->process_intrinsic_call(fun, s);
+        this->process_intrinsic_call(s, fun->intrinsic_id());
       } else {
         // nothing to do
       }
     }
 
-    void process_intrinsic_call(ar::Function* fun, ar::CallBase* s) {
-      switch (fun->intrinsic_id()) {
+    void process_intrinsic_call(ar::CallBase* s, ar::Intrinsic::ID id) {
+      switch (id) {
         case ar::Intrinsic::MemoryCopy:
         case ar::Intrinsic::MemoryMove: {
           this->process_mem_copy(s);
         } break;
+        case ar::Intrinsic::MemorySet:
+        case ar::Intrinsic::VarArgStart:
+        case ar::Intrinsic::VarArgEnd:
+        case ar::Intrinsic::VarArgGet:
+        case ar::Intrinsic::VarArgCopy:
+        case ar::Intrinsic::StackSave:
+        case ar::Intrinsic::StackRestore:
+        case ar::Intrinsic::LifetimeStart:
+        case ar::Intrinsic::LifetimeEnd:
+        case ar::Intrinsic::EhTypeidFor:
+        case ar::Intrinsic::Trap:
+          break; // do nothing
+        // <ikos/analyzer/intrinsic.h>
+        case ar::Intrinsic::IkosAssert:
+        case ar::Intrinsic::IkosAssume:
+        case ar::Intrinsic::IkosNonDetSi32:
+        case ar::Intrinsic::IkosNonDetUi32:
+        case ar::Intrinsic::IkosCounterInit:
+        case ar::Intrinsic::IkosCounterIncr:
+        case ar::Intrinsic::IkosPrintInvariant:
+        case ar::Intrinsic::IkosPrintValues:
+          break; // do nothing
+        // <stdlib.h>
         case ar::Intrinsic::LibcMalloc:
         case ar::Intrinsic::LibcCalloc:
+        case ar::Intrinsic::LibcValloc:
+        case ar::Intrinsic::LibcAlignedAlloc:
+        case ar::Intrinsic::LibcRealloc: {
+          this->process_dyn_alloc(s);
+        } break;
+        case ar::Intrinsic::LibcFree:
+        case ar::Intrinsic::LibcAbs:
+        case ar::Intrinsic::LibcRand:
+        case ar::Intrinsic::LibcSrand:
+        case ar::Intrinsic::LibcExit:
+        case ar::Intrinsic::LibcAbort:
+          break; // do nothing
+        // <fcntl.h>
+        case ar::Intrinsic::LibcOpen:
+          break; // do nothing
+        // <unistd.h>
+        case ar::Intrinsic::LibcClose:
+        case ar::Intrinsic::LibcRead:
+        case ar::Intrinsic::LibcWrite:
+          break; // do nothing
+        // <stdio.h>
+        case ar::Intrinsic::LibcGets:
+        case ar::Intrinsic::LibcFgets: {
+          this->assign_call_result(s, s->argument(0));
+        } break;
+        case ar::Intrinsic::LibcGetc:
+        case ar::Intrinsic::LibcFgetc:
+        case ar::Intrinsic::LibcGetchar:
+        case ar::Intrinsic::LibcPuts:
+        case ar::Intrinsic::LibcFputs:
+        case ar::Intrinsic::LibcPutc:
+        case ar::Intrinsic::LibcFputc:
+        case ar::Intrinsic::LibcPrintf:
+        case ar::Intrinsic::LibcFprintf:
+        case ar::Intrinsic::LibcSprintf:
+        case ar::Intrinsic::LibcSnprintf:
+        case ar::Intrinsic::LibcScanf:
+        case ar::Intrinsic::LibcFscanf:
+        case ar::Intrinsic::LibcSscanf:
+          break; // do nothing
+        case ar::Intrinsic::LibcFopen: {
+          this->process_dyn_alloc(s);
+        } break;
+        case ar::Intrinsic::LibcFclose:
+        case ar::Intrinsic::LibcFflush:
+          break; // do nothing
+        // <string.h>
+        case ar::Intrinsic::LibcStrlen:
+        case ar::Intrinsic::LibcStrnlen:
+          break; // do nothing
+        case ar::Intrinsic::LibcStrcpy:
+        case ar::Intrinsic::LibcStrncpy:
+        case ar::Intrinsic::LibcStrcat:
+        case ar::Intrinsic::LibcStrncat: {
+          this->assign_call_result(s, s->argument(0));
+        } break;
+        case ar::Intrinsic::LibcStrcmp:
+        case ar::Intrinsic::LibcStrncmp:
+          break; // do nothing
+        case ar::Intrinsic::LibcStrstr:
+        case ar::Intrinsic::LibcStrchr: {
+          this->process_string_search(s);
+        } break;
+        case ar::Intrinsic::LibcStrdup:
+        case ar::Intrinsic::LibcStrndup: {
+          this->process_dyn_alloc(s);
+        } break;
+        case ar::Intrinsic::LibcStrcpyCheck: {
+          this->assign_call_result(s, s->argument(0));
+        } break;
+        case ar::Intrinsic::LibcMemoryCopyCheck:
+        case ar::Intrinsic::LibcMemoryMoveCheck: {
+          this->process_mem_copy(s);
+          this->assign_call_result(s, s->argument(0));
+        } break;
+        case ar::Intrinsic::LibcMemorySetCheck:
+        case ar::Intrinsic::LibcStrcatCheck: {
+          this->assign_call_result(s, s->argument(0));
+        } break;
         case ar::Intrinsic::LibcppNew:
-        case ar::Intrinsic::LibcppNewArray:
+        case ar::Intrinsic::LibcppNewArray: {
+          this->process_dyn_alloc(s);
+        } break;
+        case ar::Intrinsic::LibcppDelete:
+        case ar::Intrinsic::LibcppDeleteArray:
+          break; // do nothing
         case ar::Intrinsic::LibcppAllocateException: {
           this->process_dyn_alloc(s);
         } break;
+        case ar::Intrinsic::LibcppFreeException:
+        case ar::Intrinsic::LibcppThrow:
+          break; // do nothing
+        case ar::Intrinsic::LibcppBeginCatch: {
+          this->assign_call_result(s, s->argument(0));
+        } break;
+        case ar::Intrinsic::LibcppEndCatch:
+          break; // do nothing
         default: {
-          // do nothing
+          ikos_unreachable("unreachable");
         } break;
       }
-      // TODO(marthaud): support va_start, va_end, va_copy
     }
 
     void process_mem_copy(ar::CallBase* s) {
@@ -705,6 +819,10 @@ private:
     }
 
     void process_dyn_alloc(ar::CallBase* s) {
+      if (!s->has_result()) {
+        return;
+      }
+
       // This analysis is context insensitive
       CallContext* context = _ctx.call_context_factory->get_empty();
       MemoryLocation* dyn_addr = _ctx.mem_factory->get_dyn_alloc(s, context);
@@ -712,7 +830,34 @@ private:
       this->_csts.add(AssignCst::create(var, AddrOp::create(dyn_addr, zero())));
     }
 
-    void process_intern_call(ar::Function* fun, ar::CallBase* s) {
+    void assign_call_result(ar::CallBase* s, ar::Value* operand) {
+      if (!s->has_result()) {
+        return;
+      }
+
+      this->assign(this->_lit_factory.get(s->result()),
+                   this->_lit_factory.get(operand));
+    }
+
+    void process_string_search(ar::CallBase* s) {
+      if (!s->has_result()) {
+        return;
+      }
+
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
+      const ScalarLit& ptr = this->_lit_factory.get_scalar(s->argument(0));
+
+      if (!lhs.is_pointer_var() || !ptr.is_pointer_var()) {
+        return;
+      }
+
+      auto top = MachineIntInterval::top(this->_data_layout.pointers.bit_width,
+                                         Unsigned);
+      this->_csts.add(
+          AssignCst::create(lhs.var(), VarOp::create(ptr.var(), top)));
+    }
+
+    void process_intern_call(ar::CallBase* s, ar::Function* fun) {
       // Handle parameters
       auto fit = fun->param_begin(), fet = fun->param_end();
       auto ait = s->arg_begin(), aet = s->arg_end();

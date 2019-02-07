@@ -185,6 +185,11 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       ret_ty = void_ptr_ty;      // ret
       params.push_back(size_ty); // size
     } break;
+    case LibcAlignedAlloc: {
+      ret_ty = void_ptr_ty;      // ret
+      params.push_back(size_ty); // alignment
+      params.push_back(size_ty); // size
+    } break;
     case LibcRealloc: {
       ret_ty = void_ptr_ty;          // ret
       params.push_back(void_ptr_ty); // ptr
@@ -523,6 +528,8 @@ const char* Intrinsic::short_name(ID id) {
       return "libc.calloc";
     case LibcValloc:
       return "libc.valloc";
+    case LibcAlignedAlloc:
+      return "libc.aligned_alloc";
     case LibcRealloc:
       return "libc.realloc";
     case LibcFree:

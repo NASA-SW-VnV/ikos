@@ -78,6 +78,8 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcCalloc);
     } else if (name == "valloc") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcValloc);
+    } else if (name == "aligned_alloc") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAlignedAlloc);
     } else if (name == "realloc") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcRealloc);
     } else if (name == "free") {
@@ -100,7 +102,7 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
     // <unistd.h>
     if (name == "close") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcClose);
-    } else if (name == "read") {
+    } else if (name == "read" || name == "\x01_read") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcRead);
     } else if (name == "write") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcWrite);

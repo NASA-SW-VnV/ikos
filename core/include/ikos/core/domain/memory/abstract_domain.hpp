@@ -214,7 +214,7 @@ public:
   virtual void forget_mem(MemoryLocationRef addr) = 0;
 
   /// \brief Forget the memory contents in range
-  /// [addr + offset, addr + offset + size - 1]
+  /// `[addr + offset, addr + offset + size - 1]`
   ///
   /// \param addr The memory location
   /// \param offset The machine integer variable
@@ -224,7 +224,7 @@ public:
                           const MachineInt& size) = 0;
 
   /// \brief Forget the memory contents in range
-  /// [addr + range.lb(), addr + range.ub()]
+  /// `[addr + range.lb(), addr + range.ub()]`
   ///
   /// \param addr The memory location
   /// \param range The byte range as a machine integer interval
@@ -234,22 +234,29 @@ public:
   /// \brief Forget the memory contents accessible through pointer `p`
   virtual void forget_reachable_mem(VariableRef p) = 0;
 
-  /// \brief Forget the memory contents in range [p, p + size - 1]
+  /// \brief Forget the memory contents in range `[p, p + size - 1]`
   ///
-  /// Forget all memory contents that can be accessible through pointer p
-  /// and that overlap with [p.offset, ..., p.offset + size - 1]
+  /// Forget all memory contents that can be accessible through pointer `p`
+  /// and that overlap with `[p.offset, ..., p.offset + size - 1]`
   //
   /// \param p The pointer variable
   /// \param size The size in bytes
   virtual void forget_reachable_mem(VariableRef p, const MachineInt& size) = 0;
 
-  /// \brief Abstract the memory contents in range [p, p + size - 1]
+  /// \brief Abstract the memory contents reachable through pointer `p`
   ///
-  /// Abstract all memory contents that can be accessible through pointer p
-  /// and that overlap with [p.offset, ..., p.offset + size - 1]. Suppose it
+  /// Abstract all memory contents that can be accessible through pointer `p`.
+  /// Suppose it contains random bytes, and no valid pointers (unlike
+  /// forget_reachable_mem).
+  virtual void abstract_reachable_mem(VariableRef p) = 0;
+
+  /// \brief Abstract the memory contents in range `[p, p + size - 1]`
+  ///
+  /// Abstract all memory contents that can be accessible through pointer `p`
+  /// and that overlap with `[p.offset, ..., p.offset + size - 1]`. Suppose it
   /// contains random bytes, and no valid pointers (unlike
   /// forget_reachable_mem).
-  //
+  ///
   /// \param p The pointer variable
   /// \param size The size in bytes
   virtual void abstract_reachable_mem(VariableRef p,

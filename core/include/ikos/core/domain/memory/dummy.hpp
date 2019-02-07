@@ -350,6 +350,8 @@ public:
 
   void forget_reachable_mem(VariableRef, const MachineInt&) override {}
 
+  void abstract_reachable_mem(VariableRef) override {}
+
   void abstract_reachable_mem(VariableRef, const MachineInt&) override {}
 
   void zero_reachable_mem(VariableRef) override {}

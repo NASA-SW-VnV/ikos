@@ -126,11 +126,32 @@ public:
   /// \brief Execute a call to the given extern function
   virtual void exec_extern_call(ar::CallBase* call, ar::Function* fun) = 0;
 
+  /// \brief Execute a call to the given intrinsic function
+  virtual void exec_intrinsic_call(ar::CallBase* call, ar::Intrinsic::ID) = 0;
+
   /// \brief Execute a call to an unknown extern function
   virtual void exec_unknown_extern_call(ar::CallBase* call) = 0;
 
   /// \brief Execute a call to an unknown internal function
   virtual void exec_unknown_intern_call(ar::CallBase* call) = 0;
+
+  /// \brief Execute a call to an unknown function
+  ///
+  /// \param call
+  ///   The call statement
+  /// \param may_write_params
+  ///   True if the function call might write on a pointer parameter
+  /// \param ignore_unknown_write
+  ///   True to ignore writes on unknown pointer parameters (unsound)
+  /// \param may_write_globals
+  ///   True if the function call might update a global variable
+  /// \param may_throw_exc
+  ///   True if the function call might throw an exception
+  virtual void exec_unknown_call(ar::CallBase* call,
+                                 bool may_write_params,
+                                 bool ignore_unknown_write,
+                                 bool may_write_globals,
+                                 bool may_throw_exc) = 0;
 
   /// \brief Assign formal parameters to the actual arguments of a function call
   virtual void match_down(ar::CallBase* call, ar::Function* called) = 0;

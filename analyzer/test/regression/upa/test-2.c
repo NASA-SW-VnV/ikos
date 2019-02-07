@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// Only available since C11
+extern void* aligned_alloc(size_t alignment, size_t size);
+
 int main(int argc, char* argv[]) {
   int* aligned_ptr = aligned_alloc(1 << 12, sizeof(int));
 
