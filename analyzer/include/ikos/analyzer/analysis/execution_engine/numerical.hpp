@@ -1772,7 +1772,7 @@ public:
 
     if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
       // Ignore memory write, analysis could be unsound.
-      // See CheckKind::IgnoredUnknownStore
+      // See CheckKind::IgnoredStore
       return;
     }
 
@@ -2361,7 +2361,9 @@ public:
             continue; // safe
           } else if (ignore_unknown_write &&
                      this->_inv.normal().pointers().points_to(ptr).is_top()) {
-            continue; // Ignore side effect on the memory
+            // Ignore side effect on the memory
+            // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+            continue;
           } else {
             this->_inv.normal().forget_reachable_mem(ptr);
           }
@@ -2437,17 +2439,14 @@ private:
     if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
       // Ignore memory copy/move, analysis could be unsound.
       // See CheckKind::IgnoredMemoryCopy, CheckKind::IgnoredMemoryMove
-      return;
-    }
-
-    if (cast< ar::IntegerConstant >(call->argument(5))->value() == 0) {
-      // non-volatile
+    } else if (cast< ar::IntegerConstant >(call->argument(5))->value() == 0) {
+      // Non-volatile
       this->_inv.normal().mem_copy(this->_var_factory,
                                    dest.var(),
                                    src.var(),
                                    size);
     } else {
-      // volatile
+      // Volatile
       IntInterval s;
       if (size.is_machine_int()) {
         s = IntInterval(size.machine_int());
@@ -2488,10 +2487,9 @@ private:
     if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
       // Ignore memory set, analysis could be unsound.
       // See CheckKind::IgnoredMemorySet
-      return;
+    } else {
+      this->_inv.normal().mem_set(this->_var_factory, dest.var(), value, size);
     }
-
-    this->_inv.normal().mem_set(this->_var_factory, dest.var(), value, size);
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
@@ -2896,7 +2894,10 @@ private:
       return;
     }
 
-    if (size.is_machine_int()) {
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore read, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else if (size.is_machine_int()) {
       this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
     } else if (size.is_machine_int_var()) {
       IntInterval size_intv =
@@ -2935,7 +2936,12 @@ private:
       return;
     }
 
-    this->_inv.normal().abstract_reachable_mem(ptr.var());
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore gets, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else {
+      this->_inv.normal().abstract_reachable_mem(ptr.var());
+    }
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
@@ -2969,9 +2975,13 @@ private:
       return;
     }
 
-    // size is a ui32, we need a size_t
+    // size is a ui32, convert it to a size_t
     auto size_type = ar::IntegerType::size_type(this->_ctx.bundle);
-    if (size.is_machine_int()) {
+
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore fgets, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else if (size.is_machine_int()) {
       this->_inv.normal()
           .abstract_reachable_mem(ptr.var(),
                                   size.machine_int()
@@ -3021,7 +3031,12 @@ private:
       return;
     }
 
-    this->_inv.normal().abstract_reachable_mem(ptr.var());
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore sprintf, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else {
+      this->_inv.normal().abstract_reachable_mem(ptr.var());
+    }
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
@@ -3054,7 +3069,10 @@ private:
       return;
     }
 
-    if (size.is_machine_int()) {
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore snprintf, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else if (size.is_machine_int()) {
       this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
     } else if (size.is_machine_int_var()) {
       IntInterval size_intv =
@@ -3260,8 +3278,13 @@ private:
       return;
     }
 
-    // Do not keep track of the content
-    this->_inv.normal().forget_reachable_mem(dest.var());
+    if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
+      // Ignore strcpy, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else {
+      // Do not keep track of the content
+      this->_inv.normal().forget_reachable_mem(dest.var());
+    }
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
@@ -3305,8 +3328,13 @@ private:
       return;
     }
 
-    // Do not keep track of the content
-    this->_inv.normal().forget_reachable_mem(s1.var());
+    if (this->_inv.normal().pointers().points_to(s1.var()).is_top()) {
+      // Ignore strcat, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else {
+      // Do not keep track of the content
+      this->_inv.normal().forget_reachable_mem(s1.var());
+    }
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());

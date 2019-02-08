@@ -56,11 +56,10 @@ namespace analyzer {
 
 /// \brief Soundness checker
 ///
-/// Warn about any statement that makes the analysis unsound
+/// Warn about any statement that could make the analysis unsound.
 class SoundnessChecker final : public Checker {
 private:
   using PointsToSet = core::PointsToSet< MemoryLocation* >;
-  using IntInterval = core::machine_int::Interval;
 
 public:
   /// \brief Constructor
@@ -83,37 +82,55 @@ private:
     CheckKind kind;
     Result result;
     llvm::SmallVector< ar::Value*, 2 > operands;
+    JsonDict info;
   };
 
-  /// \brief Check a memory access
-  void check_mem_access(ar::Statement* stmt,
-                        ar::Value* pointer,
-                        CheckKind access_kind,
-                        const value::AbstractDomain& inv,
-                        CallContext* call_context);
+  /// \brief Check a function call
+  std::vector< CheckResult > check_call(ar::CallBase* call,
+                                        const value::AbstractDomain& inv);
 
-  /// \brief Check a memory access
-  boost::optional< CheckResult > check_mem_access(
+  /// \brief Check an intrinsic function call
+  std::vector< CheckResult > check_intrinsic_call(
+      ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv);
+
+  /// \brief Check a call to an unknown extern function
+  ///
+  /// Warn about IgnoredCallSideEffect.
+  CheckResult check_unknown_extern_call(ar::CallBase* call,
+                                        ar::Function* fun,
+                                        const value::AbstractDomain& inv);
+
+  /// \brief Check a memory write on an unknown pointer
+  ///
+  /// Check if the points-to set of the pointer is top.
+  ///
+  /// Warn about IgnoredStore, IgnoredMemoryCopy, IgnoredMemoryMove and
+  /// IgnoredMemorySet.
+  boost::optional< CheckResult > check_mem_write(
       ar::Statement* stmt,
       ar::Value* pointer,
       CheckKind access_kind,
       const value::AbstractDomain& inv);
 
+  /// \brief Check a call for unknown pointer parameters
+  ///
+  /// Check if the points-to set of any given pointer is top.
+  ///
+  /// Warn about IgnoredCallSideEffectOnPointerParameter.
+  std::vector< CheckResult > check_call_pointer_params(
+      ar::CallBase* call,
+      ar::Function* fun,
+      std::vector< ar::Value* > pointers,
+      const value::AbstractDomain& inv);
+
   /// \brief Check a call to free()
   ///
-  /// Check for free() on an unknown pointer, i.e CheckKind::IgnoredFree
-  boost::optional< CheckResult > check_free(ar::IntrinsicCall* call,
-                                            const value::AbstractDomain& inv);
-
-  /// \brief Check a call
+  /// Check if the points-to set of the given pointer is top.
   ///
-  /// Check for calls to unknown extern function with an unknown pointer
-  /// parameter, i.e CheckKind::IgnoredCallSideEffect
-  std::vector< CheckResult > check_call(ar::CallBase* call,
-                                        const value::AbstractDomain& inv);
-
-  /// \brief Return true if the function is an known external function
-  static bool is_known_extern_function(ar::Function* fun);
+  /// Warn about IgnoredFree.
+  boost::optional< CheckResult > check_free(ar::CallBase* call,
+                                            ar::Value* pointer,
+                                            const value::AbstractDomain& inv);
 
   /// \brief Dispay a soundness check, if requested
   bool display_soundness_check(Result result, ar::Statement* stmt) const;

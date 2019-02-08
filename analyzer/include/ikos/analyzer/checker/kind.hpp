@@ -132,10 +132,13 @@ enum class CheckKind {
   /// \brief Ignored memory set on an unknown pointer
   IgnoredMemorySet,
 
-  /// \brief Ignored free() on an unknown pointer
+  /// \brief Ignored free on an unknown pointer
   IgnoredFree,
 
   /// \brief Ignored side effect of a call with an unknown pointer parameter
+  IgnoredCallSideEffectOnPointerParameter,
+
+  /// \brief Ignored side effect of a function call
   IgnoredCallSideEffect,
 
   _EndSoundness,

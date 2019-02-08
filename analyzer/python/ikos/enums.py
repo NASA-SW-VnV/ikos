@@ -105,6 +105,7 @@ class CheckKind:
     IGNORED_MEMORY_MOVE = auto()
     IGNORED_MEMORY_SET = auto()
     IGNORED_FREE = auto()
+    IGNORED_CALL_SIDE_EFFECT_ON_POINTER_PARAM = auto()
     IGNORED_CALL_SIDE_EFFECT = auto()
     _END_SOUNDNESS = auto()
     _BEGIN_FUNCTION_CALL = auto()

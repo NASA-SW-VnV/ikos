@@ -1597,11 +1597,26 @@ def generate_ignored_free_message(report, verbosity):
     return s
 
 
-def generate_ignored_call_side_effect_message(report, verbosity):
+def generate_ignored_call_side_effect_on_pointer_param_message(report,
+                                                               verbosity):
     assert report.status == Result.WARNING
     (_, operand), = report.load_operands()
-    s = 'ignored possible side effect of function call'
+    info = report.load_info()
+    function_id = info['fun_id']
+    function = report.db.functions[function_id]
+    s = "ignored side effect of call to function '%s'" % function.pretty_name()
     s += ", could not infer information about pointer '%s'." % operand.repr
+    s += ' Analysis might be unsound.'
+    return s
+
+
+def generate_ignored_call_side_effect_message(report, verbosity):
+    assert report.status == Result.WARNING
+    info = report.load_info()
+    function_id = info['fun_id']
+    function = report.db.functions[function_id]
+    s = "ignored side effect of call to extern function '%s'."
+    s = s % function.pretty_name()
     s += ' Analysis might be unsound.'
     return s
 
@@ -1781,6 +1796,8 @@ GENERATE_MESSAGE_MAP = {
     CheckKind.IGNORED_MEMORY_MOVE: generate_ignored_memmove_message,
     CheckKind.IGNORED_MEMORY_SET: generate_ignored_memset_message,
     CheckKind.IGNORED_FREE: generate_ignored_free_message,
+    CheckKind.IGNORED_CALL_SIDE_EFFECT_ON_POINTER_PARAM:
+        generate_ignored_call_side_effect_on_pointer_param_message,
     CheckKind.IGNORED_CALL_SIDE_EFFECT:
         generate_ignored_call_side_effect_message,
     CheckKind.FUNCTION_CALL_INLINE_ASSEMBLY: generate_call_inline_asm_message,

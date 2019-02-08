@@ -63,88 +63,429 @@ void SoundnessChecker::check(ar::Statement* stmt,
                              const value::AbstractDomain& inv,
                              CallContext* call_context) {
   if (auto store = dyn_cast< ar::Store >(stmt)) {
-    this->check_mem_access(store,
-                           store->pointer(),
-                           CheckKind::IgnoredStore,
-                           inv,
-                           call_context);
-  } else if (auto memcpy = dyn_cast< ar::MemoryCopy >(stmt)) {
-    this->check_mem_access(memcpy,
-                           memcpy->destination(),
-                           CheckKind::IgnoredMemoryCopy,
-                           inv,
-                           call_context);
-  } else if (auto memmove = dyn_cast< ar::MemoryMove >(stmt)) {
-    this->check_mem_access(memmove,
-                           memmove->destination(),
-                           CheckKind::IgnoredMemoryMove,
-                           inv,
-                           call_context);
-  } else if (auto memset = dyn_cast< ar::MemorySet >(stmt)) {
-    this->check_mem_access(memset,
-                           memset->pointer(),
-                           CheckKind::IgnoredMemorySet,
-                           inv,
-                           call_context);
-  } else {
-    if (auto call = dyn_cast< ar::IntrinsicCall >(stmt)) {
-      if (call->intrinsic_id() == ar::Intrinsic::LibcFree ||
-          call->intrinsic_id() == ar::Intrinsic::LibcppDelete ||
-          call->intrinsic_id() == ar::Intrinsic::LibcppDeleteArray ||
-          call->intrinsic_id() == ar::Intrinsic::LibcppFreeException) {
-        if (auto check = this->check_free(call, inv)) {
-          this->display_invariant(check->result, stmt, inv);
-          this->_checks.insert(check->kind,
-                               CheckerName::Soundness,
-                               check->result,
-                               stmt,
-                               call_context,
-                               check->operands);
-        }
-      }
+    auto check = this->check_mem_write(store,
+                                       store->pointer(),
+                                       CheckKind::IgnoredStore,
+                                       inv);
+    if (check) {
+      this->display_invariant(check->result, stmt, inv);
+      this->_checks.insert(check->kind,
+                           CheckerName::Soundness,
+                           check->result,
+                           stmt,
+                           call_context,
+                           check->operands,
+                           check->info);
     }
-    if (auto call = dyn_cast< ar::CallBase >(stmt)) {
-      auto checks = this->check_call(call, inv);
-      for (const auto& check : checks) {
-        this->display_invariant(check.result, stmt, inv);
-        this->_checks.insert(check.kind,
-                             CheckerName::Soundness,
-                             check.result,
-                             stmt,
-                             call_context,
-                             check.operands);
-      }
+  } else if (auto call = dyn_cast< ar::CallBase >(stmt)) {
+    auto checks = this->check_call(call, inv);
+    for (const auto& check : this->check_call(call, inv)) {
+      this->display_invariant(check.result, stmt, inv);
+      this->_checks.insert(check.kind,
+                           CheckerName::Soundness,
+                           check.result,
+                           stmt,
+                           call_context,
+                           check.operands,
+                           check.info);
     }
   }
 }
 
-void SoundnessChecker::check_mem_access(ar::Statement* stmt,
-                                        ar::Value* pointer,
-                                        CheckKind access_kind,
-                                        const value::AbstractDomain& inv,
-                                        CallContext* call_context) {
-  if (auto check = this->check_mem_access(stmt, pointer, access_kind, inv)) {
-    this->display_invariant(check->result, stmt, inv);
-    this->_checks.insert(check->kind,
-                         CheckerName::Soundness,
-                         check->result,
-                         stmt,
-                         call_context,
-                         check->operands);
+std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
+    ar::CallBase* call, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (this->display_soundness_check(Result::Unreachable, call)) {
+      out() << std::endl;
+    }
+    return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
+
+  const ScalarLit& called = this->_lit_factory.get_scalar(call->called());
+
+  // Check uninitialized
+
+  if (called.is_undefined() ||
+      (called.is_pointer_var() &&
+       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+    // Undefined call pointer operand
+    if (this->display_soundness_check(Result::Error, call)) {
+      out() << ": undefined call pointer operand" << std::endl;
+    }
+    return {{CheckKind::UninitializedVariable,
+             Result::Error,
+             {call->called()},
+             {}}};
+  }
+
+  // Check null pointer dereference
+
+  if (called.is_null() || (called.is_pointer_var() &&
+                           inv.normal().nullity().is_null(called.var()))) {
+    // Null call pointer operand
+    if (this->display_soundness_check(Result::Error, call)) {
+      out() << ": null call pointer operand" << std::endl;
+    }
+    return {{CheckKind::NullPointerDereference,
+             Result::Error,
+             {call->called()},
+             {}}};
+  }
+
+  // Collect potential callees
+  PointsToSet callees;
+
+  if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
+    callees = {_ctx.mem_factory->get_function(cst->function())};
+  } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
+    // call to inline assembly
+    if (this->display_soundness_check(Result::Ok, call)) {
+      out() << ": call to inline assembly" << std::endl;
+    }
+    return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}}};
+  } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_global(gv)};
+  } else if (auto lv = dyn_cast< ar::LocalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_local(lv)};
+  } else if (isa< ar::InternalVariable >(call->called())) {
+    // Indirect call through a function pointer
+    callees = inv.normal().pointers().points_to(called.var());
+  } else {
+    log::error("unexpected call pointer operand");
+    return {
+        {CheckKind::UnexpectedOperand, Result::Error, {call->called()}, {}}};
+  }
+
+  // Check callees
+  ikos_assert(!callees.is_bottom());
+  if (callees.is_empty()) {
+    // Invalid pointer dereference
+    if (this->display_soundness_check(Result::Error, call)) {
+      out() << ": points-to set of function pointer is empty" << std::endl;
+    }
+    return {{CheckKind::InvalidPointerDereference,
+             Result::Error,
+             {call->called()},
+             {}}};
+  } else if (callees.is_top()) {
+    // No points-to set
+    if (this->display_soundness_check(Result::Warning, call)) {
+      out() << ": no points-to set for function pointer" << std::endl;
+    }
+    return {{CheckKind::UnknownFunctionCallPointer,
+             Result::Warning,
+             {call->called()},
+             {}}};
+  }
+
+  std::vector< CheckResult > checks;
+
+  for (MemoryLocation* addr : callees) {
+    if (!isa< FunctionMemoryLocation >(addr)) {
+      // Not a call to a function memory location
+      continue;
+    }
+
+    ar::Function* callee = cast< FunctionMemoryLocation >(addr)->function();
+
+    if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
+      // Ill-formed function call
+      continue;
+    }
+
+    if (callee->is_intrinsic()) {
+      for (const auto& check : this->check_intrinsic_call(call, callee, inv)) {
+        checks.push_back(check);
+      }
+    } else if (callee->is_declaration()) {
+      checks.push_back(this->check_unknown_extern_call(call, callee, inv));
+    } else if (callee->is_definition()) {
+      // This is sound
+      continue;
+    } else {
+      ikos_unreachable("unreachable");
+    }
+  }
+
+  return checks;
+}
+
+namespace {
+
+/// \brief Convert a boost::optional to a std::vector
+template < typename T >
+inline std::vector< T > to_vector(boost::optional< T > check) {
+  if (check) {
+    return {std::move(*check)};
+  } else {
+    return {};
+  }
+}
+
+} // end anonymous namespace
+
+std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
+    check_intrinsic_call(ar::CallBase* call,
+                         ar::Function* fun,
+                         const value::AbstractDomain& inv) {
+  switch (fun->intrinsic_id()) {
+    case ar::Intrinsic::MemoryCopy: {
+      return to_vector(this->check_mem_write(call,
+                                             call->argument(0),
+                                             CheckKind::IgnoredMemoryCopy,
+                                             inv));
+    }
+    case ar::Intrinsic::MemoryMove: {
+      return to_vector(this->check_mem_write(call,
+                                             call->argument(0),
+                                             CheckKind::IgnoredMemoryMove,
+                                             inv));
+    }
+    case ar::Intrinsic::MemorySet: {
+      return to_vector(this->check_mem_write(call,
+                                             call->argument(0),
+                                             CheckKind::IgnoredMemorySet,
+                                             inv));
+    }
+    case ar::Intrinsic::VarArgStart:
+    case ar::Intrinsic::VarArgEnd:
+    case ar::Intrinsic::VarArgGet:
+    case ar::Intrinsic::VarArgCopy: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::StackSave:
+    case ar::Intrinsic::StackRestore:
+    case ar::Intrinsic::LifetimeStart:
+    case ar::Intrinsic::LifetimeEnd:
+    case ar::Intrinsic::EhTypeidFor:
+    case ar::Intrinsic::Trap: {
+      return {};
+    }
+    // <ikos/analyzer/intrinsic.h>
+    case ar::Intrinsic::IkosAssert:
+    case ar::Intrinsic::IkosAssume:
+    case ar::Intrinsic::IkosNonDetSi32:
+    case ar::Intrinsic::IkosNonDetUi32:
+    case ar::Intrinsic::IkosCounterInit:
+    case ar::Intrinsic::IkosCounterIncr:
+    case ar::Intrinsic::IkosPrintInvariant:
+    case ar::Intrinsic::IkosPrintValues: {
+      return {};
+    }
+    // <stdlib.h>
+    case ar::Intrinsic::LibcMalloc:
+    case ar::Intrinsic::LibcCalloc:
+    case ar::Intrinsic::LibcValloc:
+    case ar::Intrinsic::LibcAlignedAlloc: {
+      return {};
+    }
+    case ar::Intrinsic::LibcRealloc: {
+      return to_vector(this->check_free(call, call->argument(0), inv));
+    }
+    case ar::Intrinsic::LibcFree: {
+      return to_vector(this->check_free(call, call->argument(0), inv));
+    }
+    case ar::Intrinsic::LibcAbs:
+    case ar::Intrinsic::LibcRand:
+    case ar::Intrinsic::LibcSrand:
+    case ar::Intrinsic::LibcExit:
+    case ar::Intrinsic::LibcAbort: {
+      return {};
+    }
+    // <fcntl.h>
+    case ar::Intrinsic::LibcOpen: {
+      return {};
+    }
+    // <unistd.h>
+    case ar::Intrinsic::LibcClose: {
+      return {};
+    }
+    case ar::Intrinsic::LibcRead: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(1)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcWrite: {
+      return {};
+    }
+    // <stdio.h>
+    case ar::Intrinsic::LibcGets: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcFgets: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcGetc:
+    case ar::Intrinsic::LibcFgetc:
+    case ar::Intrinsic::LibcGetchar:
+    case ar::Intrinsic::LibcPuts:
+    case ar::Intrinsic::LibcFputs:
+    case ar::Intrinsic::LibcPutc:
+    case ar::Intrinsic::LibcFputc:
+    case ar::Intrinsic::LibcPrintf:
+    case ar::Intrinsic::LibcFprintf: {
+      return {};
+    }
+    case ar::Intrinsic::LibcSprintf: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcSnprintf: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcScanf: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->arg_begin() + 1,
+                                              call->arg_end()},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcFscanf: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->arg_begin() + 2,
+                                              call->arg_end()},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcSscanf: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->arg_begin() + 2,
+                                              call->arg_end()},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcFopen: {
+      return {};
+    }
+    case ar::Intrinsic::LibcFclose: {
+      return to_vector(this->check_free(call, call->argument(0), inv));
+    }
+    case ar::Intrinsic::LibcFflush: {
+      return {};
+    }
+    // <string.h>
+    case ar::Intrinsic::LibcStrlen:
+    case ar::Intrinsic::LibcStrnlen: {
+      return {};
+    }
+    case ar::Intrinsic::LibcStrcpy:
+    case ar::Intrinsic::LibcStrncpy:
+    case ar::Intrinsic::LibcStrcat:
+    case ar::Intrinsic::LibcStrncat: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcStrcmp:
+    case ar::Intrinsic::LibcStrncmp:
+    case ar::Intrinsic::LibcStrstr:
+    case ar::Intrinsic::LibcStrchr:
+    case ar::Intrinsic::LibcStrdup:
+    case ar::Intrinsic::LibcStrndup: {
+      return {};
+    }
+    case ar::Intrinsic::LibcStrcpyCheck: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcMemoryCopyCheck: {
+      return to_vector(this->check_mem_write(call,
+                                             call->argument(0),
+                                             CheckKind::IgnoredMemoryCopy,
+                                             inv));
+    }
+    case ar::Intrinsic::LibcMemoryMoveCheck: {
+      return to_vector(this->check_mem_write(call,
+                                             call->argument(0),
+                                             CheckKind::IgnoredMemoryMove,
+                                             inv));
+    }
+    case ar::Intrinsic::LibcMemorySetCheck: {
+      return to_vector(this->check_mem_write(call,
+                                             call->argument(0),
+                                             CheckKind::IgnoredMemorySet,
+                                             inv));
+    }
+    case ar::Intrinsic::LibcStrcatCheck: {
+      return this->check_call_pointer_params(call,
+                                             fun,
+                                             {call->argument(0)},
+                                             inv);
+    }
+    case ar::Intrinsic::LibcppNew:
+    case ar::Intrinsic::LibcppNewArray: {
+      return {};
+    }
+    case ar::Intrinsic::LibcppDelete:
+    case ar::Intrinsic::LibcppDeleteArray: {
+      return to_vector(this->check_free(call, call->argument(0), inv));
+    }
+    case ar::Intrinsic::LibcppAllocateException: {
+      return {};
+    }
+    case ar::Intrinsic::LibcppFreeException: {
+      return to_vector(this->check_free(call, call->argument(0), inv));
+    }
+    case ar::Intrinsic::LibcppThrow:
+    case ar::Intrinsic::LibcppBeginCatch:
+    case ar::Intrinsic::LibcppEndCatch: {
+      return {};
+    }
+    default: {
+      ikos_unreachable("unreachable");
+    }
+  }
+}
+
+SoundnessChecker::CheckResult SoundnessChecker::check_unknown_extern_call(
+    ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (this->display_soundness_check(Result::Unreachable, call)) {
+      out() << std::endl;
+    }
+    return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
+  }
+
+  if (this->display_soundness_check(Result::Warning, call)) {
+    out() << ": call to an unknown extern function" << std::endl;
+  }
+  return {CheckKind::IgnoredCallSideEffect,
+          Result::Warning,
+          {},
+          JsonDict{{"fun_id", _ctx.output_db->functions.insert(fun)}}};
 }
 
 boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
-    check_mem_access(ar::Statement* stmt,
-                     ar::Value* pointer,
-                     CheckKind access_kind,
-                     const value::AbstractDomain& inv) {
+    check_mem_write(ar::Statement* stmt,
+                    ar::Value* pointer,
+                    CheckKind access_kind,
+                    const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
     if (this->display_soundness_check(Result::Unreachable, stmt)) {
       out() << std::endl;
     }
-    return {{CheckKind::Unreachable, Result::Unreachable, {}}};
+    return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
 
   const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
@@ -157,7 +498,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
     if (this->display_soundness_check(Result::Error, stmt)) {
       out() << ": undefined pointer operand" << std::endl;
     }
-    return {{CheckKind::UninitializedVariable, Result::Error, {pointer}}};
+    return {{CheckKind::UninitializedVariable, Result::Error, {pointer}, {}}};
   }
 
   // Check null pointer dereference
@@ -167,13 +508,13 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
     if (this->display_soundness_check(Result::Error, stmt)) {
       out() << ": null pointer dereference" << std::endl;
     }
-    return {{CheckKind::NullPointerDereference, Result::Error, {pointer}}};
+    return {{CheckKind::NullPointerDereference, Result::Error, {pointer}, {}}};
   }
 
   // Check unexpected operand
   if (!ptr.is_pointer_var()) {
     log::error("unexpected pointer operand");
-    return {{CheckKind::UnexpectedOperand, Result::Error, {pointer}}};
+    return {{CheckKind::UnexpectedOperand, Result::Error, {pointer}, {}}};
   }
 
   if (isa< ar::GlobalVariable >(pointer) ||
@@ -190,34 +531,113 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
     if (this->display_soundness_check(Result::Error, stmt)) {
       out() << ": empty points-to set for pointer" << std::endl;
     }
-    return {{CheckKind::InvalidPointerDereference, Result::Error, {pointer}}};
+    return {
+        {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}}};
   }
 
   if (addrs.is_top()) {
     // Ignored memory access because points-to set is top
     if (this->display_soundness_check(Result::Warning, stmt)) {
-      out() << ": ignored memory access because points-to set is top"
+      out() << ": ignored memory write because points-to set is top"
             << std::endl;
     }
-    return {{access_kind, Result::Warning, {pointer}}};
+    return {{access_kind, Result::Warning, {pointer}, {}}};
   }
 
   return boost::none;
 }
-
-boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
-    ar::IntrinsicCall* call, const value::AbstractDomain& inv) {
+std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
+    check_call_pointer_params(ar::CallBase* call,
+                              ar::Function* fun,
+                              std::vector< ar::Value* > pointers,
+                              const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
     if (this->display_soundness_check(Result::Unreachable, call)) {
       out() << std::endl;
     }
-    return {{CheckKind::Unreachable, Result::Unreachable, {}}};
+    return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
 
-  ikos_assert(call->num_arguments() == 1);
+  std::vector< CheckResult > checks;
 
-  auto pointer = call->argument(0);
+  // Check for unknown pointer arguments
+  for (ar::Value* pointer : pointers) {
+    ikos_assert(pointer->type()->is_pointer());
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
+
+    // Check uninitialized argument
+    if (ptr.is_undefined() ||
+        (ptr.is_pointer_var() &&
+         inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
+      // Undefined pointer argument
+      if (this->display_soundness_check(Result::Error, call)) {
+        out() << ": undefined pointer argument" << std::endl;
+      }
+      return {{CheckKind::UninitializedVariable, Result::Error, {pointer}, {}}};
+    }
+
+    // Check null pointer argument
+    if (ptr.is_null() ||
+        (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
+      // This is sound
+      continue;
+    }
+
+    // Check unexpected argument
+    if (!ptr.is_pointer_var()) {
+      log::error("unexpected pointer argument");
+      return {{CheckKind::UnexpectedOperand, Result::Error, {pointer}, {}}};
+    }
+
+    if (isa< ar::GlobalVariable >(pointer) ||
+        isa< ar::FunctionPointerConstant >(pointer)) {
+      // Points-to set is a singleton
+      // This is sound
+      continue;
+    }
+
+    // Points-to set of the pointer
+    PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
+
+    if (addrs.is_empty()) {
+      // Pointer is invalid
+      if (this->display_soundness_check(Result::Error, call)) {
+        out() << ": empty points-to set for pointer" << std::endl;
+      }
+      return {
+          {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}}};
+    }
+
+    if (addrs.is_top()) {
+      // Ignored memory access because points-to set is top
+      if (this->display_soundness_check(Result::Warning, call)) {
+        out() << ": ignored call side effect on pointer ";
+        pointer->dump(out());
+        out() << " because points-to set is top" << std::endl;
+      }
+      checks.push_back(
+          {CheckKind::IgnoredCallSideEffectOnPointerParameter,
+           Result::Warning,
+           {pointer},
+           JsonDict{{"fun_id", _ctx.output_db->functions.insert(fun)}}});
+    }
+  }
+
+  return checks;
+}
+
+boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
+    ar::CallBase* call, ar::Value* pointer, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (this->display_soundness_check(Result::Unreachable, call)) {
+      out() << std::endl;
+    }
+    return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
+  }
+
   const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
 
   // Check uninitialized
@@ -228,23 +648,23 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
     if (this->display_soundness_check(Result::Error, call)) {
       out() << ": undefined pointer operand" << std::endl;
     }
-    return {{CheckKind::UninitializedVariable, Result::Error, {pointer}}};
+    return {{CheckKind::UninitializedVariable, Result::Error, {pointer}, {}}};
   }
 
   // Check null pointer dereference
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
     // Null pointer argument, safe
-    if (this->display_soundness_check(Result::Error, call)) {
+    if (this->display_soundness_check(Result::Ok, call)) {
       out() << ": safe call to free with NULL value" << std::endl;
     }
-    return {{CheckKind::Free, Result::Ok, {pointer}}};
+    return {{CheckKind::Free, Result::Ok, {pointer}, {}}};
   }
 
   // Check unexpected operand
   if (!ptr.is_pointer_var()) {
     log::error("unexpected pointer operand");
-    return {{CheckKind::UnexpectedOperand, Result::Error, {pointer}}};
+    return {{CheckKind::UnexpectedOperand, Result::Error, {pointer}, {}}};
   }
 
   if (isa< ar::GlobalVariable >(pointer) ||
@@ -257,185 +677,15 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
   PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
 
   if (addrs.is_top()) {
-    // Ignored memory access because points-to set is top
+    // Ignored memory deallocation because points-to set is top
     if (this->display_soundness_check(Result::Warning, call)) {
       out() << ": ignored memory deallocation because points-to set is top"
             << std::endl;
     }
-    return {{CheckKind::IgnoredFree, Result::Warning, {pointer}}};
+    return {{CheckKind::IgnoredFree, Result::Warning, {pointer}, {}}};
   }
 
   return boost::none;
-}
-
-std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
-    ar::CallBase* call, const value::AbstractDomain& inv) {
-  if (inv.is_normal_flow_bottom()) {
-    // Statement unreachable
-    if (this->display_soundness_check(Result::Unreachable, call)) {
-      out() << std::endl;
-    }
-    return {{CheckKind::Unreachable, Result::Unreachable, {}}};
-  }
-
-  const ScalarLit& called = this->_lit_factory.get_scalar(call->called());
-
-  // Check uninitialized
-
-  if (called.is_undefined() ||
-      (called.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(called.var()))) {
-    // Undefined call pointer operand
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": undefined call pointer operand" << std::endl;
-    }
-    return {{
-        CheckKind::UninitializedVariable,
-        Result::Error,
-        {call->called()},
-    }};
-  }
-
-  // Check null pointer dereference
-
-  if (called.is_null() || (called.is_pointer_var() &&
-                           inv.normal().nullity().is_null(called.var()))) {
-    // Null call pointer operand
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": null call pointer operand" << std::endl;
-    }
-    return {
-        {CheckKind::NullPointerDereference, Result::Error, {call->called()}}};
-  }
-
-  // Collect potential callees
-  PointsToSet callees;
-
-  if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
-    callees = {_ctx.mem_factory->get_function(cst->function())};
-  } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
-    // call to inline assembly
-    if (this->display_soundness_check(Result::Ok, call)) {
-      out() << ": call to inline assembly" << std::endl;
-    }
-    return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}}};
-  } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
-    callees = {_ctx.mem_factory->get_global(gv)};
-  } else if (auto lv = dyn_cast< ar::LocalVariable >(call->called())) {
-    callees = {_ctx.mem_factory->get_local(lv)};
-  } else if (isa< ar::InternalVariable >(call->called())) {
-    // Indirect call through a function pointer
-    callees = inv.normal().pointers().points_to(called.var());
-  } else {
-    log::error("unexpected call pointer operand");
-    return {{CheckKind::UnexpectedOperand, Result::Error, {call->called()}}};
-  }
-
-  // Check callees
-  ikos_assert(!callees.is_bottom());
-  if (callees.is_empty()) {
-    // Invalid pointer dereference
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": points-to set of function pointer is empty" << std::endl;
-    }
-    return {{CheckKind::InvalidPointerDereference,
-             Result::Error,
-             {call->called()}}};
-  } else if (callees.is_top()) {
-    // No points-to set
-    if (this->display_soundness_check(Result::Warning, call)) {
-      out() << ": no points-to set for function pointer" << std::endl;
-    }
-    return {{CheckKind::UnknownFunctionCallPointer,
-             Result::Warning,
-             {call->called()}}};
-  }
-
-  // Is it calling an unknown extern function
-  bool calls_unknown_extern_function =
-      std::any_of(callees.begin(), callees.end(), [call](MemoryLocation* addr) {
-        if (!isa< FunctionMemoryLocation >(addr)) {
-          return false;
-        }
-        ar::Function* callee = cast< FunctionMemoryLocation >(addr)->function();
-        return callee->is_declaration() &&
-               ar::TypeVerifier::is_valid_call(call, callee->type()) &&
-               !is_known_extern_function(callee);
-      });
-
-  if (!calls_unknown_extern_function) {
-    return {}; // sound function call
-  }
-
-  std::vector< CheckResult > checks;
-
-  for (auto it = call->arg_begin(), et = call->arg_end(); it != et; ++it) {
-    ar::Value* arg = *it;
-    if (isa< ar::InternalVariable >(arg) && arg->type()->is_pointer()) {
-      const ScalarLit& ptr = this->_lit_factory.get_scalar(arg);
-      ikos_assert(ptr.is_pointer_var());
-
-      if (!inv.normal().uninitialized().is_uninitialized(ptr.var()) &&
-          !inv.normal().nullity().is_null(ptr.var()) &&
-          inv.normal().pointers().points_to(ptr.var()).is_top()) {
-        // Ignored side effect on the memory because points-to set is top
-        if (this->display_soundness_check(Result::Warning, call)) {
-          out() << ": ignored call side effect on pointer ";
-          arg->dump(out());
-          out() << " because points-to set is top" << std::endl;
-        }
-        checks.push_back(
-            {CheckKind::IgnoredCallSideEffect, Result::Warning, {arg}});
-      }
-    }
-  }
-
-  return checks;
-}
-
-bool SoundnessChecker::is_known_extern_function(ar::Function* fun) {
-  ikos_assert(fun->is_declaration());
-
-  if (!fun->is_intrinsic()) {
-    return false;
-  }
-
-  // This needs to be up to date with
-  // NumericalExecutionEngine::exec_intrinsic_call()
-  switch (fun->intrinsic_id()) {
-    case ar::Intrinsic::MemoryCopy:
-    case ar::Intrinsic::MemoryMove:
-    case ar::Intrinsic::MemorySet:
-    case ar::Intrinsic::LibcMalloc:
-    case ar::Intrinsic::LibcCalloc:
-    case ar::Intrinsic::LibcppNew:
-    case ar::Intrinsic::LibcppNewArray:
-    case ar::Intrinsic::LibcppAllocateException:
-    case ar::Intrinsic::LibcFree:
-    case ar::Intrinsic::LibcppDelete:
-    case ar::Intrinsic::LibcppDeleteArray:
-    case ar::Intrinsic::LibcppFreeException:
-    case ar::Intrinsic::LibcRead:
-    case ar::Intrinsic::LibcppThrow:
-    case ar::Intrinsic::LibcppBeginCatch:
-    case ar::Intrinsic::LibcStrlen:
-    case ar::Intrinsic::LibcStrnlen:
-    case ar::Intrinsic::LibcStrcpy:
-    case ar::Intrinsic::LibcStrncpy:
-    case ar::Intrinsic::LibcStrcat:
-    case ar::Intrinsic::LibcStrncat:
-    case ar::Intrinsic::IkosAssert:
-    case ar::Intrinsic::IkosAssume:
-    case ar::Intrinsic::IkosPrintInvariant:
-    case ar::Intrinsic::IkosPrintValues:
-    case ar::Intrinsic::IkosNonDetSi32:
-    case ar::Intrinsic::IkosNonDetUi32:
-    case ar::Intrinsic::IkosCounterInit:
-    case ar::Intrinsic::IkosCounterIncr:
-      return true;
-    default:
-      return false;
-  }
 }
 
 bool SoundnessChecker::display_soundness_check(Result result,
