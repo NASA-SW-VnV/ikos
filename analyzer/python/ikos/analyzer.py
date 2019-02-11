@@ -493,6 +493,13 @@ def path_ext(path):
     return os.path.splitext(path)[1]
 
 
+c_extensions = ('.c', '.h', '.i')
+cpp_extensions = ('.cpp', '.cc', '.cxx', '.cppm', '.c++', '.cp', '.C', '.CPP',
+                  '.hpp', '.hh', '.hxx',
+                  '.ii', '.iim')
+llvm_extensions = ('.bc', '.ll')
+
+
 def create_working_directory(wd=None, save=False):
     ''' Create a temporary working directory '''
     if not wd:
@@ -600,7 +607,7 @@ def clang(
     else:
         cmd.append('-fno-color-diagnostics')
 
-    if cpp_path.endswith('.cpp'):
+    if path_ext(cpp_path) in cpp_extensions:
         cmd.append('-std=c++17')  # available because clang >= 7.0
 
     log.info('Compiling %s' % cpp_path)
@@ -822,7 +829,7 @@ def main(argv):
     input_path = opt.file
 
     # compile c/c++ code
-    if path_ext(input_path) in ('.c', '.cpp'):
+    if path_ext(input_path) in c_extensions + cpp_extensions:
         bc_path = namer(opt.file, '.bc', wd)
 
         try:
@@ -840,7 +847,7 @@ def main(argv):
 
         input_path = bc_path
 
-    if path_ext(input_path) not in ('.bc', '.ll'):
+    if path_ext(input_path) not in llvm_extensions:
         printf('%s: error: unexpected file extension.\n',
                progname, file=sys.stderr)
         sys.exit(1)
