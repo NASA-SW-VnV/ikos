@@ -942,6 +942,20 @@ public:
           }
         } else {
           this->set(x, IntervalT(BoundT(0), BoundT(abs(z) - 1)));
+
+          // If y < abs(z) then x >= y
+          if (v_y.ub() < BoundT(abs(z))) {
+            MatrixIndex i = this->var_index(x);
+            MatrixIndex j = this->var_index(y);
+            this->add_constraint(j, i, BoundT(0));
+          }
+
+          // If y >= -abs(z) then x <= y + abs(z)
+          if (v_y.lb() >= BoundT(-abs(z))) {
+            MatrixIndex i = this->var_index(x);
+            MatrixIndex j = this->var_index(y);
+            this->add_constraint(i, j, BoundT(abs(z)));
+          }
         }
       } break;
       case BinaryOperator::Rem:
