@@ -114,6 +114,7 @@ public:
     ikos_assert_msg(this->find(prev_name) == symbol, "symbol not registered");
     ikos_assert_msg(!new_name.empty(), "name is empty");
     ikos_assert_msg(!this->contains(new_name), "name already taken");
+    ikos_ignore(symbol);
 
     auto it = this->_map.find(prev_name);
     std::unique_ptr< T > symbol_ptr = std::move(it->second);

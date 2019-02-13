@@ -550,7 +550,7 @@ Contains definition of utilities for the analyzer, e.g, logging, colors, timers,
 
 Contains the web resources for ikos-view. It includes HTML, CSS and JS code.
 
-#### script
+#### script/
 
 Contains python entry points for the command line tools.
 
