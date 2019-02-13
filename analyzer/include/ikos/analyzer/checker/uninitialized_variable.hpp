@@ -74,9 +74,6 @@ private:
 
 private:
   /// \brief Dispay a uninitialized variable check, if requested
-  void display_initialized_check(Result result, ar::Statement* stmt) const;
-
-  /// \brief Dispay a uninitialized variable check, if requested
   void display_initialized_check(Result result,
                                  ar::Statement* stmt,
                                  ar::Value* operand) const;

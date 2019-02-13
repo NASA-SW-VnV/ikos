@@ -133,13 +133,6 @@ boost::optional< Result > UninitializedVariableChecker::check_initialized(
 }
 
 void UninitializedVariableChecker::display_initialized_check(
-    Result result, ar::Statement* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_initialized()" << std::endl;
-  }
-}
-
-void UninitializedVariableChecker::display_initialized_check(
     Result result, ar::Statement* stmt, ar::Value* operand) const {
   if (this->display_check(result, stmt)) {
     out() << "check_initialized(";

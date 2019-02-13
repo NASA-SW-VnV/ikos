@@ -63,10 +63,11 @@ void SoundnessChecker::check(ar::Statement* stmt,
                              const value::AbstractDomain& inv,
                              CallContext* call_context) {
   if (auto store = dyn_cast< ar::Store >(stmt)) {
-    auto check = this->check_mem_write(store,
-                                       store->pointer(),
-                                       CheckKind::IgnoredStore,
-                                       inv);
+    boost::optional< CheckResult > check =
+        this->check_mem_write(store,
+                              store->pointer(),
+                              CheckKind::IgnoredStore,
+                              inv);
     if (check) {
       this->display_invariant(check->result, stmt, inv);
       this->_checks.insert(check->kind,
@@ -78,8 +79,8 @@ void SoundnessChecker::check(ar::Statement* stmt,
                            check->info);
     }
   } else if (auto call = dyn_cast< ar::CallBase >(stmt)) {
-    auto checks = this->check_call(call, inv);
-    for (const auto& check : this->check_call(call, inv)) {
+    std::vector< CheckResult > checks = this->check_call(call, inv);
+    for (const auto& check : checks) {
       this->display_invariant(check.result, stmt, inv);
       this->_checks.insert(check.kind,
                            CheckerName::Soundness,
@@ -159,6 +160,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
 
   // Check callees
   ikos_assert(!callees.is_bottom());
+
   if (callees.is_empty()) {
     // Invalid pointer dereference
     if (this->display_soundness_check(Result::Error, call)) {
@@ -546,6 +548,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
 
   return boost::none;
 }
+
 std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
     check_call_pointer_params(ar::CallBase* call,
                               ar::Function* fun,

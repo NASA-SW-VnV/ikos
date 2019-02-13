@@ -156,7 +156,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
       } else {
         result = Result::Error;
         if (this->display_pointer_overflow_check(result, stmt)) {
-          out() << " ∀ p ∈ base_interval, p > " << max << std::endl;
+          out() << ": ∀ p ∈ base_interval, p > " << max << std::endl;
         }
         break;
       }

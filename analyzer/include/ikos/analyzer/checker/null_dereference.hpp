@@ -43,6 +43,10 @@
 
 #pragma once
 
+#include <vector>
+
+#include <llvm/ADT/SmallVector.h>
+
 #include <ikos/analyzer/checker/checker.hpp>
 
 namespace ikos {
@@ -50,6 +54,9 @@ namespace analyzer {
 
 /// \brief Null dereference checker
 class NullDereferenceChecker final : public Checker {
+private:
+  using PointsToSet = core::PointsToSet< MemoryLocation* >;
+
 public:
   /// \brief Constructor
   explicit NullDereferenceChecker(Context& ctx);
@@ -66,17 +73,20 @@ public:
              CallContext* call_context) override;
 
 private:
-  /// \brief Check a null dereference and insert the check in the database
-  void check_null(ar::Statement* stmt,
-                  ar::Value* operand,
-                  const value::AbstractDomain& inv,
-                  CallContext* call_context);
-
   /// \brief Check result
   struct CheckResult {
     CheckKind kind;
     Result result;
+    llvm::SmallVector< ar::Value*, 2 > operands;
   };
+
+  /// \brief Check a function call
+  std::vector< CheckResult > check_call(ar::CallBase* call,
+                                        const value::AbstractDomain& inv);
+
+  /// \brief Check an intrinsic function call
+  std::vector< CheckResult > check_intrinsic_call(
+      ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv);
 
   /// \brief Check a null dereference
   CheckResult check_null(ar::Statement* stmt,
@@ -84,6 +94,9 @@ private:
                          const value::AbstractDomain& inv);
 
 private:
+  /// \brief Dispay a null dereference check, if requested
+  bool display_null_check(Result result, ar::Statement* stmt) const;
+
   /// \brief Dispay a null dereference check, if requested
   bool display_null_check(Result result,
                           ar::Statement* stmt,

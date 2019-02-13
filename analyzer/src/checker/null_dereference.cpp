@@ -41,6 +41,8 @@
  *
  ******************************************************************************/
 
+#include <ikos/ar/verify/type.hpp>
+
 #include <ikos/analyzer/analysis/literal.hpp>
 #include <ikos/analyzer/checker/null_dereference.hpp>
 #include <ikos/analyzer/support/cast.hpp>
@@ -63,59 +65,338 @@ void NullDereferenceChecker::check(ar::Statement* stmt,
                                    const value::AbstractDomain& inv,
                                    CallContext* call_context) {
   if (auto load = dyn_cast< ar::Load >(stmt)) {
-    this->check_null(stmt, load->operand(), inv, call_context);
-  }
-  if (auto store = dyn_cast< ar::Store >(stmt)) {
-    this->check_null(stmt, store->pointer(), inv, call_context);
-  }
-  if (auto call = dyn_cast< ar::CallBase >(stmt)) {
-    this->check_null(stmt, call->called(), inv, call_context);
-  }
-  if (auto call = dyn_cast< ar::IntrinsicCall >(stmt)) {
-    ar::Function* fun = call->called_function();
-
-    switch (fun->intrinsic_id()) {
-      case ar::Intrinsic::MemoryCopy:
-      case ar::Intrinsic::MemoryMove: {
-        this->check_null(stmt, call->argument(0), inv, call_context);
-        this->check_null(stmt, call->argument(1), inv, call_context);
-      } break;
-      case ar::Intrinsic::MemorySet: {
-        this->check_null(stmt, call->argument(0), inv, call_context);
-      } break;
-      case ar::Intrinsic::LibcStrlen:
-      case ar::Intrinsic::LibcStrnlen: {
-        this->check_null(stmt, call->argument(0), inv, call_context);
-      } break;
-      case ar::Intrinsic::LibcStrcpy:
-      case ar::Intrinsic::LibcStrncpy: {
-        this->check_null(stmt, call->argument(0), inv, call_context);
-        this->check_null(stmt, call->argument(1), inv, call_context);
-      } break;
-      case ar::Intrinsic::LibcStrcat:
-      case ar::Intrinsic::LibcStrncat: {
-        this->check_null(stmt, call->argument(0), inv, call_context);
-        this->check_null(stmt, call->argument(1), inv, call_context);
-      } break;
-      default: {
-        break;
-      }
+    CheckResult check = this->check_null(stmt, load->operand(), inv);
+    this->display_invariant(check.result, stmt, inv);
+    this->_checks.insert(check.kind,
+                         CheckerName::NullPointerDereference,
+                         check.result,
+                         stmt,
+                         call_context,
+                         check.operands);
+  } else if (auto store = dyn_cast< ar::Store >(stmt)) {
+    CheckResult check = this->check_null(stmt, store->pointer(), inv);
+    this->display_invariant(check.result, stmt, inv);
+    this->_checks.insert(check.kind,
+                         CheckerName::NullPointerDereference,
+                         check.result,
+                         stmt,
+                         call_context,
+                         check.operands);
+  } else if (auto call = dyn_cast< ar::CallBase >(stmt)) {
+    std::vector< CheckResult > checks = this->check_call(call, inv);
+    for (const auto& check : checks) {
+      this->display_invariant(check.result, stmt, inv);
+      this->_checks.insert(check.kind,
+                           CheckerName::NullPointerDereference,
+                           check.result,
+                           stmt,
+                           call_context,
+                           check.operands);
     }
   }
 }
 
-void NullDereferenceChecker::check_null(ar::Statement* stmt,
-                                        ar::Value* operand,
-                                        const value::AbstractDomain& inv,
-                                        CallContext* call_context) {
-  CheckResult check = this->check_null(stmt, operand, inv);
-  this->display_invariant(check.result, stmt, inv);
-  this->_checks.insert(check.kind,
-                       CheckerName::NullPointerDereference,
-                       check.result,
-                       stmt,
-                       call_context,
-                       std::array< ar::Value*, 1 >{{operand}});
+std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
+    check_call(ar::CallBase* call, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (this->display_null_check(Result::Unreachable, call)) {
+      out() << std::endl;
+    }
+    return {{CheckKind::Unreachable, Result::Unreachable, {}}};
+  }
+
+  const ScalarLit& called = this->_lit_factory.get_scalar(call->called());
+
+  // Check uninitialized
+
+  if (called.is_undefined() ||
+      (called.is_pointer_var() &&
+       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+    // Undefined call pointer operand
+    if (this->display_null_check(Result::Error, call, call->called())) {
+      out() << ": undefined call pointer operand" << std::endl;
+    }
+    return {
+        {CheckKind::UninitializedVariable, Result::Error, {call->called()}}};
+  }
+
+  // Check null pointer dereference
+
+  if (called.is_null() || (called.is_pointer_var() &&
+                           inv.normal().nullity().is_null(called.var()))) {
+    // Null call pointer operand
+    if (this->display_null_check(Result::Error, call, call->called())) {
+      out() << ": null call pointer operand" << std::endl;
+    }
+    return {
+        {CheckKind::NullPointerDereference, Result::Error, {call->called()}}};
+  }
+
+  // Collect potential callees
+  PointsToSet callees;
+
+  if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
+    callees = {_ctx.mem_factory->get_function(cst->function())};
+  } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
+    // call to inline assembly
+    if (this->display_null_check(Result::Ok, call, call->called())) {
+      out() << ": call to inline assembly" << std::endl;
+    }
+    return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}}};
+  } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_global(gv)};
+  } else if (auto lv = dyn_cast< ar::LocalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_local(lv)};
+  } else if (isa< ar::InternalVariable >(call->called())) {
+    // Indirect call through a function pointer
+    callees = inv.normal().pointers().points_to(called.var());
+  } else {
+    log::error("unexpected call pointer operand");
+    return {{CheckKind::UnexpectedOperand, Result::Error, {call->called()}}};
+  }
+
+  // Check callees
+  ikos_assert(!callees.is_bottom());
+
+  if (callees.is_empty()) {
+    // Invalid pointer dereference
+    if (this->display_null_check(Result::Error, call, call->called())) {
+      out() << ": points-to set of function pointer is empty" << std::endl;
+    }
+    return {{CheckKind::InvalidPointerDereference,
+             Result::Error,
+             {call->called()}}};
+  }
+
+  std::vector< CheckResult > checks = {
+      this->check_null(call, call->called(), inv)};
+
+  if (callees.is_top()) {
+    // No points-to set
+    if (this->display_null_check(Result::Warning, call, call->called())) {
+      out() << ": no points-to set for function pointer" << std::endl;
+    }
+    checks.push_back({CheckKind::UnknownFunctionCallPointer,
+                      Result::Warning,
+                      {call->called()}});
+    return checks;
+  }
+
+  for (MemoryLocation* addr : callees) {
+    if (!isa< FunctionMemoryLocation >(addr)) {
+      // Not a call to a function memory location
+      continue;
+    }
+
+    ar::Function* callee = cast< FunctionMemoryLocation >(addr)->function();
+
+    if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
+      // Ill-formed function call
+      continue;
+    }
+
+    if (callee->is_intrinsic()) {
+      for (const auto& check : this->check_intrinsic_call(call, callee, inv)) {
+        checks.push_back(check);
+      }
+    }
+  }
+
+  return checks;
+}
+
+std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
+    check_intrinsic_call(ar::CallBase* call,
+                         ar::Function* fun,
+                         const value::AbstractDomain& inv) {
+  switch (fun->intrinsic_id()) {
+    case ar::Intrinsic::MemoryCopy:
+    case ar::Intrinsic::MemoryMove: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::MemorySet: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::VarArgStart:
+    case ar::Intrinsic::VarArgEnd:
+    case ar::Intrinsic::VarArgGet: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::VarArgCopy: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::StackSave:
+    case ar::Intrinsic::StackRestore:
+    case ar::Intrinsic::LifetimeStart:
+    case ar::Intrinsic::LifetimeEnd:
+    case ar::Intrinsic::EhTypeidFor:
+    case ar::Intrinsic::Trap: {
+      return {};
+    }
+    // <ikos/analyzer/intrinsic.h>
+    case ar::Intrinsic::IkosAssert:
+    case ar::Intrinsic::IkosAssume:
+    case ar::Intrinsic::IkosNonDetSi32:
+    case ar::Intrinsic::IkosNonDetUi32:
+    case ar::Intrinsic::IkosCounterInit:
+    case ar::Intrinsic::IkosCounterIncr:
+    case ar::Intrinsic::IkosPrintInvariant:
+    case ar::Intrinsic::IkosPrintValues: {
+      return {};
+    }
+    // <stdlib.h>
+    case ar::Intrinsic::LibcMalloc:
+    case ar::Intrinsic::LibcCalloc:
+    case ar::Intrinsic::LibcValloc:
+    case ar::Intrinsic::LibcAlignedAlloc:
+    case ar::Intrinsic::LibcRealloc:
+    case ar::Intrinsic::LibcFree:
+    case ar::Intrinsic::LibcAbs:
+    case ar::Intrinsic::LibcRand:
+    case ar::Intrinsic::LibcSrand:
+    case ar::Intrinsic::LibcExit:
+    case ar::Intrinsic::LibcAbort: {
+      return {};
+    }
+    // <fcntl.h>
+    case ar::Intrinsic::LibcOpen: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    // <unistd.h>
+    case ar::Intrinsic::LibcClose: {
+      return {};
+    }
+    case ar::Intrinsic::LibcRead: {
+      return {this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcWrite: {
+      return {this->check_null(call, call->argument(1), inv)};
+    }
+    // <stdio.h>
+    case ar::Intrinsic::LibcGets: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcFgets: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(2), inv)};
+    }
+    case ar::Intrinsic::LibcGetc:
+    case ar::Intrinsic::LibcFgetc: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcGetchar: {
+      return {};
+    }
+    case ar::Intrinsic::LibcPuts: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcFputs: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcPutc:
+    case ar::Intrinsic::LibcFputc: {
+      return {this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcPrintf: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcFprintf: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcSprintf: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcSnprintf: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(2), inv)};
+    }
+    case ar::Intrinsic::LibcScanf:
+    case ar::Intrinsic::LibcFscanf:
+    case ar::Intrinsic::LibcSscanf: {
+      std::vector< CheckResult > checks;
+      std::transform(call->arg_begin(),
+                     call->arg_end(),
+                     std::back_inserter(checks),
+                     [=](ar::Value* arg) {
+                       return this->check_null(call, arg, inv);
+                     });
+      return checks;
+    }
+    case ar::Intrinsic::LibcFopen: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcFclose: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcFflush: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    // <string.h>
+    case ar::Intrinsic::LibcStrlen:
+    case ar::Intrinsic::LibcStrnlen: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcStrcpy:
+    case ar::Intrinsic::LibcStrncpy: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcStrcat:
+    case ar::Intrinsic::LibcStrncat: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcStrcmp:
+    case ar::Intrinsic::LibcStrncmp: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcStrstr: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcStrchr: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcStrdup:
+    case ar::Intrinsic::LibcStrndup: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcStrcpyCheck:
+    case ar::Intrinsic::LibcMemoryCopyCheck:
+    case ar::Intrinsic::LibcMemoryMoveCheck: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcMemorySetCheck: {
+      return {this->check_null(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcStrcatCheck: {
+      return {this->check_null(call, call->argument(0), inv),
+              this->check_null(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::LibcppNew:
+    case ar::Intrinsic::LibcppNewArray:
+    case ar::Intrinsic::LibcppDelete:
+    case ar::Intrinsic::LibcppDeleteArray:
+    case ar::Intrinsic::LibcppAllocateException:
+    case ar::Intrinsic::LibcppFreeException:
+    case ar::Intrinsic::LibcppThrow:
+    case ar::Intrinsic::LibcppBeginCatch:
+    case ar::Intrinsic::LibcppEndCatch: {
+      return {};
+    }
+    default: {
+      ikos_unreachable("unreachable");
+    }
+  }
 }
 
 NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
@@ -125,7 +406,7 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
     if (this->display_null_check(Result::Unreachable, stmt, operand)) {
       out() << std::endl;
     }
-    return {CheckKind::Unreachable, Result::Unreachable};
+    return {CheckKind::Unreachable, Result::Unreachable, {}};
   }
 
   const ScalarLit& ptr = this->_lit_factory.get_scalar(operand);
@@ -137,7 +418,7 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
     if (this->display_null_check(Result::Error, stmt, operand)) {
       out() << ": undefined operand" << std::endl;
     }
-    return {CheckKind::UninitializedVariable, Result::Error};
+    return {CheckKind::UninitializedVariable, Result::Error, {operand}};
   }
 
   if (ptr.is_null()) {
@@ -145,12 +426,12 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
     if (this->display_null_check(Result::Error, stmt, operand)) {
       out() << ": null operand" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Error};
+    return {CheckKind::NullPointerDereference, Result::Error, {operand}};
   }
 
   if (!ptr.is_pointer_var()) {
     log::error("unexpected pointer operand");
-    return {CheckKind::UnexpectedOperand, Result::Error};
+    return {CheckKind::UnexpectedOperand, Result::Error, {operand}};
   }
 
   if (isa< ar::LocalVariable >(operand)) {
@@ -158,25 +439,25 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
     if (this->display_null_check(Result::Ok, stmt, operand)) {
       out() << ": dereferencing a local variable" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Ok};
+    return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else if (isa< ar::GlobalVariable >(operand)) {
     // Global variable
     if (this->display_null_check(Result::Ok, stmt, operand)) {
       out() << ": dereferencing a global variable" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Ok};
+    return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else if (isa< ar::InlineAssemblyConstant >(operand)) {
     // Inline Assembly
     if (this->display_null_check(Result::Ok, stmt, operand)) {
       out() << ": dereferencing an inline assembly" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Ok};
+    return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else if (isa< ar::FunctionPointerConstant >(operand)) {
     // Function pointer constant
     if (this->display_null_check(Result::Ok, stmt, operand)) {
       out() << ": dereferencing a function pointer" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Ok};
+    return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   }
 
   core::Nullity null_val = inv.normal().nullity().get(ptr.var());
@@ -185,20 +466,31 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
     if (this->display_null_check(Result::Error, stmt, operand)) {
       out() << ": pointer is null" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Error};
+    return {CheckKind::NullPointerDereference, Result::Error, {operand}};
   } else if (null_val.is_non_null()) {
     // Pointer is definitely non-null
     if (this->display_null_check(Result::Ok, stmt, operand)) {
       out() << ": pointer is non null" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Ok};
+    return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else {
     // Pointer may be null
     if (this->display_null_check(Result::Warning, stmt, operand)) {
       out() << ": pointer may be null" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Warning};
+    return {CheckKind::NullPointerDereference, Result::Warning, {operand}};
   }
+}
+
+bool NullDereferenceChecker::display_null_check(Result result,
+                                                ar::Statement* stmt) const {
+  if (this->display_check(result, stmt)) {
+    out() << "check_null_dereference(";
+    stmt->dump(out());
+    out() << ")";
+    return true;
+  }
+  return false;
 }
 
 bool NullDereferenceChecker::display_null_check(Result result,
