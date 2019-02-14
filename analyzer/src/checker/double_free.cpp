@@ -41,8 +41,11 @@
  *
  ******************************************************************************/
 
+#include <ikos/ar/verify/type.hpp>
+
 #include <ikos/analyzer/checker/double_free.hpp>
 #include <ikos/analyzer/support/cast.hpp>
+#include <ikos/analyzer/util/log.hpp>
 
 namespace ikos {
 namespace analyzer {
@@ -60,12 +63,9 @@ const char* DoubleFreeChecker::description() const {
 void DoubleFreeChecker::check(ar::Statement* stmt,
                               const value::AbstractDomain& inv,
                               CallContext* call_context) {
-  if (auto call = dyn_cast< ar::IntrinsicCall >(stmt)) {
-    if (call->intrinsic_id() == ar::Intrinsic::LibcFree ||
-        call->intrinsic_id() == ar::Intrinsic::LibcppDelete ||
-        call->intrinsic_id() == ar::Intrinsic::LibcppDeleteArray ||
-        call->intrinsic_id() == ar::Intrinsic::LibcppFreeException) {
-      CheckResult check = this->check_double_free(call, inv);
+  if (auto call = dyn_cast< ar::CallBase >(stmt)) {
+    std::vector< CheckResult > checks = this->check_call(call, inv);
+    for (const auto& check : checks) {
       this->display_invariant(check.result, stmt, inv);
       this->_checks.insert(check.kind,
                            CheckerName::DoubleFree,
@@ -78,50 +78,181 @@ void DoubleFreeChecker::check(ar::Statement* stmt,
   }
 }
 
-DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
-    ar::IntrinsicCall* stmt, const value::AbstractDomain& inv) {
+std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
+    ar::CallBase* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_double_free_check(Result::Unreachable, stmt)) {
+    if (this->display_double_free_check(Result::Unreachable, call)) {
+      out() << std::endl;
+    }
+    return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
+  }
+
+  const ScalarLit& called = this->_lit_factory.get_scalar(call->called());
+
+  // Check uninitialized
+
+  if (called.is_undefined() ||
+      (called.is_pointer_var() &&
+       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+    // Undefined call pointer operand
+    if (this->display_double_free_check(Result::Error, call)) {
+      out() << ": undefined call pointer operand" << std::endl;
+    }
+    return {{CheckKind::UninitializedVariable,
+             Result::Error,
+             {call->called()},
+             {}}};
+  }
+
+  // Check null pointer dereference
+
+  if (called.is_null() || (called.is_pointer_var() &&
+                           inv.normal().nullity().is_null(called.var()))) {
+    // Null call pointer operand
+    if (this->display_double_free_check(Result::Error, call)) {
+      out() << ": null call pointer operand" << std::endl;
+    }
+    return {{CheckKind::NullPointerDereference,
+             Result::Error,
+             {call->called()},
+             {}}};
+  }
+
+  // Collect potential callees
+  PointsToSet callees;
+
+  if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
+    callees = {_ctx.mem_factory->get_function(cst->function())};
+  } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
+    // call to inline assembly
+    if (this->display_double_free_check(Result::Ok, call)) {
+      out() << ": call to inline assembly" << std::endl;
+    }
+    return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}}};
+  } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_global(gv)};
+  } else if (auto lv = dyn_cast< ar::LocalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_local(lv)};
+  } else if (isa< ar::InternalVariable >(call->called())) {
+    // Indirect call through a function pointer
+    callees = inv.normal().pointers().points_to(called.var());
+  } else {
+    log::error("unexpected call pointer operand");
+    return {
+        {CheckKind::UnexpectedOperand, Result::Error, {call->called()}, {}}};
+  }
+
+  // Check callees
+  ikos_assert(!callees.is_bottom());
+
+  if (callees.is_empty()) {
+    // Invalid pointer dereference
+    if (this->display_double_free_check(Result::Error, call)) {
+      out() << ": points-to set of function pointer is empty" << std::endl;
+    }
+    return {{CheckKind::InvalidPointerDereference,
+             Result::Error,
+             {call->called()},
+             {}}};
+  } else if (callees.is_top()) {
+    // No points-to set
+    if (this->display_double_free_check(Result::Warning, call)) {
+      out() << ": no points-to set for function pointer" << std::endl;
+    }
+    return {{CheckKind::UnknownFunctionCallPointer,
+             Result::Warning,
+             {call->called()},
+             {}}};
+  }
+
+  std::vector< CheckResult > checks;
+
+  for (MemoryLocation* addr : callees) {
+    if (!isa< FunctionMemoryLocation >(addr)) {
+      // Not a call to a function memory location
+      continue;
+    }
+
+    ar::Function* callee = cast< FunctionMemoryLocation >(addr)->function();
+
+    if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
+      // Ill-formed function call
+      continue;
+    }
+
+    if (callee->is_intrinsic()) {
+      boost::optional< CheckResult > check =
+          this->check_intrinsic_call(call, callee, inv);
+      if (check) {
+        checks.push_back(*check);
+      }
+    }
+  }
+
+  return checks;
+}
+
+boost::optional< DoubleFreeChecker::CheckResult > DoubleFreeChecker::
+    check_intrinsic_call(ar::CallBase* call,
+                         ar::Function* fun,
+                         const value::AbstractDomain& inv) {
+  switch (fun->intrinsic_id()) {
+    case ar::Intrinsic::LibcRealloc:
+    case ar::Intrinsic::LibcFree:
+    case ar::Intrinsic::LibcFclose:
+    case ar::Intrinsic::LibcppDelete:
+    case ar::Intrinsic::LibcppDeleteArray:
+    case ar::Intrinsic::LibcppFreeException: {
+      return this->check_double_free(call, call->argument(0), inv);
+    }
+    default: {
+      return boost::none;
+    }
+  }
+}
+
+DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
+    ar::CallBase* call, ar::Value* pointer, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (this->display_double_free_check(Result::Unreachable, call)) {
       out() << std::endl;
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
   }
 
-  ikos_assert(stmt->num_arguments() == 1);
-
-  const auto operand = stmt->argument(0);
-  const ScalarLit& ptr = this->_lit_factory.get_scalar(operand);
+  const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
 
   if (ptr.is_undefined() ||
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
-    if (this->display_double_free_check(Result::Error, stmt)) {
+    if (this->display_double_free_check(Result::Error, call)) {
       out() << ": undefined operand" << std::endl;
     }
-    return {CheckKind::UninitializedVariable, Result::Error, {operand}, {}};
+    return {CheckKind::UninitializedVariable, Result::Error, {pointer}, {}};
   }
 
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
-    if (this->display_double_free_check(Result::Ok, stmt)) {
+    if (this->display_double_free_check(Result::Ok, call)) {
       out() << ": safe call to free with NULL value" << std::endl;
     }
-    return {CheckKind::Free, Result::Ok, {operand}, {}};
+    return {CheckKind::Free, Result::Ok, {pointer}, {}};
   }
 
   PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
 
   if (addrs.is_empty()) {
-    if (this->display_double_free_check(Result::Error, stmt)) {
+    if (this->display_double_free_check(Result::Error, call)) {
       out() << ": empty points-to set for pointer";
     }
-    return {CheckKind::InvalidPointerDereference, Result::Error, {operand}, {}};
+    return {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}};
   } else if (addrs.is_top()) {
-    if (this->display_double_free_check(Result::Warning, stmt)) {
+    if (this->display_double_free_check(Result::Warning, call)) {
       out() << ": no points-to information for pointer" << std::endl;
     }
-    return {CheckKind::IgnoredFree, Result::Warning, {operand}, {}};
+    return {CheckKind::IgnoredFree, Result::Warning, {pointer}, {}};
   }
 
   bool all_error = true;
@@ -133,7 +264,7 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
   for (const auto& addr : addrs) {
     JsonDict block_info = {
         {"id", _ctx.output_db->memory_locations.insert(addr)}};
-    auto result = this->check_memory_location_free(stmt, inv, addr);
+    Result result = this->check_memory_location_free(call, inv, addr);
     block_info.put("status", static_cast< int >(result));
 
     if (result == Result::Ok) {
@@ -151,37 +282,38 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
 
   if (all_error) {
     // Unsafe
-    return {CheckKind::Free, Result::Error, {operand}, info};
+    return {CheckKind::Free, Result::Error, {pointer}, info};
   } else if (all_ok) {
     // Safe
-    return {CheckKind::Free, Result::Ok, {operand}, {}};
+    return {CheckKind::Free, Result::Ok, {pointer}, {}};
   } else {
     // Warning
-    return {CheckKind::Free, Result::Warning, {operand}, info};
+    return {CheckKind::Free, Result::Warning, {pointer}, info};
   }
 }
 
 Result DoubleFreeChecker::check_memory_location_free(
-    ar::IntrinsicCall* stmt,
+    ar::CallBase* call,
     const value::AbstractDomain& inv,
     MemoryLocation* addr) {
   if (isa< DynAllocMemoryLocation >(addr)) {
     auto lifetime = inv.normal().lifetime().get(addr);
+
     if (lifetime.is_deallocated()) {
       // This is a double free
-      if (this->display_double_free_check(Result::Error, stmt, addr)) {
+      if (this->display_double_free_check(Result::Error, call, addr)) {
         out() << ": double free" << std::endl;
       }
       return Result::Error;
     } else if (lifetime.is_top()) {
       // A double free could be possible
-      if (this->display_double_free_check(Result::Warning, stmt, addr)) {
+      if (this->display_double_free_check(Result::Warning, call, addr)) {
         out() << ": possible double free" << std::endl;
       }
       return Result::Warning;
     } else {
       // Safe
-      if (this->display_double_free_check(Result::Ok, stmt, addr)) {
+      if (this->display_double_free_check(Result::Ok, call, addr)) {
         out() << ": safe call to free()" << std::endl;
       }
       return Result::Ok;
@@ -190,15 +322,15 @@ Result DoubleFreeChecker::check_memory_location_free(
     // This is a free() call on something which isn't a dynamic allocated
     // memory.
     // This is an error
-    if (this->display_double_free_check(Result::Error, stmt, addr)) {
+    if (this->display_double_free_check(Result::Error, call, addr)) {
       out() << ": free() called on a non-dynamic allocated memory" << std::endl;
     }
     return Result::Error;
   }
 }
 
-bool DoubleFreeChecker::display_double_free_check(
-    Result result, ar::IntrinsicCall* stmt) const {
+bool DoubleFreeChecker::display_double_free_check(Result result,
+                                                  ar::Statement* stmt) const {
   if (this->display_check(result, stmt)) {
     out() << "check_dfa(";
     stmt->dump(out());
@@ -209,11 +341,11 @@ bool DoubleFreeChecker::display_double_free_check(
 }
 
 bool DoubleFreeChecker::display_double_free_check(Result result,
-                                                  ar::IntrinsicCall* stmt,
+                                                  ar::CallBase* call,
                                                   MemoryLocation* addr) const {
-  if (this->display_check(result, stmt)) {
+  if (this->display_check(result, call)) {
     out() << "check_dfa(";
-    stmt->dump(out());
+    call->dump(out());
     out() << ", addr=";
     addr->dump(out());
     out() << ")";

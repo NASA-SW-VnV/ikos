@@ -43,6 +43,10 @@
 
 #pragma once
 
+#include <vector>
+
+#include <boost/optional.hpp>
+
 #include <llvm/ADT/SmallVector.h>
 
 #include <ikos/analyzer/checker/checker.hpp>
@@ -79,21 +83,30 @@ private:
     JsonDict info;
   };
 
-  /// \brief Check for a double free call
-  CheckResult check_double_free(ar::IntrinsicCall* stmt,
+  /// \brief Check a function call
+  std::vector< CheckResult > check_call(ar::CallBase* call,
+                                        const value::AbstractDomain& inv);
+
+  /// \brief Check an intrinsic function call
+  boost::optional< CheckResult > check_intrinsic_call(
+      ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv);
+
+  /// \brief Check a function call to free on the given pointer
+  CheckResult check_double_free(ar::CallBase* call,
+                                ar::Value* pointer,
                                 const value::AbstractDomain& inv);
 
   /// \brief Check for a double free call on a memory location
-  Result check_memory_location_free(ar::IntrinsicCall* stmt,
+  Result check_memory_location_free(ar::CallBase* call,
                                     const value::AbstractDomain& inv,
                                     MemoryLocation* addr);
 
   /// \brief Display the double free check, if requested
-  bool display_double_free_check(Result result, ar::IntrinsicCall* stmt) const;
+  bool display_double_free_check(Result result, ar::Statement* stmt) const;
 
   /// \brief Display the double free check, if requested, with a memory location
   bool display_double_free_check(Result result,
-                                 ar::IntrinsicCall* stmt,
+                                 ar::CallBase* call,
                                  MemoryLocation* addr) const;
 
 }; // end class DoubleFreeChecker

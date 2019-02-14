@@ -79,7 +79,8 @@ void IntOverflowCheckerBase::check_integer_overflow(
     ar::BinaryOperation* stmt,
     const value::AbstractDomain& inv,
     CallContext* call_context) {
-  auto checks = this->check_integer_overflow(stmt, inv);
+  llvm::SmallVector< CheckResult, 2 > checks =
+      this->check_integer_overflow(stmt, inv);
   for (const auto& check : checks) {
     this->display_invariant(check.result, stmt, inv);
     this->_checks.insert(check.kind,

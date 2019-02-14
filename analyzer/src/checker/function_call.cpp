@@ -142,6 +142,7 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
 
   // Check callees
   ikos_assert(!callees.is_bottom());
+
   if (callees.is_empty()) {
     // Invalid pointer dereference
     if (this->display_call_check(Result::Error, call)) {
