@@ -41,6 +41,8 @@
  *
  ******************************************************************************/
 
+#include <ikos/ar/verify/type.hpp>
+
 #include <ikos/analyzer/checker/buffer_overflow.hpp>
 #include <ikos/analyzer/json/helper.hpp>
 #include <ikos/analyzer/support/cast.hpp>
@@ -54,6 +56,8 @@ BufferOverflowChecker::BufferOverflowChecker(Context& ctx)
       _ar_context(ctx.bundle->context()),
       _data_layout(ctx.bundle->data_layout()),
       _offset_type(ar::IntegerType::size_type(ctx.bundle)),
+      _size_zero(
+          ar::IntegerConstant::get(this->_ar_context, this->_offset_type, 0)),
       _size_one(
           ar::IntegerConstant::get(this->_ar_context, this->_offset_type, 1)) {}
 
@@ -65,183 +69,652 @@ const char* BufferOverflowChecker::description() const {
   return "Buffer overflow checker";
 }
 
-/// \brief Return true if `lit >= n`
-static bool is_greater_equal(const ScalarLit& lit,
-                             const MachineInt& n,
-                             const value::AbstractDomain& inv) {
-  if (lit.is_undefined()) {
-    return false;
-  } else if (lit.is_machine_int()) {
-    return lit.machine_int() >= n;
-  } else if (lit.is_machine_int_var()) {
-    if (inv.is_normal_flow_bottom()) {
-      return false;
-    }
-
-    value::AbstractDomain tmp(inv);
-    tmp.normal().integers().add(core::machine_int::Predicate::LT, lit.var(), n);
-    return tmp.is_normal_flow_bottom();
-  } else {
-    ikos_unreachable("unreachable");
-  }
-}
-
 void BufferOverflowChecker::check(ar::Statement* stmt,
                                   const value::AbstractDomain& inv,
                                   CallContext* call_context) {
   if (auto load = dyn_cast< ar::Load >(stmt)) {
-    this->check_mem_access(load,
-                           load->operand(),
-                           this->store_size(load->result()->type()),
-                           inv,
-                           call_context);
+    CheckResult check =
+        this->check_mem_access(load,
+                               load->operand(),
+                               this->store_size(load->result()->type()),
+                               /* if_null = */ Result::Error,
+                               inv);
+    this->display_invariant(check.result, stmt, inv);
+    this->_checks.insert(check.kind,
+                         CheckerName::BufferOverflow,
+                         check.result,
+                         stmt,
+                         call_context,
+                         check.operands,
+                         check.info);
   } else if (auto store = dyn_cast< ar::Store >(stmt)) {
-    this->check_mem_access(store,
-                           store->pointer(),
-                           this->store_size(store->value()->type()),
-                           inv,
-                           call_context);
-  } else if (auto memcpy = dyn_cast< ar::MemoryCopy >(stmt)) {
-    this->check_mem_access(memcpy,
-                           memcpy->source(),
-                           memcpy->length(),
-                           inv,
-                           call_context);
-    this->check_mem_access(memcpy,
-                           memcpy->destination(),
-                           memcpy->length(),
-                           inv,
-                           call_context);
-  } else if (auto memmove = dyn_cast< ar::MemoryMove >(stmt)) {
-    this->check_mem_access(memmove,
-                           memmove->source(),
-                           memmove->length(),
-                           inv,
-                           call_context);
-    this->check_mem_access(memmove,
-                           memmove->destination(),
-                           memmove->length(),
-                           inv,
-                           call_context);
-  } else if (auto memset = dyn_cast< ar::MemorySet >(stmt)) {
-    this->check_mem_access(memset,
-                           memset->pointer(),
-                           memset->length(),
-                           inv,
-                           call_context);
-  } else if (auto call = dyn_cast< ar::IntrinsicCall >(stmt)) {
-    ar::Function* fun = call->called_function();
-
-    switch (fun->intrinsic_id()) {
-      /// IKOS does not keep track of the string length (which is different from
-      /// the allocated size), thus it is hard to check if these function calls
-      /// are safe or not.
-      ///
-      /// In most cases here, we just check if the first byte is accessible.
-      case ar::Intrinsic::LibcStrlen: {
-        this->check_mem_access(call,
-                               call->argument(0),
-                               this->_size_one,
-                               inv,
-                               call_context);
-      } break;
-      case ar::Intrinsic::LibcStrnlen: {
-        const ScalarLit& n = this->_lit_factory.get_scalar(call->argument(1));
-        if (is_greater_equal(n, this->_size_one->value(), inv)) {
-          this->check_mem_access(call,
-                                 call->argument(0),
-                                 this->_size_one,
-                                 inv,
-                                 call_context);
-        }
-      } break;
-      case ar::Intrinsic::LibcStrcpy: {
-        this->check_mem_access(call,
-                               call->argument(0),
-                               this->_size_one,
-                               inv,
-                               call_context);
-        this->check_mem_access(call,
-                               call->argument(1),
-                               this->_size_one,
-                               inv,
-                               call_context);
-        this->check_strcpy(call,
-                           call->argument(0),
-                           call->argument(1),
-                           inv,
-                           call_context);
-      } break;
-      case ar::Intrinsic::LibcStrncpy: {
-        const ScalarLit& n = this->_lit_factory.get_scalar(call->argument(2));
-        if (is_greater_equal(n, this->_size_one->value(), inv)) {
-          this->check_mem_access(call,
-                                 call->argument(0),
-                                 this->_size_one,
-                                 inv,
-                                 call_context);
-          this->check_mem_access(call,
-                                 call->argument(1),
-                                 this->_size_one,
-                                 inv,
-                                 call_context);
-          // TODO(marthaud): check_strncpy
-        }
-      } break;
-      case ar::Intrinsic::LibcStrcat: {
-        this->check_mem_access(call,
-                               call->argument(0),
-                               this->_size_one,
-                               inv,
-                               call_context);
-        this->check_mem_access(call,
-                               call->argument(1),
-                               this->_size_one,
-                               inv,
-                               call_context);
-      } break;
-      case ar::Intrinsic::LibcStrncat: {
-        const ScalarLit& n = this->_lit_factory.get_scalar(call->argument(2));
-        if (is_greater_equal(n, this->_size_one->value(), inv)) {
-          this->check_mem_access(call,
-                                 call->argument(0),
-                                 this->_size_one,
-                                 inv,
-                                 call_context);
-          this->check_mem_access(call,
-                                 call->argument(1),
-                                 this->_size_one,
-                                 inv,
-                                 call_context);
-        }
-      } break;
-      default: {
-        break;
-      }
+    CheckResult check =
+        this->check_mem_access(store,
+                               store->pointer(),
+                               this->store_size(store->value()->type()),
+                               /* if_null = */ Result::Error,
+                               inv);
+    this->display_invariant(check.result, stmt, inv);
+    this->_checks.insert(check.kind,
+                         CheckerName::BufferOverflow,
+                         check.result,
+                         stmt,
+                         call_context,
+                         check.operands,
+                         check.info);
+  } else if (auto call = dyn_cast< ar::CallBase >(stmt)) {
+    std::vector< CheckResult > checks = this->check_call(call, inv);
+    for (const auto& check : checks) {
+      this->display_invariant(check.result, stmt, inv);
+      this->_checks.insert(check.kind,
+                           CheckerName::BufferOverflow,
+                           check.result,
+                           stmt,
+                           call_context,
+                           check.operands,
+                           check.info);
     }
   }
 }
 
-void BufferOverflowChecker::check_mem_access(ar::Statement* stmt,
-                                             ar::Value* pointer,
-                                             ar::Value* access_size,
-                                             const value::AbstractDomain& inv,
-                                             CallContext* call_context) {
-  CheckResult check = this->check_mem_access(stmt, pointer, access_size, inv);
-  this->display_invariant(check.result, stmt, inv);
-  this->_checks.insert(check.kind,
-                       CheckerName::BufferOverflow,
-                       check.result,
-                       stmt,
-                       call_context,
-                       check.operands,
-                       check.info);
+std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
+    check_call(ar::CallBase* call, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (this->display_mem_access_check(Result::Unreachable, call)) {
+      out() << std::endl;
+    }
+    return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
+  }
+
+  const ScalarLit& called = this->_lit_factory.get_scalar(call->called());
+
+  // Check uninitialized
+
+  if (called.is_undefined() ||
+      (called.is_pointer_var() &&
+       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+    // Undefined call pointer operand
+    if (this->display_mem_access_check(Result::Error, call)) {
+      out() << ": undefined call pointer operand" << std::endl;
+    }
+    return {{CheckKind::UninitializedVariable,
+             Result::Error,
+             {call->called()},
+             {}}};
+  }
+
+  // Check null pointer dereference
+
+  if (called.is_null() || (called.is_pointer_var() &&
+                           inv.normal().nullity().is_null(called.var()))) {
+    // Null call pointer operand
+    if (this->display_mem_access_check(Result::Error, call)) {
+      out() << ": null call pointer operand" << std::endl;
+    }
+    return {{CheckKind::NullPointerDereference,
+             Result::Error,
+             {call->called()},
+             {}}};
+  }
+
+  // Collect potential callees
+  PointsToSet callees;
+
+  if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
+    callees = {_ctx.mem_factory->get_function(cst->function())};
+  } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
+    // call to inline assembly
+    if (this->display_mem_access_check(Result::Ok, call)) {
+      out() << ": call to inline assembly" << std::endl;
+    }
+    return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}}};
+  } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_global(gv)};
+  } else if (auto lv = dyn_cast< ar::LocalVariable >(call->called())) {
+    callees = {_ctx.mem_factory->get_local(lv)};
+  } else if (isa< ar::InternalVariable >(call->called())) {
+    // Indirect call through a function pointer
+    callees = inv.normal().pointers().points_to(called.var());
+  } else {
+    log::error("unexpected call pointer operand");
+    return {
+        {CheckKind::UnexpectedOperand, Result::Error, {call->called()}, {}}};
+  }
+
+  // Check callees
+  ikos_assert(!callees.is_bottom());
+
+  if (callees.is_empty()) {
+    // Invalid pointer dereference
+    if (this->display_mem_access_check(Result::Error, call)) {
+      out() << ": points-to set of function pointer is empty" << std::endl;
+    }
+    return {{CheckKind::InvalidPointerDereference,
+             Result::Error,
+             {call->called()},
+             {}}};
+  } else if (callees.is_top()) {
+    // No points-to set
+    if (this->display_mem_access_check(Result::Warning, call)) {
+      out() << ": no points-to set for function pointer" << std::endl;
+    }
+    return {{CheckKind::UnknownFunctionCallPointer,
+             Result::Warning,
+             {call->called()},
+             {}}};
+  }
+
+  std::vector< CheckResult > checks;
+
+  for (MemoryLocation* addr : callees) {
+    if (!isa< FunctionMemoryLocation >(addr)) {
+      // Not a call to a function memory location
+      continue;
+    }
+
+    ar::Function* callee = cast< FunctionMemoryLocation >(addr)->function();
+
+    if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
+      // Ill-formed function call
+      continue;
+    }
+
+    if (callee->is_intrinsic()) {
+      for (const auto& check : this->check_intrinsic_call(call, callee, inv)) {
+        checks.push_back(check);
+      }
+    }
+  }
+
+  return checks;
+}
+
+std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
+    check_intrinsic_call(ar::CallBase* call,
+                         ar::Function* fun,
+                         const value::AbstractDomain& inv) {
+  switch (fun->intrinsic_id()) {
+    case ar::Intrinsic::MemoryCopy:
+    case ar::Intrinsic::MemoryMove: {
+      return {this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+              this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::MemorySet: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::VarArgStart:
+    case ar::Intrinsic::VarArgEnd:
+    case ar::Intrinsic::VarArgGet: {
+      return {this->check_va_list_access(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::VarArgCopy: {
+      return {this->check_va_list_access(call, call->argument(0), inv),
+              this->check_va_list_access(call, call->argument(1), inv)};
+    }
+    case ar::Intrinsic::StackSave:
+    case ar::Intrinsic::StackRestore:
+    case ar::Intrinsic::LifetimeStart:
+    case ar::Intrinsic::LifetimeEnd:
+    case ar::Intrinsic::EhTypeidFor:
+    case ar::Intrinsic::Trap: {
+      return {};
+    }
+    // <ikos/analyzer/intrinsic.h>
+    case ar::Intrinsic::IkosAssert:
+    case ar::Intrinsic::IkosAssume:
+    case ar::Intrinsic::IkosNonDetSi32:
+    case ar::Intrinsic::IkosNonDetUi32:
+    case ar::Intrinsic::IkosCounterInit:
+    case ar::Intrinsic::IkosCounterIncr:
+    case ar::Intrinsic::IkosPrintInvariant:
+    case ar::Intrinsic::IkosPrintValues: {
+      return {};
+    }
+    // <stdlib.h>
+    case ar::Intrinsic::LibcMalloc:
+    case ar::Intrinsic::LibcCalloc:
+    case ar::Intrinsic::LibcValloc:
+    case ar::Intrinsic::LibcAlignedAlloc: {
+      return {};
+    }
+    case ar::Intrinsic::LibcRealloc: {
+      return {this->check_realloc(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::LibcFree:
+    case ar::Intrinsic::LibcAbs:
+    case ar::Intrinsic::LibcRand:
+    case ar::Intrinsic::LibcSrand:
+    case ar::Intrinsic::LibcExit:
+    case ar::Intrinsic::LibcAbort: {
+      return {};
+    }
+    // <fcntl.h>
+    case ar::Intrinsic::LibcOpen: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    // <unistd.h>
+    case ar::Intrinsic::LibcClose: {
+      return {};
+    }
+    case ar::Intrinsic::LibcRead: {
+      return {this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcWrite: {
+      return {this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    // <stdio.h>
+    case ar::Intrinsic::LibcGets: {
+      return {{CheckKind::BufferOverflowGets,
+               Result::Error,
+               {call->argument(0)},
+               {}}};
+    }
+    case ar::Intrinsic::LibcFgets: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(1),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+              this->check_file_access(call,
+                                      call->argument(2),
+                                      /* if_null = */ Result::Error,
+                                      inv)};
+    }
+    case ar::Intrinsic::LibcGetc:
+    case ar::Intrinsic::LibcFgetc: {
+      return {this->check_file_access(call,
+                                      call->argument(0),
+                                      /* if_null = */ Result::Error,
+                                      inv)};
+    }
+    case ar::Intrinsic::LibcGetchar: {
+      return {};
+    }
+    case ar::Intrinsic::LibcPuts: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcFputs: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_file_access(call,
+                                      call->argument(1),
+                                      /* if_null = */ Result::Error,
+                                      inv)};
+    }
+    case ar::Intrinsic::LibcPutc:
+    case ar::Intrinsic::LibcFputc: {
+      return {this->check_file_access(call,
+                                      call->argument(1),
+                                      /* if_null = */ Result::Error,
+                                      inv)};
+    }
+    case ar::Intrinsic::LibcPrintf: {
+      std::vector< CheckResult > checks = {
+          this->check_string_access(call,
+                                    call->argument(0),
+                                    /* if_null = */ Result::Error,
+                                    inv)};
+      for (auto it = call->arg_begin() + 1, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        if (arg->type()->is_pointer()) {
+          checks.push_back(this->check_string_access(call,
+                                                     arg,
+                                                     /* if_null = */ Result::Ok,
+                                                     inv));
+        }
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcFprintf: {
+      std::vector< CheckResult > checks =
+          {this->check_file_access(call,
+                                   call->argument(0),
+                                   /* if_null = */ Result::Error,
+                                   inv),
+           this->check_string_access(call,
+                                     call->argument(1),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+      for (auto it = call->arg_begin() + 2, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        if (arg->type()->is_pointer()) {
+          checks.push_back(this->check_string_access(call,
+                                                     arg,
+                                                     /* if_null = */ Result::Ok,
+                                                     inv));
+        }
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcSprintf: {
+      std::vector< CheckResult > checks =
+          {this->check_string_access(call,
+                                     call->argument(0),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+           this->check_string_access(call,
+                                     call->argument(1),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+      for (auto it = call->arg_begin() + 2, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        if (arg->type()->is_pointer()) {
+          checks.push_back(this->check_string_access(call,
+                                                     arg,
+                                                     /* if_null = */ Result::Ok,
+                                                     inv));
+        }
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcSnprintf: {
+      std::vector< CheckResult > checks =
+          {this->check_mem_access(call,
+                                  call->argument(0),
+                                  call->argument(1),
+                                  /* if_null = */ Result::Error,
+                                  inv),
+           this->check_string_access(call,
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+      for (auto it = call->arg_begin() + 3, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        if (arg->type()->is_pointer()) {
+          checks.push_back(this->check_string_access(call,
+                                                     arg,
+                                                     /* if_null = */ Result::Ok,
+                                                     inv));
+        }
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcScanf: {
+      std::vector< CheckResult > checks = {
+          this->check_string_access(call,
+                                    call->argument(0),
+                                    /* if_null = */ Result::Error,
+                                    inv)};
+      for (auto it = call->arg_begin() + 1, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        ikos_assert(arg->type()->is_pointer());
+        checks.push_back(
+            this->check_string_access(call,
+                                      arg,
+                                      /* if_null = */ Result::Error,
+                                      inv));
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcFscanf: {
+      std::vector< CheckResult > checks = {
+          this->check_file_access(call,
+                                  call->argument(0),
+                                  /* if_null = */ Result::Error,
+                                  inv),
+          this->check_string_access(call,
+                                    call->argument(1),
+                                    /* if_null = */ Result::Error,
+                                    inv),
+      };
+      for (auto it = call->arg_begin() + 2, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        ikos_assert(arg->type()->is_pointer());
+        checks.push_back(
+            this->check_string_access(call,
+                                      arg,
+                                      /* if_null = */ Result::Error,
+                                      inv));
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcSscanf: {
+      std::vector< CheckResult > checks = {
+          this->check_string_access(call,
+                                    call->argument(0),
+                                    /* if_null = */ Result::Error,
+                                    inv),
+          this->check_string_access(call,
+                                    call->argument(1),
+                                    /* if_null = */ Result::Error,
+                                    inv),
+      };
+      for (auto it = call->arg_begin() + 2, et = call->arg_end(); it != et;
+           ++it) {
+        ar::Value* arg = *it;
+        ikos_assert(arg->type()->is_pointer());
+        checks.push_back(
+            this->check_string_access(call,
+                                      arg,
+                                      /* if_null = */ Result::Error,
+                                      inv));
+      }
+      return checks;
+    }
+    case ar::Intrinsic::LibcFopen: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcFclose:
+    case ar::Intrinsic::LibcFflush: {
+      return {this->check_file_access(call,
+                                      call->argument(0),
+                                      /* if_null = */ Result::Error,
+                                      inv)};
+    }
+    // <string.h>
+    case ar::Intrinsic::LibcStrlen: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrnlen: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(1),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcStrcpy: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrncpy: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+              this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcStrcat: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrncat: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcStrcmp: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrncmp: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+              this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcStrstr: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrchr: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrdup: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcStrndup: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(1),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcStrcpyCheck: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+              this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcMemoryCopyCheck:
+    case ar::Intrinsic::LibcMemoryMoveCheck: {
+      return {this->check_mem_access(call,
+                                     call->argument(1),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv),
+              this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcMemorySetCheck: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(2),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
+    case ar::Intrinsic::LibcStrcatCheck: {
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
+    }
+    case ar::Intrinsic::LibcppNew:
+    case ar::Intrinsic::LibcppNewArray:
+    case ar::Intrinsic::LibcppDelete:
+    case ar::Intrinsic::LibcppDeleteArray:
+    case ar::Intrinsic::LibcppAllocateException:
+    case ar::Intrinsic::LibcppFreeException:
+    case ar::Intrinsic::LibcppThrow:
+    case ar::Intrinsic::LibcppBeginCatch:
+    case ar::Intrinsic::LibcppEndCatch: {
+      return {};
+    }
+    default: {
+      ikos_unreachable("unreachable");
+    }
+  }
 }
 
 BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
     ar::Statement* stmt,
     ar::Value* pointer,
     ar::Value* access_size,
+    Result if_null,
     value::AbstractDomain inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
@@ -290,13 +763,10 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
     // Null pointer operand
-    if (this->display_mem_access_check(Result::Error,
-                                       stmt,
-                                       pointer,
-                                       access_size)) {
+    if (this->display_mem_access_check(if_null, stmt, pointer, access_size)) {
       out() << ": null pointer dereference" << std::endl;
     }
-    return {CheckKind::NullPointerDereference, Result::Error, {pointer}, {}};
+    return {CheckKind::NullPointerDereference, if_null, {pointer}, {}};
   }
 
   // Check unexpected operand
@@ -310,7 +780,7 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   }
 
   // Initialize global variable pointer and function pointer
-  this->init_global_ptr(pointer, inv);
+  this->init_global_ptr(inv, pointer);
 
   // Variable representing the pointer offset
   Variable* offset_var = inv.normal().pointers().offset_var(ptr.var());
@@ -344,28 +814,56 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   IntInterval offset_intv = inv.normal().integers().to_interval(offset_var);
   info.put("offset", to_json(offset_intv));
 
+  IntInterval size_intv;
+  if (size.is_machine_int_var()) {
+    size_intv = inv.normal().integers().to_interval(size.var());
+  } else if (size.is_machine_int()) {
+    size_intv = IntInterval(size.machine_int());
+  } else {
+    ikos_unreachable("unexpected access size");
+  }
+  info.put("access_size", to_json(size_intv));
+
   // Add a shadow variable `offset_plus_size = offset + access_size`
   Variable* offset_plus_size =
       _ctx.var_factory->get_named_shadow(this->_offset_type,
                                          "shadow.offset_plus_size");
 
-  IntInterval size_intv;
-  if (size.is_machine_int_var()) {
-    size_intv = inv.normal().integers().to_interval(size.var());
-    inv.normal().integers().apply(IntBinaryOperator::Add,
-                                  offset_plus_size,
-                                  offset_var,
-                                  size.var());
-  } else if (size.is_machine_int()) {
-    size_intv = IntInterval(size.machine_int());
-    inv.normal().integers().apply(IntBinaryOperator::Add,
-                                  offset_plus_size,
-                                  offset_var,
-                                  size.machine_int());
+  if (access_size->type() == this->_offset_type) {
+    if (size.is_machine_int_var()) {
+      inv.normal().integers().apply(IntBinaryOperator::Add,
+                                    offset_plus_size,
+                                    offset_var,
+                                    size.var());
+    } else if (size.is_machine_int()) {
+      inv.normal().integers().apply(IntBinaryOperator::Add,
+                                    offset_plus_size,
+                                    offset_var,
+                                    size.machine_int());
+    } else {
+      ikos_unreachable("unexpected access size");
+    }
   } else {
-    ikos_unreachable("unexpected access size");
+    // This happens in LibcFgets for instance
+    if (size.is_machine_int_var()) {
+      inv.normal().integers().apply(IntUnaryOperator::Cast,
+                                    offset_plus_size,
+                                    size.var());
+      inv.normal().integers().apply(IntBinaryOperator::Add,
+                                    offset_plus_size,
+                                    offset_plus_size,
+                                    offset_var);
+    } else if (size.is_machine_int()) {
+      inv.normal().integers().apply(IntBinaryOperator::Add,
+                                    offset_plus_size,
+                                    offset_var,
+                                    size.machine_int()
+                                        .cast(this->_offset_type->bit_width(),
+                                              ar::Unsigned));
+    } else {
+      ikos_unreachable("unexpected access size");
+    }
   }
-  info.put("access_size", to_json(size_intv));
 
   if (auto element_size =
           this->is_array_access(stmt, inv, offset_intv, addrs)) {
@@ -378,30 +876,30 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
 
   for (auto addr : addrs) {
     AllocSizeVariable* size_var = _ctx.var_factory->get_alloc_size(addr);
-    this->init_global_alloc_size(addr, size_var, inv);
+    this->init_global_alloc_size(inv, addr, size_var);
 
     // add block info
     JsonDict block_info = {
         {"id", _ctx.output_db->memory_locations.insert(addr)}};
 
     // perform analysis
-    auto result_pair = this->check_memory_location_access(stmt,
-                                                          pointer,
-                                                          access_size,
-                                                          inv,
-                                                          addr,
-                                                          size_var,
-                                                          offset_var,
-                                                          offset_plus_size,
-                                                          offset_intv,
-                                                          block_info);
+    auto check = this->check_memory_location_access(stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    inv,
+                                                    addr,
+                                                    size_var,
+                                                    offset_var,
+                                                    offset_plus_size,
+                                                    offset_intv,
+                                                    block_info);
 
-    block_info.put("status", static_cast< int >(result_pair.first));
-    block_info.put("kind", static_cast< int >(result_pair.second));
+    block_info.put("status", static_cast< int >(check.result));
+    block_info.put("kind", static_cast< int >(check.kind));
 
-    if (result_pair.first == Result::Error) {
+    if (check.result == Result::Error) {
       all_valid = false;
-    } else if (result_pair.first == Result::Warning) {
+    } else if (check.result == Result::Warning) {
       all_valid = false;
       all_invalid = false;
     } else {
@@ -428,18 +926,17 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   }
 }
 
-std::pair< Result, BufferOverflowChecker::BufferOverflowCheckKind >
-BufferOverflowChecker::check_memory_location_access(
-    ar::Statement* stmt,
-    ar::Value* pointer,
-    ar::Value* access_size,
-    const value::AbstractDomain& inv,
-    MemoryLocation* addr,
-    AllocSizeVariable* size_var,
-    Variable* offset_var,
-    Variable* offset_plus_size,
-    const IntInterval& offset_intv,
-    JsonDict& block_info) {
+BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
+    check_memory_location_access(ar::Statement* stmt,
+                                 ar::Value* pointer,
+                                 ar::Value* access_size,
+                                 const value::AbstractDomain& inv,
+                                 MemoryLocation* addr,
+                                 AllocSizeVariable* size_var,
+                                 Variable* offset_var,
+                                 Variable* offset_plus_size,
+                                 const IntInterval& offset_intv,
+                                 JsonDict& block_info) {
   if (isa< FunctionMemoryLocation >(addr)) {
     // Try to dereference a function pointer, this is an error
     if (this->display_mem_access_check(Result::Error,
@@ -449,7 +946,7 @@ BufferOverflowChecker::check_memory_location_access(
                                        addr)) {
       out() << ": dereferencing a function pointer" << std::endl;
     }
-    return {Result::Error, BufferOverflowCheckKind::Function};
+    return {BufferOverflowCheckKind::Function, Result::Error};
   }
 
   if (isa< DynAllocMemoryLocation >(addr)) {
@@ -467,7 +964,7 @@ BufferOverflowChecker::check_memory_location_access(
                                          addr)) {
         out() << ": use after free" << std::endl;
       }
-      return {Result::Error, BufferOverflowCheckKind::UseAfterFree};
+      return {BufferOverflowCheckKind::UseAfterFree, Result::Error};
     } else if (lifetime.is_top()) {
       // Possible use after free
       if (this->display_mem_access_check(Result::Warning,
@@ -477,7 +974,7 @@ BufferOverflowChecker::check_memory_location_access(
                                          addr)) {
         out() << ": possible use after free" << std::endl;
       }
-      return {Result::Warning, BufferOverflowCheckKind::UseAfterFree};
+      return {BufferOverflowCheckKind::UseAfterFree, Result::Warning};
     } else {
       ikos_assert(lifetime.is_allocated());
     }
@@ -498,7 +995,7 @@ BufferOverflowChecker::check_memory_location_access(
                                          addr)) {
         out() << ": access to a dangling stack pointer" << std::endl;
       }
-      return {Result::Error, BufferOverflowCheckKind::UseAfterReturn};
+      return {BufferOverflowCheckKind::UseAfterReturn, Result::Error};
     } else if (lifetime.is_top()) {
       // Possible access to a dangling stack pointer
       if (this->display_mem_access_check(Result::Warning,
@@ -508,7 +1005,7 @@ BufferOverflowChecker::check_memory_location_access(
                                          addr)) {
         out() << ": possible access to a dangling stack pointer" << std::endl;
       }
-      return {Result::Warning, BufferOverflowCheckKind::UseAfterReturn};
+      return {BufferOverflowCheckKind::UseAfterReturn, Result::Warning};
     } else {
       ikos_assert(lifetime.is_allocated());
     }
@@ -538,7 +1035,7 @@ BufferOverflowChecker::check_memory_location_access(
         access_size->dump(out());
         out() << std::endl;
       }
-      return {Result::Ok, BufferOverflowCheckKind::HardwareAddresses};
+      return {BufferOverflowCheckKind::HardwareAddresses, Result::Ok};
     } else if (_ctx.opts.hardware_addresses.is_meet_bottom(offset_intv) ||
                _ctx.opts.hardware_addresses.is_meet_bottom(
                    last_byte_offset_intv)) {
@@ -555,7 +1052,7 @@ BufferOverflowChecker::check_memory_location_access(
         access_size->dump(out());
         out() << std::endl;
       }
-      return {Result::Error, BufferOverflowCheckKind::HardwareAddresses};
+      return {BufferOverflowCheckKind::HardwareAddresses, Result::Error};
     } else {
       // The offset_var isn't completely included in an hardware address range
       // specified by the user, so it could overflow somewhere
@@ -571,7 +1068,7 @@ BufferOverflowChecker::check_memory_location_access(
         access_size->dump(out());
         out() << std::endl;
       }
-      return {Result::Warning, BufferOverflowCheckKind::HardwareAddresses};
+      return {BufferOverflowCheckKind::HardwareAddresses, Result::Warning};
     }
   }
 
@@ -611,7 +1108,7 @@ BufferOverflowChecker::check_memory_location_access(
       access_size->dump(out());
       out() << std::endl;
     }
-    return {Result::Ok, BufferOverflowCheckKind::OutOfBound};
+    return {BufferOverflowCheckKind::OutOfBound, Result::Ok};
   }
 
   // Check: `offset <= mem_size && offset + access_size <= mem_size`
@@ -632,7 +1129,7 @@ BufferOverflowChecker::check_memory_location_access(
       access_size->dump(out());
       out() << std::endl;
     }
-    return {Result::Error, BufferOverflowCheckKind::OutOfBound};
+    return {BufferOverflowCheckKind::OutOfBound, Result::Error};
   } else {
     if (this->display_mem_access_check(Result::Warning,
                                        stmt,
@@ -645,195 +1142,77 @@ BufferOverflowChecker::check_memory_location_access(
       access_size->dump(out());
       out() << std::endl;
     }
-    return {Result::Warning, BufferOverflowCheckKind::OutOfBound};
+    return {BufferOverflowCheckKind::OutOfBound, Result::Warning};
   }
 }
 
-void BufferOverflowChecker::check_strcpy(ar::Statement* stmt,
-                                         ar::Value* dest_op,
-                                         ar::Value* src_op,
-                                         const value::AbstractDomain& inv,
-                                         CallContext* call_context) {
-  CheckResult check = this->check_strcpy(stmt, dest_op, src_op, inv);
-  this->display_invariant(check.result, stmt, inv);
-  this->_checks.insert(check.kind,
-                       CheckerName::BufferOverflow,
-                       check.result,
-                       stmt,
-                       call_context,
-                       check.operands,
-                       check.info);
-}
-
-BufferOverflowChecker::CheckResult BufferOverflowChecker::check_strcpy(
+BufferOverflowChecker::CheckResult BufferOverflowChecker::check_string_access(
     ar::Statement* stmt,
-    ar::Value* dest_op,
-    ar::Value* src_op,
-    value::AbstractDomain inv) {
-  if (inv.is_normal_flow_bottom()) {
-    // Statement unreachable
-    if (this->display_strcpy_check(Result::Unreachable,
-                                   stmt,
-                                   dest_op,
-                                   src_op)) {
-      out() << std::endl;
-    }
-    return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
-  }
-
-  const ScalarLit& dest = this->_lit_factory.get_scalar(dest_op);
-  const ScalarLit& src = this->_lit_factory.get_scalar(src_op);
-
-  // Check uninitialized
-
-  if (src.is_undefined() ||
-      (src.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(src.var()))) {
-    // Undefined source pointer operand
-    if (this->display_strcpy_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": undefined source pointer" << std::endl;
-    }
-    return {CheckKind::UninitializedVariable, Result::Error, {src_op}, {}};
-  }
-
-  if (dest.is_undefined() ||
-      (dest.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(dest.var()))) {
-    // Undefined destination pointer operand
-    if (this->display_strcpy_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": undefined destination pointer" << std::endl;
-    }
-    return {CheckKind::UninitializedVariable, Result::Error, {dest_op}, {}};
-  }
-
-  // Check null pointer dereference
-
-  if (src.is_null() ||
-      (src.is_pointer_var() && inv.normal().nullity().is_null(src.var()))) {
-    // Null source pointer operand
-    if (this->display_mem_access_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": null source pointer" << std::endl;
-    }
-    return {CheckKind::NullPointerDereference, Result::Error, {src_op}, {}};
-  }
-
-  if (dest.is_null() ||
-      (dest.is_pointer_var() && inv.normal().nullity().is_null(dest.var()))) {
-    // Null destination pointer operand
-    if (this->display_mem_access_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": null destination pointer" << std::endl;
-    }
-    return {CheckKind::NullPointerDereference, Result::Error, {dest_op}, {}};
-  }
-
-  // Check unexpected operand
-  if (!src.is_pointer_var()) {
-    log::error("unexpected source pointer operand");
-    return {CheckKind::UnexpectedOperand, Result::Error, {src_op}, {}};
-  }
-  if (!dest.is_pointer_var()) {
-    log::error("unexpected destination pointer operand");
-    return {CheckKind::UnexpectedOperand, Result::Error, {dest_op}, {}};
-  }
-
-  // Initialize global variable pointers and function pointers
-  this->init_global_ptr(dest_op, inv);
-  this->init_global_ptr(src_op, inv);
-
-  PointsToSet dest_addrs = inv.normal().pointers().points_to(dest.var());
-  PointsToSet src_addrs = inv.normal().pointers().points_to(src.var());
-
-  if (src_addrs.is_empty()) {
-    // Source pointer is invalid
-    if (this->display_strcpy_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": empty points-to set for source pointer" << std::endl;
-    }
-    return {CheckKind::InvalidPointerDereference, Result::Error, {src_op}, {}};
-  }
-  if (dest_addrs.is_empty()) {
-    // Destination pointer is invalid
-    if (this->display_strcpy_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": empty points-to set for destination pointer" << std::endl;
-    }
-    return {CheckKind::InvalidPointerDereference, Result::Error, {dest_op}, {}};
-  }
-  if (src_addrs.is_top()) {
-    // Unknown source points-to set
-    if (this->display_strcpy_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": no points-to information for source pointer" << std::endl;
-    }
-    return {CheckKind::UnknownMemoryAccess, Result::Warning, {src_op}, {}};
-  }
-  if (dest_addrs.is_top()) {
-    // Unknown source points-to set
-    if (this->display_strcpy_check(Result::Error, stmt, dest_op, src_op)) {
-      out() << ": no points-to information for destination pointer"
-            << std::endl;
-    }
-    return {CheckKind::UnknownMemoryAccess, Result::Warning, {dest_op}, {}};
-  }
-
-  bool all_valid = true;
-
-  for (auto dest_addr : dest_addrs) {
-    AllocSizeVariable* dest_size = _ctx.var_factory->get_alloc_size(dest_addr);
-    this->init_global_alloc_size(dest_addr, dest_size, inv);
-    Variable* dest_offset = inv.normal().pointers().offset_var(dest.var());
-    Variable* max_space_available =
-        _ctx.var_factory->get_named_shadow(this->_offset_type,
-                                           "shadow.max_space_available");
-
-    for (auto src_addr : src_addrs) {
-      AllocSizeVariable* src_size = _ctx.var_factory->get_alloc_size(src_addr);
-      this->init_global_alloc_size(src_addr, src_size, inv);
-      Variable* src_offset = inv.normal().pointers().offset_var(src.var());
-      Variable* max_space_needed =
-          _ctx.var_factory->get_named_shadow(this->_offset_type,
-                                             "shadow.max_space_needed");
-
-      value::AbstractDomain tmp(inv);
-      tmp.normal().integers().apply(IntBinaryOperator::Sub,
-                                    max_space_available,
-                                    dest_size,
-                                    dest_offset);
-      tmp.normal().integers().apply(IntBinaryOperator::Sub,
-                                    max_space_needed,
-                                    src_size,
-                                    src_offset);
-      tmp.normal().integers().add(IntPredicate::GT,
-                                  max_space_needed,
-                                  max_space_available);
-      bool is_bottom = tmp.is_normal_flow_bottom();
-
-      if (is_bottom &&
-          this->display_strcpy_check(Result::Ok, stmt, dest_op, src_op)) {
-        out() << ": ∀(s, d) ∈ src.offset x dest.offset, ";
-        src_size->dump(out());
-        out() << " - s <= ";
-        dest_size->dump(out());
-        out() << " - d" << std::endl;
-      } else if (!is_bottom && this->display_strcpy_check(Result::Warning,
-                                                          stmt,
-                                                          dest_op,
-                                                          src_op)) {
-        out() << ": ∃(s, d) ∈ src.offset x dest.offset, ";
-        src_size->dump(out());
-        out() << " - s > ";
-        dest_size->dump(out());
-        out() << " - d" << std::endl;
-      }
-
-      all_valid = all_valid && is_bottom;
-    }
-  }
-
-  return {CheckKind::StrcpyBufferOverflow,
-          all_valid ? Result::Ok : Result::Warning,
-          {dest_op, src_op},
-          {}};
+    ar::Value* pointer,
+    Result if_null,
+    const value::AbstractDomain& inv) {
+  /// Notes:
+  ///
+  /// Since we do not keep track of null-terminated string lengths, we cannot
+  /// prove if a string access is safe. Thus, we use one for the access size,
+  /// checking only if the first byte is accessible.
+  ///
+  /// ASSUMPTION: If the first byte of a string is accessible, the string is
+  /// well-formed.
+  ///
+  /// TODO: Improve checks for strings.
+  return this->check_mem_access(stmt, pointer, this->_size_one, if_null, inv);
 }
 
-ar::IntegerConstant* BufferOverflowChecker::store_size(ar::Type* type) {
+BufferOverflowChecker::CheckResult BufferOverflowChecker::check_va_list_access(
+    ar::Statement* stmt, ar::Value* pointer, const value::AbstractDomain& inv) {
+  /// Notes:
+  ///
+  /// Since we do not have the size of `va_list`, we cannot prove if a `va_list`
+  /// is safe. Thus, we use zero for the access size.
+  ///
+  /// ASSUMPTION: calls to `va_start`, `va_end`, `va_arg` and `va_copy` are
+  /// memory safe.
+  return this->check_mem_access(stmt,
+                                pointer,
+                                this->_size_zero,
+                                /* if_null = */ Result::Error,
+                                inv);
+}
+
+BufferOverflowChecker::CheckResult BufferOverflowChecker::check_realloc(
+    ar::CallBase* call, ar::Value* pointer, const value::AbstractDomain& inv) {
+  /// Notes:
+  ///
+  /// Since `realloc` knows the size of the allocated memory block, we use zero
+  /// for the access size.
+  ///
+  /// ASSUMPTION: calls to `realloc` are memory safe.
+  ///
+  /// TODO: Add checks that the pointer offset is zero.
+  /// TODO: Add checks that the pointer was dynamically allocated.
+  return this->check_mem_access(call,
+                                pointer,
+                                this->_size_zero,
+                                /* if_null = */ Result::Ok,
+                                inv);
+}
+
+BufferOverflowChecker::CheckResult BufferOverflowChecker::check_file_access(
+    ar::Statement* stmt,
+    ar::Value* pointer,
+    Result if_null,
+    const value::AbstractDomain& inv) {
+  /// Notes:
+  ///
+  /// Since we do not have the size of `FILE*`, we cannot prove if a `FILE*`
+  /// is safe. Thus, we use zero for the access size.
+  ///
+  /// ASSUMPTION: accesses of `FILE*` by libc functions are memory safe.
+  return this->check_mem_access(stmt, pointer, this->_size_zero, if_null, inv);
+}
+
+ar::IntegerConstant* BufferOverflowChecker::store_size(ar::Type* type) const {
   return ar::IntegerConstant::get(this->_ar_context,
                                   this->_offset_type,
                                   MachineInt(this->_data_layout
@@ -842,8 +1221,8 @@ ar::IntegerConstant* BufferOverflowChecker::store_size(ar::Type* type) {
                                              this->_offset_type->sign()));
 }
 
-void BufferOverflowChecker::init_global_ptr(ar::Value* value,
-                                            value::AbstractDomain& inv) {
+void BufferOverflowChecker::init_global_ptr(value::AbstractDomain& inv,
+                                            ar::Value* value) const {
   if (auto gv = dyn_cast< ar::GlobalVariable >(value)) {
     Variable* ptr = _ctx.var_factory->get_global(gv);
     MemoryLocation* addr = _ctx.mem_factory->get_global(gv);
@@ -862,9 +1241,10 @@ void BufferOverflowChecker::init_global_ptr(ar::Value* value,
   }
 }
 
-void BufferOverflowChecker::init_global_alloc_size(MemoryLocation* addr,
-                                                   AllocSizeVariable* size_var,
-                                                   value::AbstractDomain& inv) {
+void BufferOverflowChecker::init_global_alloc_size(
+    value::AbstractDomain& inv,
+    MemoryLocation* addr,
+    AllocSizeVariable* size_var) const {
   if (auto gv = dyn_cast< GlobalMemoryLocation >(addr)) {
     MachineInt size(this->_data_layout.store_size_in_bytes(
                         gv->global_var()->type()->pointee()),
@@ -956,7 +1336,18 @@ boost::optional< MachineInt > BufferOverflowChecker::is_array_access(
     return boost::none;
   }
 
-  return element_size;
+  return {element_size};
+}
+
+bool BufferOverflowChecker::display_mem_access_check(
+    Result result, ar::Statement* stmt) const {
+  if (this->display_check(result, stmt)) {
+    out() << "check_mem_access(";
+    stmt->dump(out());
+    out() << ")";
+    return true;
+  }
+  return false;
 }
 
 bool BufferOverflowChecker::display_mem_access_check(
@@ -986,23 +1377,8 @@ bool BufferOverflowChecker::display_mem_access_check(
     pointer->dump(out());
     out() << ", access_size=";
     access_size->dump(out());
-    out() << ", addr=";
+    out() << ", address=";
     addr->dump(out());
-    out() << ")";
-    return true;
-  }
-  return false;
-}
-
-bool BufferOverflowChecker::display_strcpy_check(Result result,
-                                                 ar::Statement* stmt,
-                                                 ar::Value* dest_op,
-                                                 ar::Value* src_op) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_strcpy(dest=";
-    dest_op->dump(out());
-    out() << ", src=";
-    src_op->dump(out());
     out() << ")";
     return true;
   }

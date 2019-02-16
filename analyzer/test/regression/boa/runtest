@@ -170,7 +170,10 @@ if __name__ == '__main__':
     t.add(Test('test-36.c', 'test-36.c', 'boa', 'safe'))
     t.add(Test('test-37.c', 'test-37.c', 'boa', 'safe'))
     t.add(Test('test-38-argv.c', 'test-38-argv.c', 'boa', 'error', options=['--argc=4'],
-               line_checks=[(7, 'ok'), (8, 'ok'), (9, 'ok'), (10, 'error')]))
+               line_checks=[(7, 'ok', 'warning'),
+                            (8, 'ok', 'warning'),
+                            (9, 'ok', 'warning'),
+                            (10, 'error')]))
     t.add(Test('test-39.c', 'test-39.c', 'boa', 'safe'))
     t.add(Test('test-40.c', 'test-40.c', 'boa', 'safe'))
     t.add(Test('test-41.c', 'test-41.c', 'boa', 'safe'))
@@ -195,7 +198,7 @@ if __name__ == '__main__':
     t.add(Test('test-49.c', 'test-49.c', 'boa', 'safe'))
     t.add(Test('test-49-unsafe-1.c', 'test-49-unsafe-1.c', 'boa', 'error'))
     t.add(Test('test-49-unsafe-2.c', 'test-49-unsafe-2.c', 'boa', 'error',
-               expected='unsafe', line_checks=[(7, 'error', 'warning')]))
+               expected='safe', line_checks=[(7, 'error', 'ok')]))
     t.add(Test('test-50.c', 'test-50.c', 'boa', 'safe'))
     t.add(Test('test-50-unsafe.c', 'test-50-unsafe.c', 'boa', 'error'))
     t.add(Test('test-51.c', 'test-51.c', 'boa', 'safe', expected='unsafe'))
@@ -220,4 +223,6 @@ if __name__ == '__main__':
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe',
                line_checks=[(20, 'ok', 'warning')]))
+    t.add(Test('test-57.c', 'test-57.c', 'boa', 'safe'))
+    t.add(Test('test-57-unsafe.c', 'test-57-unsafe.c', 'boa', 'error'))
     t.run()

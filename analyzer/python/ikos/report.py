@@ -1053,9 +1053,9 @@ def memory_location_str(mem_loc):
         elif 'name' in info:
             return "global variable '%s'" % info['name']
         elif 'cst' in info:
-            return "global constant '%s'" % info['cst']
+            return "constant %s" % info['cst']
         else:
-            assert False, 'unexpected global memory location'
+            return 'unnamed global variable'
     elif mem_loc.kind == MemoryLocationKind.FUNCTION:
         function = mem_loc.db.functions[info['id']]
         return "function '%s'" % function.pretty_name()
@@ -1066,7 +1066,7 @@ def memory_location_str(mem_loc):
     elif mem_loc.kind == MemoryLocationKind.ABSOLUTE_ZERO:
         return 'zero'
     elif mem_loc.kind == MemoryLocationKind.ARGV:
-        return 'argv'
+        return "'argv'"
     elif mem_loc.kind == MemoryLocationKind.DYN_ALLOC:
         call = mem_loc.db.statements[info['call_id']]
         function = call.function()
@@ -1135,7 +1135,7 @@ def generate_assert_message(report, verbosity):
 
 def generate_division_by_zero_message(report, verbosity):
     if report.status == Result.OK:
-        return 'safe division'
+        return 'divisor is not zero'
     elif report.status == Result.ERROR:
         return 'division by zero'
 
@@ -1155,7 +1155,7 @@ def generate_division_by_zero_message(report, verbosity):
 
 def generate_shift_count_message(report, verbosity):
     if report.status == Result.OK:
-        return 'safe shift count'
+        return 'shift count is valid'
 
     if report.status == Result.ERROR:
         s = 'invalid shift count'
@@ -1263,7 +1263,7 @@ def generate_pointer_cmp_message(report, verbosity):
     if report.status == Result.OK:
         return 'safe pointer comparison'
     elif report.status == Result.ERROR:
-        return 'invalid comparison of pointers referring to different objects'
+        return 'comparison of pointers referring to different objects'
     elif report.status == Result.WARNING:
         return 'comparison of pointers that might refer to different objects'
     else:
@@ -1274,9 +1274,9 @@ def generate_pointer_overflow_message(report, verbosity):
     if report.status == Result.OK:
         return 'safe pointer arithmetic'
     elif report.status == Result.WARNING:
-        return 'possible pointer overflow'
+        return 'pointer arithmetic might overflow'
     elif report.status == Result.ERROR:
-        return 'pointer overflow'
+        return 'pointer arithmetic overflow'
     else:
         assert False, 'unexpected status'
 
@@ -1291,14 +1291,14 @@ def generate_invalid_pointer_deref_message(report, verbosity):
 def generate_unknown_memory_access_message(report, verbosity):
     assert report.status == Result.WARNING
     (_, operand), = report.load_operands()
-    s = 'memory access might be unsafe'
+    s = 'memory access might be invalid'
     s += ", could not infer information about pointer '%s'" % operand.repr
     return s
 
 
 def generate_unaligned_pointer_message(report, verbosity):
     if report.status == Result.OK:
-        return 'pointer is well aligned'
+        return 'memory access is well aligned'
 
     if report.status == Result.WARNING:
         s = 'memory access might be unaligned'
@@ -1356,6 +1356,11 @@ def generate_unaligned_pointer_message(report, verbosity):
     return s
 
 
+def generate_buffer_overflow_gets_message(report, verbosity):
+    assert report.status == Result.ERROR
+    return "call to unsafe function 'gets'"
+
+
 def generate_buffer_overflow_message(report, verbosity):
     if report.status == Result.OK:
         return 'safe memory access'
@@ -1366,7 +1371,7 @@ def generate_buffer_overflow_message(report, verbosity):
     if len(kinds) > 1:
         # different kind of errors, use a generic message
         if report.status == Result.WARNING:
-            s = 'possible invalid memory access'
+            s = 'memory access might be invalid'
         elif report.status == Result.ERROR:
             s = 'invalid memory access'
         else:
@@ -1390,17 +1395,36 @@ def generate_buffer_overflow_message(report, verbosity):
             assert False, 'unexpected status'
     elif kinds == {BufferOverflowCheckKind.HARDWARE_ADDRESSES}:
         if report.status == Result.WARNING:
-            s = 'possible invalid memory access'
+            s = 'memory access might be invalid'
         elif report.status == Result.ERROR:
             s = 'invalid memory access'
         else:
             assert False, 'unexpected status'
 
+        access_size = Interval.from_dict(info['access_size'])
         offset = Interval.from_dict(info['offset'])
+
+        if access_size.ub.is_max():
+            s += ', could not bound access size'
+            return s
+        if offset.ub.is_max():
+            s += ', could not bound offset'
+            return s
+
+        if access_size.is_constant():
+            s += ', accessing %d bytes' % access_size.ub.n
+        elif not access_size.lb.is_min():
+            s += ', accessing between %d and %d bytes' % (
+                access_size.lb.n,
+                access_size.ub.n
+            )
+        else:
+            s += ', accessing up to %d bytes' % access_size.ub.n
+
         if offset.is_constant():
-            s += ' to absolute address 0x%x' % offset.lb.n
-        elif not offset.is_top():
-            s += ' to absolute address between 0x%x and 0x%x' % (
+            s += ' at address 0x%x' % offset.ub.n
+        else:
+            s += ' at address between 0x%x and 0x%x' % (
                 offset.lb.n,
                 offset.ub.n
             )
@@ -1433,14 +1457,14 @@ def generate_buffer_overflow_message(report, verbosity):
 
             if array_element_size:
                 if size.is_constant():
-                    n = size.lb.n // array_element_size
+                    n = size.ub.n // array_element_size
                     line += ' of %d elements' % n
                 elif not size.ub.is_max():
                     ub = size.ub.n // array_element_size
                     line += ' of at most %d elements' % ub
             else:
                 if size.is_constant():
-                    line += ' of size %d bytes' % size.lb.n
+                    line += ' of size %d bytes' % size.ub.n
                 elif not size.ub.is_max():
                     line += ' of size at most %d bytes' % size.ub.n
 
@@ -1470,16 +1494,16 @@ def generate_buffer_overflow_message(report, verbosity):
             if status == Result.WARNING:
                 line += ', which might not be a valid hardware address'
             elif status == Result.ERROR:
-                line += ', which is not a valid hardware address'
+                line += ', which is an invalid hardware address'
             else:
                 assert False, 'unexpected status'
         elif kind == BufferOverflowCheckKind.OUT_OF_BOUND:
             if status == Result.OK:
                 line += ', which is valid'
             elif status == Result.WARNING:
-                line += ', which is a possible buffer overflow'
+                line += ', which might be out of bounds'
             elif status == Result.ERROR:
-                line += ', which is a buffer overflow'
+                line += ', which is out of bounds'
             else:
                 assert False, 'unexpected status'
         else:
@@ -1496,15 +1520,15 @@ def generate_buffer_overflow_message(report, verbosity):
         offset = offset.sign_cast(Signedness.SIGNED)
 
         if offset.is_constant():
-            n = offset.lb.n // array_element_size
-            s += ', trying to access index %d' % n
+            n = offset.ub.n // array_element_size
+            s += ', accessing index %d' % n
         elif not offset.ub.is_max():
             ub = offset.ub.n // array_element_size
             if not offset.lb.is_min():
                 lb = offset.lb.n // array_element_size
-                s += ', trying to access index between %d and %d' % (lb, ub)
+                s += ', accessing index between %d and %d' % (lb, ub)
             else:
-                s += ', trying to access index up to %d' % ub
+                s += ', accessing index up to %d' % ub
         else:
             s += ', could not bound index for access'
 
@@ -1517,39 +1541,47 @@ def generate_buffer_overflow_message(report, verbosity):
 
     (_, operand), _ = report.load_operands()
     s += ", pointer '%s'" % operand.repr
+    points_to_prep = ' points to'
 
     if BufferOverflowCheckKind.OUT_OF_BOUND in kinds:
+        offset_prep = ' at'
+        points_to_prep = ' of'
+
+        access_size = Interval.from_dict(info['access_size'])
+        if access_size.is_constant():
+            s += ' accesses %d bytes' % access_size.ub.n
+        elif not access_size.ub.is_max():
+            if not access_size.lb.is_min():
+                s += ' accesses between %d and %d bytes' % (
+                    access_size.lb.n,
+                    access_size.ub.n
+                )
+            else:
+                s += ' accesses up to %d bytes' % access_size.ub.n
+        else:
+            offset_prep = ' with'
+            points_to_prep = ' points to'
+
         offset = Interval.from_dict(info['offset'])
         offset = offset.sign_cast(Signedness.SIGNED)
-
         if offset.is_constant():
-            n = offset.lb.n
-            s += ' with offset %d bytes' % n
+            s += offset_prep + ' offset %d bytes' % offset.ub.n
         elif not offset.ub.is_max():
-            ub = offset.ub.n
             if not offset.lb.is_min():
-                lb = offset.lb.n
-                s += ' with offset between %d and %d bytes' % (lb, ub)
+                s += offset_prep + ' offset between %d and %d bytes' % (
+                    offset.lb.n,
+                    offset.ub.n
+                )
             else:
-                s += ' with offset up to %d bytes' % ub
+                s += offset_prep + ' offset up to %d bytes' % offset.ub.n
 
+    s += points_to_prep
     if len(points_to) == 1:
-        s += ' points to %s' % points_to[0]
+        s += ' %s' % points_to[0]
     else:
-        s += ' points to:%s' % ''.join('\n\t* %s' % p for p in points_to)
+        s += ':%s' % ''.join('\n\t* %s' % p for p in points_to)
 
     return s
-
-
-def generate_strcpy_buffer_overflow_message(report, verbosity):
-    if report.status == Result.OK:
-        return 'safe call to strcpy()'
-    elif report.status == Result.WARNING:
-        return 'possible buffer overflow'
-    elif report.status == Result.ERROR:
-        return 'buffer overflow'
-    else:
-        assert False, 'unreachable'
 
 
 def generate_ignored_store_message(report, verbosity):
@@ -1658,7 +1690,7 @@ def generate_function_call_message(report, verbosity):
         return s
 
     if report.status == Result.WARNING:
-        s = 'possible invalid function call'
+        s = 'function call might be invalid'
     elif report.status == Result.ERROR:
         s = 'invalid function call'
     else:
@@ -1741,7 +1773,7 @@ def generate_double_free_message(report, verbosity):
             assert False, 'unexpected status'
     else:
         if report.status == Result.WARNING:
-            s = 'possible invalid memory deallocation'
+            s = 'memory deallocation might be invalid'
         elif report.status == Result.ERROR:
             s = 'invalid memory deallocation'
         else:
@@ -1789,8 +1821,8 @@ GENERATE_MESSAGE_MAP = {
     CheckKind.INVALID_POINTER_DEREF: generate_invalid_pointer_deref_message,
     CheckKind.UNKNOWN_MEMORY_ACCESS: generate_unknown_memory_access_message,
     CheckKind.UNALIGNED_POINTER: generate_unaligned_pointer_message,
+    CheckKind.BUFFER_OVERFLOW_GETS: generate_buffer_overflow_gets_message,
     CheckKind.BUFFER_OVERFLOW: generate_buffer_overflow_message,
-    CheckKind.STRCPY_BUFFER_OVERFLOW: generate_strcpy_buffer_overflow_message,
     CheckKind.IGNORED_STORE: generate_ignored_store_message,
     CheckKind.IGNORED_MEMORY_COPY: generate_ignored_memcpy_message,
     CheckKind.IGNORED_MEMORY_MOVE: generate_ignored_memmove_message,

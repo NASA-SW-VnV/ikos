@@ -60,7 +60,7 @@ enum class CheckKind {
   /// \brief Check for an assertion
   Assert,
 
-  /// \brief Check for a Division by zero
+  /// \brief Check for a division by zero
   DivisionByZero,
 
   /// \brief Check for an invalid shift count
@@ -110,11 +110,11 @@ enum class CheckKind {
 
   _BeginBufferOverflow,
 
+  /// \brief Check for a call to gets()
+  BufferOverflowGets,
+
   /// \brief Check for a buffer overflow
   BufferOverflow,
-
-  /// \brief Check for a buffer overflow on strcpy
-  StrcpyBufferOverflow,
 
   _EndBufferOverflow,
 
@@ -145,10 +145,10 @@ enum class CheckKind {
 
   _BeginFunctionCall,
 
-  /// \brief Function call to inline assembly
+  /// \brief Check for a function call to inline assembly
   FunctionCallInlineAssembly,
 
-  /// \brief Function call on an unknown pointer
+  /// \brief Check for a function call on an unknown pointer
   UnknownFunctionCallPointer,
 
   /// \brief Check a function call
@@ -156,7 +156,7 @@ enum class CheckKind {
 
   _EndFunctionCall,
 
-  /// \brief Check for free
+  /// \brief Check for a memory deallocation (e.g, free)
   Free,
 
 };

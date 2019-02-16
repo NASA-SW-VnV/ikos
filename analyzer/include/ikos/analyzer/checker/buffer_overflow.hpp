@@ -57,6 +57,7 @@ class BufferOverflowChecker final : public Checker {
 private:
   using PointsToSet = core::PointsToSet< MemoryLocation* >;
   using IntPredicate = core::machine_int::Predicate;
+  using IntUnaryOperator = core::machine_int::UnaryOperator;
   using IntBinaryOperator = core::machine_int::BinaryOperator;
   using IntInterval = core::machine_int::Interval;
   using IntVariable = core::VariableExpression< MachineInt, Variable* >;
@@ -72,7 +73,10 @@ private:
   /// \brief The unsigned integer type with the bit-width of a pointer
   ar::IntegerType* _offset_type;
 
-  /// \brief The integer constant 1
+  /// \brief The integer constant 0 of type size_t
+  ar::IntegerConstant* _size_zero;
+
+  /// \brief The integer constant 1 of type size_t
   ar::IntegerConstant* _size_one;
 
 public:
@@ -87,10 +91,10 @@ public:
     /// \brief Check for a memory access on a dangling stack pointer
     UseAfterReturn = 2,
 
-    /// \brief Check for a memory access on an invalid hardware address
+    /// \brief Check for a memory access on a hardware address
     HardwareAddresses = 3,
 
-    // \brief Check for a out of bound memory access
+    // \brief Check for an out of bound memory access
     OutOfBound = 4,
   };
 
@@ -118,21 +122,19 @@ private:
     JsonDict info;
   };
 
-  /// \brief Check a memory access (read/write) for buffer overflow
-  ///
-  /// The method checks that the memory access is valid and writes the result
-  /// in the database.
-  ///
-  /// \param stmt The statement
-  /// \param pointer The pointer operand
-  /// \param access_size The read/written size (in bytes)
-  /// \param inv The invariant
-  /// \param call_context The calling context
-  void check_mem_access(ar::Statement* stmt,
-                        ar::Value* pointer,
-                        ar::Value* access_size,
-                        const value::AbstractDomain& inv,
-                        CallContext* call_context);
+  /// \brief Memory location check result
+  struct MemoryLocationCheckResult {
+    BufferOverflowCheckKind kind;
+    Result result;
+  };
+
+  /// \brief Check a function call
+  std::vector< CheckResult > check_call(ar::CallBase* call,
+                                        const value::AbstractDomain& inv);
+
+  /// \brief Check an intrinsic function call
+  std::vector< CheckResult > check_intrinsic_call(
+      ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv);
 
   /// \brief Check a memory access (read/write) for buffer overflow
   ///
@@ -147,14 +149,16 @@ private:
   ///
   /// \param stmt The statement
   /// \param pointer The pointer operand
-  /// \param access_size The read/written size (in bytes)
+  /// \param access_size The access size operand (in bytes)
+  /// \param if_null Result if the pointer is null
   /// \param inv The invariant
   CheckResult check_mem_access(ar::Statement* stmt,
                                ar::Value* pointer,
                                ar::Value* access_size,
+                               Result if_null,
                                value::AbstractDomain inv);
 
-  /// \brief Check a memory access (read/write)
+  /// \brief Check a memory access (read/write) at the given memory location
   ///
   /// The method is called by check_mem_access, and performs the analysis
   /// of the memory location access.
@@ -162,16 +166,16 @@ private:
   /// \returns A pair which contains the result and the kind of the check
   ///
   /// \param stmt The statement
-  /// \param pointer The
-  /// \param access_size The read/written size (in bytes)
+  /// \param pointer The pointer operand
+  /// \param access_size The access size operand (in bytes)
   /// \param inv The invariant
   /// \param addr The memory location
-  /// \param size_var Size of the variable
-  /// \param offset_var The pointer offset
-  /// \param offset_plus_size Shadow variable, = offset + access size
-  /// \param offset_intv Offset int interval
-  /// \param block_info Json dictionnary for adding extra information
-  std::pair< Result, BufferOverflowCheckKind > check_memory_location_access(
+  /// \param size_var The allocation size variable
+  /// \param offset_var The pointer offset variable
+  /// \param offset_plus_size The shadow variable equal to offset + access size
+  /// \param offset_intv The pointer offset interval
+  /// \param block_info JSON dictionary to add extra information
+  MemoryLocationCheckResult check_memory_location_access(
       ar::Statement* stmt,
       ar::Value* pointer,
       ar::Value* access_size,
@@ -183,45 +187,64 @@ private:
       const IntInterval& offset_intv,
       JsonDict& block_info);
 
-  /// \brief Check a string copy for overflow
-  ///
-  /// The method checks that the memory access is valid and writes the result
-  /// in the database.
-  ///
-  /// \param stmt The statement
-  /// \param dest_op The destination pointer operand
-  /// \param src_op The source pointer operand
-  /// \param inv The invariant
-  /// \param call_context The calling context
-  void check_strcpy(ar::Statement* stmt,
-                    ar::Value* dest_op,
-                    ar::Value* src_op,
-                    const value::AbstractDomain& inv,
-                    CallContext* call_context);
-
-  /// \brief Check a string copy for overflow
+  /// \brief Check a string access (read/write) for buffer overflow
   ///
   /// \returns The analysis check result (Ok, Warning, Error, Unreachable)
   ///
   /// \param stmt The statement
-  /// \param dest_op The destination pointer operand
-  /// \param src_op The source pointer operand
+  /// \param pointer The pointer string operand
+  /// \param if_null Result if the pointer is null
   /// \param inv The invariant
-  CheckResult check_strcpy(ar::Statement* stmt,
-                           ar::Value* dest_op,
-                           ar::Value* src_op,
-                           value::AbstractDomain inv);
+  CheckResult check_string_access(ar::Statement* stmt,
+                                  ar::Value* pointer,
+                                  Result if_null,
+                                  const value::AbstractDomain& inv);
+
+  /// \brief Check a `va_list` access (read/write) for buffer overflow
+  ///
+  /// \returns The analysis check result (Ok, Warning, Error, Unreachable)
+  ///
+  /// \param stmt The statement
+  /// \param pointer The pointer operand
+  /// \param inv The invariant
+  CheckResult check_va_list_access(ar::Statement* stmt,
+                                   ar::Value* pointer,
+                                   const value::AbstractDomain& inv);
+
+  /// \brief Check a call to realloc for buffer overflow
+  ///
+  /// \returns The analysis check result (Ok, Warning, Error, Unreachable)
+  ///
+  /// \param call The call statement
+  /// \param pointer The pointer operand
+  /// \param inv The invariant
+  CheckResult check_realloc(ar::CallBase* call,
+                            ar::Value* pointer,
+                            const value::AbstractDomain& inv);
+
+  /// \brief Check a `FILE*` access (read/write) for buffer overflow
+  ///
+  /// \returns The analysis check result (Ok, Warning, Error, Unreachable)
+  ///
+  /// \param stmt The statement
+  /// \param pointer The pointer operand
+  /// \param if_null Result if the pointer is null
+  /// \param inv The invariant
+  CheckResult check_file_access(ar::Statement* stmt,
+                                ar::Value* pointer,
+                                Result if_null,
+                                const value::AbstractDomain& inv);
 
   /// \brief Return the store size for the given type, as an integer constant
-  ar::IntegerConstant* store_size(ar::Type*);
+  ar::IntegerConstant* store_size(ar::Type*) const;
 
   /// \brief Initialize global variable pointers and function pointers
-  void init_global_ptr(ar::Value* value, value::AbstractDomain& inv);
+  void init_global_ptr(value::AbstractDomain& inv, ar::Value* value) const;
 
   /// \brief Initialize global variable sizes and function sizes
-  void init_global_alloc_size(MemoryLocation* addr,
-                              AllocSizeVariable* size_var,
-                              value::AbstractDomain& inv);
+  void init_global_alloc_size(value::AbstractDomain& inv,
+                              MemoryLocation* addr,
+                              AllocSizeVariable* size_var) const;
 
   /// \brief Check whether a memory access is an array access
   ///
@@ -231,6 +254,9 @@ private:
       const value::AbstractDomain& inv,
       const IntInterval& offset_intv,
       const PointsToSet& addrs) const;
+
+  /// \brief Display a memory access check, if requested
+  bool display_mem_access_check(Result result, ar::Statement* stmt) const;
 
   /// \brief Display a memory access check, if requested
   bool display_mem_access_check(Result result,
@@ -244,12 +270,6 @@ private:
                                 ar::Value* pointer,
                                 ar::Value* access_size,
                                 MemoryLocation* addr) const;
-
-  /// \brief Display a strcpy() check, if requested
-  bool display_strcpy_check(Result result,
-                            ar::Statement* stmt,
-                            ar::Value* dest_op,
-                            ar::Value* src_op) const;
 
 }; // end class BufferOverflowChecker
 
