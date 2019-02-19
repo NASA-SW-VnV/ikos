@@ -711,11 +711,6 @@ int main(int argc, char** argv) {
   analyzer::color::Enable = colors_enabled();
 
   try {
-#ifndef NDEBUG
-    analyzer::log::warning(
-        "ikos was compiled in debug mode, the analysis might be slow");
-#endif
-
     // Initialize output database
     // This might throw DbError, see catch()
     analyzer::log::debug("Creating output database '" + OutputFilename + "'");

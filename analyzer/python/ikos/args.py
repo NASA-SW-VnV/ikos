@@ -244,9 +244,9 @@ default_procedurality = 'inter'
 # Preprocessing options choices
 
 opt_levels = (
-    ('none', 'Only passes required for the translation to AR'),
+    ('none', 'Disable all optimizations'),
     ('basic', 'Basic set of optimizations'),
-    ('aggressive', 'Aggressive optimizations'),
+    ('aggressive', 'Aggressive optimizations (not recommended)'),
 )
 
 default_opt_level = 'basic'

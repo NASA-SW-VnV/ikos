@@ -121,7 +121,9 @@ static llvm::cl::opt< OptLevelType > OptLevel(
                    "none",
                    "Only passes required for the translation to AR"),
         clEnumValN(Basic, "basic", "Basic set of optimizations (recommended)"),
-        clEnumValN(Aggressive, "aggressive", "Aggressive optimizations"),
+        clEnumValN(Aggressive,
+                   "aggressive",
+                   "Aggressive optimizations (not recommended)"),
         clEnumValN(Custom, "custom", "Use a custom set of llvm passes")),
     llvm::cl::init(Basic));
 

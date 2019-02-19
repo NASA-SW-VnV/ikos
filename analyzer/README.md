@@ -279,9 +279,13 @@ $ ikos --entry-points=foo,bar test.c
 
 ### Optimization level
 
-The parameter `--opt` allows you to set the optimization level. Performing a set of LLVM transformations can improve both the precision of the subsequent analysis as well as the performance.
+The parameter `--opt` allows you to set the optimization level. Optimizations are performed by running a set of LLVM passes on the analyzed code.
 
-Unfortunately, it might also hide errors in your code. By default, optimizations are disabled.
+Available levels are:
+
+* **none**: Disable all optimizations.
+* **basic**: Basic set of optimizations (similar to `-O1`). This is the default value.
+* **aggressive**: Aggressive optimizations (similar to `-O3`). This is not recommended since it might hide errors. The translation from LLVM to AR might fail because of unsupported instructions.
 
 ### Inter-procedural vs Intra-procedural
 

@@ -616,6 +616,10 @@ def clang(
 
 
 def ikos_pp(pp_path, bc_path, entry_points, opt_level, inline_all, verify):
+    if opt_level == 'aggressive':
+        log.warning('Using aggressive optimizations is not recommended')
+        log.warning('The translation from LLVM bitcode to AR might fail')
+
     cmd = [settings.ikos_pp(),
            '-opt=%s' % opt_level,
            '-entry-points=%s' % ','.join(entry_points)]
@@ -647,6 +651,9 @@ class AnalyzerError(Exception):
 
 
 def ikos_analyzer(db_path, pp_path, opt):
+    if settings.BUILD_MODE == 'Debug':
+        log.warning('ikos was built in debug mode, the analysis might be slow')
+
     # Fix huge slow down when ikos-analyzer uses DROP TABLE on an existing db
     if os.path.isfile(db_path):
         os.remove(db_path)
