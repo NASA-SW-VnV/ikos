@@ -65,7 +65,7 @@ define i32 @foo(i32*, i32*, i32*) #0 !dbg !8 {
 ; CHECK: }
 ; CHECK: #2 predecessors={#1} successors={#4} {
 ; CHECK:   %4 peq %5
-; CHECK:   si32* %6 = ptrshift %5, 4 * 18446744073709551606
+; CHECK:   si32* %6 = ptrshift %5, 4 * -10
 ; CHECK:   si32* %7 = ptrshift %4, 4 * 42
 ; CHECK:   si32* %.01 = %7
 ; CHECK:   si32* %.0 = %6

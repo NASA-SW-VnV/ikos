@@ -104,7 +104,7 @@ define i32 @foo(i32*, i32*, i32*) #0 !dbg !8 {
 ; CHECK: #2 predecessors={#1} successors={#4} {
 ; CHECK:   %14 peq %15
 ; CHECK:   si32* %16 = load $8, align 8
-; CHECK:   si32* %17 = ptrshift %16, 4 * 18446744073709551606
+; CHECK:   si32* %17 = ptrshift %16, 4 * -10
 ; CHECK:   store $8, %17, align 8
 ; CHECK:   si32* %18 = load $7, align 8
 ; CHECK:   si32* %19 = ptrshift %18, 4 * 42

@@ -79,7 +79,7 @@ define internal fastcc i32 @foo(i32*, i32*, i32*) unnamed_addr #0 !dbg !8 {
 ; CHECK:   ui1 %6 = 0
 ; CHECK: }
 ; CHECK: #4 predecessors={#2, #3} successors={#5, #6} {
-; CHECK:   si32* %7 = ptrshift %2, 4 * 18446744073709551608
+; CHECK:   si32* %7 = ptrshift %2, 4 * -8
 ; CHECK:   si32* %8 = ptrshift %1, 4 * 43
 ; CHECK: }
 ; CHECK: #5 predecessors={#4} successors={#7} {

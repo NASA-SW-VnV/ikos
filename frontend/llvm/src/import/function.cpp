@@ -918,7 +918,7 @@ void FunctionImporter::translate_getelementptr(
           this->_llvm_data_layout.getTypeAllocSize(it.getIndexedType());
       ar::Type* preferred_type =
           llvm::isa< llvm::Constant >(op)
-              ? _ctx.type_imp->translate_type(op->getType(), ar::Unsigned)
+              ? _ctx.type_imp->translate_type(op->getType(), ar::Signed)
               : nullptr;
       ar::Value* ar_op =
           this->translate_value(bb_translation, op, preferred_type);
