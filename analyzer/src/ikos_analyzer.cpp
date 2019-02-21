@@ -634,6 +634,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .procedural = Procedural,
       .use_liveness = !NoLiveness,
       .use_pointer = !NoPointer,
+      .use_fixpoint_profiles = !NoFixpointProfiles,
       .precision = Precision,
       .globals_init_policy = GlobalsInitPolicy,
       .display_invariants = DisplayInvariants,

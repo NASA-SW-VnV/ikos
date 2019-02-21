@@ -284,6 +284,9 @@ public:
   /// \brief Wether we should use a pointer analysis or not
   bool use_pointer;
 
+  /// \brief Wether we should use a fixpoint profile analysis or not
+  bool use_fixpoint_profiles;
+
   /// \brief Precision of the analysis
   Precision precision;
 

@@ -79,6 +79,8 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("use-pointer-analysis", this->use_pointer);
 
+  table.insert("use-fixpoint-profiles", this->use_fixpoint_profiles);
+
   table.insert("precision-level", precision_str(this->precision));
 
   table.insert("globals-init-policy",
