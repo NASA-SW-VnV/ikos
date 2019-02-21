@@ -9,6 +9,8 @@
  *
  * Author: Arnaud J. Venet
  *
+ * Contributor: Maxime Arthaud
+ *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
@@ -47,7 +49,6 @@
 
 #pragma once
 
-#include <deque>
 #include <memory>
 #include <sstream>
 #include <unordered_map>
@@ -55,7 +56,7 @@
 #include <vector>
 
 #include <boost/container/slist.hpp>
-#include <boost/iterator/iterator_facade.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
 #include <ikos/core/number/bound.hpp>
 #include <ikos/core/semantic/dumpable.hpp>
@@ -76,105 +77,101 @@ class WtoCycle;
 template < typename GraphRef, typename GraphTrait >
 class WtoComponentVisitor;
 
+/// \brief Helper for sequential containers of unique_ptr
+template < typename T >
+struct SeqExposeConstRef {
+  const T& operator()(const std::unique_ptr< T >& p) const { return *p; }
+};
+
+/// \brief Represents the nesting of a node
+///
+/// The nesting of a node is the list of cycles containing the node, from
+/// the outermost to the innermost.
 template < typename GraphRef, typename GraphTrait >
 class WtoNesting {
-  friend class Wto< GraphRef, GraphTrait >;
-  friend class WtoVertex< GraphRef, GraphTrait >;
-  friend class WtoCycle< GraphRef, GraphTrait >;
-
 public:
   using NodeRef = typename GraphTrait::NodeRef;
 
 private:
   using NodeList = std::vector< NodeRef >;
-  using NodeListPtr = std::shared_ptr< NodeList >;
-
-private:
-  NodeListPtr _nodes;
 
 public:
-  class Iterator : public boost::iterator_facade< Iterator,
-                                                  NodeRef,
-                                                  boost::forward_traversal_tag,
-                                                  NodeRef > {
-    friend class boost::iterator_core_access;
-
-  private:
-    typename NodeList::const_iterator _it;
-    NodeListPtr _l;
-
-  public:
-    Iterator(const NodeListPtr& l, bool b)
-        : _it(b ? l->begin() : l->end()), _l(l) {}
-
-  private:
-    void increment() { ++this->_it; }
-
-    bool equal(const Iterator& other) const {
-      return this->_l == other._l && this->_it == other._it;
-    }
-
-    NodeRef dereference() const {
-      ikos_assert_msg(this->_it != this->_l->end(),
-                      "trying to dereference an empty iterator");
-      return *this->_it;
-    }
-
-  }; // end class Iterator
+  using Iterator = typename NodeList::const_iterator;
 
 private:
-  explicit WtoNesting(const NodeListPtr& l)
-      : _nodes(std::make_shared< NodeList >(*l)) {}
-
-  int compare(const WtoNesting& other) const {
-    Iterator this_it = this->begin(), other_it = other.begin();
-    while (this_it != this->end()) {
-      if (other_it == other.end()) {
-        return 1;
-      } else if (*this_it == *other_it) {
-        ++this_it;
-        ++other_it;
-      } else {
-        return 2; // Nestings are not comparable
-      }
-    }
-    if (other_it == other.end()) {
-      return 0;
-    } else {
-      return -1;
-    }
-  }
+  NodeList _nodes;
 
 public:
-  WtoNesting() : _nodes(std::make_shared< NodeList >()) {}
+  /// \brief Constructor
+  WtoNesting() {}
 
-  void operator+=(NodeRef n) {
-    this->_nodes = std::make_shared< NodeList >(*this->_nodes);
-    this->_nodes->push_back(n);
-  }
+  /// \brief Copy constructor
+  WtoNesting(const WtoNesting&) = default;
 
-  WtoNesting operator+(NodeRef n) const {
-    WtoNesting res(this->_nodes);
-    res._nodes->push_back(n);
-    return res;
-  }
+  /// \brief Move constructor
+  WtoNesting(WtoNesting&&) = default;
 
-  Iterator begin() const { return Iterator(this->_nodes, true); }
+  /// \brief Copy assignment operator
+  WtoNesting& operator=(const WtoNesting&) = default;
 
-  Iterator end() const { return Iterator(this->_nodes, false); }
+  /// \brief Move assignment operator
+  WtoNesting& operator=(WtoNesting&&) = default;
 
+  /// \brief Destructor
+  ~WtoNesting() = default;
+
+  /// \brief Add a cycle head in the nesting
+  void add(NodeRef head) { this->_nodes.push_back(head); }
+
+  /// \brief Begin iterator over the head of cycles
+  Iterator begin() const { return this->_nodes.cbegin(); }
+
+  /// \brief End iterator over the head of cycles
+  Iterator end() const { return this->_nodes.cend(); }
+
+  /// \brief Return the common prefix of the given nestings
   WtoNesting operator^(const WtoNesting& other) const {
     WtoNesting res;
-    for (Iterator this_it = this->begin(), other_it = other.begin();
+    for (auto this_it = this->begin(), other_it = other.begin();
          this_it != this->end() && other_it != other.end();
          ++this_it, ++other_it) {
       if (*this_it == *other_it) {
-        res._nodes->push_back(*this_it);
+        res.add(*this_it);
       } else {
         break;
       }
     }
     return res;
+  }
+
+private:
+  /// \brief Compare the given nestings
+  int compare(const WtoNesting& other) const {
+    if (this == &other) {
+      return 0; // equals
+    }
+
+    auto this_it = this->begin(), other_it = other.begin();
+    while (this_it != this->end()) {
+      if (other_it == other.end()) {
+        return 1; // `this` is nested within `other`
+      } else if (*this_it == *other_it) {
+        ++this_it;
+        ++other_it;
+      } else {
+        return 2; // not comparable
+      }
+    }
+    if (other_it == other.end()) {
+      return 0; // equals
+    } else {
+      return -1; // `other` is nested within `this`
+    }
+  }
+
+public:
+  bool operator<(const WtoNesting& other) const {
+    return this->compare(other) == -1;
   }
 
   bool operator<=(const WtoNesting& other) const {
@@ -193,12 +190,13 @@ public:
     return this->compare(other) == 1;
   }
 
+  /// \brief Dump the nesting, for debugging purpose
   void dump(std::ostream& o) const {
     o << "[";
-    for (Iterator it = this->begin(); it != this->end();) {
+    for (auto it = this->begin(), et = this->end(); it != et;) {
       DumpableTraits< NodeRef >::dump(o, *it);
       ++it;
-      if (it != this->end()) {
+      if (it != et) {
         o << ", ";
       }
     }
@@ -213,136 +211,120 @@ public:
 template < typename GraphRef, typename GraphTrait = GraphTraits< GraphRef > >
 class WtoComponent {
 public:
+  /// \brief Default constructor
   WtoComponent() = default;
 
+  /// \brief Copy constructor
   WtoComponent(const WtoComponent&) = default;
 
+  /// \brief Move constructor
   WtoComponent(WtoComponent&&) = default;
 
+  /// \brief Copy assignment operator
   WtoComponent& operator=(const WtoComponent&) = default;
 
+  /// \brief Move assignment operator
   WtoComponent& operator=(WtoComponent&&) = default;
 
+  /// \brief Accept the given visitor
   virtual void accept(WtoComponentVisitor< GraphRef, GraphTrait >&) const = 0;
 
+  /// \brief Destructor
   virtual ~WtoComponent() = default;
 
 }; // end class WtoComponent
 
+/// \brief Represents a vertex
 template < typename GraphRef, typename GraphTrait = GraphTraits< GraphRef > >
 class WtoVertex final : public WtoComponent< GraphRef, GraphTrait > {
-  friend class Wto< GraphRef, GraphTrait >;
-
 public:
   using NodeRef = typename GraphTrait::NodeRef;
 
 private:
   NodeRef _node;
 
-private:
-  /// \brief Tag to call the private constructor
-  struct PrivateCtor {};
-
 public:
-  WtoVertex(NodeRef node, PrivateCtor) : _node(node) {}
+  /// \brief Constructor
+  explicit WtoVertex(NodeRef node) : _node(node) {}
 
-public:
+  /// \brief Return the graph node
   NodeRef node() const { return this->_node; }
 
+  /// \brief Accept the given visitor
   void accept(WtoComponentVisitor< GraphRef, GraphTrait >& v) const override {
     v.visit(*this);
   }
 
+  /// \brief Dump the vertex, for debugging purpose
   void dump(std::ostream& o) const {
     DumpableTraits< NodeRef >::dump(o, this->_node);
   }
 
 }; // end class WtoVertex
 
+/// \brief Represents a cycle
 template < typename GraphRef, typename GraphTrait = GraphTraits< GraphRef > >
 class WtoCycle final : public WtoComponent< GraphRef, GraphTrait > {
-  friend class Wto< GraphRef, GraphTrait >;
-
 public:
   using NodeRef = typename GraphTrait::NodeRef;
   using WtoComponentT = WtoComponent< GraphRef, GraphTrait >;
 
 private:
-  using WtoComponentPtr = std::shared_ptr< WtoComponentT >;
+  using WtoComponentPtr = std::unique_ptr< WtoComponentT >;
   using WtoComponentList = boost::container::slist< WtoComponentPtr >;
-  using WtoComponentListPtr = std::shared_ptr< WtoComponentList >;
-
-private:
-  NodeRef _head;
-  WtoComponentListPtr _components;
-
-private:
-  /// \brief Tag to call the private constructor
-  struct PrivateCtor {};
 
 public:
-  WtoCycle(NodeRef head, WtoComponentListPtr components, PrivateCtor)
+  /// \brief Iterator over the components
+  using Iterator =
+      boost::transform_iterator< SeqExposeConstRef< WtoComponentT >,
+                                 typename WtoComponentList::const_iterator >;
+
+private:
+  /// \brief Head of the cycle
+  NodeRef _head;
+
+  /// \brief List of components
+  WtoComponentList _components;
+
+public:
+  /// \brief Constructor
+  WtoCycle(NodeRef head, WtoComponentList components)
       : _head(head), _components(std::move(components)) {}
 
-public:
-  class Iterator : public boost::iterator_facade< Iterator,
-                                                  const WtoComponentT&,
-                                                  boost::forward_traversal_tag,
-                                                  const WtoComponentT& > {
-    friend class boost::iterator_core_access;
-
-  private:
-    typename WtoComponentList::const_iterator _it;
-    WtoComponentListPtr _l;
-
-  public:
-    Iterator(const WtoComponentListPtr& l, bool b)
-        : _it(b ? l->begin() : l->end()), _l(l) {}
-
-  private:
-    void increment() { ++this->_it; }
-
-    bool equal(const Iterator& other) const {
-      return this->_l == other._l && this->_it == other._it;
-    }
-
-    const WtoComponentT& dereference() const {
-      ikos_assert_msg(this->_it != this->_l->end(),
-                      "trying to dereference an empty iterator");
-      return **this->_it;
-    }
-
-  }; // end class Iterator
-
-public:
+  /// \brief Return the head of the cycle
   NodeRef head() const { return this->_head; }
 
+  /// \brief Begin iterator over the components
+  Iterator begin() const {
+    return boost::make_transform_iterator(this->_components.cbegin(),
+                                          SeqExposeConstRef< WtoComponentT >());
+  }
+
+  /// \brief End iterator over the components
+  Iterator end() const {
+    return boost::make_transform_iterator(this->_components.cend(),
+                                          SeqExposeConstRef< WtoComponentT >());
+  }
+
+  /// \brief Accept the given visitor
   void accept(WtoComponentVisitor< GraphRef, GraphTrait >& v) const override {
     v.visit(*this);
   }
 
-  Iterator begin() const { return Iterator(this->_components, true); }
-
-  Iterator end() const { return Iterator(this->_components, false); }
-
+  /// \brief Dump the cycle, for debugging purpose
   void dump(std::ostream& o) const {
     o << "(";
     DumpableTraits< NodeRef >::dump(o, this->_head);
-    if (!this->_components->empty()) {
+    for (const auto& c : this->_components) {
       o << " ";
-      for (Iterator it = this->begin(); it != this->end();) {
-        it->dump(o);
-        ++it;
-        if (it != this->end()) {
-          o << " ";
-        }
-      }
+      c->dump(o);
     }
     o << ")";
   }
 
 }; // end class WtoCycle
 
+/// \brief Weak topological order visitor
 template < typename GraphRef, typename GraphTrait = GraphTraits< GraphRef > >
 class WtoComponentVisitor {
 public:
@@ -350,20 +332,28 @@ public:
   using WtoCycleT = WtoCycle< GraphRef, GraphTrait >;
 
 public:
+  /// \brief Default constructor
   WtoComponentVisitor() = default;
 
+  /// \brief Copy constructor
   WtoComponentVisitor(const WtoComponentVisitor&) = default;
 
+  /// \brief Move constructor
   WtoComponentVisitor(WtoComponentVisitor&&) = default;
 
+  /// \brief Copy assignment operator
   WtoComponentVisitor& operator=(const WtoComponentVisitor&) = default;
 
+  /// \brief Move assignment operator
   WtoComponentVisitor& operator=(WtoComponentVisitor&&) = default;
 
+  /// \brief Visit the given vertex
   virtual void visit(const WtoVertexT&) = 0;
 
+  /// \brief Visit the given cycle
   virtual void visit(const WtoCycleT&) = 0;
 
+  /// \brief Destructor
   virtual ~WtoComponentVisitor() = default;
 
 }; // end class WtoComponentVisitor
@@ -383,106 +373,110 @@ public:
   using WtoCycleT = WtoCycle< GraphRef, GraphTrait >;
 
 private:
-  using WtoComponentPtr = std::shared_ptr< WtoComponentT >;
-  using WtoVertexPtr = std::shared_ptr< WtoVertexT >;
-  using WtoCyclePtr = std::shared_ptr< WtoCycleT >;
+  using WtoComponentPtr = std::unique_ptr< WtoComponentT >;
   using WtoComponentList = boost::container::slist< WtoComponentPtr >;
-  using WtoComponentListPtr = std::shared_ptr< WtoComponentList >;
   using Dfn = Bound< ZNumber >;
   using DfnTable = std::unordered_map< NodeRef, Dfn >;
-  using DfnTablePtr = std::shared_ptr< DfnTable >;
-  using Stack = std::deque< NodeRef >;
-  using StackPtr = std::shared_ptr< Stack >;
-  using NestingTable = std::unordered_map< NodeRef, WtoNestingT >;
-  using NestingTablePtr = std::shared_ptr< NestingTable >;
+  using Stack = std::vector< NodeRef >;
+  using WtoNestingPtr = std::shared_ptr< WtoNestingT >;
+  using NestingTable = std::unordered_map< NodeRef, WtoNestingPtr >;
+
+public:
+  /// \brief Iterator over the components
+  using Iterator =
+      boost::transform_iterator< SeqExposeConstRef< WtoComponentT >,
+                                 typename WtoComponentList::const_iterator >;
 
 private:
-  WtoComponentListPtr _components;
-  DfnTablePtr _dfn_table;
+  WtoComponentList _components;
+  NestingTable _nesting_table;
+  DfnTable _dfn_table;
   Dfn _num;
-  StackPtr _stack;
-  NestingTablePtr _nesting_table;
+  Stack _stack;
 
 private:
+  /// \brief Visitor to build the nestings of each node
   class NestingBuilder final
       : public WtoComponentVisitor< GraphRef, GraphTrait > {
-  public:
-    using WtoVertexT = WtoVertex< GraphRef, GraphTrait >;
-    using WtoCycleT = WtoCycle< GraphRef, GraphTrait >;
-
   private:
-    WtoNestingT _nesting;
-    NestingTablePtr _nesting_table;
+    WtoNestingPtr _nesting;
+    NestingTable& _nesting_table;
 
   public:
-    explicit NestingBuilder(NestingTablePtr nesting_table)
-        : _nesting_table(std::move(nesting_table)) {}
+    explicit NestingBuilder(NestingTable& nesting_table)
+        : _nesting(std::make_shared< WtoNestingT >()),
+          _nesting_table(nesting_table) {}
 
     void visit(const WtoCycleT& cycle) override {
       NodeRef head = cycle.head();
-      WtoNestingT previous_nesting = this->_nesting;
-      this->_nesting_table->insert(std::make_pair(head, this->_nesting));
-      this->_nesting += head;
-      for (auto it = cycle.begin(); it != cycle.end(); ++it) {
+      WtoNestingPtr previous_nesting = this->_nesting;
+      this->_nesting_table.insert(std::make_pair(head, this->_nesting));
+      this->_nesting = std::make_shared< WtoNestingT >(*this->_nesting);
+      this->_nesting->add(head);
+      for (auto it = cycle.begin(), et = cycle.end(); it != et; ++it) {
         it->accept(*this);
       }
       this->_nesting = previous_nesting;
     }
 
     void visit(const WtoVertexT& vertex) override {
-      this->_nesting_table->insert(
+      this->_nesting_table.insert(
           std::make_pair(vertex.node(), this->_nesting));
     }
 
   }; // end class NestingBuilder
 
 private:
+  /// \brief Return the depth-first number of the given node
   Dfn dfn(NodeRef n) const {
-    auto it = this->_dfn_table->find(n);
-    if (it == this->_dfn_table->end()) {
-      return Dfn(0);
-    } else {
+    auto it = this->_dfn_table.find(n);
+    if (it != this->_dfn_table.end()) {
       return it->second;
+    } else {
+      return Dfn(0);
     }
   }
 
+  /// \brief Set the depth-first number of the given node
   void set_dfn(NodeRef n, const Dfn& dfn) {
-    std::pair< typename DfnTable::iterator, bool > res =
-        this->_dfn_table->insert(std::make_pair(n, dfn));
+    auto res = this->_dfn_table.insert(std::make_pair(n, dfn));
     if (!res.second) {
       (res.first)->second = dfn;
     }
   }
 
+  /// \brief Pop a node from the stack
   NodeRef pop() {
-    ikos_assert_msg(!this->_stack->empty(), "empty stack");
-    NodeRef top = this->_stack->back();
-    this->_stack->pop_back();
+    ikos_assert_msg(!this->_stack.empty(), "empty stack");
+    NodeRef top = this->_stack.back();
+    this->_stack.pop_back();
     return top;
   }
 
-  void push(NodeRef n) { this->_stack->push_back(n); }
+  /// \brief Push a node on the stack
+  void push(NodeRef n) { this->_stack.push_back(n); }
 
-  WtoCyclePtr component(GraphRef cfg, NodeRef vertex) {
-    WtoComponentListPtr partition = std::make_shared< WtoComponentList >();
+  /// \brief Create the cycle component for the given vertex
+  WtoComponentPtr component(NodeRef vertex) {
+    WtoComponentList partition;
     for (auto it = GraphTrait::successor_begin(vertex),
               et = GraphTrait::successor_end(vertex);
          it != et;
          ++it) {
       NodeRef succ = *it;
       if (this->dfn(succ) == Dfn(0)) {
-        this->visit(cfg, succ, partition);
+        this->visit(succ, partition);
       }
     }
-    return std::make_shared< WtoCycleT >(vertex,
-                                         partition,
-                                         typename WtoCycleT::PrivateCtor());
+    return std::make_unique< WtoCycleT >(vertex, std::move(partition));
   }
 
-  Dfn visit(GraphRef cfg,
-            NodeRef vertex,
-            const WtoComponentListPtr& partition) {
-    Dfn head(0), min(0);
+  /// \brief Visit the given node
+  ///
+  /// Algorithm to build a weak topological order of a graph
+  Dfn visit(NodeRef vertex, WtoComponentList& partition) {
+    Dfn head(0);
+    Dfn min(0);
     bool loop;
 
     this->push(vertex);
@@ -497,7 +491,7 @@ private:
       NodeRef succ = *it;
       Dfn succ_dfn = this->dfn(succ);
       if (succ_dfn == Dfn(0)) {
-        min = this->visit(cfg, succ, partition);
+        min = this->visit(succ, partition);
       } else {
         min = succ_dfn;
       }
@@ -514,117 +508,78 @@ private:
           this->set_dfn(element, Dfn(0));
           element = this->pop();
         }
-        partition->push_front(
-            std::static_pointer_cast< WtoComponentT, WtoCycleT >(
-                this->component(cfg, vertex)));
+        partition.push_front(this->component(vertex));
       } else {
-        partition->push_front(
-            std::static_pointer_cast< WtoComponentT, WtoVertexT >(
-                std::make_shared<
-                    WtoVertexT >(vertex, typename WtoVertexT::PrivateCtor())));
+        partition.push_front(std::make_unique< WtoVertexT >(vertex));
       }
     }
     return head;
   }
 
+  /// \brief Build the nesting table
   void build_nesting() {
     NestingBuilder builder(this->_nesting_table);
-    for (Iterator it = this->begin(); it != this->end(); ++it) {
+    for (auto it = this->begin(), et = this->end(); it != et; ++it) {
       it->accept(builder);
     }
   }
 
 public:
-  class Iterator : public boost::iterator_facade< Iterator,
-                                                  const WtoComponentT&,
-                                                  boost::forward_traversal_tag,
-                                                  const WtoComponentT& > {
-    friend class boost::iterator_core_access;
-
-  private:
-    typename WtoComponentList::const_iterator _it;
-    WtoComponentListPtr _l;
-
-  public:
-    Iterator(const WtoComponentListPtr& l, bool b)
-        : _it(b ? l->begin() : l->end()), _l(l) {}
-
-  private:
-    void increment() { ++this->_it; }
-
-    bool equal(const Iterator& other) const {
-      return this->_l == other._l && this->_it == other._it;
-    }
-
-    const WtoComponentT& dereference() const {
-      ikos_assert_msg(this->_it != this->_l->end(),
-                      "trying to dereference an empty iterator");
-      return **this->_it;
-    }
-
-  }; // end class Iterator
-
-public:
   /// \brief Compute the weak topological order of the given graph
-  explicit Wto(GraphRef cfg)
-      : _components(std::make_shared< WtoComponentList >()),
-        _dfn_table(std::make_shared< DfnTable >()),
-        _num(0),
-        _stack(std::make_shared< Stack >()),
-        _nesting_table(std::make_shared< NestingTable >()) {
-    this->visit(cfg, GraphTrait::entry(cfg), this->_components);
-    this->_dfn_table.reset();
-    this->_stack.reset();
+  explicit Wto(GraphRef cfg) : _num(0) {
+    this->visit(GraphTrait::entry(cfg), this->_components);
+    this->_dfn_table.clear();
+    this->_stack.clear();
     this->build_nesting();
   }
 
-  /// \brief Copy constructor
-  Wto(const Wto& other)
-      : _components(other._components), _nesting_table(other._nesting_table) {}
+  /// \brief Deleted copy constructor
+  Wto(const Wto& other) = delete;
 
   /// \brief Move constructor
-  Wto(Wto&& other)
-      : _components(std::move(other._components)),
-        _nesting_table(std::move(other._nesting_table)) {}
+  Wto(Wto&& other) = default;
 
-  /// \brief Copy assignment operator
-  Wto& operator=(const Wto& other) {
-    this->_components = other._components;
-    this->_nesting_table = other._nesting_table;
-    return *this;
-  }
+  /// \brief Deleted copy assignment operator
+  Wto& operator=(const Wto& other) = delete;
 
   /// \brief Move assignment operator
-  Wto& operator=(Wto&& other) {
-    this->_components = std::move(other._components);
-    this->_nesting_table = std::move(other._nesting_table);
-    return *this;
-  }
+  Wto& operator=(Wto&& other) = default;
 
   /// \brief Destructor
   ~Wto() = default;
 
-  Iterator begin() const { return Iterator(this->_components, true); }
-
-  Iterator end() const { return Iterator(this->_components, false); }
-
-  WtoNestingT nesting(NodeRef n) const {
-    auto it = this->_nesting_table->find(n);
-    ikos_assert_msg(it != this->_nesting_table->end(), "node not found");
-    return it->second;
+  /// \brief Begin iterator over the components
+  Iterator begin() const {
+    return boost::make_transform_iterator(this->_components.cbegin(),
+                                          SeqExposeConstRef< WtoComponentT >());
   }
 
+  /// \brief End iterator over the components
+  Iterator end() const {
+    return boost::make_transform_iterator(this->_components.cend(),
+                                          SeqExposeConstRef< WtoComponentT >());
+  }
+
+  /// \brief Return the nesting of the given node
+  const WtoNestingT& nesting(NodeRef n) const {
+    auto it = this->_nesting_table.find(n);
+    ikos_assert_msg(it != this->_nesting_table.end(), "node not found");
+    return *(it->second);
+  }
+
+  /// \brief Accept the given visitor
   void accept(WtoComponentVisitor< GraphRef, GraphTrait >& v) {
-    for (Iterator it = this->begin(); it != this->end(); ++it) {
-      it->accept(v);
+    for (const auto& c : this->_components) {
+      c->accept(v);
     }
   }
 
+  /// \brief Dump the order, for debugging purpose
   void dump(std::ostream& o) const {
-    for (Iterator it = this->begin(); it != this->end();) {
+    for (auto it = this->begin(), et = this->end(); it != et;) {
       it->dump(o);
       ++it;
-      if (it != this->end()) {
+      if (it != et) {
         o << " ";
       }
     }

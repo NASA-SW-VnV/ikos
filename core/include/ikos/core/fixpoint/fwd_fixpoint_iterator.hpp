@@ -78,7 +78,6 @@ class InterleavedFwdFixpointIterator
 private:
   using NodeRef = typename GraphTrait::NodeRef;
   using InvariantTable = std::unordered_map< NodeRef, AbstractValue >;
-  using InvariantTablePtr = std::shared_ptr< InvariantTable >;
   using WtoT = Wto< GraphRef, GraphTrait >;
   using WtoIterator = interleaved_fwd_fixpoint_iterator_impl::
       WtoIterator< GraphRef, AbstractValue, GraphTrait >;
@@ -88,26 +87,24 @@ private:
 private:
   GraphRef _cfg;
   WtoT _wto;
-  InvariantTablePtr _pre, _post;
+  InvariantTable _pre;
+  InvariantTable _post;
 
 public:
   /// \brief Create an interleaved forward fixpoint iterator
   explicit InterleavedFwdFixpointIterator(GraphRef cfg)
-      : _cfg(cfg),
-        _wto(cfg),
-        _pre(std::make_shared< InvariantTable >()),
-        _post(std::make_shared< InvariantTable >()) {}
+      : _cfg(cfg), _wto(cfg) {}
 
-  /// \brief Copy constructor
+  /// \brief Deleted copy constructor
   InterleavedFwdFixpointIterator(const InterleavedFwdFixpointIterator&) =
-      default;
+      delete;
 
   /// \brief Move constructor
   InterleavedFwdFixpointIterator(InterleavedFwdFixpointIterator&&) = default;
 
-  /// \brief Copy assignment operator
+  /// \brief Deleted copy assignment operator
   InterleavedFwdFixpointIterator& operator=(
-      const InterleavedFwdFixpointIterator&) = default;
+      const InterleavedFwdFixpointIterator&) = delete;
 
   /// \brief Move assignment operator
   InterleavedFwdFixpointIterator& operator=(InterleavedFwdFixpointIterator&&) =
@@ -121,14 +118,12 @@ public:
 
 private:
   /// \brief Set the invariant for the given node
-  static void set(const InvariantTablePtr& table,
-                  NodeRef node,
-                  AbstractValue inv) {
-    auto it = table->find(node);
-    if (it != table->end()) {
+  static void set(InvariantTable& table, NodeRef node, AbstractValue inv) {
+    auto it = table.find(node);
+    if (it != table.end()) {
       it->second = std::move(inv);
     } else {
-      table->emplace(node, std::move(inv));
+      table.emplace(node, std::move(inv));
     }
   }
 
@@ -143,14 +138,13 @@ private:
   }
 
   /// \brief Get the invariant for the given node
-  static const AbstractValue& get(const InvariantTablePtr& table,
-                                  NodeRef node) {
-    auto it = table->find(node);
-    if (it != table->end()) {
+  static const AbstractValue& get(const InvariantTable& table, NodeRef node) {
+    auto it = table.find(node);
+    if (it != table.end()) {
       return it->second;
     } else {
-      auto res = table->emplace(node, AbstractValue::bottom());
-      return res.first->second;
+      static AbstractValue bottom = AbstractValue::bottom();
+      return bottom;
     }
   }
 
@@ -244,8 +238,8 @@ public:
 
   /// \brief Clear the current fixpoint
   void clear() {
-    this->_pre = std::make_shared< InvariantTable >();
-    this->_post = std::make_shared< InvariantTable >();
+    this->_pre.clear();
+    this->_post.clear();
   }
 
   /// \brief Destructor
@@ -256,7 +250,7 @@ public:
 namespace interleaved_fwd_fixpoint_iterator_impl {
 
 template < typename GraphRef, typename AbstractValue, typename GraphTrait >
-class WtoIterator : public WtoComponentVisitor< GraphRef, GraphTrait > {
+class WtoIterator final : public WtoComponentVisitor< GraphRef, GraphTrait > {
 public:
   using InterleavedIterator =
       InterleavedFwdFixpointIterator< GraphRef, AbstractValue, GraphTrait >;
@@ -264,7 +258,7 @@ public:
   using WtoVertexT = WtoVertex< GraphRef, GraphTrait >;
   using WtoCycleT = WtoCycle< GraphRef, GraphTrait >;
   using WtoT = Wto< GraphRef, GraphTrait >;
-  using WtoNestingT = typename WtoT::WtoNestingT;
+  using WtoNestingT = WtoNesting< GraphRef, GraphTrait >;
 
 private:
   enum IterationKind { Increasing, Decreasing };
@@ -300,7 +294,7 @@ public:
 
   void visit(const WtoCycleT& cycle) override {
     NodeRef head = cycle.head();
-    WtoNestingT cycle_nesting = this->_iterator.wto().nesting(head);
+    const WtoNestingT& cycle_nesting = this->_iterator.wto().nesting(head);
     AbstractValue pre = AbstractValue::bottom();
 
     // Collect invariants from incoming edges
@@ -309,7 +303,7 @@ public:
          it != et;
          ++it) {
       NodeRef pred = *it;
-      if (!(this->_iterator.wto().nesting(pred) > cycle_nesting)) {
+      if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
         pre.join_with(this->_iterator.analyze_edge(pred,
                                                    head,
                                                    this->_iterator.post(pred)));
@@ -334,7 +328,7 @@ public:
            it != et;
            ++it) {
         NodeRef pred = *it;
-        if (!(this->_iterator.wto().nesting(pred) > cycle_nesting)) {
+        if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
           new_pre_in.join_with(
               this->_iterator.analyze_edge(pred,
                                            head,
@@ -394,7 +388,7 @@ public:
 }; // end class WtoIterator
 
 template < typename GraphRef, typename AbstractValue, typename GraphTrait >
-class WtoProcessor : public WtoComponentVisitor< GraphRef, GraphTrait > {
+class WtoProcessor final : public WtoComponentVisitor< GraphRef, GraphTrait > {
 public:
   using InterleavedIterator =
       InterleavedFwdFixpointIterator< GraphRef, AbstractValue, GraphTrait >;
