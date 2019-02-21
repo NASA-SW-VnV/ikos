@@ -1336,7 +1336,7 @@ boost::optional< MachineInt > BufferOverflowChecker::is_array_access(
     return boost::none;
   }
 
-  return {element_size};
+  return element_size;
 }
 
 bool BufferOverflowChecker::display_mem_access_check(
