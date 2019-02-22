@@ -67,6 +67,9 @@ class WtoProcessor;
 
 } // end namespace interleaved_fwd_fixpoint_iterator_impl
 
+/// \brief Interleaved forward fixpoint iterator
+///
+/// This class computes a fixpoint on a control flow graph.
 template < typename GraphRef,
            typename AbstractValue,
            typename GraphTrait = GraphTraits< GraphRef > >
@@ -230,11 +233,21 @@ public:
   /// \brief Compute the fixpoint with the given initial abstract value
   void run(AbstractValue init) {
     this->set_pre(GraphTrait::entry(this->_cfg), std::move(init));
+
+    // Compute the fixpoint
     WtoIterator iterator(*this);
     this->_wto.accept(iterator);
+
+    // Call process_pre/process_post methods
     WtoProcessor processor(*this);
     this->_wto.accept(processor);
   }
+
+  /// \brief Clear the pre invariants
+  void clear_pre() { this->_pre.clear(); }
+
+  /// \brief Clear the post invariants
+  void clear_post() { this->_post.clear(); }
 
   /// \brief Clear the current fixpoint
   void clear() {

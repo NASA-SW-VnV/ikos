@@ -336,6 +336,11 @@ static llvm::cl::opt< bool > NoFixpointProfiles(
     llvm::cl::desc("Disable the fixpoint profiles analysis"),
     llvm::cl::cat(AnalysisCategory));
 
+static llvm::cl::opt< bool > NoFixpointCache(
+    "no-fixpoint-cache",
+    llvm::cl::desc("Disable the cache of fixpoints"),
+    llvm::cl::cat(AnalysisCategory));
+
 static llvm::cl::opt< analyzer::Precision > Precision(
     "prec",
     llvm::cl::desc("Precision level:"),
@@ -635,6 +640,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .use_liveness = !NoLiveness,
       .use_pointer = !NoPointer,
       .use_fixpoint_profiles = !NoFixpointProfiles,
+      .use_fixpoint_cache = !NoFixpointCache,
       .precision = Precision,
       .globals_init_policy = GlobalsInitPolicy,
       .display_invariants = DisplayInvariants,

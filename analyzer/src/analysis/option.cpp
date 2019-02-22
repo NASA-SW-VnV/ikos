@@ -81,6 +81,8 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("use-fixpoint-profiles", this->use_fixpoint_profiles);
 
+  table.insert("use-fixpoint-cache", this->use_fixpoint_cache);
+
   table.insert("precision-level", precision_str(this->precision));
 
   table.insert("globals-init-policy",

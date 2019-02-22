@@ -287,6 +287,9 @@ public:
   /// \brief Wether we should use a fixpoint profile analysis or not
   bool use_fixpoint_profiles;
 
+  /// \brief Wether we should save fixpoints on called functions or not
+  bool use_fixpoint_cache;
+
   /// \brief Precision of the analysis
   Precision precision;
 

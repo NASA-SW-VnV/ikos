@@ -323,14 +323,14 @@ private:
       InlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
 
 private:
+  /// \brief Analysis context
+  Context& _ctx;
+
   /// \brief Analyzed function
   ar::Function* _function;
 
   /// \brief Current call context
   CallContext* _call_context;
-
-  /// \brief Machine integer abstract domain
-  MachineIntDomainOption _machine_int_domain;
 
   /// \brief Fixpoint profile
   boost::optional< const FixpointProfile& > _profile;
@@ -359,9 +359,9 @@ public:
                    const std::vector< std::unique_ptr< Checker > >& checkers,
                    ar::Function* entry_point)
       : FwdFixpointIterator(entry_point->body()),
+        _ctx(ctx),
         _function(entry_point),
         _call_context(ctx.call_context_factory->get_empty()),
-        _machine_int_domain(ctx.opts.machine_int_domain),
         _profile(ctx.fixpoint_profiler == nullptr
                      ? boost::none
                      : ctx.fixpoint_profiler->profile(entry_point)),
@@ -394,10 +394,10 @@ public:
                    ar::Function* callee,
                    bool context_stable)
       : FwdFixpointIterator(callee->body()),
+        _ctx(ctx),
         _function(callee),
         _call_context(
             ctx.call_context_factory->get_context(caller._call_context, call)),
-        _machine_int_domain(ctx.opts.machine_int_domain),
         _profile(ctx.fixpoint_profiler == nullptr
                      ? boost::none
                      : ctx.fixpoint_profiler->profile(callee)),
@@ -422,8 +422,16 @@ public:
   /// \brief Compute the fixpoint
   void run(AbstractDomain inv) {
     FwdFixpointIterator::run(std::move(inv));
+
+    // Fixpoint reached
     this->_call_exec_engine.mark_convergence_achieved();
+
+    // Clear post invariants, save a lot of memory
+    this->clear_post();
   }
+
+  /// \brief Post invariants are cleared to save memory
+  const AbstractDomain& post(ar::BasicBlock*) const = delete;
 
   /// \brief Extrapolate the new state after an increasing iteration
   AbstractDomain extrapolate(ar::BasicBlock* head,
@@ -447,7 +455,7 @@ public:
   /// \brief Check if the decreasing iterations fixpoint is reached
   bool is_decreasing_iterations_fixpoint(const AbstractDomain& before,
                                          const AbstractDomain& after) override {
-    if (machine_int_domain_option_has_narrowing(this->_machine_int_domain)) {
+    if (machine_int_domain_option_has_narrowing(_ctx.opts.machine_int_domain)) {
       return before.leq(after);
     } else {
       return true; // stop after the first decreasing iteration
@@ -488,6 +496,9 @@ public:
 
   /// \brief Run the checks with the previously computed fix-point
   void run_checks() {
+    // Check called functions during the transfer function
+    this->_call_exec_engine.mark_check_callees();
+
     for (const auto& checker : this->_checkers) {
       checker->enter(this->_function, this->_call_context);
     }
@@ -521,15 +532,6 @@ public:
     for (const auto& checker : this->_checkers) {
       checker->leave(this->_function, this->_call_context);
     }
-
-    // Clear the invariants
-    this->clear();
-
-    // Run the checks on the callees
-    this->_call_exec_engine.run_checks();
-
-    // Clear the list of callees
-    this->_call_exec_engine.clear();
   }
 
   /// \name Helpers for InlineCallExecutionEngine
@@ -555,6 +557,11 @@ public:
   /// \brief Return the exit invariant, or bottom
   const AbstractDomain& exit_invariant() const {
     return this->_call_exec_engine.exit_invariant();
+  }
+
+  /// \brief Return the return statement, or null
+  ar::ReturnValue* return_stmt() const {
+    return this->_call_exec_engine.return_stmt();
   }
 
 }; // end class FunctionFixpoint

@@ -104,13 +104,16 @@ private:
   ar::ReturnValue* _return_stmt;
 
   /// \brief Store previously-computed fixpoints on callees
-  CallMap _calls;
+  CallMap _calls_cache;
 
   /// \brief True if the calling context is stable
   bool _context_stable;
 
-  /// \brief True if the fixpoint on _caller is reached
+  /// \brief True if the fixpoint of the current function is reached
   bool _convergence_achieved;
+
+  /// \brief True to check properties on the callees
+  bool _check_callees;
 
 public:
   /// \brief Constructor
@@ -124,9 +127,9 @@ public:
         _caller(caller),
         _exit_inv(AbstractDomain::bottom()),
         _return_stmt(nullptr),
-        _calls(),
         _context_stable(context_stable),
-        _convergence_achieved(convergence_achieved) {}
+        _convergence_achieved(convergence_achieved),
+        _check_callees(false) {}
 
   /// \brief Mark that the calling context is stable
   void mark_context_stable() { this->_context_stable = true; }
@@ -134,16 +137,8 @@ public:
   /// \brief Mark that the reached the fixpoint
   void mark_convergence_achieved() { this->_convergence_achieved = true; }
 
-  /// \brief Clear the list of callees
-  void clear() { this->_calls.clear(); }
-
-  /// \brief Run the checks on the callees
-  void run_checks() const {
-    for (auto it = this->_calls.begin(), et = this->_calls.end(); it != et;
-         ++it) {
-      this->run_checks(it->second);
-    }
-  }
+  /// \brief Mark to check the callees
+  void mark_check_callees() { this->_check_callees = true; }
 
   /// \brief Return the exit invariant, or bottom
   const AbstractDomain& exit_invariant() const { return this->_exit_inv; }
@@ -151,15 +146,6 @@ public:
   /// \brief Return the return statement, or null
   ar::ReturnValue* return_stmt() const { return this->_return_stmt; }
 
-private:
-  /// \brief Run the checks on the given CalleeMap
-  void run_checks(const CalleeMap& callees) const {
-    for (auto it = callees.begin(), et = callees.end(); it != et; ++it) {
-      it->second->run_checks();
-    }
-  }
-
-public:
   /// \brief Exit a function
   ///
   /// This is called whenever we reach the exit node (if there is one).
@@ -286,9 +272,6 @@ private:
     // Compute the post invariant
     //
 
-    // Map from callee to FunctionAnalyzerPtr
-    CalleeMap& callee_map = this->_calls[call];
-
     // By default, propagate the exception states
     AbstractDomain post(this->inv());
     post.set_normal_flow_to_bottom();
@@ -346,23 +329,24 @@ private:
       // Analyze recursively the callee
       //
 
-      const InlineCallExecutionEngineT* callee_inliner = nullptr;
+      std::unique_ptr< FunctionAnalyzer > callee_analyzer = nullptr;
 
-      if (this->_convergence_achieved) {
+      if (this->_convergence_achieved && _ctx.opts.use_fixpoint_cache) {
         // Use the previously computed fix-point
-        FunctionAnalyzer* callee_analyzer = callee_map.at(callee).get();
+        callee_analyzer = std::move(this->_calls_cache[call][callee]);
 
         if (this->_context_stable) {
           // Calling context is stable
           callee_analyzer->mark_context_stable();
         }
-
-        callee_inliner = &callee_analyzer->inliner();
       } else {
-        // Erase the previous fix-point
-        callee_map.erase(callee);
+        if (_ctx.opts.use_fixpoint_cache) {
+          // Erase the previous fix-point on the callee
+          this->_calls_cache[call][callee].reset();
+        }
 
-        auto callee_analyzer = std::make_unique<
+        // Create a fixpoint on the callee
+        callee_analyzer = std::make_unique<
             FunctionAnalyzer >(_ctx,
                                _caller,
                                call,
@@ -370,17 +354,28 @@ private:
                                this->_context_stable &&
                                    this->_convergence_achieved);
 
-        callee_inliner = &callee_analyzer->inliner();
-
         // Run analysis on callee
         log::debug("Analyzing function '" + demangle(callee->name()) + "'");
         callee_analyzer->run(engine.inv());
-
-        // insert in the callee map
-        callee_map.emplace(callee, std::move(callee_analyzer));
       }
 
-      engine.set_inv(callee_inliner->exit_invariant());
+      if (this->_check_callees) {
+        // Run the checks on the callee
+        callee_analyzer->run_checks();
+      }
+
+      // Return statement in the callee, or null
+      ar::ReturnValue* return_stmt = callee_analyzer->return_stmt();
+
+      engine.set_inv(callee_analyzer->exit_invariant());
+
+      if (_ctx.opts.use_fixpoint_cache) {
+        // Save the fix-point for later
+        this->_calls_cache[call][callee] = std::move(callee_analyzer);
+      } else {
+        // Delete the callee fix-point
+        callee_analyzer.reset();
+      }
 
       // Merge exceptions in caught_exceptions, in case it's an invoke
       engine.inv().merge_propagated_in_caught_exceptions();
@@ -392,7 +387,7 @@ private:
         continue;
       }
 
-      engine.match_up(call, callee_inliner->return_stmt());
+      engine.match_up(call, return_stmt);
       post.join_with(engine.inv());
 
       resolved = true;

@@ -150,6 +150,11 @@ def parse_arguments(argv):
                           help='Disable the fixpoint profiles analysis',
                           action='store_true',
                           default=False)
+    analysis.add_argument('--no-fixpoint-cache',
+                          dest='no_fixpoint_cache',
+                          help='Disable the cache of fixpoints',
+                          action='store_true',
+                          default=False)
     analysis.add_argument('--prec',
                           dest='precision_level',
                           metavar='',
@@ -676,6 +681,8 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-pointer')
     if opt.no_fixpoint_profiles:
         cmd.append('-no-fixpoint-profiles')
+    if opt.no_fixpoint_cache:
+        cmd.append('-no-fixpoint-cache')
     if opt.hardware_addresses:
         cmd.append('-hardware-addresses=%s' % ','.join(opt.hardware_addresses))
     if opt.hardware_addresses_file:

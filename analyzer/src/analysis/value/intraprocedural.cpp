@@ -73,7 +73,7 @@ namespace {
 using namespace value;
 
 /// \brief Fixpoint on a function body
-class FunctionFixpoint
+class FunctionFixpoint final
     : public core::InterleavedFwdFixpointIterator< ar::Code*, AbstractDomain > {
 private:
   /// \brief Parent class
@@ -90,9 +90,6 @@ private:
   /// \brief Empty call context
   CallContext* _empty_call_context;
 
-  /// \brief Machine integer abstract domain
-  MachineIntDomainOption _machine_int_domain;
-
   /// \brief Fixpoint profile
   boost::optional< const FixpointProfile& > _profile;
 
@@ -103,7 +100,6 @@ public:
         _ctx(ctx),
         _function(function),
         _empty_call_context(ctx.call_context_factory->get_empty()),
-        _machine_int_domain(ctx.opts.machine_int_domain),
         _profile(ctx.fixpoint_profiler == nullptr
                      ? boost::none
                      : ctx.fixpoint_profiler->profile(function)) {}
@@ -130,7 +126,7 @@ public:
   /// \brief Check if the decreasing iterations fixpoint is reached
   bool is_decreasing_iterations_fixpoint(const AbstractDomain& before,
                                          const AbstractDomain& after) override {
-    if (machine_int_domain_option_has_narrowing(this->_machine_int_domain)) {
+    if (machine_int_domain_option_has_narrowing(_ctx.opts.machine_int_domain)) {
       return before.leq(after);
     } else {
       return true; // stop after the first decreasing iteration

@@ -64,9 +64,13 @@ Analysis issues
 
 IKOS probably ran out of memory.
 
-We are currently working on this issue.
+See [Running ouf of memory](#running-out-of-memory)
 
-As a short-term solution, you could run IKOS on a machine with more memory.
+### Running out of memory
+
+IKOS might run out of memory on huge code bases.
+
+Consider using the option `--no-fixpoint-cache`. It disables the cache of fixpoint for called functions, which decreases the memory usage at the cost of run time.
 
 Known issues
 ------------
