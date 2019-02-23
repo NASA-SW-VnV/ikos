@@ -257,7 +257,7 @@ private:
     //
     ikos_assert(!callees.is_bottom());
     if (callees.is_empty()) {
-      // Null pointer dereference
+      // Invalid pointer dereference
       this->inv().set_normal_flow_to_bottom();
       return;
     } else if (callees.is_top()) {
@@ -275,9 +275,6 @@ private:
     // By default, propagate the exception states
     AbstractDomain post(this->inv());
     post.set_normal_flow_to_bottom();
-
-    // Check if the call is correct
-    bool resolved = false;
 
     // For each callee
     for (MemoryLocation* mem : callees) {
@@ -303,8 +300,6 @@ private:
         engine.exec_extern_call(call, callee);
         engine.inv().merge_propagated_in_caught_exceptions();
         post.join_with(engine.inv());
-
-        resolved = true;
         continue;
       }
       ikos_assert(callee->is_definition());
@@ -382,22 +377,11 @@ private:
 
       if (engine.inv().is_normal_flow_bottom()) {
         post.join_with(engine.inv()); // collect the exception states
-
-        resolved = true;
         continue;
       }
 
       engine.match_up(call, return_stmt);
       post.join_with(engine.inv());
-
-      resolved = true;
-    }
-
-    if (!resolved) {
-      // ASSUMPTION: the callee has no side effects.
-      // Just set lhs and all actual parameters of pointer type to TOP.
-      this->_engine.exec_unknown_extern_call(call);
-      return;
     }
 
     this->_engine.set_inv(std::move(post));
