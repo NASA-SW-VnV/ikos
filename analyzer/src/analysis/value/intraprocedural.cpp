@@ -181,11 +181,6 @@ public:
 
   /// \brief Run the checks with the previously computed fix-point
   void run_checks(const std::vector< std::unique_ptr< Checker > >& checkers) {
-    for (const auto& checker : checkers) {
-      checker->enter(this->_function, this->_empty_call_context);
-    }
-
-    // Check the function body
     for (ar::BasicBlock* bb : *this->cfg()) {
       NumericalExecutionEngine< AbstractDomain >
           exec_engine(this->pre(bb),
@@ -200,9 +195,6 @@ public:
           exec_engine);
 
       exec_engine.exec_enter(bb);
-      for (const auto& checker : checkers) {
-        checker->enter(bb, exec_engine.inv(), this->_empty_call_context);
-      }
 
       for (ar::Statement* stmt : *bb) {
         // Check the statement if it's related to an llvm instruction
@@ -211,18 +203,12 @@ public:
             checker->check(stmt, exec_engine.inv(), this->_empty_call_context);
           }
         }
+
         // Propagate
         transfer_function(exec_engine, call_exec_engine, stmt);
       }
 
-      for (const auto& checker : checkers) {
-        checker->leave(bb, exec_engine.inv(), this->_empty_call_context);
-      }
       exec_engine.exec_leave(bb);
-    }
-
-    for (const auto& checker : checkers) {
-      checker->leave(this->_function, this->_empty_call_context);
     }
   }
 

@@ -499,17 +499,9 @@ public:
     // Check called functions during the transfer function
     this->_call_exec_engine.mark_check_callees();
 
-    for (const auto& checker : this->_checkers) {
-      checker->enter(this->_function, this->_call_context);
-    }
-
-    // Check the function body
     for (ar::BasicBlock* bb : *this->cfg()) {
       this->_exec_engine.set_inv(this->pre(bb));
       this->_exec_engine.exec_enter(bb);
-      for (const auto& checker : this->_checkers) {
-        checker->enter(bb, this->_exec_engine.inv(), this->_call_context);
-      }
 
       for (ar::Statement* stmt : *bb) {
         // Check the statement if it's related to an llvm instruction
@@ -523,14 +515,7 @@ public:
         transfer_function(this->_exec_engine, this->_call_exec_engine, stmt);
       }
 
-      for (const auto& checker : this->_checkers) {
-        checker->leave(bb, this->_exec_engine.inv(), this->_call_context);
-      }
       this->_exec_engine.exec_leave(bb);
-    }
-
-    for (const auto& checker : this->_checkers) {
-      checker->leave(this->_function, this->_call_context);
     }
   }
 

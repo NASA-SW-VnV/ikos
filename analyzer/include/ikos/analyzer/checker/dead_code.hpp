@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <llvm/ADT/DenseMap.h>
+
 #include <ikos/analyzer/checker/checker.hpp>
 
 namespace ikos {
@@ -51,8 +53,11 @@ namespace analyzer {
 /// \brief Dead code checker
 class DeadCodeChecker final : public Checker {
 private:
-  /// \brief Previous statement in the basic block
-  ar::Statement* _prev_stmt = nullptr;
+  /// \brief Previous statement for each basic block currently analyzed
+  ///
+  /// Since we cannot get the previous statement of an `ar::Statement` in O(1),
+  /// we use this map to store the previously analyzed statement.
+  llvm::DenseMap< ar::BasicBlock*, ar::Statement* > _prev_stmts;
 
 public:
   /// \brief Constructor
@@ -64,17 +69,18 @@ public:
   /// \brief Get the checker description
   const char* description() const override;
 
-  /// \brief Start the checks for the given basic block
-  void enter(ar::BasicBlock* bb,
-             const value::AbstractDomain& inv,
-             CallContext* call_context) override;
-
   /// \brief Check a statement
   void check(ar::Statement* stmt,
              const value::AbstractDomain& inv,
              CallContext* call_context) override;
 
 private:
+  /// \brief Return the previous statement
+  ar::Statement* previous_statement(ar::Statement* stmt) const;
+
+  /// \brief Save the current statement
+  void save_current_statement(ar::Statement* stmt);
+
   /// \brief Return true if we need to skip the check for the given statement
   static bool skip_check(ar::Statement* stmt);
 

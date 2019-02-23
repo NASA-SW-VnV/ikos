@@ -112,22 +112,6 @@ public:
   /// \brief Get the checker description
   virtual const char* description() const = 0;
 
-  /// \brief Start the checks for the given function
-  virtual void enter(ar::Function*, CallContext*) {}
-
-  /// \brief End the checks for the given function
-  virtual void leave(ar::Function*, CallContext*) {}
-
-  /// \brief Start the checks for the given basic block
-  virtual void enter(ar::BasicBlock*,
-                     const value::AbstractDomain&,
-                     CallContext*) {}
-
-  /// \brief End the checks for the given basic block
-  virtual void leave(ar::BasicBlock*,
-                     const value::AbstractDomain&,
-                     CallContext*) {}
-
   /// \brief Check a statement
   virtual void check(ar::Statement* stmt,
                      const value::AbstractDomain& inv,

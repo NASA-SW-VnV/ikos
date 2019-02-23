@@ -59,12 +59,6 @@ const char* DeadCodeChecker::description() const {
   return "Dead code checker";
 }
 
-void DeadCodeChecker::enter(ar::BasicBlock* /*bb*/,
-                            const value::AbstractDomain& /*inv*/,
-                            CallContext* /*call_context*/) {
-  this->_prev_stmt = nullptr;
-}
-
 void DeadCodeChecker::check(ar::Statement* stmt,
                             const value::AbstractDomain& inv,
                             CallContext* call_context) {
@@ -72,9 +66,8 @@ void DeadCodeChecker::check(ar::Statement* stmt,
     return;
   }
 
-  // Update _prev_stmt
-  ar::Statement* prev_stmt = this->_prev_stmt;
-  this->_prev_stmt = stmt;
+  ar::Statement* prev_stmt = this->previous_statement(stmt);
+  this->save_current_statement(stmt);
 
   // Check if the current statement needs a check
   if (!needs_check(prev_stmt, stmt->parent())) {
@@ -90,6 +83,27 @@ void DeadCodeChecker::check(ar::Statement* stmt,
                        result,
                        stmt,
                        call_context);
+}
+
+ar::Statement* DeadCodeChecker::previous_statement(ar::Statement* stmt) const {
+  auto it = this->_prev_stmts.find(stmt->parent());
+  if (it != this->_prev_stmts.end()) {
+    return it->second;
+  } else {
+    return nullptr; // First statement in the basic block
+  }
+}
+
+void DeadCodeChecker::save_current_statement(ar::Statement* stmt) {
+  ar::BasicBlock* bb = stmt->parent();
+
+  if (bb->back() == stmt) {
+    // Last statement in the basic block, no need to keep it in the map
+    this->_prev_stmts.erase(bb);
+    return;
+  }
+
+  this->_prev_stmts[bb] = stmt;
 }
 
 bool DeadCodeChecker::skip_check(ar::Statement* stmt) {
