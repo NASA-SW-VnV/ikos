@@ -74,6 +74,9 @@ static llvm::cl::opt< std::string > OutputFilename(
     llvm::cl::desc("Override output filename"),
     llvm::cl::value_desc("filename"));
 
+static llvm::cl::opt< bool > NoVerify(
+    "no-verify", llvm::cl::desc("Do not run the LLVM bitcode verifier"));
+
 static llvm::cl::opt< bool > NoLibIkos(
     "no-libikos",
     llvm::cl::desc("Do not use ikos intrinsics (__ikos_assert, etc.)"));
@@ -91,7 +94,7 @@ static llvm::cl::opt< bool > AllowDebugInfoMismatch(
     llvm::cl::desc("Allow incorrect debug information in the module"));
 
 static llvm::cl::opt< bool > NoTypeCheck(
-    "disable-type-check", llvm::cl::desc("Do not run the type checker"));
+    "no-type-check", llvm::cl::desc("Do not run the AR type checker"));
 
 static llvm::cl::opt< bool > NoSimplifyCFG(
     "no-simplify-cfg", llvm::cl::desc("Do not run the simplify-cfg pass"));
@@ -170,7 +173,7 @@ int main(int argc, char** argv) {
   }
 
   // Immediately run the verifier to catch any problems
-  if (verifyModule(*module, &llvm::errs())) {
+  if (!NoVerify && verifyModule(*module, &llvm::errs())) {
     llvm::errs() << progname << ": " << InputFilename
                  << ": error: input module is broken!\n";
     return 2;

@@ -227,8 +227,8 @@ def parse_arguments(argv):
                             help='Front-end inline all functions',
                             action='store_true',
                             default=False)
-    preprocess.add_argument('--disable-bc-verify',
-                            dest='disable_bc_verify',
+    preprocess.add_argument('--no-bc-verify',
+                            dest='no_bc_verify',
                             help='Do not run the LLVM bitcode verifier',
                             action='store_true',
                             default=False)
@@ -256,8 +256,8 @@ def parse_arguments(argv):
 
     # AR passes options
     passes = parser.add_argument_group('AR Passes Options')
-    passes.add_argument('--disable-type-check',
-                        dest='disable_type_check',
+    passes.add_argument('--no-type-check',
+                        dest='no_type_check',
                         help='Do not run the AR type checker',
                         action='store_true',
                         default=False)
@@ -633,7 +633,7 @@ def ikos_pp(pp_path, bc_path, entry_points, opt_level, inline_all, verify):
         cmd.append('-inline-all')
 
     if not verify:
-        cmd.append('-disable-verify')
+        cmd.append('-no-verify')
 
     cmd += [bc_path, '-o', pp_path]
 
@@ -692,6 +692,8 @@ def ikos_analyzer(db_path, pp_path, opt):
 
     # import options
     cmd.append('-allow-dbg-mismatch')
+    if opt.no_bc_verify:
+        cmd.append('-no-verify')
     if opt.no_libc:
         cmd.append('-no-libc')
     if opt.no_libcpp:
@@ -700,8 +702,8 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-libikos')
 
     # AR passes options
-    if opt.disable_type_check:
-        cmd.append('-disable-type-check')
+    if opt.no_type_check:
+        cmd.append('-no-type-check')
     if opt.no_simplify_cfg:
         cmd.append('-no-simplify-cfg')
     if opt.no_simplify_upcast_comparison:
@@ -872,7 +874,7 @@ def main(argv):
         with stats.timer('ikos-pp'):
             ikos_pp(pp_path, input_path,
                     opt.entry_points, opt.opt_level,
-                    opt.inline_all, not opt.disable_bc_verify)
+                    opt.inline_all, not opt.no_bc_verify)
     except subprocess.CalledProcessError as e:
         printf('%s: error while preprocessing llvm bitcode, abort.\n',
                progname, file=sys.stderr)

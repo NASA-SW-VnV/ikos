@@ -404,6 +404,9 @@ static llvm::cl::opt< int > Argc("argc",
 static llvm::cl::OptionCategory ImportCategory(
     "Import Options", "Options for the translation from LLVM to AR");
 
+static llvm::cl::opt< bool > NoVerify(
+    "no-verify", llvm::cl::desc("Do not run the LLVM bitcode verifier"));
+
 static llvm::cl::opt< bool > NoLibIkos(
     "no-libikos",
     llvm::cl::desc("Do not use ikos intrinsics (__ikos_assert, etc.)"),
@@ -431,7 +434,7 @@ static llvm::cl::opt< bool > AllowDebugInfoMismatch(
 static llvm::cl::OptionCategory PassCategory("AR Passes Options");
 
 static llvm::cl::opt< bool > NoTypeCheck(
-    "disable-type-check",
+    "no-type-check",
     llvm::cl::desc("Do not run the type checker"),
     llvm::cl::cat(PassCategory));
 
@@ -740,7 +743,7 @@ int main(int argc, char** argv) {
     }
 
     // Immediately run the verifier to catch any problems
-    {
+    if (!NoVerify) {
       analyzer::log::debug("Verifying integrity of LLVM bitcode");
       analyzer::ScopeTimerDatabase t(output_db.times,
                                      "ikos-analyzer.verify-bc");

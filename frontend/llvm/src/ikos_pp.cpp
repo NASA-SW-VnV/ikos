@@ -91,7 +91,7 @@ static llvm::cl::opt< bool > InlineAll("inline-all",
                                        llvm::cl::desc("Inline all functions"));
 
 static llvm::cl::opt< bool > NoVerify(
-    "disable-verify", llvm::cl::desc("Do not run the verifier"));
+    "no-verify", llvm::cl::desc("Do not run the LLVM bitcode verifier"));
 
 static llvm::cl::opt< bool > DiscardValueNames(
     "discard-value-names",
