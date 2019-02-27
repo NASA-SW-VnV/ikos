@@ -369,6 +369,14 @@ def parse_arguments(argv):
                                      args.default_log_level),
                       choices=args.choices(args.log_levels),
                       default=None)
+    misc.add_argument('--progress',
+                      dest='progress',
+                      metavar='',
+                      help=args.help('Progress report:',
+                                     args.progress_choices,
+                                     args.default_progress),
+                      choices=args.choices(args.progress_choices),
+                      default=args.default_progress)
 
     # Report options
     report = parser.add_argument_group('Report Options')
@@ -745,6 +753,7 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-color=0')
 
     cmd.append('-log=%s' % opt.log_level)
+    cmd.append('-progress=%s' % opt.progress)
 
     # input/output
     cmd += [pp_path, '-o', db_path]

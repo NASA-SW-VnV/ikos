@@ -64,6 +64,7 @@
 #include <ikos/analyzer/support/cast.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/log.hpp>
+#include <ikos/analyzer/util/progress.hpp>
 #include <ikos/analyzer/util/timer.hpp>
 
 namespace ikos {
@@ -640,23 +641,42 @@ void InterproceduralValueAnalysis::run() {
   value::AbstractDomain init_inv = init_invariant(_ctx.opts.machine_int_domain);
 
   // Initialize global variables
-  log::debug("Computing global variable static initialization");
-  for (auto it = bundle->global_begin(), et = bundle->global_end(); it != et;
-       ++it) {
-    ar::GlobalVariable* gv = *it;
-    if (gv->is_definition() &&
-        is_initialized(gv, _ctx.opts.globals_init_policy)) {
-      log::debug("Initializing global variable '" + gv->name() + "'");
-      GlobalVarInitializerFixpoint fixpoint(_ctx, gv);
-      fixpoint.run(init_inv);
-      init_inv = fixpoint.exit_invariant();
+  {
+    log::debug("Computing global variable static initialization");
+
+    GlobalsInitPolicy policy = _ctx.opts.globals_init_policy;
+
+    // Setup a progress logger
+    std::unique_ptr< ProgressLogger > progress =
+        make_progress_logger(_ctx.opts.progress,
+                             LogLevel::Debug,
+                             /* num_tasks = */
+                             std::count_if(bundle->global_begin(),
+                                           bundle->global_end(),
+                                           [=](ar::GlobalVariable* gv) {
+                                             return gv->is_definition() &&
+                                                    is_initialized(gv, policy);
+                                           }));
+    ScopeLogger scope(*progress);
+
+    for (auto it = bundle->global_begin(), et = bundle->global_end(); it != et;
+         ++it) {
+      ar::GlobalVariable* gv = *it;
+      if (gv->is_definition() && is_initialized(gv, policy)) {
+        progress->start_task("Initializing global variable '" +
+                             demangle(gv->name()) + "'");
+        GlobalVarInitializerFixpoint fixpoint(_ctx, gv);
+        fixpoint.run(init_inv);
+        init_inv = fixpoint.exit_invariant();
+      }
     }
   }
 
   if (_ctx.opts.display_invariants == DisplayOption::All) {
-    log::out() << "Invariant after global variable static initialization:\n";
-    init_inv.dump(log::out());
-    log::out() << std::endl;
+    LogMessage msg = log::msg();
+    msg << "Invariant after global variable static initialization:\n";
+    init_inv.dump(msg.stream());
+    msg << "\n";
   }
 
   // Call constructors
@@ -696,9 +716,10 @@ void InterproceduralValueAnalysis::run() {
     }
 
     if (_ctx.opts.display_invariants == DisplayOption::All) {
-      log::out() << "Invariant after global variable dynamic initialization:\n";
-      init_inv.dump(log::out());
-      log::out() << std::endl;
+      LogMessage msg = log::msg();
+      msg << "Invariant after global variable dynamic initialization:\n";
+      init_inv.dump(msg.stream());
+      msg << "\n";
     }
   }
 

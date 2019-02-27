@@ -180,9 +180,9 @@ bool HardwareAddresses::is_meet_bottom(const Interval& other) const {
 }
 
 void HardwareAddresses::dump(std::ostream& o) const {
-  o << "HardwareAddresses:" << std::endl;
+  o << "HardwareAddresses:\n";
   for (const auto& it : this->ranges()) {
-    o << "  - " << it << std::endl;
+    o << "  - " << it << "\n";
   }
 }
 

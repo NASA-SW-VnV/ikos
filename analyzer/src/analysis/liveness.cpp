@@ -50,7 +50,9 @@
 
 #include <ikos/analyzer/analysis/liveness.hpp>
 #include <ikos/analyzer/analysis/variable.hpp>
+#include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/log.hpp>
+#include <ikos/analyzer/util/progress.hpp>
 
 namespace ikos {
 namespace analyzer {
@@ -409,13 +411,30 @@ boost::optional< const LivenessAnalysis::VariableRefList& > LivenessAnalysis::
 void LivenessAnalysis::run() {
   ar::Bundle* bundle = _ctx.bundle;
 
+  // Setup a progress logger
+  std::unique_ptr< ProgressLogger > progress =
+      make_progress_logger(_ctx.opts.progress,
+                           LogLevel::Info,
+                           /* num_tasks = */
+                           std::count_if(bundle->global_begin(),
+                                         bundle->global_end(),
+                                         [](ar::GlobalVariable* gv) {
+                                           return gv->is_definition();
+                                         }) +
+                               std::count_if(bundle->function_begin(),
+                                             bundle->function_end(),
+                                             [](ar::Function* fun) {
+                                               return fun->is_definition();
+                                             }));
+  ScopeLogger scope(*progress);
+
   for (auto it = bundle->global_begin(), et = bundle->global_end(); it != et;
        ++it) {
     ar::GlobalVariable* gv = *it;
     if (gv->is_definition()) {
-      log::debug(
+      progress->start_task(
           "Running liveness analysis on initializer of global variable '" +
-          gv->name() + "'");
+          demangle(gv->name()) + "'");
       this->run(gv->initializer());
     }
   }
@@ -425,7 +444,8 @@ void LivenessAnalysis::run() {
        ++it) {
     ar::Function* fun = *it;
     if (fun->is_definition()) {
-      log::debug("Running liveness analysis on function '" + fun->name() + "'");
+      progress->start_task("Running liveness analysis on function '" +
+                           demangle(fun->name()) + "'");
       this->run(fun->body());
     }
   }

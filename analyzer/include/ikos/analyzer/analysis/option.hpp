@@ -248,6 +248,21 @@ inline const char* globals_init_policy_str(GlobalsInitPolicy p) {
   }
 }
 
+/// \brief Progress report option
+enum class ProgressOption {
+  /// \brief Interactive if output is a TTY, otherwise None
+  Auto,
+
+  /// \brief Interactive progress
+  Interactive,
+
+  /// \brief Linear progress
+  Linear,
+
+  /// \brief No progress
+  None,
+};
+
 /// \brief Display option
 enum class DisplayOption {
   /// \brief Display all
@@ -295,6 +310,9 @@ public:
 
   /// \brief Policy of initialization for global variables
   GlobalsInitPolicy globals_init_policy;
+
+  /// \brief Option to show the progress of the analysis
+  ProgressOption progress;
 
   /// \brief Option to display the invariants
   DisplayOption display_invariants;

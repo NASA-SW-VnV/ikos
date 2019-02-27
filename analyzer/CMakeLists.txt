@@ -262,6 +262,7 @@ add_executable(ikos-analyzer
   src/json/json.cpp
   src/util/color.cpp
   src/util/log.cpp
+  src/util/progress.cpp
   src/util/source_location.cpp
   src/util/timer.cpp
 )

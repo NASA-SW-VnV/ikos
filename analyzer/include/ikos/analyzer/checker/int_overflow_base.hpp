@@ -82,8 +82,8 @@ private:
 
 private:
   /// \brief Display info about the check
-  bool display_int_overflow_check(Result result,
-                                  ar::BinaryOperation* stmt) const;
+  boost::optional< LogMessage > display_int_overflow_check(
+      Result result, ar::BinaryOperation* stmt) const;
 
   /// \brief CheckKind for integer underflow
   virtual CheckKind underflow_check_kind() const = 0;

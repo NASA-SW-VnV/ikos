@@ -85,8 +85,8 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
     ar::BinaryOperation* stmt, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_division_check(Result::Unreachable, stmt)) {
-      out() << std::endl;
+    if (auto msg = this->display_division_check(Result::Unreachable, stmt)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}};
   }
@@ -97,8 +97,8 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
       (lit.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(lit.var()))) {
     // Undefined operand
-    if (this->display_division_check(Result::Error, stmt)) {
-      out() << ": undefined operand" << std::endl;
+    if (auto msg = this->display_division_check(Result::Error, stmt)) {
+      *msg << ": undefined operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {}};
   }
@@ -117,35 +117,35 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
 
   if (d && (*d).is_zero()) {
     // The second operand is definitely 0
-    if (this->display_division_check(Result::Error, stmt)) {
-      out() << ": ∀d ∈ divisor, d == 0" << std::endl;
+    if (auto msg = this->display_division_check(Result::Error, stmt)) {
+      *msg << ": ∀d ∈ divisor, d == 0\n";
     }
     return {CheckKind::DivisionByZero, Result::Error, {}};
   } else if (divisor.contains(
                  MachineInt(0, divisor.bit_width(), divisor.sign()))) {
     // The second operand may be 0
-    if (this->display_division_check(Result::Warning, stmt)) {
-      out() << ": ∃d ∈ divisor, d == 0" << std::endl;
+    if (auto msg = this->display_division_check(Result::Warning, stmt)) {
+      *msg << ": ∃d ∈ divisor, d == 0\n";
     }
     return {CheckKind::DivisionByZero, Result::Warning, to_json(divisor)};
   } else {
     // The second operand cannot be definitely 0
-    if (this->display_division_check(Result::Ok, stmt)) {
-      out() << ": ∀d ∈ divisor, d != 0" << std::endl;
+    if (auto msg = this->display_division_check(Result::Ok, stmt)) {
+      *msg << ": ∀d ∈ divisor, d != 0\n";
     }
     return {CheckKind::DivisionByZero, Result::Ok, {}};
   }
 }
 
-bool DivisionByZeroChecker::display_division_check(
+boost::optional< LogMessage > DivisionByZeroChecker::display_division_check(
     Result result, ar::BinaryOperation* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_dbz(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_dbz(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

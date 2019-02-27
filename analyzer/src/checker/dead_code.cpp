@@ -165,10 +165,10 @@ bool DeadCodeChecker::needs_check(ar::Statement* prev_stmt,
 
 void DeadCodeChecker::display_dead_code_check(Result result,
                                               ar::Statement* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_dead_code(";
-    stmt->dump(out());
-    out() << ")" << std::endl;
+  if (auto msg = this->display_check(result, stmt)) {
+    *msg << "check_dead_code(";
+    stmt->dump(msg->stream());
+    *msg << ")\n";
   }
 }
 

@@ -41,16 +41,73 @@
  *
  ******************************************************************************/
 
-#include <unistd.h>
+#include <iostream>
 
 #include <ikos/analyzer/util/log.hpp>
 
 namespace ikos {
 namespace analyzer {
+
+// LoggerOutputStream
+
+void LogMessage::start() {
+  this->_logger->start_message();
+}
+
+void LogMessage::end() {
+  this->_logger->end_message();
+}
+
+// TerminalLogger
+
+TerminalLogger::TerminalLogger(std::ostream& out) : Logger(out) {}
+
+TerminalLogger::~TerminalLogger() = default;
+
+void TerminalLogger::start_logger() {}
+
+void TerminalLogger::end_logger() {
+  this->_out.flush();
+}
+
+void TerminalLogger::start_message() {}
+
+void TerminalLogger::end_message() {
+  this->_out.flush();
+}
+
+// ScopeLogger
+
+ScopeLogger::ScopeLogger(Logger& logger) : _previous_logger(log::get_logger()) {
+  // Set the new logger
+  log::set_logger(logger);
+}
+
+ScopeLogger::~ScopeLogger() {
+  // Restore the previous logger
+  log::set_logger(this->_previous_logger);
+}
+
 namespace log {
 
 // Default global logging level
 LogLevel Level = LogLevel::All;
+
+// Default logger
+static TerminalLogger terminal_logger(std::cout);
+
+/// \brief Global logger
+static Logger* Log = &terminal_logger;
+
+void set_logger(Logger& logger) {
+  Log->end_logger();
+  Log = &logger;
+  Log->start_logger();
+}
+
+Logger& get_logger() {
+  return *Log;
+}
 
 } // end namespace log
 } // end namespace analyzer

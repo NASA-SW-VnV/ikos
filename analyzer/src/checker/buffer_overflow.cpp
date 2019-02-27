@@ -121,8 +121,8 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
     check_call(ar::CallBase* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_mem_access_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -135,8 +135,8 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
       (called.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(called.var()))) {
     // Undefined call pointer operand
-    if (this->display_mem_access_check(Result::Error, call)) {
-      out() << ": undefined call pointer operand" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error, call)) {
+      *msg << ": undefined call pointer operand\n";
     }
     return {{CheckKind::UninitializedVariable,
              Result::Error,
@@ -149,8 +149,8 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
   if (called.is_null() || (called.is_pointer_var() &&
                            inv.normal().nullity().is_null(called.var()))) {
     // Null call pointer operand
-    if (this->display_mem_access_check(Result::Error, call)) {
-      out() << ": null call pointer operand" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error, call)) {
+      *msg << ": null call pointer operand\n";
     }
     return {{CheckKind::NullPointerDereference,
              Result::Error,
@@ -165,8 +165,8 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
     callees = {_ctx.mem_factory->get_function(cst->function())};
   } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
     // call to inline assembly
-    if (this->display_mem_access_check(Result::Ok, call)) {
-      out() << ": call to inline assembly" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Ok, call)) {
+      *msg << ": call to inline assembly\n";
     }
     return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}}};
   } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
@@ -187,8 +187,8 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
 
   if (callees.is_empty()) {
     // Invalid pointer dereference
-    if (this->display_mem_access_check(Result::Error, call)) {
-      out() << ": points-to set of function pointer is empty" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error, call)) {
+      *msg << ": points-to set of function pointer is empty\n";
     }
     return {{CheckKind::InvalidPointerDereference,
              Result::Error,
@@ -196,8 +196,8 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
              {}}};
   } else if (callees.is_top()) {
     // No points-to set
-    if (this->display_mem_access_check(Result::Warning, call)) {
-      out() << ": no points-to set for function pointer" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Warning, call)) {
+      *msg << ": no points-to set for function pointer\n";
     }
     return {{CheckKind::UnknownFunctionCallPointer,
              Result::Warning,
@@ -718,11 +718,11 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
     value::AbstractDomain inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_mem_access_check(Result::Unreachable,
-                                       stmt,
-                                       pointer,
-                                       access_size)) {
-      out() << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Unreachable,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
   }
@@ -736,11 +736,11 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
     // Undefined pointer operand
-    if (this->display_mem_access_check(Result::Error,
-                                       stmt,
-                                       pointer,
-                                       access_size)) {
-      out() << ": undefined pointer operand" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size)) {
+      *msg << ": undefined pointer operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {pointer}, {}};
   }
@@ -749,11 +749,11 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
       (size.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(size.var()))) {
     // Undefined pointer operand
-    if (this->display_mem_access_check(Result::Error,
-                                       stmt,
-                                       pointer,
-                                       access_size)) {
-      out() << ": undefined size operand" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size)) {
+      *msg << ": undefined size operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {access_size}, {}};
   }
@@ -763,8 +763,11 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
     // Null pointer operand
-    if (this->display_mem_access_check(if_null, stmt, pointer, access_size)) {
-      out() << ": null pointer dereference" << std::endl;
+    if (auto msg = this->display_mem_access_check(if_null,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size)) {
+      *msg << ": null pointer dereference\n";
     }
     return {CheckKind::NullPointerDereference, if_null, {pointer}, {}};
   }
@@ -790,20 +793,20 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
 
   if (addrs.is_empty()) {
     // Pointer is invalid
-    if (this->display_mem_access_check(Result::Error,
-                                       stmt,
-                                       pointer,
-                                       access_size)) {
-      out() << ": empty points-to set for pointer" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size)) {
+      *msg << ": empty points-to set for pointer\n";
     }
     return {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}};
   } else if (addrs.is_top()) {
     // Unknown points-to set
-    if (this->display_mem_access_check(Result::Warning,
-                                       stmt,
-                                       pointer,
-                                       access_size)) {
-      out() << ": no points-to information for pointer" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Warning,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size)) {
+      *msg << ": no points-to information for pointer\n";
     }
     return {CheckKind::UnknownMemoryAccess, Result::Warning, {pointer}, {}};
   }
@@ -939,12 +942,12 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
                                  JsonDict& block_info) {
   if (isa< FunctionMemoryLocation >(addr)) {
     // Try to dereference a function pointer, this is an error
-    if (this->display_mem_access_check(Result::Error,
-                                       stmt,
-                                       pointer,
-                                       access_size,
-                                       addr)) {
-      out() << ": dereferencing a function pointer" << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size,
+                                                  addr)) {
+      *msg << ": dereferencing a function pointer\n";
     }
     return {BufferOverflowCheckKind::Function, Result::Error};
   }
@@ -957,22 +960,22 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
 
     if (lifetime.is_deallocated()) {
       // Use after free
-      if (this->display_mem_access_check(Result::Error,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << ": use after free" << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Error,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << ": use after free\n";
       }
       return {BufferOverflowCheckKind::UseAfterFree, Result::Error};
     } else if (lifetime.is_top()) {
       // Possible use after free
-      if (this->display_mem_access_check(Result::Warning,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << ": possible use after free" << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Warning,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << ": possible use after free\n";
       }
       return {BufferOverflowCheckKind::UseAfterFree, Result::Warning};
     } else {
@@ -988,22 +991,22 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
 
     if (lifetime.is_deallocated()) {
       // Access to a dangling stack pointer
-      if (this->display_mem_access_check(Result::Error,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << ": access to a dangling stack pointer" << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Error,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << ": access to a dangling stack pointer\n";
       }
       return {BufferOverflowCheckKind::UseAfterReturn, Result::Error};
     } else if (lifetime.is_top()) {
       // Possible access to a dangling stack pointer
-      if (this->display_mem_access_check(Result::Warning,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << ": possible access to a dangling stack pointer" << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Warning,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << ": possible access to a dangling stack pointer\n";
       }
       return {BufferOverflowCheckKind::UseAfterReturn, Result::Warning};
     } else {
@@ -1024,16 +1027,16 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
     if (_ctx.opts.hardware_addresses.geq(writable_interval)) {
       // The offset_var is completely included in an hardware address range
       // specified by the user, so we're Ok
-      if (this->display_mem_access_check(Result::Ok,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << "[hardware addresses]: ∀o ∈ offset, o <= ";
-        access_size->dump(out());
-        out() << " && o + access_size <= ";
-        access_size->dump(out());
-        out() << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Ok,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << "[hardware addresses]: ∀o ∈ offset, o <= ";
+        access_size->dump(msg->stream());
+        *msg << " && o + access_size <= ";
+        access_size->dump(msg->stream());
+        *msg << "\n";
       }
       return {BufferOverflowCheckKind::HardwareAddresses, Result::Ok};
     } else if (_ctx.opts.hardware_addresses.is_meet_bottom(offset_intv) ||
@@ -1041,32 +1044,32 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
                    last_byte_offset_intv)) {
       // The offset_var isn't included in an hardware address range at all.
       // This is an error
-      if (this->display_mem_access_check(Result::Error,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << "[hardware addresses]: ∀o ∈ offset, o > ";
-        access_size->dump(out());
-        out() << " || o + access_size > ";
-        access_size->dump(out());
-        out() << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Error,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << "[hardware addresses]: ∀o ∈ offset, o > ";
+        access_size->dump(msg->stream());
+        *msg << " || o + access_size > ";
+        access_size->dump(msg->stream());
+        *msg << "\n";
       }
       return {BufferOverflowCheckKind::HardwareAddresses, Result::Error};
     } else {
       // The offset_var isn't completely included in an hardware address range
       // specified by the user, so it could overflow somewhere
       // This is a warning
-      if (this->display_mem_access_check(Result::Warning,
-                                         stmt,
-                                         pointer,
-                                         access_size,
-                                         addr)) {
-        out() << "[hardware addresses]: ∃o ∈ offset, o > ";
-        access_size->dump(out());
-        out() << " || o + access_size > ";
-        access_size->dump(out());
-        out() << std::endl;
+      if (auto msg = this->display_mem_access_check(Result::Warning,
+                                                    stmt,
+                                                    pointer,
+                                                    access_size,
+                                                    addr)) {
+        *msg << "[hardware addresses]: ∃o ∈ offset, o > ";
+        access_size->dump(msg->stream());
+        *msg << " || o + access_size > ";
+        access_size->dump(msg->stream());
+        *msg << "\n";
       }
       return {BufferOverflowCheckKind::HardwareAddresses, Result::Warning};
     }
@@ -1097,16 +1100,16 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
   if (is_bottom) {
     // offset_var <= size_var and offset_plus_size <= size_var, so we're
     // safe here
-    if (this->display_mem_access_check(Result::Ok,
-                                       stmt,
-                                       pointer,
-                                       access_size,
-                                       addr)) {
-      out() << ": ∀o ∈ offset, o <= ";
-      access_size->dump(out());
-      out() << " && o + access_size <= ";
-      access_size->dump(out());
-      out() << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Ok,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size,
+                                                  addr)) {
+      *msg << ": ∀o ∈ offset, o <= ";
+      access_size->dump(msg->stream());
+      *msg << " && o + access_size <= ";
+      access_size->dump(msg->stream());
+      *msg << "\n";
     }
     return {BufferOverflowCheckKind::OutOfBound, Result::Ok};
   }
@@ -1118,29 +1121,29 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
   is_bottom = tmp3.is_normal_flow_bottom();
 
   if (is_bottom) {
-    if (this->display_mem_access_check(Result::Error,
-                                       stmt,
-                                       pointer,
-                                       access_size,
-                                       addr)) {
-      out() << ": ∀o ∈ offset, o > ";
-      access_size->dump(out());
-      out() << " || o + access_size > ";
-      access_size->dump(out());
-      out() << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Error,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size,
+                                                  addr)) {
+      *msg << ": ∀o ∈ offset, o > ";
+      access_size->dump(msg->stream());
+      *msg << " || o + access_size > ";
+      access_size->dump(msg->stream());
+      *msg << "\n";
     }
     return {BufferOverflowCheckKind::OutOfBound, Result::Error};
   } else {
-    if (this->display_mem_access_check(Result::Warning,
-                                       stmt,
-                                       pointer,
-                                       access_size,
-                                       addr)) {
-      out() << ": ∃o ∈ offset, o <= ";
-      access_size->dump(out());
-      out() << " && o + access_size <= ";
-      access_size->dump(out());
-      out() << std::endl;
+    if (auto msg = this->display_mem_access_check(Result::Warning,
+                                                  stmt,
+                                                  pointer,
+                                                  access_size,
+                                                  addr)) {
+      *msg << ": ∃o ∈ offset, o <= ";
+      access_size->dump(msg->stream());
+      *msg << " && o + access_size <= ";
+      access_size->dump(msg->stream());
+      *msg << "\n";
     }
     return {BufferOverflowCheckKind::OutOfBound, Result::Warning};
   }
@@ -1339,50 +1342,50 @@ boost::optional< MachineInt > BufferOverflowChecker::is_array_access(
   return element_size;
 }
 
-bool BufferOverflowChecker::display_mem_access_check(
+boost::optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
     Result result, ar::Statement* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_mem_access(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_mem_access(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
-bool BufferOverflowChecker::display_mem_access_check(
+boost::optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
     Result result,
     ar::Statement* stmt,
     ar::Value* pointer,
     ar::Value* access_size) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_mem_access(pointer=";
-    pointer->dump(out());
-    out() << ", access_size=";
-    access_size->dump(out());
-    out() << ")";
-    return true;
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_mem_access(pointer=";
+    pointer->dump(msg->stream());
+    *msg << ", access_size=";
+    access_size->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
-bool BufferOverflowChecker::display_mem_access_check(
+boost::optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
     Result result,
     ar::Statement* stmt,
     ar::Value* pointer,
     ar::Value* access_size,
     MemoryLocation* addr) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_mem_access(pointer=";
-    pointer->dump(out());
-    out() << ", access_size=";
-    access_size->dump(out());
-    out() << ", address=";
-    addr->dump(out());
-    out() << ")";
-    return true;
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_mem_access(pointer=";
+    pointer->dump(msg->stream());
+    *msg << ", access_size=";
+    access_size->dump(msg->stream());
+    *msg << ", address=";
+    addr->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

@@ -97,8 +97,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
     ar::CallBase* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_soundness_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -111,8 +111,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
       (called.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(called.var()))) {
     // Undefined call pointer operand
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": undefined call pointer operand" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, call)) {
+      *msg << ": undefined call pointer operand\n";
     }
     return {{CheckKind::UninitializedVariable,
              Result::Error,
@@ -125,8 +125,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
   if (called.is_null() || (called.is_pointer_var() &&
                            inv.normal().nullity().is_null(called.var()))) {
     // Null call pointer operand
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": null call pointer operand" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, call)) {
+      *msg << ": null call pointer operand\n";
     }
     return {{CheckKind::NullPointerDereference,
              Result::Error,
@@ -141,8 +141,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
     callees = {_ctx.mem_factory->get_function(cst->function())};
   } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
     // call to inline assembly
-    if (this->display_soundness_check(Result::Ok, call)) {
-      out() << ": call to inline assembly" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Ok, call)) {
+      *msg << ": call to inline assembly\n";
     }
     return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}}};
   } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
@@ -163,8 +163,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
 
   if (callees.is_empty()) {
     // Invalid pointer dereference
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": points-to set of function pointer is empty" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, call)) {
+      *msg << ": points-to set of function pointer is empty\n";
     }
     return {{CheckKind::InvalidPointerDereference,
              Result::Error,
@@ -172,8 +172,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
              {}}};
   } else if (callees.is_top()) {
     // No points-to set
-    if (this->display_soundness_check(Result::Warning, call)) {
-      out() << ": no points-to set for function pointer" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Warning, call)) {
+      *msg << ": no points-to set for function pointer\n";
     }
     return {{CheckKind::UnknownFunctionCallPointer,
              Result::Warning,
@@ -462,14 +462,14 @@ SoundnessChecker::CheckResult SoundnessChecker::check_unknown_extern_call(
     ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_soundness_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
   }
 
-  if (this->display_soundness_check(Result::Warning, call)) {
-    out() << ": call to an unknown extern function" << std::endl;
+  if (auto msg = this->display_soundness_check(Result::Warning, call)) {
+    *msg << ": call to an unknown extern function\n";
   }
   return {CheckKind::IgnoredCallSideEffect,
           Result::Warning,
@@ -484,8 +484,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
                     const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_soundness_check(Result::Unreachable, stmt)) {
-      out() << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Unreachable, stmt)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -497,8 +497,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
     // Undefined pointer operand
-    if (this->display_soundness_check(Result::Error, stmt)) {
-      out() << ": undefined pointer operand" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, stmt)) {
+      *msg << ": undefined pointer operand\n";
     }
     return {{CheckKind::UninitializedVariable, Result::Error, {pointer}, {}}};
   }
@@ -507,8 +507,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
     // Null pointer operand
-    if (this->display_soundness_check(Result::Error, stmt)) {
-      out() << ": null pointer dereference" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, stmt)) {
+      *msg << ": null pointer dereference\n";
     }
     return {{CheckKind::NullPointerDereference, Result::Error, {pointer}, {}}};
   }
@@ -530,8 +530,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
 
   if (addrs.is_empty()) {
     // Pointer is invalid
-    if (this->display_soundness_check(Result::Error, stmt)) {
-      out() << ": empty points-to set for pointer" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, stmt)) {
+      *msg << ": empty points-to set for pointer\n";
     }
     return {
         {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}}};
@@ -539,9 +539,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
 
   if (addrs.is_top()) {
     // Ignored memory access because points-to set is top
-    if (this->display_soundness_check(Result::Warning, stmt)) {
-      out() << ": ignored memory write because points-to set is top"
-            << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Warning, stmt)) {
+      *msg << ": ignored memory write because points-to set is top\n";
     }
     return {{access_kind, Result::Warning, {pointer}, {}}};
   }
@@ -556,8 +555,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
                               const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_soundness_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -575,8 +574,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
         (ptr.is_pointer_var() &&
          inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
       // Undefined pointer argument
-      if (this->display_soundness_check(Result::Error, call)) {
-        out() << ": undefined pointer argument" << std::endl;
+      if (auto msg = this->display_soundness_check(Result::Error, call)) {
+        *msg << ": undefined pointer argument\n";
       }
       return {{CheckKind::UninitializedVariable, Result::Error, {pointer}, {}}};
     }
@@ -606,8 +605,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
 
     if (addrs.is_empty()) {
       // Pointer is invalid
-      if (this->display_soundness_check(Result::Error, call)) {
-        out() << ": empty points-to set for pointer" << std::endl;
+      if (auto msg = this->display_soundness_check(Result::Error, call)) {
+        *msg << ": empty points-to set for pointer\n";
       }
       return {
           {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}}};
@@ -615,10 +614,10 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
 
     if (addrs.is_top()) {
       // Ignored memory access because points-to set is top
-      if (this->display_soundness_check(Result::Warning, call)) {
-        out() << ": ignored call side effect on pointer ";
-        pointer->dump(out());
-        out() << " because points-to set is top" << std::endl;
+      if (auto msg = this->display_soundness_check(Result::Warning, call)) {
+        *msg << ": ignored call side effect on pointer ";
+        pointer->dump(msg->stream());
+        *msg << " because points-to set is top\n";
       }
       checks.push_back(
           {CheckKind::IgnoredCallSideEffectOnPointerParameter,
@@ -635,8 +634,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
     ar::CallBase* call, ar::Value* pointer, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_soundness_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -648,8 +647,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
     // Undefined pointer operand
-    if (this->display_soundness_check(Result::Error, call)) {
-      out() << ": undefined pointer operand" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Error, call)) {
+      *msg << ": undefined pointer operand\n";
     }
     return {{CheckKind::UninitializedVariable, Result::Error, {pointer}, {}}};
   }
@@ -658,8 +657,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
     // Null pointer argument, safe
-    if (this->display_soundness_check(Result::Ok, call)) {
-      out() << ": safe call to free with NULL value" << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Ok, call)) {
+      *msg << ": safe call to free with NULL value\n";
     }
     return {{CheckKind::Free, Result::Ok, {pointer}, {}}};
   }
@@ -681,9 +680,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
 
   if (addrs.is_top()) {
     // Ignored memory deallocation because points-to set is top
-    if (this->display_soundness_check(Result::Warning, call)) {
-      out() << ": ignored memory deallocation because points-to set is top"
-            << std::endl;
+    if (auto msg = this->display_soundness_check(Result::Warning, call)) {
+      *msg << ": ignored memory deallocation because points-to set is top\n";
     }
     return {{CheckKind::IgnoredFree, Result::Warning, {pointer}, {}}};
   }
@@ -691,15 +689,15 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
   return boost::none;
 }
 
-bool SoundnessChecker::display_soundness_check(Result result,
-                                               ar::Statement* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_soundness(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > SoundnessChecker::display_soundness_check(
+    Result result, ar::Statement* stmt) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_soundness(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

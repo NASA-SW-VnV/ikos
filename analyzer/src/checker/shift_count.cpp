@@ -87,8 +87,8 @@ ShiftCountChecker::CheckResult ShiftCountChecker::check_shift_count(
     ar::BinaryOperation* stmt, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_shift_count_check(Result::Unreachable, stmt)) {
-      out() << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Unreachable, stmt)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}};
   }
@@ -99,8 +99,8 @@ ShiftCountChecker::CheckResult ShiftCountChecker::check_shift_count(
   if (shift_count.is_undefined() ||
       (shift_count.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(shift_count.var()))) {
-    if (this->display_shift_count_check(Result::Error, stmt)) {
-      out() << ": undefined shift count" << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Error, stmt)) {
+      *msg << ": undefined shift count\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {}};
   } else if (shift_count.is_machine_int()) {
@@ -119,52 +119,51 @@ ShiftCountChecker::CheckResult ShiftCountChecker::check_shift_count(
       MachineInt(type->bit_width() - 1, type->bit_width(), type->sign());
 
   if (shift_count_interval.ub() < zero) {
-    if (this->display_shift_count_check(Result::Error, stmt)) {
-      out() << ": ∀c ∈ shift_count, c < 0" << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Error, stmt)) {
+      *msg << ": ∀c ∈ shift_count, c < 0\n";
     }
     return {CheckKind::ShiftCount,
             Result::Error,
             to_json(shift_count_interval)};
   } else if (shift_count_interval.lb() < zero) {
-    if (this->display_shift_count_check(Result::Warning, stmt)) {
-      out() << ": ∃c ∈ shift_count, c < 0" << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Warning, stmt)) {
+      *msg << ": ∃c ∈ shift_count, c < 0\n";
     }
     return {CheckKind::ShiftCount,
             Result::Warning,
             to_json(shift_count_interval)};
   } else if (shift_count_interval.lb() > limit) {
-    if (this->display_shift_count_check(Result::Error, stmt)) {
-      out() << ": ∀c ∈ shift_count, c >= " << type->bit_width() << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Error, stmt)) {
+      *msg << ": ∀c ∈ shift_count, c >= " << type->bit_width() << "\n";
     }
     return {CheckKind::ShiftCount,
             Result::Error,
             to_json(shift_count_interval)};
   } else if (shift_count_interval.ub() > limit) {
-    if (this->display_shift_count_check(Result::Warning, stmt)) {
-      out() << ": ∃c ∈ shift_count, c >= " << type->bit_width() << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Warning, stmt)) {
+      *msg << ": ∃c ∈ shift_count, c >= " << type->bit_width() << "\n";
     }
     return {CheckKind::ShiftCount,
             Result::Warning,
             to_json(shift_count_interval)};
   } else {
-    if (this->display_shift_count_check(Result::Ok, stmt)) {
-      out() << ": ∀c ∈ shift_count, 0 <= c < " << type->bit_width()
-            << std::endl;
+    if (auto msg = this->display_shift_count_check(Result::Ok, stmt)) {
+      *msg << ": ∀c ∈ shift_count, 0 <= c < " << type->bit_width() << "\n";
     }
     return {CheckKind::ShiftCount, Result::Ok, {}};
   }
 }
 
-bool ShiftCountChecker::display_shift_count_check(
+boost::optional< LogMessage > ShiftCountChecker::display_shift_count_check(
     Result result, ar::BinaryOperation* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_shc(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_shc(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer
-} // namespace ikos
+} // end namespace ikos

@@ -287,6 +287,15 @@ log_levels = (
 
 default_log_level = 'info'
 
+progress_choices = (
+    ('auto', 'Interactive if the output is a terminal'),
+    ('interactive', 'Interactive'),
+    ('linear', 'Linear'),
+    ('no', 'Disable progress report'),
+)
+
+default_progress = 'auto'
+
 # Report options choices
 
 display_times_choices = (

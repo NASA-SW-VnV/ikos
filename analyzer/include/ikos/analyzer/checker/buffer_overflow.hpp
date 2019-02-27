@@ -256,20 +256,23 @@ private:
       const PointsToSet& addrs) const;
 
   /// \brief Display a memory access check, if requested
-  bool display_mem_access_check(Result result, ar::Statement* stmt) const;
+  boost::optional< LogMessage > display_mem_access_check(
+      Result result, ar::Statement* stmt) const;
 
   /// \brief Display a memory access check, if requested
-  bool display_mem_access_check(Result result,
-                                ar::Statement* stmt,
-                                ar::Value* pointer,
-                                ar::Value* access_size) const;
+  boost::optional< LogMessage > display_mem_access_check(
+      Result result,
+      ar::Statement* stmt,
+      ar::Value* pointer,
+      ar::Value* access_size) const;
 
   /// \brief Display a memory access check, if requested
-  bool display_mem_access_check(Result result,
-                                ar::Statement* stmt,
-                                ar::Value* pointer,
-                                ar::Value* access_size,
-                                MemoryLocation* addr) const;
+  boost::optional< LogMessage > display_mem_access_check(
+      Result result,
+      ar::Statement* stmt,
+      ar::Value* pointer,
+      ar::Value* access_size,
+      MemoryLocation* addr) const;
 
 }; // end class BufferOverflowChecker
 

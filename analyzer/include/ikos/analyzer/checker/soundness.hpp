@@ -133,7 +133,8 @@ private:
                                             const value::AbstractDomain& inv);
 
   /// \brief Dispay a soundness check, if requested
-  bool display_soundness_check(Result result, ar::Statement* stmt) const;
+  boost::optional< LogMessage > display_soundness_check(
+      Result result, ar::Statement* stmt) const;
 
 }; // end class SoundnessChecker
 

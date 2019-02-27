@@ -87,8 +87,8 @@ private:
                                      const value::AbstractDomain& inv);
 
   /// \brief Display the pointer overflow check, if requested
-  bool display_pointer_overflow_check(Result result,
-                                      ar::PointerShift* stmt) const;
+  boost::optional< LogMessage > display_pointer_overflow_check(
+      Result result, ar::PointerShift* stmt) const;
 
 }; // end class PointerOverflowChecker
 

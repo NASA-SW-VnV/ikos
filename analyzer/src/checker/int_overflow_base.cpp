@@ -98,8 +98,9 @@ IntOverflowCheckerBase::check_integer_overflow(
     ar::BinaryOperation* stmt, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_int_overflow_check(Result::Unreachable, stmt)) {
-      out() << std::endl;
+    if (auto msg =
+            this->display_int_overflow_check(Result::Unreachable, stmt)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -118,8 +119,8 @@ IntOverflowCheckerBase::check_integer_overflow(
       (left_lit.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(left_lit.var()))) {
     // Undefined operand
-    if (this->display_int_overflow_check(Result::Error, stmt)) {
-      out() << ": undefined left operand" << std::endl;
+    if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
+      *msg << ": undefined left operand\n";
     }
     return {
         {CheckKind::UninitializedVariable, Result::Error, {stmt->left()}, {}}};
@@ -136,8 +137,8 @@ IntOverflowCheckerBase::check_integer_overflow(
       (right_lit.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(right_lit.var()))) {
     // Undefined operand
-    if (this->display_int_overflow_check(Result::Error, stmt)) {
-      out() << ": undefined right operand" << std::endl;
+    if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
+      *msg << ": undefined right operand\n";
     }
     return {
         {CheckKind::UninitializedVariable, Result::Error, {stmt->right()}, {}}};
@@ -182,8 +183,8 @@ IntOverflowCheckerBase::check_integer_overflow(
 
   // No result because of division by zero
   if (result_interval.is_bottom()) {
-    if (this->display_int_overflow_check(Result::Error, stmt)) {
-      out() << ": division by zero" << std::endl;
+    if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
+      *msg << ": division by zero\n";
     }
     return {{CheckKind::DivisionByZero, Result::Error, {stmt->right()}, {}}};
   }
@@ -204,34 +205,34 @@ IntOverflowCheckerBase::check_integer_overflow(
   if (lb > max) {
     result_underflow = Result::Ok;
     result_overflow = Result::Error;
-    if (this->display_int_overflow_check(Result::Error, stmt)) {
-      out() << ": ∀ a, b ∈ left x right, left " << op_char(stmt->op())
-            << " right > INT_MAX" << std::endl;
+    if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
+      *msg << ": ∀ a, b ∈ left x right, left " << op_char(stmt->op())
+           << " right > INT_MAX\n";
     }
   } else if (ub < min) {
     result_underflow = Result::Error;
     result_overflow = Result::Ok;
-    if (this->display_int_overflow_check(Result::Error, stmt)) {
-      out() << ": ∀ a, b ∈ left x right, left " << op_char(stmt->op())
-            << " right < INT_MIN" << std::endl;
+    if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
+      *msg << ": ∀ a, b ∈ left x right, left " << op_char(stmt->op())
+           << " right < INT_MIN\n";
     }
   } else {
     result_underflow = (lb < min) ? Result::Warning : Result::Ok;
     result_overflow = (ub > max) ? Result::Warning : Result::Ok;
-    if (this->display_int_overflow_check(result_underflow, stmt)) {
-      out() << " [underflow]: ";
+    if (auto msg = this->display_int_overflow_check(result_underflow, stmt)) {
+      *msg << " [underflow]: ";
       if (result_underflow == Result::Warning) {
-        out() << "lower_bound < min" << std::endl;
+        *msg << "lower_bound < min\n";
       } else {
-        out() << "lower_bound >= min" << std::endl;
+        *msg << "lower_bound >= min\n";
       }
     }
-    if (this->display_int_overflow_check(result_overflow, stmt)) {
-      out() << " [overflow]: ";
+    if (auto msg = this->display_int_overflow_check(result_overflow, stmt)) {
+      *msg << " [overflow]: ";
       if (result_overflow == Result::Warning) {
-        out() << "upper_bound > max" << std::endl;
+        *msg << "upper_bound > max\n";
       } else {
-        out() << "upper_bound <= max" << std::endl;
+        *msg << "upper_bound <= max\n";
       }
     }
   }
@@ -246,15 +247,15 @@ IntOverflowCheckerBase::check_integer_overflow(
            ((result_overflow != Result::Ok) ? info : JsonDict())}};
 }
 
-bool IntOverflowCheckerBase::display_int_overflow_check(
-    Result result, ar::BinaryOperation* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_" << this->short_name() << "(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > IntOverflowCheckerBase::
+    display_int_overflow_check(Result result, ar::BinaryOperation* stmt) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_" << this->short_name() << "(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

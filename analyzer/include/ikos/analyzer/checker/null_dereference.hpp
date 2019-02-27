@@ -95,12 +95,13 @@ private:
 
 private:
   /// \brief Dispay a null dereference check, if requested
-  bool display_null_check(Result result, ar::Statement* stmt) const;
+  boost::optional< LogMessage > display_null_check(Result result,
+                                                   ar::Statement* stmt) const;
 
   /// \brief Dispay a null dereference check, if requested
-  bool display_null_check(Result result,
-                          ar::Statement* stmt,
-                          ar::Value* operand) const;
+  boost::optional< LogMessage > display_null_check(Result result,
+                                                   ar::Statement* stmt,
+                                                   ar::Value* operand) const;
 
 }; // end class NullDereferenceChecker
 

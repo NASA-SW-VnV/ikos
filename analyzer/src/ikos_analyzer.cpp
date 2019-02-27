@@ -126,6 +126,23 @@ static llvm::cl::opt< analyzer::LogLevel > LogLevel(
     llvm::cl::init(analyzer::LogLevel::Warning),
     llvm::cl::cat(MainCategory));
 
+static llvm::cl::opt< analyzer::ProgressOption > Progress(
+    "progress",
+    llvm::cl::desc("Progress report:"),
+    llvm::cl::values(
+        clEnumValN(analyzer::ProgressOption::Auto,
+                   "auto",
+                   "Interactive if the output is a terminal (default)"),
+        clEnumValN(analyzer::ProgressOption::Interactive,
+                   "interactive",
+                   "Interactive"),
+        clEnumValN(analyzer::ProgressOption::Linear, "linear", "Linear"),
+        clEnumValN(analyzer::ProgressOption::None,
+                   "no",
+                   "Disable progress report")),
+    llvm::cl::init(analyzer::ProgressOption::Auto),
+    llvm::cl::cat(MainCategory));
+
 /// @}
 /// \name Analysis options
 /// @{
@@ -565,12 +582,14 @@ static bool colors_enabled() {
   // constructors are called, and the 'color' option is registered.
   llvm::WithColor X(llvm::outs(), llvm::HighlightColor::String);
 
-  llvm::StringMap< llvm::cl::Option* > opts = llvm::cl::getRegisteredOptions();
+  const llvm::StringMap< llvm::cl::Option* >& opts =
+      llvm::cl::getRegisteredOptions();
   auto it = opts.find("color");
   ikos_assert_msg(it != opts.end(), "Option 'color' is not registered");
   auto opt =
       static_cast< llvm::cl::opt< llvm::cl::boolOrDefault >* >(it->second);
   if (opt->getValue() == llvm::cl::BOU_UNSET) {
+    // has_colors() returns true if the output is a TTY
     return llvm::outs().has_colors();
   } else {
     return opt->getValue() == llvm::cl::BOU_TRUE;
@@ -646,6 +665,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .use_fixpoint_cache = !NoFixpointCache,
       .precision = Precision,
       .globals_init_policy = GlobalsInitPolicy,
+      .progress = Progress,
       .display_invariants = DisplayInvariants,
       .display_checks = DisplayChecks,
       .hardware_addresses = {bundle, HardwareAddresses, HardwareAddressesFile},
@@ -833,7 +853,7 @@ int main(int argc, char** argv) {
       analyzer::ScopeTimerDatabase t(output_db.times,
                                      "ikos-analyzer.display-ar");
       ar::TextFormatter formatter(make_format_options());
-      formatter.format(analyzer::log::out(), bundle);
+      formatter.format(analyzer::log::msg().stream(), bundle);
     }
 
     // Generate .dot files
@@ -877,7 +897,7 @@ int main(int argc, char** argv) {
       ctx.liveness = &liveness;
     }
     if (DisplayLiveness) {
-      liveness.dump(analyzer::log::out());
+      liveness.dump(analyzer::log::msg().stream());
     }
 
     // Run the fixpoint profile analysis
@@ -892,7 +912,7 @@ int main(int argc, char** argv) {
       ctx.fixpoint_profiler = &profiler;
     }
     if (DisplayFixpointProfiles) {
-      profiler.dump(analyzer::log::out());
+      profiler.dump(analyzer::log::msg().stream());
     }
 
     // Run a fast intraprocedural function pointer analysis
@@ -908,7 +928,7 @@ int main(int argc, char** argv) {
       ctx.function_pointer = &function_pointer;
     }
     if (DisplayFunctionPointer) {
-      function_pointer.dump(analyzer::log::out());
+      function_pointer.dump(analyzer::log::msg().stream());
     }
 
     // Run a deep (still intraprocedural) pointer analysis
@@ -923,7 +943,7 @@ int main(int argc, char** argv) {
       ctx.pointer = &pointer;
     }
     if (DisplayPointer) {
-      pointer.dump(analyzer::log::out());
+      pointer.dump(analyzer::log::msg().stream());
     }
 
     // Final step, run a value analysis, and check properties on the results

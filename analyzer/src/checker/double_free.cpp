@@ -82,8 +82,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
     ar::CallBase* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_double_free_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}, {}}};
   }
@@ -96,8 +96,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
       (called.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(called.var()))) {
     // Undefined call pointer operand
-    if (this->display_double_free_check(Result::Error, call)) {
-      out() << ": undefined call pointer operand" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Error, call)) {
+      *msg << ": undefined call pointer operand\n";
     }
     return {{CheckKind::UninitializedVariable,
              Result::Error,
@@ -110,8 +110,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
   if (called.is_null() || (called.is_pointer_var() &&
                            inv.normal().nullity().is_null(called.var()))) {
     // Null call pointer operand
-    if (this->display_double_free_check(Result::Error, call)) {
-      out() << ": null call pointer operand" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Error, call)) {
+      *msg << ": null call pointer operand\n";
     }
     return {{CheckKind::NullPointerDereference,
              Result::Error,
@@ -126,8 +126,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
     callees = {_ctx.mem_factory->get_function(cst->function())};
   } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
     // call to inline assembly
-    if (this->display_double_free_check(Result::Ok, call)) {
-      out() << ": call to inline assembly" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Ok, call)) {
+      *msg << ": call to inline assembly\n";
     }
     return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}}};
   } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
@@ -148,8 +148,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
 
   if (callees.is_empty()) {
     // Invalid pointer dereference
-    if (this->display_double_free_check(Result::Error, call)) {
-      out() << ": points-to set of function pointer is empty" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Error, call)) {
+      *msg << ": points-to set of function pointer is empty\n";
     }
     return {{CheckKind::InvalidPointerDereference,
              Result::Error,
@@ -157,8 +157,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
              {}}};
   } else if (callees.is_top()) {
     // No points-to set
-    if (this->display_double_free_check(Result::Warning, call)) {
-      out() << ": no points-to set for function pointer" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Warning, call)) {
+      *msg << ": no points-to set for function pointer\n";
     }
     return {{CheckKind::UnknownFunctionCallPointer,
              Result::Warning,
@@ -216,8 +216,8 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
     ar::CallBase* call, ar::Value* pointer, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_double_free_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
   }
@@ -227,16 +227,16 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
   if (ptr.is_undefined() ||
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
-    if (this->display_double_free_check(Result::Error, call)) {
-      out() << ": undefined operand" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Error, call)) {
+      *msg << ": undefined operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {pointer}, {}};
   }
 
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
-    if (this->display_double_free_check(Result::Ok, call)) {
-      out() << ": safe call to free with NULL value" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Ok, call)) {
+      *msg << ": safe call to free with NULL value\n";
     }
     return {CheckKind::Free, Result::Ok, {pointer}, {}};
   }
@@ -244,13 +244,13 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
   PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
 
   if (addrs.is_empty()) {
-    if (this->display_double_free_check(Result::Error, call)) {
-      out() << ": empty points-to set for pointer";
+    if (auto msg = this->display_double_free_check(Result::Error, call)) {
+      *msg << ": empty points-to set for pointer\n";
     }
     return {CheckKind::InvalidPointerDereference, Result::Error, {pointer}, {}};
   } else if (addrs.is_top()) {
-    if (this->display_double_free_check(Result::Warning, call)) {
-      out() << ": no points-to information for pointer" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Warning, call)) {
+      *msg << ": no points-to information for pointer\n";
     }
     return {CheckKind::IgnoredFree, Result::Warning, {pointer}, {}};
   }
@@ -301,20 +301,22 @@ Result DoubleFreeChecker::check_memory_location_free(
 
     if (lifetime.is_deallocated()) {
       // This is a double free
-      if (this->display_double_free_check(Result::Error, call, addr)) {
-        out() << ": double free" << std::endl;
+      if (auto msg =
+              this->display_double_free_check(Result::Error, call, addr)) {
+        *msg << ": double free\n";
       }
       return Result::Error;
     } else if (lifetime.is_top()) {
       // A double free could be possible
-      if (this->display_double_free_check(Result::Warning, call, addr)) {
-        out() << ": possible double free" << std::endl;
+      if (auto msg =
+              this->display_double_free_check(Result::Warning, call, addr)) {
+        *msg << ": possible double free\n";
       }
       return Result::Warning;
     } else {
       // Safe
-      if (this->display_double_free_check(Result::Ok, call, addr)) {
-        out() << ": safe call to free()" << std::endl;
+      if (auto msg = this->display_double_free_check(Result::Ok, call, addr)) {
+        *msg << ": safe call to free()\n";
       }
       return Result::Ok;
     }
@@ -322,36 +324,35 @@ Result DoubleFreeChecker::check_memory_location_free(
     // This is a free() call on something which isn't a dynamic allocated
     // memory.
     // This is an error
-    if (this->display_double_free_check(Result::Error, call, addr)) {
-      out() << ": free() called on a non-dynamic allocated memory" << std::endl;
+    if (auto msg = this->display_double_free_check(Result::Error, call, addr)) {
+      *msg << ": free() called on a non-dynamic allocated memory\n";
     }
     return Result::Error;
   }
 }
 
-bool DoubleFreeChecker::display_double_free_check(Result result,
-                                                  ar::Statement* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_dfa(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > DoubleFreeChecker::display_double_free_check(
+    Result result, ar::Statement* stmt) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_dfa(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
-bool DoubleFreeChecker::display_double_free_check(Result result,
-                                                  ar::CallBase* call,
-                                                  MemoryLocation* addr) const {
-  if (this->display_check(result, call)) {
-    out() << "check_dfa(";
-    call->dump(out());
-    out() << ", addr=";
-    addr->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > DoubleFreeChecker::display_double_free_check(
+    Result result, ar::CallBase* call, MemoryLocation* addr) const {
+  auto msg = this->display_check(result, call);
+  if (msg) {
+    *msg << "check_dfa(";
+    call->dump(msg->stream());
+    *msg << ", addr=";
+    addr->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

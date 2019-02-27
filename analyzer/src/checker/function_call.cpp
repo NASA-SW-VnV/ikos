@@ -80,8 +80,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
     ar::CallBase* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_call_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_call_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
   }
@@ -94,8 +94,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
       (called.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(called.var()))) {
     // Undefined call pointer operand
-    if (this->display_call_check(Result::Error, call)) {
-      out() << ": undefined call pointer operand" << std::endl;
+    if (auto msg = this->display_call_check(Result::Error, call)) {
+      *msg << ": undefined call pointer operand\n";
     }
     return {CheckKind::UninitializedVariable,
             Result::Error,
@@ -108,8 +108,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
   if (called.is_null() || (called.is_pointer_var() &&
                            inv.normal().nullity().is_null(called.var()))) {
     // Null call pointer operand
-    if (this->display_call_check(Result::Error, call)) {
-      out() << ": null call pointer operand" << std::endl;
+    if (auto msg = this->display_call_check(Result::Error, call)) {
+      *msg << ": null call pointer operand\n";
     }
     return {CheckKind::NullPointerDereference,
             Result::Error,
@@ -124,8 +124,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
     callees = {_ctx.mem_factory->get_function(cst->function())};
   } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
     // call to inline assembly
-    if (this->display_call_check(Result::Ok, call)) {
-      out() << ": call to inline assembly" << std::endl;
+    if (auto msg = this->display_call_check(Result::Ok, call)) {
+      *msg << ": call to inline assembly\n";
     }
     return {CheckKind::FunctionCallInlineAssembly, Result::Ok, {}, {}};
   } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
@@ -145,8 +145,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
 
   if (callees.is_empty()) {
     // Invalid pointer dereference
-    if (this->display_call_check(Result::Error, call)) {
-      out() << ": points-to set of function pointer is empty" << std::endl;
+    if (auto msg = this->display_call_check(Result::Error, call)) {
+      *msg << ": points-to set of function pointer is empty\n";
     }
     return {CheckKind::InvalidPointerDereference,
             Result::Error,
@@ -154,8 +154,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
             {}};
   } else if (callees.is_top()) {
     // No points-to set
-    if (this->display_call_check(Result::Warning, call)) {
-      out() << ": no points-to set for function pointer" << std::endl;
+    if (auto msg = this->display_call_check(Result::Warning, call)) {
+      *msg << ": no points-to set for function pointer\n";
     }
     return {CheckKind::UnknownFunctionCallPointer,
             Result::Warning,
@@ -175,10 +175,10 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
 
     if (!isa< FunctionMemoryLocation >(addr)) {
       // Not a call to a function memory location, emit a warning
-      if (this->display_call_check(Result::Error, call)) {
-        out() << ": potential call to ";
-        addr->dump(out());
-        out() << ", which is not a function" << std::endl;
+      if (auto msg = this->display_call_check(Result::Error, call)) {
+        *msg << ": potential call to ";
+        addr->dump(msg->stream());
+        *msg << ", which is not a function\n";
       }
 
       block_info.put("kind",
@@ -191,9 +191,9 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
       if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
         // Ill-formed function call
         // This could be because of an imprecision of the pointer analysis.
-        if (this->display_call_check(Result::Error, call)) {
-          out() << ": potential call to " << callee->name()
-                << ", wrong signature" << std::endl;
+        if (auto msg = this->display_call_check(Result::Error, call)) {
+          *msg << ": potential call to " << callee->name()
+               << ", wrong signature\n";
         }
 
         block_info.put("kind",
@@ -201,8 +201,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
                            FunctionCallCheckKind::WrongSignature));
         all_valid = false;
       } else {
-        if (this->display_call_check(Result::Ok, call)) {
-          out() << ": potential call to " << callee->name() << std::endl;
+        if (auto msg = this->display_call_check(Result::Ok, call)) {
+          *msg << ": potential call to " << callee->name() << "\n";
         }
 
         block_info.put("kind", static_cast< int >(FunctionCallCheckKind::Ok));
@@ -225,15 +225,15 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
   }
 }
 
-bool FunctionCallChecker::display_call_check(Result result,
-                                             ar::CallBase* call) const {
-  if (this->display_check(result, call)) {
-    out() << "check_call(";
-    call->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > FunctionCallChecker::display_call_check(
+    Result result, ar::CallBase* call) const {
+  auto msg = this->display_check(result, call);
+  if (msg) {
+    *msg << "check_call(";
+    call->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

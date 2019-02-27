@@ -83,8 +83,9 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
     ar::Comparison* stmt, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_pointer_compare_check(Result::Unreachable, stmt)) {
-      out() << std::endl;
+    if (auto msg =
+            this->display_pointer_compare_check(Result::Unreachable, stmt)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
   }
@@ -97,8 +98,8 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   if (left_ptr.is_undefined() ||
       (left_ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(left_ptr.var()))) {
-    if (this->display_pointer_compare_check(Result::Error, stmt)) {
-      out() << ": undefined left operand" << std::endl;
+    if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
+      *msg << ": undefined left operand\n";
     }
     return {CheckKind::UninitializedVariable,
             Result::Error,
@@ -107,8 +108,8 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   } else if (right_ptr.is_undefined() ||
              (right_ptr.is_pointer_var() &&
               inv.normal().uninitialized().is_uninitialized(right_ptr.var()))) {
-    if (this->display_pointer_compare_check(Result::Error, stmt)) {
-      out() << ": undefined right operand" << std::endl;
+    if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
+      *msg << ": undefined right operand\n";
     }
     return {CheckKind::UninitializedVariable,
             Result::Error,
@@ -120,8 +121,8 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
 
   if (left_ptr.is_null() || (left_ptr.is_pointer_var() &&
                              inv.normal().nullity().is_null(left_ptr.var()))) {
-    if (this->display_pointer_compare_check(Result::Error, stmt)) {
-      out() << ": null left operand" << std::endl;
+    if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
+      *msg << ": null left operand\n";
     }
     return {CheckKind::NullPointerComparison,
             Result::Error,
@@ -130,8 +131,8 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   } else if (right_ptr.is_null() ||
              (right_ptr.is_pointer_var() &&
               inv.normal().nullity().is_null(right_ptr.var()))) {
-    if (this->display_pointer_compare_check(Result::Error, stmt)) {
-      out() << ": null right operand" << std::endl;
+    if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
+      *msg << ": null right operand\n";
     }
     return {CheckKind::NullPointerComparison,
             Result::Error,
@@ -167,16 +168,16 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   }
 
   if (left_addrs.is_empty()) {
-    if (this->display_pointer_compare_check(Result::Error, stmt)) {
-      out() << ": empty points-to set for left operand" << std::endl;
+    if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
+      *msg << ": empty points-to set for left operand\n";
     }
     return {CheckKind::InvalidPointerComparison,
             Result::Error,
             {stmt->left()},
             {}};
   } else if (right_addrs.is_empty()) {
-    if (this->display_pointer_compare_check(Result::Error, stmt)) {
-      out() << ": empty points-to set for right operand" << std::endl;
+    if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
+      *msg << ": empty points-to set for right operand\n";
     }
     return {CheckKind::InvalidPointerComparison,
             Result::Error,
@@ -196,9 +197,9 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
     result = Result::Ok;
   }
 
-  if (this->display_pointer_compare_check(result, stmt)) {
-    out() << ": left addresses=" << left_addrs
-          << " right addresses=" << right_addrs << std::endl;
+  if (auto msg = this->display_pointer_compare_check(result, stmt)) {
+    *msg << ": left addresses=" << left_addrs
+         << " right addresses=" << right_addrs << "\n";
   }
 
   JsonDict info;
@@ -230,15 +231,15 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
           info};
 }
 
-bool PointerCompareChecker::display_pointer_compare_check(
-    Result result, ar::Comparison* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_pcmp(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > PointerCompareChecker::
+    display_pointer_compare_check(Result result, ar::Comparison* stmt) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_pcmp(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

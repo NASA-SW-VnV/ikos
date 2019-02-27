@@ -93,8 +93,8 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
     ar::IntrinsicCall* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_assert_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_assert_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable};
   }
@@ -105,8 +105,8 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
       (cond.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(cond.var()))) {
     // Undefined operand
-    if (this->display_assert_check(Result::Error, call)) {
-      out() << ": undefined operand" << std::endl;
+    if (auto msg = this->display_assert_check(Result::Error, call)) {
+      *msg << ": undefined operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error};
   }
@@ -125,21 +125,21 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
 
   if (v && (*v).is_zero()) {
     // The condition is definitely 0
-    if (this->display_assert_check(Result::Error, call)) {
-      out() << ": ∀x ∈ " << cond << ", x == 0" << std::endl;
+    if (auto msg = this->display_assert_check(Result::Error, call)) {
+      *msg << ": ∀x ∈ " << cond << ", x == 0\n";
     }
     return {CheckKind::Assert, Result::Error};
   } else if (flag.contains(MachineInt(0, flag.bit_width(), flag.sign()))) {
     // The condition may be 0
-    if (this->display_assert_check(Result::Warning, call)) {
-      out() << ": (∃x ∈ " << cond << ", x == 0) and (∃x ∈ " << cond
-            << ", x != 0)" << std::endl;
+    if (auto msg = this->display_assert_check(Result::Warning, call)) {
+      *msg << ": (∃x ∈ " << cond << ", x == 0) and (∃x ∈ " << cond
+           << ", x != 0)\n";
     }
     return {CheckKind::Assert, Result::Warning};
   } else {
     // The condition cannot be 0
-    if (this->display_assert_check(Result::Ok, call)) {
-      out() << ": ∀x ∈ " << cond << ", x != 0" << std::endl;
+    if (auto msg = this->display_assert_check(Result::Ok, call)) {
+      *msg << ": ∀x ∈ " << cond << ", x != 0\n";
     }
     return {CheckKind::Assert, Result::Ok};
   }
@@ -147,95 +147,97 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
 
 void AssertProverChecker::exec_print_invariant(
     ar::IntrinsicCall* call, const value::AbstractDomain& inv) {
-  this->display_stmt_location(call);
-  out() << "__ikos_print_invariant():\n";
-  inv.dump(out());
-  out() << std::endl;
+  LogMessage msg = log::msg();
+  this->display_stmt_location(msg, call);
+  msg << "__ikos_print_invariant():\n";
+  inv.dump(msg.stream());
+  msg << "\n";
 }
 
 void AssertProverChecker::exec_print_values(ar::IntrinsicCall* call,
                                             const value::AbstractDomain& inv) {
-  this->display_stmt_location(call);
-  out() << "__ikos_print_values(";
+  LogMessage msg = log::msg();
+  this->display_stmt_location(msg, call);
+  msg << "__ikos_print_values(";
   for (auto it = call->arg_begin(), et = call->arg_end(); it != et;) {
-    (*it)->dump(out());
+    (*it)->dump(msg.stream());
     ++it;
     if (it != et) {
-      out() << ", ";
+      msg << ", ";
     }
   }
-  out() << "):\n";
+  msg << "):\n";
 
   if (inv.is_normal_flow_bottom()) {
-    out() << "Invariant: ";
-    inv.dump(out());
-    out() << std::endl;
+    msg << "Invariant: ";
+    inv.dump(msg.stream());
+    msg << "\n";
   } else {
     for (auto it = call->arg_begin(), et = call->arg_end(); it != et; ++it) {
       const ScalarLit& v = this->_lit_factory.get_scalar(*it);
 
       if (v.is_machine_int_var()) {
-        out() << "\t";
-        v.var()->dump(out());
-        out() << " -> " << inv.normal().integers().to_interval(v.var()) << "\n";
+        msg << "\t";
+        v.var()->dump(msg.stream());
+        msg << " -> " << inv.normal().integers().to_interval(v.var()) << "\n";
       } else if (v.is_floating_point_var()) {
         // ignored for now
       } else if (v.is_pointer_var()) {
         // points-to
         PointsToSet points_to = inv.normal().pointers().points_to(v.var());
-        out() << "\t";
-        v.var()->dump(out());
-        out() << " -> ";
-        points_to.dump(out());
-        out() << std::endl;
+        msg << "\t";
+        v.var()->dump(msg.stream());
+        msg << " -> ";
+        points_to.dump(msg.stream());
+        msg << "\n";
 
         // offset
         Variable* offset_var = inv.normal().pointers().offset_var(v.var());
-        out() << "\t";
-        offset_var->dump(out());
-        out() << " -> " << inv.normal().integers().to_interval(offset_var)
-              << "\n";
+        msg << "\t";
+        offset_var->dump(msg.stream());
+        msg << " -> " << inv.normal().integers().to_interval(offset_var)
+            << "\n";
 
         // nullity
         Nullity nullity_val = inv.normal().nullity().get(v.var());
-        out() << "\t";
-        v.var()->dump(out());
+        msg << "\t";
+        v.var()->dump(msg.stream());
         if (nullity_val.is_null()) {
-          out() << " is null\n";
+          msg << " is null\n";
         } else if (nullity_val.is_non_null()) {
-          out() << " is non-null\n";
+          msg << " is non-null\n";
         } else {
-          out() << " may be null\n";
+          msg << " may be null\n";
         }
       } else {
-        log::error("__ikos_print_values() argument is not a variable");
+        msg << "\targument is not a variable\n";
         continue;
       }
 
       // initialized (available for all variables)
       Uninitialized uninit_val = inv.normal().uninitialized().get(v.var());
-      out() << "\t";
-      v.var()->dump(out());
+      msg << "\t";
+      v.var()->dump(msg.stream());
       if (uninit_val.is_uninitialized()) {
-        out() << " is uninitialized" << std::endl;
+        msg << " is uninitialized\n";
       } else if (uninit_val.is_initialized()) {
-        out() << " is initialized" << std::endl;
+        msg << " is initialized\n";
       } else {
-        out() << " may be uninitialized" << std::endl;
+        msg << " may be uninitialized\n";
       }
     }
   }
 }
 
-bool AssertProverChecker::display_assert_check(Result result,
-                                               ar::IntrinsicCall* call) const {
-  if (this->display_check(result, call)) {
-    out() << "__ikos_assert(";
-    call->argument(0)->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > AssertProverChecker::display_assert_check(
+    Result result, ar::IntrinsicCall* call) const {
+  auto msg = this->display_check(result, call);
+  if (msg) {
+    *msg << "__ikos_assert(";
+    call->argument(0)->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

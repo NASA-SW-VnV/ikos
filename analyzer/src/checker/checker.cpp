@@ -65,25 +65,25 @@ namespace analyzer {
 
 // Checker
 
-void Checker::display_stmt_location(ar::Statement* s) const {
-  out() << color::bold() << source_location_string(s, _ctx.wd) << ": "
-        << color::off();
+void Checker::display_stmt_location(LogMessage& msg, ar::Statement* s) const {
+  msg << color::bold() << source_location_string(s, _ctx.wd) << ": "
+      << color::off();
 }
 
-void Checker::display_result(Result result) const {
+void Checker::display_result(LogMessage& msg, Result result) const {
   switch (result) {
     case Result::Ok: {
-      out() << "[" << color::bold_green() << "ok" << color::off() << "] ";
+      msg << "[" << color::bold_green() << "ok" << color::off() << "] ";
     } break;
     case Result::Warning: {
-      out() << "[" << color::bold_yellow() << "warning" << color::off() << "] ";
+      msg << "[" << color::bold_yellow() << "warning" << color::off() << "] ";
     } break;
     case Result::Error: {
-      out() << "[" << color::bold_red() << "error" << color::off() << "] ";
+      msg << "[" << color::bold_red() << "error" << color::off() << "] ";
     } break;
     case Result::Unreachable: {
-      out() << "[" << color::bold_magenta() << "unreachable" << color::off()
-            << "] ";
+      msg << "[" << color::bold_magenta() << "unreachable" << color::off()
+          << "] ";
     } break;
     default: {
       ikos_unreachable("unreachable");

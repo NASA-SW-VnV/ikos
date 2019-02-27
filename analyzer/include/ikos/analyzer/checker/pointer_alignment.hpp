@@ -107,9 +107,8 @@ private:
 
 private:
   /// \brief Dispay the pointer alignment check, if requested
-  bool display_alignment_check(Result result,
-                               ar::Statement* stmt,
-                               ar::Value* operand) const;
+  boost::optional< LogMessage > display_alignment_check(
+      Result result, ar::Statement* stmt, ar::Value* operand) const;
 
 }; // end class PointerAlignmentChecker
 

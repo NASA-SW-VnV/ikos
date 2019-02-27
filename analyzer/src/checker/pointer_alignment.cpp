@@ -130,8 +130,9 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
     const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_alignment_check(Result::Unreachable, stmt, operand)) {
-      out() << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Unreachable, stmt, operand)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}};
   }
@@ -142,8 +143,9 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
     // Undefined operand
-    if (this->display_alignment_check(Result::Error, stmt, operand)) {
-      out() << ": undefined operand" << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Error, stmt, operand)) {
+      *msg << ": undefined operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {}};
   }
@@ -151,8 +153,9 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
   if (ptr.is_null() ||
       (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
     // Null operand
-    if (this->display_alignment_check(Result::Error, stmt, operand)) {
-      out() << ": null operand" << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Error, stmt, operand)) {
+      *msg << ": null operand\n";
     }
     return {CheckKind::NullPointerDereference, Result::Error, {}};
   }
@@ -164,8 +167,8 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
 
   if (alignment_req == 0 || alignment_req == 1) {
     // No alignment requirement found, or always-safe alignment requirement
-    if (this->display_alignment_check(Result::Ok, stmt, operand)) {
-      out() << ": pointer alignment always safe" << std::endl;
+    if (auto msg = this->display_alignment_check(Result::Ok, stmt, operand)) {
+      *msg << ": pointer alignment always safe\n";
     }
     return {CheckKind::UnalignedPointer, Result::Ok, {}};
   }
@@ -185,16 +188,18 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
 
   if (addrs.is_empty()) {
     // Pointer is invalid
-    if (this->display_alignment_check(Result::Error, stmt, operand)) {
-      out() << ": empty points-to set for pointer" << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Error, stmt, operand)) {
+      *msg << ": empty points-to set for pointer\n";
     }
     return {CheckKind::InvalidPointerDereference, Result::Error, {}};
   }
 
   if (addrs.is_top()) {
     // Unknown points-to set
-    if (this->display_alignment_check(Result::Warning, stmt, operand)) {
-      out() << ": no points-to information for pointer" << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Warning, stmt, operand)) {
+      *msg << ": no points-to information for pointer\n";
     }
     return {CheckKind::UnknownMemoryAccess, Result::Warning, {}};
   }
@@ -243,29 +248,33 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
     if (is_correctly_aligned == Result::Ok) {
       all_invalid = false;
 
-      if (this->display_alignment_check(is_correctly_aligned, stmt, operand)) {
-        out() << ": memory location (";
-        addr->dump(out());
-        out() << ") with offset (" << offset_c << ") is correctly aligned"
-              << std::endl;
+      if (auto msg = this->display_alignment_check(is_correctly_aligned,
+                                                   stmt,
+                                                   operand)) {
+        *msg << ": memory location (";
+        addr->dump(msg->stream());
+        *msg << ") with offset (" << offset_c << ") is correctly aligned\n";
       }
     } else if (is_correctly_aligned == Result::Error) {
       all_valid = false;
 
-      if (this->display_alignment_check(is_correctly_aligned, stmt, operand)) {
-        out() << ": memory location (";
-        addr->dump(out());
-        out() << ") with offset (" << offset_c << ") is unaligned" << std::endl;
+      if (auto msg = this->display_alignment_check(is_correctly_aligned,
+                                                   stmt,
+                                                   operand)) {
+        *msg << ": memory location (";
+        addr->dump(msg->stream());
+        *msg << ") with offset (" << offset_c << ") is unaligned\n";
       }
     } else {
       all_valid = false;
       all_invalid = false;
 
-      if (this->display_alignment_check(is_correctly_aligned, stmt, operand)) {
-        out() << ": memory location (";
-        addr->dump(out());
-        out() << ") with offset (" << offset_c << ") may be unaligned"
-              << std::endl;
+      if (auto msg = this->display_alignment_check(is_correctly_aligned,
+                                                   stmt,
+                                                   operand)) {
+        *msg << ": memory location (";
+        addr->dump(msg->stream());
+        *msg << ") with offset (" << offset_c << ") may be unaligned\n";
       }
     }
 
@@ -275,18 +284,20 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
   info.put("points_to", points_to_info);
 
   if (all_valid) {
-    if (this->display_alignment_check(Result::Ok, stmt, operand)) {
-      out() << ": pointer is aligned" << std::endl;
+    if (auto msg = this->display_alignment_check(Result::Ok, stmt, operand)) {
+      *msg << ": pointer is aligned\n";
     }
     return {CheckKind::UnalignedPointer, Result::Ok, {}};
   } else if (all_invalid) {
-    if (this->display_alignment_check(Result::Error, stmt, operand)) {
-      out() << ": pointer is unaligned" << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Error, stmt, operand)) {
+      *msg << ": pointer is unaligned\n";
     }
     return {CheckKind::UnalignedPointer, Result::Error, info};
   } else {
-    if (this->display_alignment_check(Result::Warning, stmt, operand)) {
-      out() << ": pointer may be unaligned" << std::endl;
+    if (auto msg =
+            this->display_alignment_check(Result::Warning, stmt, operand)) {
+      *msg << ": pointer may be unaligned\n";
     }
     return {CheckKind::UnalignedPointer, Result::Warning, info};
   }
@@ -369,15 +380,15 @@ core::machine_int::Congruence PointerAlignmentChecker::to_congruence(
                     Unsigned);
 }
 
-bool PointerAlignmentChecker::display_alignment_check(
+boost::optional< LogMessage > PointerAlignmentChecker::display_alignment_check(
     Result result, ar::Statement* stmt, ar::Value* operand) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_pointer_alignment(";
-    operand->dump(out());
-    out() << ")";
-    return true;
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_pointer_alignment(";
+    operand->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

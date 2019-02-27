@@ -85,7 +85,8 @@ private:
                                     const value::AbstractDomain& inv);
 
   /// \brief Display the pointer comparison check, if requested
-  bool display_pointer_compare_check(Result result, ar::Comparison* stmt) const;
+  boost::optional< LogMessage > display_pointer_compare_check(
+      Result result, ar::Comparison* stmt) const;
 
 }; // end class PointerCompareChecker
 

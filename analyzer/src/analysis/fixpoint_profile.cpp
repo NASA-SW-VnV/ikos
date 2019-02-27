@@ -47,6 +47,9 @@
 
 #include <ikos/analyzer/analysis/fixpoint_profile.hpp>
 #include <ikos/analyzer/support/cast.hpp>
+#include <ikos/analyzer/util/demangle.hpp>
+#include <ikos/analyzer/util/log.hpp>
+#include <ikos/analyzer/util/progress.hpp>
 
 namespace ikos {
 namespace analyzer {
@@ -165,20 +168,38 @@ public:
 
 void FixpointProfileAnalysis::run() {
   auto bundle = this->_ctx.bundle;
+
+  // Setup a progress logger
+  std::unique_ptr< ProgressLogger > progress =
+      make_progress_logger(_ctx.opts.progress,
+                           LogLevel::Info,
+                           /* num_tasks = */
+                           std::count_if(bundle->function_begin(),
+                                         bundle->function_end(),
+                                         [](ar::Function* fun) {
+                                           return fun->is_definition();
+                                         }));
+  ScopeLogger scope(*progress);
+
   for (auto it = bundle->function_begin(), et = bundle->function_end();
        it != et;
-       it++) {
-    if (auto profile = this->analyze_function(*it)) {
-      this->_map.try_emplace(*it, std::move(profile));
+       ++it) {
+    ar::Function* fun = *it;
+    if (fun->is_definition()) {
+      progress->start_task("Running fixpoint profile analysis on function '" +
+                           demangle(fun->name()) + "'");
+      if (auto profile = this->analyze_function(fun)) {
+        this->_map.try_emplace(fun, std::move(profile));
+      }
     }
   }
 }
 
 void FixpointProfileAnalysis::dump(std::ostream& o) const {
   for (const auto& item : this->_map) {
-    o << "function " << item.first->name() << ':' << std::endl;
+    o << "function " << item.first->name() << ":\n";
     item.second->dump(o);
-    o << std::endl;
+    o << "\n";
   }
 }
 
@@ -227,7 +248,7 @@ void FixpointProfile::dump(std::ostream& o) const {
   for (const auto& item : this->_widening_hints) {
     o << " • ";
     item.first->dump(o);
-    o << ": " << *item.second << std::endl;
+    o << ": " << *item.second << "\n";
   }
 }
 

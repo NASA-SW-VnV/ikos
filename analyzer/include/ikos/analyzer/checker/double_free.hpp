@@ -102,12 +102,12 @@ private:
                                     MemoryLocation* addr);
 
   /// \brief Display the double free check, if requested
-  bool display_double_free_check(Result result, ar::Statement* stmt) const;
+  boost::optional< LogMessage > display_double_free_check(
+      Result result, ar::Statement* stmt) const;
 
   /// \brief Display the double free check, if requested, with a memory location
-  bool display_double_free_check(Result result,
-                                 ar::CallBase* call,
-                                 MemoryLocation* addr) const;
+  boost::optional< LogMessage > display_double_free_check(
+      Result result, ar::CallBase* call, MemoryLocation* addr) const;
 
 }; // end class DoubleFreeChecker
 

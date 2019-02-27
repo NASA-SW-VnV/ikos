@@ -45,6 +45,8 @@
 
 #include <memory>
 
+#include <boost/optional.hpp>
+
 #include <ikos/ar/semantic/statement.hpp>
 
 #include <ikos/analyzer/analysis/call_context.hpp>
@@ -53,6 +55,7 @@
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
 #include <ikos/analyzer/checker/name.hpp>
 #include <ikos/analyzer/database/output.hpp>
+#include <ikos/analyzer/util/log.hpp>
 
 namespace ikos {
 namespace analyzer {
@@ -120,9 +123,6 @@ public:
 protected:
   // Helpers to display checks and invariants
 
-  /// \brief Output stream to display checks and invariants
-  static inline std::ostream& out() { return std::cout; }
-
   /// \brief Return true if the invariant should be displayed
   inline bool display_invariant(Result result) const {
     return this->_display_invariants == DisplayOption::All ||
@@ -133,18 +133,21 @@ protected:
 
   // \brief Display the invariant for the given statement, if requested
   ///
-  /// \return true if the invariant should be displayed
-  inline bool display_invariant(Result result,
-                                ar::Statement* stmt,
-                                const value::AbstractDomain& inv) const {
+  /// \return a log message if the invariant should be displayed
+  inline boost::optional< LogMessage > display_invariant(
+      Result result,
+      ar::Statement* stmt,
+      const value::AbstractDomain& inv) const {
     if (this->display_invariant(result)) {
-      this->display_stmt_location(stmt);
-      out() << "Invariant:\n";
-      inv.dump(out());
-      out() << std::endl;
-      return true;
+      LogMessage msg = log::msg();
+      this->display_stmt_location(msg, stmt);
+      msg << "Invariant:\n";
+      inv.dump(msg.stream());
+      msg << "\n";
+      return std::move(msg);
+    } else {
+      return boost::none;
     }
-    return false;
   }
 
   /// \brief Return true if the check should be displayed
@@ -157,21 +160,24 @@ protected:
 
   /// \brief Display the check for the given statement, if requested
   ///
-  /// \return true if the check should be displayed
-  inline bool display_check(Result result, ar::Statement* stmt) const {
+  /// \return a log message if the check should be displayed
+  inline boost::optional< LogMessage > display_check(
+      Result result, ar::Statement* stmt) const {
     if (this->display_check(result)) {
-      this->display_stmt_location(stmt);
-      this->display_result(result);
-      return true;
+      LogMessage msg = log::msg();
+      this->display_stmt_location(msg, stmt);
+      this->display_result(msg, result);
+      return std::move(msg);
+    } else {
+      return boost::none;
     }
-    return false;
   }
 
   /// \brief Display a statement location
-  void display_stmt_location(ar::Statement* s) const;
+  void display_stmt_location(LogMessage& msg, ar::Statement* s) const;
 
   /// \brief Display a check result
-  void display_result(Result result) const;
+  void display_result(LogMessage& msg, Result result) const;
 
 }; // end class Checker
 

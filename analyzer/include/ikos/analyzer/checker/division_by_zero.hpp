@@ -82,7 +82,8 @@ private:
 
 private:
   /// \brief Dispay the check for the given division, if requested
-  bool display_division_check(Result result, ar::BinaryOperation* stmt) const;
+  boost::optional< LogMessage > display_division_check(
+      Result result, ar::BinaryOperation* stmt) const;
 
 }; // end class DivisionByZeroChecker
 

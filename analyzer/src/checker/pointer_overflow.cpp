@@ -80,8 +80,9 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
                            const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_pointer_overflow_check(Result::Unreachable, stmt)) {
-      out() << std::endl;
+    if (auto msg =
+            this->display_pointer_overflow_check(Result::Unreachable, stmt)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}};
   }
@@ -91,8 +92,8 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
   if (base.is_undefined() ||
       (base.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(base.var()))) {
-    if (this->display_pointer_overflow_check(Result::Error, stmt)) {
-      out() << ": undefined base operand" << std::endl;
+    if (auto msg = this->display_pointer_overflow_check(Result::Error, stmt)) {
+      *msg << ": undefined base operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {stmt->pointer()}};
   }
@@ -130,8 +131,9 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
     if (offset.is_undefined() ||
         (offset.is_machine_int_var() &&
          inv.normal().uninitialized().is_uninitialized(offset.var()))) {
-      if (this->display_pointer_overflow_check(Result::Error, stmt)) {
-        out() << ": undefined operand" << std::endl;
+      if (auto msg =
+              this->display_pointer_overflow_check(Result::Error, stmt)) {
+        *msg << ": undefined operand\n";
       }
       return {CheckKind::UninitializedVariable, Result::Error, {term.second}};
     } else if (offset.is_machine_int()) {
@@ -150,19 +152,19 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
       // possible overflow
       if (base_interval.lb() <= max) {
         result = Result::Warning;
-        if (this->display_pointer_overflow_check(result, stmt)) {
-          out() << ": ∃ p ∈ base_interval | p > " << max << std::endl;
+        if (auto msg = this->display_pointer_overflow_check(result, stmt)) {
+          *msg << ": ∃ p ∈ base_interval | p > " << max << "\n";
         }
       } else {
         result = Result::Error;
-        if (this->display_pointer_overflow_check(result, stmt)) {
-          out() << ": ∀ p ∈ base_interval, p > " << max << std::endl;
+        if (auto msg = this->display_pointer_overflow_check(result, stmt)) {
+          *msg << ": ∀ p ∈ base_interval, p > " << max << "\n";
         }
         break;
       }
     } else {
-      if (this->display_pointer_overflow_check(result, stmt)) {
-        out() << ": ∀ p ∈ base_interval, p < " << max << std::endl;
+      if (auto msg = this->display_pointer_overflow_check(result, stmt)) {
+        *msg << ": ∀ p ∈ base_interval, p < " << max << "\n";
       }
     }
   }
@@ -172,16 +174,17 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
           {stmt->op_begin(), stmt->op_end()}};
 }
 
-bool PointerOverflowChecker::display_pointer_overflow_check(
-    Result result, ar::PointerShift* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_poa(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > PointerOverflowChecker::
+    display_pointer_overflow_check(Result result,
+                                   ar::PointerShift* stmt) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_poa(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer
-} // namespace ikos
+} // end namespace ikos

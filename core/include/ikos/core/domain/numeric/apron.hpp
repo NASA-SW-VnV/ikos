@@ -1123,7 +1123,7 @@ public:
     // This is less generic since it needs a FILE* (here, we use stdout)
     o << "(";
     this->_var_map.dump(o);
-    o << ",{" << std::endl;
+    o << ",{\n" << std::flush;
 
     fflush(stdout);
     ap_abstract0_fprint(stdout, manager(), this->_inv.get(), nullptr);

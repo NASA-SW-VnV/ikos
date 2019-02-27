@@ -55,7 +55,9 @@
 #include <ikos/analyzer/analysis/pointer/constraint.hpp>
 #include <ikos/analyzer/analysis/pointer/function.hpp>
 #include <ikos/analyzer/analysis/pointer/value.hpp>
+#include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/log.hpp>
+#include <ikos/analyzer/util/progress.hpp>
 
 namespace ikos {
 namespace analyzer {
@@ -116,21 +118,38 @@ public:
 void FunctionPointerAnalysis::run() {
   ar::Bundle* bundle = _ctx.bundle;
 
-  PointerConstraints constraints(bundle->data_layout());
+  // Setup a progress logger
+  std::unique_ptr< ProgressLogger > progress =
+      make_progress_logger(_ctx.opts.progress,
+                           LogLevel::Info,
+                           /* num_tasks = */
+                           std::count_if(bundle->global_begin(),
+                                         bundle->global_end(),
+                                         [](ar::GlobalVariable* gv) {
+                                           return gv->is_definition();
+                                         }) +
+                               std::count_if(bundle->function_begin(),
+                                             bundle->function_end(),
+                                             [](ar::Function* fun) {
+                                               return fun->is_definition();
+                                             }) +
+                               1);
+  ScopeLogger scope(*progress);
 
+  log::debug("Generating pointer constraints");
+  PointerConstraints constraints(bundle->data_layout());
   PointerConstraintsGenerator< EmptyCodeInvariants > visitor(_ctx,
                                                              constraints,
                                                              nullptr);
 
-  log::debug("Generating pointer constraints");
   for (auto it = bundle->global_begin(), et = bundle->global_end(); it != et;
        ++it) {
     ar::GlobalVariable* gv = *it;
     if (gv->is_definition()) {
-      log::debug(
+      progress->start_task(
           "Generating pointer constraints for initializer of global variable "
           "'" +
-          gv->name() + "'");
+          demangle(gv->name()) + "'");
       visitor.process_global_var_def(gv, EmptyCodeInvariants());
     } else {
       visitor.process_global_var_decl(gv);
@@ -142,8 +161,8 @@ void FunctionPointerAnalysis::run() {
        ++it) {
     ar::Function* fun = *it;
     if (fun->is_definition()) {
-      log::debug("Generating pointer constraints for function '" + fun->name() +
-                 "'");
+      progress->start_task("Generating pointer constraints for function '" +
+                           demangle(fun->name()) + "'");
       visitor.process_function_def(fun, EmptyCodeInvariants());
     } else {
       visitor.process_function_decl(fun);
@@ -151,6 +170,7 @@ void FunctionPointerAnalysis::run() {
   }
 
   log::debug("Solving pointer constraints");
+  progress->start_task("Solving pointer constraints");
   constraints.solve();
 
   // Save information

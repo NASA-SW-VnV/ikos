@@ -58,6 +58,7 @@
 #include <ikos/analyzer/checker/checker.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/log.hpp>
+#include <ikos/analyzer/util/progress.hpp>
 #include <ikos/analyzer/util/timer.hpp>
 
 namespace ikos {
@@ -237,6 +238,18 @@ void IntraproceduralValueAnalysis::run() {
       /*caught_exceptions=*/value::MemoryAbstractDomain::bottom(),
       /*propagated_exceptions=*/value::MemoryAbstractDomain::bottom());
 
+  // Setup a progress logger
+  std::unique_ptr< ProgressLogger > progress =
+      make_progress_logger(_ctx.opts.progress,
+                           LogLevel::Info,
+                           /* num_tasks = */
+                           2 * std::count_if(bundle->function_begin(),
+                                             bundle->function_end(),
+                                             [](ar::Function* fun) {
+                                               return fun->is_definition();
+                                             }));
+  ScopeLogger scope(*progress);
+
   // Analyze every function in the bundle
   for (auto it = bundle->function_begin(), et = bundle->function_end();
        it != et;
@@ -253,15 +266,16 @@ void IntraproceduralValueAnalysis::run() {
     FunctionFixpoint fixpoint(_ctx, function);
 
     {
-      log::info("Analyzing function '" + demangle(function->name()) + "'");
+      progress->start_task("Analyzing function '" + demangle(function->name()) +
+                           "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
                            "ikos-analyzer.value." + function->name());
       fixpoint.run(init_inv);
     }
 
     {
-      log::info("Checking properties for function '" +
-                demangle(function->name()) + "'");
+      progress->start_task("Checking properties for function '" +
+                           demangle(function->name()) + "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
                            "ikos-analyzer.check." + function->name());
       fixpoint.run_checks(checkers);

@@ -100,8 +100,8 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     check_call(ar::CallBase* call, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_null_check(Result::Unreachable, call)) {
-      out() << std::endl;
+    if (auto msg = this->display_null_check(Result::Unreachable, call)) {
+      *msg << "\n";
     }
     return {{CheckKind::Unreachable, Result::Unreachable, {}}};
   }
@@ -114,8 +114,9 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
       (called.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(called.var()))) {
     // Undefined call pointer operand
-    if (this->display_null_check(Result::Error, call, call->called())) {
-      out() << ": undefined call pointer operand" << std::endl;
+    if (auto msg =
+            this->display_null_check(Result::Error, call, call->called())) {
+      *msg << ": undefined call pointer operand\n";
     }
     return {
         {CheckKind::UninitializedVariable, Result::Error, {call->called()}}};
@@ -126,8 +127,9 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
   if (called.is_null() || (called.is_pointer_var() &&
                            inv.normal().nullity().is_null(called.var()))) {
     // Null call pointer operand
-    if (this->display_null_check(Result::Error, call, call->called())) {
-      out() << ": null call pointer operand" << std::endl;
+    if (auto msg =
+            this->display_null_check(Result::Error, call, call->called())) {
+      *msg << ": null call pointer operand\n";
     }
     return {
         {CheckKind::NullPointerDereference, Result::Error, {call->called()}}};
@@ -140,8 +142,8 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     callees = {_ctx.mem_factory->get_function(cst->function())};
   } else if (isa< ar::InlineAssemblyConstant >(call->called())) {
     // call to inline assembly
-    if (this->display_null_check(Result::Ok, call, call->called())) {
-      out() << ": call to inline assembly" << std::endl;
+    if (auto msg = this->display_null_check(Result::Ok, call, call->called())) {
+      *msg << ": call to inline assembly\n";
     }
     return {{CheckKind::FunctionCallInlineAssembly, Result::Ok, {}}};
   } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
@@ -161,8 +163,9 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
 
   if (callees.is_empty()) {
     // Invalid pointer dereference
-    if (this->display_null_check(Result::Error, call, call->called())) {
-      out() << ": points-to set of function pointer is empty" << std::endl;
+    if (auto msg =
+            this->display_null_check(Result::Error, call, call->called())) {
+      *msg << ": points-to set of function pointer is empty\n";
     }
     return {{CheckKind::InvalidPointerDereference,
              Result::Error,
@@ -174,8 +177,9 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
 
   if (callees.is_top()) {
     // No points-to set
-    if (this->display_null_check(Result::Warning, call, call->called())) {
-      out() << ": no points-to set for function pointer" << std::endl;
+    if (auto msg =
+            this->display_null_check(Result::Warning, call, call->called())) {
+      *msg << ": no points-to set for function pointer\n";
     }
     checks.push_back({CheckKind::UnknownFunctionCallPointer,
                       Result::Warning,
@@ -403,8 +407,9 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
     ar::Statement* stmt, ar::Value* operand, const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
-    if (this->display_null_check(Result::Unreachable, stmt, operand)) {
-      out() << std::endl;
+    if (auto msg =
+            this->display_null_check(Result::Unreachable, stmt, operand)) {
+      *msg << "\n";
     }
     return {CheckKind::Unreachable, Result::Unreachable, {}};
   }
@@ -415,16 +420,16 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
       (ptr.is_pointer_var() &&
        inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
     // Undefined operand
-    if (this->display_null_check(Result::Error, stmt, operand)) {
-      out() << ": undefined operand" << std::endl;
+    if (auto msg = this->display_null_check(Result::Error, stmt, operand)) {
+      *msg << ": undefined operand\n";
     }
     return {CheckKind::UninitializedVariable, Result::Error, {operand}};
   }
 
   if (ptr.is_null()) {
     // Null operand
-    if (this->display_null_check(Result::Error, stmt, operand)) {
-      out() << ": null operand" << std::endl;
+    if (auto msg = this->display_null_check(Result::Error, stmt, operand)) {
+      *msg << ": null operand\n";
     }
     return {CheckKind::NullPointerDereference, Result::Error, {operand}};
   }
@@ -436,26 +441,26 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
 
   if (isa< ar::LocalVariable >(operand)) {
     // Local variable
-    if (this->display_null_check(Result::Ok, stmt, operand)) {
-      out() << ": dereferencing a local variable" << std::endl;
+    if (auto msg = this->display_null_check(Result::Ok, stmt, operand)) {
+      *msg << ": dereferencing a local variable\n";
     }
     return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else if (isa< ar::GlobalVariable >(operand)) {
     // Global variable
-    if (this->display_null_check(Result::Ok, stmt, operand)) {
-      out() << ": dereferencing a global variable" << std::endl;
+    if (auto msg = this->display_null_check(Result::Ok, stmt, operand)) {
+      *msg << ": dereferencing a global variable\n";
     }
     return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else if (isa< ar::InlineAssemblyConstant >(operand)) {
     // Inline Assembly
-    if (this->display_null_check(Result::Ok, stmt, operand)) {
-      out() << ": dereferencing an inline assembly" << std::endl;
+    if (auto msg = this->display_null_check(Result::Ok, stmt, operand)) {
+      *msg << ": dereferencing an inline assembly\n";
     }
     return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else if (isa< ar::FunctionPointerConstant >(operand)) {
     // Function pointer constant
-    if (this->display_null_check(Result::Ok, stmt, operand)) {
-      out() << ": dereferencing a function pointer" << std::endl;
+    if (auto msg = this->display_null_check(Result::Ok, stmt, operand)) {
+      *msg << ": dereferencing a function pointer\n";
     }
     return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   }
@@ -463,46 +468,45 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
   core::Nullity null_val = inv.normal().nullity().get(ptr.var());
   if (null_val.is_null()) {
     // Pointer is definitely null
-    if (this->display_null_check(Result::Error, stmt, operand)) {
-      out() << ": pointer is null" << std::endl;
+    if (auto msg = this->display_null_check(Result::Error, stmt, operand)) {
+      *msg << ": pointer is null\n";
     }
     return {CheckKind::NullPointerDereference, Result::Error, {operand}};
   } else if (null_val.is_non_null()) {
     // Pointer is definitely non-null
-    if (this->display_null_check(Result::Ok, stmt, operand)) {
-      out() << ": pointer is non null" << std::endl;
+    if (auto msg = this->display_null_check(Result::Ok, stmt, operand)) {
+      *msg << ": pointer is non null\n";
     }
     return {CheckKind::NullPointerDereference, Result::Ok, {operand}};
   } else {
     // Pointer may be null
-    if (this->display_null_check(Result::Warning, stmt, operand)) {
-      out() << ": pointer may be null" << std::endl;
+    if (auto msg = this->display_null_check(Result::Warning, stmt, operand)) {
+      *msg << ": pointer may be null\n";
     }
     return {CheckKind::NullPointerDereference, Result::Warning, {operand}};
   }
 }
 
-bool NullDereferenceChecker::display_null_check(Result result,
-                                                ar::Statement* stmt) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_null_dereference(";
-    stmt->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > NullDereferenceChecker::display_null_check(
+    Result result, ar::Statement* stmt) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_null_dereference(";
+    stmt->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
-bool NullDereferenceChecker::display_null_check(Result result,
-                                                ar::Statement* stmt,
-                                                ar::Value* operand) const {
-  if (this->display_check(result, stmt)) {
-    out() << "check_null_dereference(";
-    operand->dump(out());
-    out() << ")";
-    return true;
+boost::optional< LogMessage > NullDereferenceChecker::display_null_check(
+    Result result, ar::Statement* stmt, ar::Value* operand) const {
+  auto msg = this->display_check(result, stmt);
+  if (msg) {
+    *msg << "check_null_dereference(";
+    operand->dump(msg->stream());
+    *msg << ")";
   }
-  return false;
+  return msg;
 }
 
 } // end namespace analyzer

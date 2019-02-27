@@ -43,10 +43,11 @@
 
 #pragma once
 
-#include <iostream>
+#include <iosfwd>
 
 #include <ikos/core/support/compiler.hpp>
 
+#include <ikos/analyzer/support/assert.hpp>
 #include <ikos/analyzer/support/string_ref.hpp>
 #include <ikos/analyzer/util/color.hpp>
 
@@ -64,14 +65,181 @@ enum class LogLevel {
   All = 0
 };
 
+// forward declaration
+class Logger;
+
+/// \brief Represents a log message
+class LogMessage {
+private:
+  friend class Logger;
+
+private:
+  /// \brief Logger
+  Logger* _logger;
+
+  /// \brief Output stream
+  std::ostream* _out;
+
+private:
+  /// \brief Constructor
+  LogMessage(Logger& logger, std::ostream& out) : _logger(&logger), _out(&out) {
+    this->start();
+  }
+
+public:
+  /// \brief Deleted copy constructor
+  LogMessage(const LogMessage&) = delete;
+
+  /// \brief Move constructor
+  LogMessage(LogMessage&& o) noexcept : _logger(o._logger), _out(o._out) {
+    o._logger = nullptr;
+    o._out = nullptr;
+  }
+
+  /// \brief Deleted copy assignment operator
+  LogMessage& operator=(const LogMessage&) = delete;
+
+  /// \brief Deleted assignment operator
+  LogMessage& operator=(LogMessage&&) = delete;
+
+  /// \brief Return the output stream of the message
+  std::ostream& stream() const {
+    ikos_assert(this->_out != nullptr);
+    return *this->_out;
+  }
+
+  /// \brief Destructor
+  ~LogMessage() {
+    if (this->_logger != nullptr) {
+      this->end();
+    }
+  }
+
+private:
+  /// \brief Notify the logger of a new log message
+  void start();
+
+  /// \brief Notify the logger of the end of a log message
+  void end();
+
+}; // end class LoggerOutputStream
+
+/// \brief Write a log message
+template < typename T >
+inline const LogMessage& operator<<(const LogMessage& msg, T&& v) {
+  msg.stream() << std::forward< T >(v);
+  return msg;
+}
+
+/// \brief Base class for loggers
+class Logger {
+private:
+  friend class LogMessage;
+
+protected:
+  /// \brief Output stream
+  std::ostream& _out;
+
+public:
+  /// \brief constructor
+  Logger(std::ostream& out) : _out(out) {}
+
+  /// \brief Deleted copy constructor
+  Logger(const Logger&) = delete;
+
+  /// \brief Deleted move constructor
+  Logger(Logger&&) = delete;
+
+  /// \brief Deleted copy assignment operator
+  Logger& operator=(const Logger&) = delete;
+
+  /// \brief Deleted assignment operator
+  Logger& operator=(Logger&&) = delete;
+
+  /// \brief Destructor
+  virtual ~Logger() = default;
+
+  /// \brief Return a new log message
+  LogMessage create_message() { return {*this, this->_out}; }
+
+  /// \brief This is called once when the logger becomes active
+  virtual void start_logger() = 0;
+
+  /// \brief This is called once when the logger becomes inactive
+  virtual void end_logger() = 0;
+
+  /// \brief This is called once before writing a log message
+  virtual void start_message() = 0;
+
+  /// \brief This is called once after writing a log message
+  virtual void end_message() = 0;
+
+}; // end class Logger
+
+/// \brief Logger on the terminal
+class TerminalLogger final : public Logger {
+public:
+  /// \brief Constructor
+  TerminalLogger(std::ostream& out);
+
+  /// \brief Destructor
+  ~TerminalLogger() override;
+
+  /// \brief This is called once when the logger becomes active
+  void start_logger() override;
+
+  /// \brief This is called once when the logger becomes inactive
+  void end_logger() override;
+
+  /// \brief This is called once before writing a log message
+  void start_message() override;
+
+  /// \brief This is called once after writing a log message
+  void end_message() override;
+
+}; // end class TerminalLogger
+
+/// \brief Setup a logger for a given scope
+class ScopeLogger {
+private:
+  /// \brief Previous logger
+  Logger& _previous_logger;
+
+public:
+  /// \brief Constructor
+  explicit ScopeLogger(Logger& logger);
+
+  /// \brief Deleted copy constructor
+  ScopeLogger(const ScopeLogger&) = delete;
+
+  /// \brief Deleted move constructor
+  ScopeLogger(ScopeLogger&&) = delete;
+
+  /// \brief Deleted copy assignment operator
+  ScopeLogger& operator=(const ScopeLogger&) = delete;
+
+  /// \brief Deleted move assignment operator
+  ScopeLogger& operator=(ScopeLogger&&) = delete;
+
+  /// \brief Destructor
+  ~ScopeLogger();
+
+}; // end class ScopeLogger
+
 namespace log {
 
 /// \brief Global logging level
 extern LogLevel Level;
 
+/// \brief Set the logger
+void set_logger(Logger&);
+
+/// \brief Get the logger
+Logger& get_logger();
+
 /// \brief Logging output stream
-inline std::ostream& out() {
-  return std::cout;
+inline LogMessage msg() {
+  return get_logger().create_message();
 }
 
 /// \brief Return true if a message of severity `level` would be displayed
@@ -79,63 +247,43 @@ inline bool is_enabled_for(LogLevel user_level) {
   return Level <= user_level;
 }
 
-/// \brief Logging stream for critical messages
-inline std::ostream& critical_out() {
-  return out() << "[" << color::on_red() << "CRITICAL" << color::off() << "] ";
-}
-
 /// \brief Log a critical message
 inline void critical(StringRef message) {
   if (is_enabled_for(LogLevel::Critical)) {
-    critical_out() << message << std::endl;
+    msg() << "[" << color::on_red() << "CRITICAL" << color::off() << "] "
+          << message << "\n";
   }
-}
-
-/// \brief Logging stream for error messages
-inline std::ostream& error_out() {
-  return out() << "[" << color::on_red() << "ERROR" << color::off() << "] ";
 }
 
 /// \brief Log an error message
 inline void error(StringRef message) {
   if (is_enabled_for(LogLevel::Error)) {
-    error_out() << message << std::endl;
+    msg() << "[" << color::on_red() << "ERROR" << color::off() << "] "
+          << message << "\n";
   }
-}
-
-/// \brief Logging stream for warning messages
-inline std::ostream& warning_out() {
-  return out() << "[" << color::bold_yellow() << "!" << color::off() << "] ";
 }
 
 /// \brief Log a warning message
 inline void warning(StringRef message) {
   if (is_enabled_for(LogLevel::Warning)) {
-    warning_out() << message << std::endl;
+    msg() << "[" << color::bold_yellow() << "!" << color::off() << "] "
+          << message << "\n";
   }
-}
-
-/// \brief Logging stream for informative messages
-inline std::ostream& info_out() {
-  return out() << "[" << color::bold_blue() << "*" << color::off() << "] ";
 }
 
 /// \brief Log an informative message
 inline void info(StringRef message) {
   if (ikos_unlikely(is_enabled_for(LogLevel::Info))) {
-    info_out() << message << std::endl;
+    msg() << "[" << color::bold_blue() << "*" << color::off() << "] " << message
+          << "\n";
   }
-}
-
-/// \brief Logging stream for debug messages
-inline std::ostream& debug_out() {
-  return out() << "[" << color::magenta() << "." << color::off() << "] ";
 }
 
 /// \brief Log a debug message
 inline void debug(StringRef message) {
   if (ikos_unlikely(is_enabled_for(LogLevel::Debug))) {
-    debug_out() << message << std::endl;
+    msg() << "[" << color::magenta() << "." << color::off() << "] " << message
+          << "\n";
   }
 }
 
