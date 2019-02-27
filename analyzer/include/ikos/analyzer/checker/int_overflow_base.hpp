@@ -82,7 +82,7 @@ private:
 
 private:
   /// \brief Display info about the check
-  boost::optional< LogMessage > display_int_overflow_check(
+  llvm::Optional< LogMessage > display_int_overflow_check(
       Result result, ar::BinaryOperation* stmt) const;
 
   /// \brief CheckKind for integer underflow

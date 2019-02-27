@@ -174,7 +174,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
           {stmt->op_begin(), stmt->op_end()}};
 }
 
-boost::optional< LogMessage > PointerOverflowChecker::
+llvm::Optional< LogMessage > PointerOverflowChecker::
     display_pointer_overflow_check(Result result,
                                    ar::PointerShift* stmt) const {
   auto msg = this->display_check(result, stmt);

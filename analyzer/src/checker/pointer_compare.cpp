@@ -231,7 +231,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
           info};
 }
 
-boost::optional< LogMessage > PointerCompareChecker::
+llvm::Optional< LogMessage > PointerCompareChecker::
     display_pointer_compare_check(Result result, ar::Comparison* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {

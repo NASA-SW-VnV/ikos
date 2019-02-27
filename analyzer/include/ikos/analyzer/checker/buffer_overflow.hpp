@@ -256,18 +256,18 @@ private:
       const PointsToSet& addrs) const;
 
   /// \brief Display a memory access check, if requested
-  boost::optional< LogMessage > display_mem_access_check(
+  llvm::Optional< LogMessage > display_mem_access_check(
       Result result, ar::Statement* stmt) const;
 
   /// \brief Display a memory access check, if requested
-  boost::optional< LogMessage > display_mem_access_check(
+  llvm::Optional< LogMessage > display_mem_access_check(
       Result result,
       ar::Statement* stmt,
       ar::Value* pointer,
       ar::Value* access_size) const;
 
   /// \brief Display a memory access check, if requested
-  boost::optional< LogMessage > display_mem_access_check(
+  llvm::Optional< LogMessage > display_mem_access_check(
       Result result,
       ar::Statement* stmt,
       ar::Value* pointer,

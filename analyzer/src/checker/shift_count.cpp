@@ -154,7 +154,7 @@ ShiftCountChecker::CheckResult ShiftCountChecker::check_shift_count(
   }
 }
 
-boost::optional< LogMessage > ShiftCountChecker::display_shift_count_check(
+llvm::Optional< LogMessage > ShiftCountChecker::display_shift_count_check(
     Result result, ar::BinaryOperation* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {

@@ -95,8 +95,8 @@ private:
   CheckResult check_call(ar::CallBase* call, const value::AbstractDomain& inv);
 
   /// \brief Dispay a function call check, if requested
-  boost::optional< LogMessage > display_call_check(Result result,
-                                                   ar::CallBase* call) const;
+  llvm::Optional< LogMessage > display_call_check(Result result,
+                                                  ar::CallBase* call) const;
 
 }; // end class FunctionCallChecker
 

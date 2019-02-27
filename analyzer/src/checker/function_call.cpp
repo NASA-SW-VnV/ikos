@@ -225,7 +225,7 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
   }
 }
 
-boost::optional< LogMessage > FunctionCallChecker::display_call_check(
+llvm::Optional< LogMessage > FunctionCallChecker::display_call_check(
     Result result, ar::CallBase* call) const {
   auto msg = this->display_check(result, call);
   if (msg) {

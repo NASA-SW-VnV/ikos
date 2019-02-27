@@ -247,8 +247,8 @@ IntOverflowCheckerBase::check_integer_overflow(
            ((result_overflow != Result::Ok) ? info : JsonDict())}};
 }
 
-boost::optional< LogMessage > IntOverflowCheckerBase::
-    display_int_overflow_check(Result result, ar::BinaryOperation* stmt) const {
+llvm::Optional< LogMessage > IntOverflowCheckerBase::display_int_overflow_check(
+    Result result, ar::BinaryOperation* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {
     *msg << "check_" << this->short_name() << "(";

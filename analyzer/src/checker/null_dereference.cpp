@@ -487,7 +487,7 @@ NullDereferenceChecker::CheckResult NullDereferenceChecker::check_null(
   }
 }
 
-boost::optional< LogMessage > NullDereferenceChecker::display_null_check(
+llvm::Optional< LogMessage > NullDereferenceChecker::display_null_check(
     Result result, ar::Statement* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {
@@ -498,7 +498,7 @@ boost::optional< LogMessage > NullDereferenceChecker::display_null_check(
   return msg;
 }
 
-boost::optional< LogMessage > NullDereferenceChecker::display_null_check(
+llvm::Optional< LogMessage > NullDereferenceChecker::display_null_check(
     Result result, ar::Statement* stmt, ar::Value* operand) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {

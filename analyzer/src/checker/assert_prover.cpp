@@ -229,7 +229,7 @@ void AssertProverChecker::exec_print_values(ar::IntrinsicCall* call,
   }
 }
 
-boost::optional< LogMessage > AssertProverChecker::display_assert_check(
+llvm::Optional< LogMessage > AssertProverChecker::display_assert_check(
     Result result, ar::IntrinsicCall* call) const {
   auto msg = this->display_check(result, call);
   if (msg) {

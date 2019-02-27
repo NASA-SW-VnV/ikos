@@ -137,7 +137,7 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
   }
 }
 
-boost::optional< LogMessage > DivisionByZeroChecker::display_division_check(
+llvm::Optional< LogMessage > DivisionByZeroChecker::display_division_check(
     Result result, ar::BinaryOperation* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {

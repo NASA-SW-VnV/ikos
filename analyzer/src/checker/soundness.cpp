@@ -689,7 +689,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
   return boost::none;
 }
 
-boost::optional< LogMessage > SoundnessChecker::display_soundness_check(
+llvm::Optional< LogMessage > SoundnessChecker::display_soundness_check(
     Result result, ar::Statement* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {

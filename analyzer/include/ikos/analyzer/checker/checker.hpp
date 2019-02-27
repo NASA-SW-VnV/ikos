@@ -45,7 +45,7 @@
 
 #include <memory>
 
-#include <boost/optional.hpp>
+#include <llvm/ADT/Optional.h>
 
 #include <ikos/ar/semantic/statement.hpp>
 
@@ -134,7 +134,7 @@ protected:
   // \brief Display the invariant for the given statement, if requested
   ///
   /// \return a log message if the invariant should be displayed
-  inline boost::optional< LogMessage > display_invariant(
+  inline llvm::Optional< LogMessage > display_invariant(
       Result result,
       ar::Statement* stmt,
       const value::AbstractDomain& inv) const {
@@ -146,7 +146,7 @@ protected:
       msg << "\n";
       return std::move(msg);
     } else {
-      return boost::none;
+      return llvm::None;
     }
   }
 
@@ -161,15 +161,15 @@ protected:
   /// \brief Display the check for the given statement, if requested
   ///
   /// \return a log message if the check should be displayed
-  inline boost::optional< LogMessage > display_check(
-      Result result, ar::Statement* stmt) const {
+  inline llvm::Optional< LogMessage > display_check(Result result,
+                                                    ar::Statement* stmt) const {
     if (this->display_check(result)) {
       LogMessage msg = log::msg();
       this->display_stmt_location(msg, stmt);
       this->display_result(msg, result);
       return std::move(msg);
     } else {
-      return boost::none;
+      return llvm::None;
     }
   }
 

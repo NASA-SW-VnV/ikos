@@ -92,7 +92,7 @@ private:
 
 private:
   /// \brief Dispay the check for the given assert(), if requested
-  boost::optional< LogMessage > display_assert_check(
+  llvm::Optional< LogMessage > display_assert_check(
       Result result, ar::IntrinsicCall* call) const;
 
 }; // end class AssertProverChecker

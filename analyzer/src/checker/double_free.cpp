@@ -331,7 +331,7 @@ Result DoubleFreeChecker::check_memory_location_free(
   }
 }
 
-boost::optional< LogMessage > DoubleFreeChecker::display_double_free_check(
+llvm::Optional< LogMessage > DoubleFreeChecker::display_double_free_check(
     Result result, ar::Statement* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {
@@ -342,7 +342,7 @@ boost::optional< LogMessage > DoubleFreeChecker::display_double_free_check(
   return msg;
 }
 
-boost::optional< LogMessage > DoubleFreeChecker::display_double_free_check(
+llvm::Optional< LogMessage > DoubleFreeChecker::display_double_free_check(
     Result result, ar::CallBase* call, MemoryLocation* addr) const {
   auto msg = this->display_check(result, call);
   if (msg) {

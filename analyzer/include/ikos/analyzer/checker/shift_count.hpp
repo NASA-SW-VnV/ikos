@@ -81,7 +81,7 @@ private:
                                 const value::AbstractDomain& inv);
 
   /// \brief Display a shift count check, if requested
-  boost::optional< LogMessage > display_shift_count_check(
+  llvm::Optional< LogMessage > display_shift_count_check(
       Result result, ar::BinaryOperation* stmt) const;
 
 }; // end class ShiftCountChecker
