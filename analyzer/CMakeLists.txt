@@ -205,8 +205,13 @@ add_executable(ikos-analyzer
   src/analysis/pointer/function.cpp
   src/analysis/pointer/pointer.cpp
   src/analysis/pointer/value.cpp
-  src/analysis/value/interprocedural.cpp
-  src/analysis/value/intraprocedural.cpp
+  src/analysis/value/global_variable.cpp
+  src/analysis/value/interprocedural/function_fixpoint.cpp
+  src/analysis/value/interprocedural/global_init_fixpoint.cpp
+  src/analysis/value/interprocedural/init_invariant.cpp
+  src/analysis/value/interprocedural/interprocedural.cpp
+  src/analysis/value/intraprocedural/function_fixpoint.cpp
+  src/analysis/value/intraprocedural/intraprocedural.cpp
   src/analysis/value/machine_int_domain/apron_interval.cpp
   src/analysis/value/machine_int_domain/apron_octagon.cpp
   src/analysis/value/machine_int_domain/apron_pkgrid_polyhedra_lin_cong.cpp

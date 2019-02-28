@@ -79,8 +79,8 @@
 #include <ikos/analyzer/analysis/pointer/function.hpp>
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
 #include <ikos/analyzer/analysis/result.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural.hpp>
-#include <ikos/analyzer/analysis/value/intraprocedural.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/interprocedural.hpp>
+#include <ikos/analyzer/analysis/value/intraprocedural/intraprocedural.hpp>
 #include <ikos/analyzer/analysis/variable.hpp>
 #include <ikos/analyzer/checker/name.hpp>
 #include <ikos/analyzer/database/output.hpp>
