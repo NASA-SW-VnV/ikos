@@ -82,6 +82,9 @@ public:
   /// \brief Constructor
   GlobalVarInitializerFixpoint(Context& ctx, ar::GlobalVariable* gv);
 
+  /// \brief Compute the fixpoint
+  void run(AbstractDomain inv);
+
   /// \brief Propagate the invariant through the basic block
   AbstractDomain analyze_node(ar::BasicBlock* bb, AbstractDomain pre) override;
 
@@ -95,9 +98,6 @@ public:
 
   /// \brief Process the computed abstract value for a node
   void process_post(ar::BasicBlock* bb, const AbstractDomain& post) override;
-
-  /// \brief Compute the fixpoint
-  void run(AbstractDomain inv);
 
   /// \brief Return the invariant at the end of the exit node
   const AbstractDomain& exit_invariant() const;

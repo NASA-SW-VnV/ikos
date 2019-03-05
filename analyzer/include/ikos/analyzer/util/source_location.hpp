@@ -61,12 +61,21 @@ using frontend::import::source_path;
 /// \brief Return the source location of the given statement
 using frontend::import::source_location;
 
+/// \brief Return the given source location as a string
+///
+/// \param loc Source location
+/// \param wd Current working directory
+std::string source_location_string(SourceLocation loc,
+                                   const boost::filesystem::path& wd);
+
 /// \brief Return the source location of the given statement as a string
 ///
 /// \param stmt Statement
 /// \param wd Current working directory
-std::string source_location_string(ar::Statement* stmt,
-                                   const boost::filesystem::path& wd);
+inline std::string source_location_string(ar::Statement* stmt,
+                                          const boost::filesystem::path& wd) {
+  return source_location_string(source_location(stmt), wd);
+}
 
 } // end namespace analyzer
 } // end namespace ikos

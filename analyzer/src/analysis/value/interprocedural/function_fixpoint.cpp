@@ -52,6 +52,7 @@ namespace interprocedural {
 FunctionFixpoint::FunctionFixpoint(
     Context& ctx,
     const std::vector< std::unique_ptr< Checker > >& checkers,
+    ProgressLogger& logger,
     ar::Function* entry_point)
     : FwdFixpointIterator(entry_point->body()),
       _ctx(ctx),
@@ -62,6 +63,7 @@ FunctionFixpoint::FunctionFixpoint(
                    : ctx.fixpoint_profiler->profile(entry_point)),
       _analyzed_functions{entry_point},
       _checkers(checkers),
+      _logger(logger),
       _exec_engine(AbstractDomain::bottom(),
                    ctx,
                    this->_call_context,
@@ -91,6 +93,7 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
                    : ctx.fixpoint_profiler->profile(callee)),
       _analyzed_functions(caller._analyzed_functions),
       _checkers(caller._checkers),
+      _logger(caller._logger),
       _exec_engine(AbstractDomain::bottom(),
                    ctx,
                    this->_call_context,
@@ -108,6 +111,11 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
 }
 
 void FunctionFixpoint::run(AbstractDomain inv) {
+  if (!this->_call_context->empty()) {
+    this->_logger.start_callee(this->_call_context, this->_function);
+  }
+
+  // Compute the fixpoint
   FwdFixpointIterator::run(std::move(inv));
 
   // Fixpoint reached
@@ -115,6 +123,10 @@ void FunctionFixpoint::run(AbstractDomain inv) {
 
   // Clear post invariants, save a lot of memory
   this->clear_post();
+
+  if (!this->_call_context->empty()) {
+    this->_logger.end_callee(this->_call_context, this->_function);
+  }
 }
 
 AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
@@ -163,6 +175,21 @@ AbstractDomain FunctionFixpoint::analyze_edge(ar::BasicBlock* src,
   return std::move(this->_exec_engine.inv());
 }
 
+void FunctionFixpoint::notify_enter_cycle(ar::BasicBlock* head) {
+  this->_logger.start_cycle(head);
+}
+
+void FunctionFixpoint::notify_cycle_iteration(
+    ar::BasicBlock* head,
+    unsigned iteration,
+    core::FixpointIterationKind kind) {
+  this->_logger.start_cycle_iter(head, iteration, kind);
+}
+
+void FunctionFixpoint::notify_leave_cycle(ar::BasicBlock* head) {
+  this->_logger.end_cycle(head);
+}
+
 void FunctionFixpoint::process_pre(ar::BasicBlock* /*bb*/,
                                    const AbstractDomain& /*pre*/) {}
 
@@ -175,6 +202,10 @@ void FunctionFixpoint::process_post(ar::BasicBlock* bb,
 }
 
 void FunctionFixpoint::run_checks() {
+  if (!this->_call_context->empty()) {
+    this->_logger.start_callee(this->_call_context, this->_function);
+  }
+
   // Check called functions during the transfer function
   this->_call_exec_engine.mark_check_callees();
 
@@ -195,6 +226,10 @@ void FunctionFixpoint::run_checks() {
     }
 
     this->_exec_engine.exec_leave(bb);
+  }
+
+  if (!this->_call_context->empty()) {
+    this->_logger.end_callee(this->_call_context, this->_function);
   }
 }
 

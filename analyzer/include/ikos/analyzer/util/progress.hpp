@@ -69,10 +69,6 @@ public:
 /// \brief Interactive progress logger
 class InteractiveProgressLogger final : public ProgressLogger {
 private:
-  /// \brief Maximum length of the status line
-  static const int MaxStatusLength = 80;
-
-private:
   /// \brief Current task
   std::size_t _current_task;
 
@@ -82,12 +78,18 @@ private:
   /// \brief Current status
   std::string _status;
 
+  /// \brief Number of columns in the output stream
+  std::size_t _out_columns;
+
 public:
   /// \brief Constructor
   ///
   /// \param out Output stream
   /// \param num_tasks Number of tasks
-  InteractiveProgressLogger(std::ostream& out, std::size_t num_tasks);
+  /// \param out_columns Number of columns in the output stream
+  InteractiveProgressLogger(std::ostream& out,
+                            std::size_t num_tasks,
+                            std::size_t out_columns);
 
   /// \brief Destructor
   ~InteractiveProgressLogger() override;

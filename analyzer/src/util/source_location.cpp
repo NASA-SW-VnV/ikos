@@ -72,10 +72,8 @@ static boost::filesystem::path relative_to(const boost::filesystem::path& from,
   return final_path;
 }
 
-std::string source_location_string(ar::Statement* stmt,
+std::string source_location_string(SourceLocation loc,
                                    const boost::filesystem::path& wd) {
-  SourceLocation loc = source_location(stmt);
-
   if (!loc) {
     return "?:?:?";
   }

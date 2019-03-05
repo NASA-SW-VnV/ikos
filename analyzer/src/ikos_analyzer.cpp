@@ -52,6 +52,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/Process.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/WithColor.h>
 #include <llvm/Support/raw_ostream.h>
@@ -589,8 +590,7 @@ static bool colors_enabled() {
   auto opt =
       static_cast< llvm::cl::opt< llvm::cl::boolOrDefault >* >(it->second);
   if (opt->getValue() == llvm::cl::BOU_UNSET) {
-    // has_colors() returns true if the output is a TTY
-    return llvm::outs().has_colors();
+    return llvm::sys::Process::StandardOutIsDisplayed();
   } else {
     return opt->getValue() == llvm::cl::BOU_TRUE;
   }

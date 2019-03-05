@@ -67,6 +67,9 @@ class WtoProcessor;
 
 } // end namespace interleaved_fwd_fixpoint_iterator_impl
 
+/// \brief Kind of fixpoint iteration
+enum class FixpointIterationKind { Increasing, Decreasing };
+
 /// \brief Interleaved forward fixpoint iterator
 ///
 /// This class computes a fixpoint on a control flow graph.
@@ -230,6 +233,27 @@ public:
     return before.leq(after);
   }
 
+  /// \brief Notify the beginning of the analysis of a cycle
+  ///
+  /// This method is called before analyzing a cycle.
+  virtual void notify_enter_cycle(NodeRef head) { ikos_ignore(head); }
+
+  /// \brief Notify the beginning of an iteration on a cycle
+  ///
+  /// This method is called for each iteration on a cycle.
+  virtual void notify_cycle_iteration(NodeRef head,
+                                      unsigned iteration,
+                                      FixpointIterationKind kind) {
+    ikos_ignore(head);
+    ikos_ignore(iteration);
+    ikos_ignore(kind);
+  }
+
+  /// \brief Notify the end of the analysis of a cycle
+  ///
+  /// This method is called after reaching a fixpoint on a cycle.
+  virtual void notify_leave_cycle(NodeRef head) { ikos_ignore(head); }
+
   /// \brief Compute the fixpoint with the given initial abstract value
   void run(AbstractValue init) {
     this->set_pre(GraphTrait::entry(this->_cfg), std::move(init));
@@ -274,20 +298,22 @@ public:
   using WtoNestingT = WtoNesting< GraphRef, GraphTrait >;
 
 private:
-  enum IterationKind { Increasing, Decreasing };
-
-private:
+  /// \brief Fixpoint engine
   InterleavedIterator& _iterator;
 
+  /// \brief Graph entry point
+  NodeRef _entry;
+
 public:
-  explicit WtoIterator(InterleavedIterator& iterator) : _iterator(iterator) {}
+  explicit WtoIterator(InterleavedIterator& iterator)
+      : _iterator(iterator), _entry(GraphTrait::entry(iterator.cfg())) {}
 
   void visit(const WtoVertexT& vertex) override {
     NodeRef node = vertex.node();
     AbstractValue pre = AbstractValue::bottom();
 
     // Use the invariant for the entry point
-    if (node == GraphTrait::entry(this->_iterator.cfg())) {
+    if (node == this->_entry) {
       pre = this->_iterator.pre(node);
     }
 
@@ -307,8 +333,10 @@ public:
 
   void visit(const WtoCycleT& cycle) override {
     NodeRef head = cycle.head();
-    const WtoNestingT& cycle_nesting = this->_iterator.wto().nesting(head);
     AbstractValue pre = AbstractValue::bottom();
+    const WtoNestingT& cycle_nesting = this->_iterator.wto().nesting(head);
+
+    this->_iterator.notify_enter_cycle(head);
 
     // Collect invariants from incoming edges
     for (auto it = GraphTrait::predecessor_begin(head),
@@ -324,8 +352,9 @@ public:
     }
 
     // Fixpoint iterations
-    IterationKind kind = Increasing;
+    FixpointIterationKind kind = FixpointIterationKind::Increasing;
     for (unsigned iteration = 1;; ++iteration) {
+      this->_iterator.notify_cycle_iteration(head, iteration, kind);
       this->_iterator.set_pre(head, pre);
       this->_iterator.set_post(head, this->_iterator.analyze_node(head, pre));
 
@@ -368,12 +397,12 @@ public:
       AbstractValue new_pre(std::move(new_pre_in));
       new_pre.join_loop_with(new_pre_back);
 
-      if (kind == Increasing) {
+      if (kind == FixpointIterationKind::Increasing) {
         // Increasing iteration with widening
         if (this->_iterator.is_increasing_iterations_fixpoint(pre, new_pre)) {
           // Post-fixpoint reached
           // Use this iteration as a decreasing iteration
-          kind = Decreasing;
+          kind = FixpointIterationKind::Decreasing;
           iteration = 1;
         } else {
           pre = this->_iterator.extrapolate(head,
@@ -383,7 +412,7 @@ public:
         }
       }
 
-      if (kind == Decreasing) {
+      if (kind == FixpointIterationKind::Decreasing) {
         // Decreasing iteration with narrowing
         new_pre =
             this->_iterator.refine(head, iteration, pre, std::move(new_pre));
@@ -396,6 +425,8 @@ public:
         }
       }
     }
+
+    this->_iterator.notify_leave_cycle(head);
   }
 
 }; // end class WtoIterator

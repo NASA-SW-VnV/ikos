@@ -84,6 +84,9 @@ public:
   /// \brief Create a function fixpoint iterator
   FunctionFixpoint(Context& ctx, ar::Function* function);
 
+  /// \brief Compute the fixpoint
+  void run(AbstractDomain inv);
+
   /// \brief Extrapolate the new state after an increasing iteration
   AbstractDomain extrapolate(ar::BasicBlock* head,
                              unsigned iteration,

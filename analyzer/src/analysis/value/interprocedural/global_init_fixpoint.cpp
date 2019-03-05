@@ -57,6 +57,29 @@ GlobalVarInitializerFixpoint::GlobalVarInitializerFixpoint(
       _ctx(ctx),
       _empty_call_context(ctx.call_context_factory->get_empty()) {}
 
+void GlobalVarInitializerFixpoint::run(AbstractDomain inv) {
+  // Allocate memory for the global variable
+  NumericalExecutionEngineT exec_engine(std::move(inv),
+                                        _ctx,
+                                        this->_empty_call_context,
+                                        /* precision = */ _ctx.opts.precision,
+                                        /* liveness = */ _ctx.liveness,
+                                        /* pointer_info = */ _ctx.pointer ==
+                                                nullptr
+                                            ? nullptr
+                                            : &_ctx.pointer->results());
+  exec_engine
+      .allocate_memory(_ctx.var_factory->get_global(_gv),
+                       _ctx.mem_factory->get_global(_gv),
+                       core::Nullity::non_null(),
+                       core::Uninitialized::initialized(),
+                       core::Lifetime::top(),
+                       NumericalExecutionEngineT::MemoryInitialValue::Zero);
+
+  // Compute the fixpoint
+  FwdFixpointIterator::run(std::move(exec_engine.inv()));
+}
+
 AbstractDomain GlobalVarInitializerFixpoint::analyze_node(ar::BasicBlock* bb,
                                                           AbstractDomain pre) {
   NumericalExecutionEngineT exec_engine(std::move(pre),
@@ -98,29 +121,6 @@ void GlobalVarInitializerFixpoint::process_pre(ar::BasicBlock* /*bb*/,
 
 void GlobalVarInitializerFixpoint::process_post(
     ar::BasicBlock* /*bb*/, const AbstractDomain& /*post*/) {}
-
-void GlobalVarInitializerFixpoint::run(AbstractDomain inv) {
-  // Allocate memory for the global variable
-  NumericalExecutionEngineT exec_engine(std::move(inv),
-                                        _ctx,
-                                        this->_empty_call_context,
-                                        /* precision = */ _ctx.opts.precision,
-                                        /* liveness = */ _ctx.liveness,
-                                        /* pointer_info = */ _ctx.pointer ==
-                                                nullptr
-                                            ? nullptr
-                                            : &_ctx.pointer->results());
-  exec_engine
-      .allocate_memory(_ctx.var_factory->get_global(_gv),
-                       _ctx.mem_factory->get_global(_gv),
-                       core::Nullity::non_null(),
-                       core::Uninitialized::initialized(),
-                       core::Lifetime::top(),
-                       NumericalExecutionEngineT::MemoryInitialValue::Zero);
-
-  // Compute the fixpoint
-  FwdFixpointIterator::run(std::move(exec_engine.inv()));
-}
 
 const AbstractDomain& GlobalVarInitializerFixpoint::exit_invariant() const {
   ar::Code* code = this->cfg();

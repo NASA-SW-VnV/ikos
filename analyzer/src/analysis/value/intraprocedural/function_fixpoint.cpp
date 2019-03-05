@@ -61,6 +61,10 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx, ar::Function* function)
                    ? boost::none
                    : ctx.fixpoint_profiler->profile(function)) {}
 
+void FunctionFixpoint::run(AbstractDomain inv) {
+  FwdFixpointIterator::run(std::move(inv));
+}
+
 AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
                                              unsigned iteration,
                                              AbstractDomain before,

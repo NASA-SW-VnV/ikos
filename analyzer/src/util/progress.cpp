@@ -41,6 +41,10 @@
  *
  ******************************************************************************/
 
+#include <algorithm>
+
+#include <llvm/Support/Process.h>
+
 #include <ikos/analyzer/util/progress.hpp>
 
 namespace ikos {
@@ -55,20 +59,32 @@ ProgressLogger::~ProgressLogger() = default;
 // InteractiveProgressLogger
 
 InteractiveProgressLogger::InteractiveProgressLogger(std::ostream& out,
-                                                     std::size_t num_tasks)
-    : ProgressLogger(out), _current_task(0), _num_tasks(num_tasks) {}
+                                                     std::size_t num_tasks,
+                                                     std::size_t out_columns)
+    : ProgressLogger(out),
+      _current_task(0),
+      _num_tasks(num_tasks),
+      _out_columns(std::max(out_columns, std::size_t{3})) {}
 
 InteractiveProgressLogger::~InteractiveProgressLogger() = default;
 
 void InteractiveProgressLogger::start_task(StringRef status) {
-  // Update the current state
+  // Update the current task
   this->_current_task++;
-  this->_status = status.to_string();
+
+  // Update the status
+  this->_status.clear();
+  this->_status += '[';
+  this->_status += std::to_string(this->_current_task);
+  this->_status += '/';
+  this->_status += std::to_string(this->_num_tasks);
+  this->_status += "] ";
+  this->_status += status;
 
   // Truncate status
-  if (this->_status.length() > MaxStatusLength) {
-    this->_status.resize(MaxStatusLength - 3);
-    this->_status.append("...");
+  if (this->_status.length() > this->_out_columns) {
+    this->_status.resize(this->_out_columns - 2);
+    this->_status += "..";
   }
 
   // Print the state
@@ -98,8 +114,7 @@ void InteractiveProgressLogger::erase_line() {
 }
 
 void InteractiveProgressLogger::print_status() {
-  this->_out << "[" << this->_current_task << "/" << this->_num_tasks << "] "
-             << this->_status;
+  this->_out << this->_status;
 }
 
 // LinearProgressLogger
@@ -160,18 +175,21 @@ std::unique_ptr< ProgressLogger > make_progress_logger(ProgressOption opt,
 
   switch (opt) {
     case ProgressOption::Auto: {
-      if (llvm::outs().has_colors()) {
-        // has_colors() returns true if the output is a TTY
-        return std::make_unique< InteractiveProgressLogger >(std::cout,
-                                                             num_tasks);
-
+      if (llvm::sys::Process::StandardOutIsDisplayed()) {
+        return std::make_unique<
+            InteractiveProgressLogger >(std::cout,
+                                        num_tasks,
+                                        llvm::sys::Process::
+                                            StandardOutColumns());
       } else {
         return std::make_unique< NoProgressLogger >(std::cout);
       }
     }
     case ProgressOption::Interactive: {
-      return std::make_unique< InteractiveProgressLogger >(std::cout,
-                                                           num_tasks);
+      return std::make_unique<
+          InteractiveProgressLogger >(std::cout,
+                                      num_tasks,
+                                      llvm::sys::Process::StandardOutColumns());
     }
     case ProgressOption::Linear: {
       return std::make_unique< LinearProgressLogger >(std::cout, num_tasks);

@@ -54,6 +54,7 @@
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
 #include <ikos/analyzer/analysis/fixpoint_profile.hpp>
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/progress.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
 
 namespace ikos {
@@ -97,6 +98,9 @@ private:
   /// \brief List of property checks to run
   const std::vector< std::unique_ptr< Checker > >& _checkers;
 
+  /// \brief Progress logger
+  ProgressLogger& _logger;
+
   /// \brief Numerical execution engine
   NumericalExecutionEngineT _exec_engine;
 
@@ -111,6 +115,7 @@ public:
   /// \param entry_point Function to analyze
   FunctionFixpoint(Context& ctx,
                    const std::vector< std::unique_ptr< Checker > >& checkers,
+                   ProgressLogger& logger,
                    ar::Function* entry_point);
 
   /// \brief Constructor for a callee
@@ -149,6 +154,17 @@ public:
   AbstractDomain analyze_edge(ar::BasicBlock* src,
                               ar::BasicBlock* dest,
                               AbstractDomain pre) override;
+
+  /// \brief Notify the beginning of the analysis of a cycle
+  void notify_enter_cycle(ar::BasicBlock* head) override;
+
+  /// \brief Notify the beginning of an iteration on a cycle
+  void notify_cycle_iteration(ar::BasicBlock* head,
+                              unsigned iteration,
+                              core::FixpointIterationKind kind) override;
+
+  /// \brief Notify the end of the analysis of a cycle
+  void notify_leave_cycle(ar::BasicBlock* head) override;
 
   /// \brief Process the computed abstract value for a node
   void process_pre(ar::BasicBlock* bb, const AbstractDomain& pre) override;
