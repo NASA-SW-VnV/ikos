@@ -112,6 +112,11 @@ bool DeadCodeChecker::skip_check(ar::Statement* stmt) {
     return true;
   }
 
+  if (ar::isa< ar::Unreachable >(stmt)) {
+    // No checks on unreachable statements
+    return true;
+  }
+
   if (ar::isa< ar::Assignment >(stmt) || ar::isa< ar::UnaryOperation >(stmt)) {
     auto value = stmt->frontend< llvm::Value >();
 
