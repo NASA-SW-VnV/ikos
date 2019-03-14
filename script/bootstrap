@@ -1855,17 +1855,6 @@ if (( ! found_llvm )); then
         mkdir build
         cd build
 
-        # Try to guess the target
-        arch=$(uname -m)
-
-        if [[ "$arch" = x86* || "$arch" = "i386" || "$arch" = "i686" ]]; then
-            llvm_targets="X86"
-        elif [[ "$arch" = arm* ]]; then
-            llvm_targets="ARM"
-        else
-            llvm_targets="all" # default to all
-        fi
-
         cmake_extra_args=()
 
         # If the compiler is gcc, tell clang to use the same SEARCH_PATH
@@ -1880,7 +1869,7 @@ if (( ! found_llvm )); then
         progress_run cmake \
             -DCMAKE_INSTALL_PREFIX="$install_dir/llvm-$llvm_install_version" \
             -DCMAKE_BUILD_TYPE=Release \
-            -DLLVM_TARGETS_TO_BUILD="$llvm_targets" \
+            -DLLVM_TARGETS_TO_BUILD=all \
             -DLLVM_INSTALL_UTILS=ON \
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_ENABLE_EH=ON \
