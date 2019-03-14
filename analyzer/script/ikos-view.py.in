@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 ###############################################################################
 #
-# ikos-view: a web server to display an analysis report
+# ikos-view: web server to display an analysis report
 #
 # Author: Maxime Arthaud
 #

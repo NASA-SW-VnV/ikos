@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 ###############################################################################
 #
-# ikos: a static analyzer for C/C++ programs
+# ikos: static analyzer for C/C++ programs
 #
 # Author: Maxime Arthaud
 #

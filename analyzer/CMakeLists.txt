@@ -392,6 +392,9 @@ install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-scan-cc" DESTINATION b
 configure_file(script/ikos-scan-c++.py.in script/ikos-scan-c++ @ONLY)
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-scan-c++" DESTINATION bin)
 
+configure_file(script/ikos-scan-extract.py.in script/ikos-scan-extract @ONLY)
+install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/script/ikos-scan-extract" DESTINATION bin)
+
 #
 # Regression tests
 #

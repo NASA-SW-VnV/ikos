@@ -1,7 +1,7 @@
 #!@PYTHON_EXECUTABLE@
 ###############################################################################
 #
-# ikos-report: generate an analysis report from a result database.
+# ikos-report: generate an analysis report from a result database
 #
 # Author: Maxime Arthaud
 #

@@ -63,74 +63,6 @@ from ikos.filetype import filetype
 from ikos.log import printf
 
 
-def parse_arguments(argv):
-    usage = '%(prog)s [options] command'
-    description = 'python helper to analyze whole C/C++ projects'
-    formatter_class = argparse.RawTextHelpFormatter
-    parser = argparse.ArgumentParser(usage=usage,
-                                     description=description,
-                                     formatter_class=formatter_class)
-
-    # Positional arguments
-    parser.add_argument('args',
-                        nargs=argparse.REMAINDER,
-                        help=argparse.SUPPRESS)
-
-    # Optional arguments
-    parser.add_argument('-v',
-                        dest='verbosity',
-                        help='Increase verbosity',
-                        action='count',
-                        default=1)
-    parser.add_argument('-q',
-                        dest='verbosity',
-                        help='Be quiet',
-                        action='store_const',
-                        const=0)
-    parser.add_argument('--version',
-                        action=args.VersionAction,
-                        nargs=0,
-                        help='Show ikos version')
-    parser.add_argument('--color',
-                        dest='color',
-                        metavar='',
-                        help=args.help('Enable terminal colors:',
-                                       args.color_choices,
-                                       args.default_color),
-                        choices=args.choices(args.color_choices),
-                        default=args.default_color)
-    parser.add_argument('--log',
-                        dest='log_level',
-                        metavar='',
-                        help=args.help('Log level:',
-                                       args.log_levels,
-                                       args.default_log_level),
-                        choices=args.choices(args.log_levels),
-                        default=None)
-
-    opt = parser.parse_args(argv)
-
-    # remove leading '--'
-    while opt.args and opt.args[0] == '--':
-        opt.args.pop(0)
-
-    if not opt.args:
-        parser.error("too few arguments")
-
-    # verbosity changes the log level, if --log is not specified
-    if opt.log_level is None:
-        if opt.verbosity <= 0:
-            opt.log_level = 'error'
-        elif opt.verbosity == 1:
-            opt.log_level = 'info'
-        elif opt.verbosity == 2:
-            opt.log_level = 'debug'
-        else:
-            opt.log_level = 'all'
-
-    return opt
-
-
 class ClangArgumentParser:
     ''' Parser for clang arguments '''
 
@@ -717,7 +649,7 @@ class ScanServer(threading.Thread):
 # main for ikos-scan-cc and ikos-scan-c++ #
 ###########################################
 
-def compile(mode, argv):
+def compile_main(mode, argv):
     progname = os.path.basename(argv[0])
 
     if 'IKOS_SCAN_SERVER' not in os.environ:
@@ -792,13 +724,163 @@ def compile(mode, argv):
             raise error
 
 
+##############################
+# main for ikos-scan-extract #
+##############################
+
+def extract_parse_arguments(argv):
+    usage = '%(prog)s [options] file'
+    description = 'Extract the llvm bitcode generated for a given file'
+    formatter_class = argparse.RawTextHelpFormatter
+    parser = argparse.ArgumentParser(usage=usage,
+                                     description=description,
+                                     formatter_class=formatter_class)
+
+    # Positional arguments
+    parser.add_argument('input',
+                        metavar='file',
+                        help='Input file')
+
+    # Optional arguments
+    parser.add_argument('-o',
+                        dest='output',
+                        metavar='<file>',
+                        help='Output file')
+    parser.add_argument('-v',
+                        dest='verbosity',
+                        help='Increase verbosity',
+                        action='count',
+                        default=1)
+    parser.add_argument('-q',
+                        dest='verbosity',
+                        help='Be quiet',
+                        action='store_const',
+                        const=0)
+    parser.add_argument('--version',
+                        action=args.VersionAction,
+                        nargs=0,
+                        help='Show ikos version')
+    parser.add_argument('--color',
+                        dest='color',
+                        metavar='',
+                        help=args.help('Enable terminal colors:',
+                                       args.color_choices,
+                                       args.default_color),
+                        choices=args.choices(args.color_choices),
+                        default=args.default_color)
+    parser.add_argument('--log',
+                        dest='log_level',
+                        metavar='',
+                        help=args.help('Log level:',
+                                       args.log_levels,
+                                       args.default_log_level),
+                        choices=args.choices(args.log_levels),
+                        default=None)
+
+    opt = parser.parse_args(argv)
+
+    # verbosity changes the log level, if --log is not specified
+    if opt.log_level is None:
+        if opt.verbosity <= 0:
+            opt.log_level = 'error'
+        elif opt.verbosity == 1:
+            opt.log_level = 'info'
+        elif opt.verbosity == 2:
+            opt.log_level = 'debug'
+        else:
+            opt.log_level = 'all'
+
+    return opt
+
+
+def extract_main(argv):
+    # parse arguments
+    opt = extract_parse_arguments(argv[1:])
+
+    # setup colors and logging
+    colors.setup(opt.color, file=log.out)
+    log.setup(opt.log_level)
+
+    input_path = opt.input
+    output_path = opt.output if opt.output else '%s.bc' % input_path
+    extract_bitcode(input_path, output_path)
+
+
 ######################
 # main for ikos-scan #
 ######################
 
-def main(argv):
+def scan_parse_arguments(argv):
+    usage = '%(prog)s [options] command'
+    description = 'python helper to analyze whole C/C++ projects'
+    formatter_class = argparse.RawTextHelpFormatter
+    parser = argparse.ArgumentParser(usage=usage,
+                                     description=description,
+                                     formatter_class=formatter_class)
+
+    # Positional arguments
+    parser.add_argument('args',
+                        nargs=argparse.REMAINDER,
+                        help=argparse.SUPPRESS)
+
+    # Optional arguments
+    parser.add_argument('-v',
+                        dest='verbosity',
+                        help='Increase verbosity',
+                        action='count',
+                        default=1)
+    parser.add_argument('-q',
+                        dest='verbosity',
+                        help='Be quiet',
+                        action='store_const',
+                        const=0)
+    parser.add_argument('--version',
+                        action=args.VersionAction,
+                        nargs=0,
+                        help='Show ikos version')
+    parser.add_argument('--color',
+                        dest='color',
+                        metavar='',
+                        help=args.help('Enable terminal colors:',
+                                       args.color_choices,
+                                       args.default_color),
+                        choices=args.choices(args.color_choices),
+                        default=args.default_color)
+    parser.add_argument('--log',
+                        dest='log_level',
+                        metavar='',
+                        help=args.help('Log level:',
+                                       args.log_levels,
+                                       args.default_log_level),
+                        choices=args.choices(args.log_levels),
+                        default=None)
+
+    opt = parser.parse_args(argv)
+
+    # remove leading '--'
+    while opt.args and opt.args[0] == '--':
+        opt.args.pop(0)
+
+    if not opt.args:
+        parser.error("too few arguments")
+
+    # verbosity changes the log level, if --log is not specified
+    if opt.log_level is None:
+        if opt.verbosity <= 0:
+            opt.log_level = 'error'
+        elif opt.verbosity == 1:
+            opt.log_level = 'info'
+        elif opt.verbosity == 2:
+            opt.log_level = 'debug'
+        else:
+            opt.log_level = 'all'
+
+    return opt
+
+
+def scan_main(argv):
     # parse arguments
-    opt = parse_arguments(argv[1:])
+    opt = scan_parse_arguments(argv[1:])
 
     # setup colors and logging
     colors.setup(opt.color, file=log.out)
