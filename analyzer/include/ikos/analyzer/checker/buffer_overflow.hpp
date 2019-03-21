@@ -200,6 +200,21 @@ private:
                                   Result if_null,
                                   const value::AbstractDomain& inv);
 
+  /// \brief Check a string access (read/write) for buffer overflow
+  ///
+  /// \returns The analysis check result (Ok, Warning, Error, Unreachable)
+  ///
+  /// \param stmt The statement
+  /// \param pointer The pointer string operand
+  /// \param max_access_size The maximum access size, in bytes
+  /// \param if_null Result if the pointer is null
+  /// \param inv The invariant
+  CheckResult check_string_access(ar::Statement* stmt,
+                                  ar::Value* pointer,
+                                  ar::Value* max_access_size,
+                                  Result if_null,
+                                  const value::AbstractDomain& inv);
+
   /// \brief Check a `va_list` access (read/write) for buffer overflow
   ///
   /// \returns The analysis check result (Ok, Warning, Error, Unreachable)

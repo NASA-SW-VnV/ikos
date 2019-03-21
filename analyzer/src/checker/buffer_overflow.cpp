@@ -568,16 +568,16 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                         inv)};
     }
     case ar::Intrinsic::LibcStrncpy: {
-      return {this->check_mem_access(call,
-                                     call->argument(0),
-                                     call->argument(2),
-                                     /* if_null = */ Result::Error,
-                                     inv),
-              this->check_mem_access(call,
-                                     call->argument(1),
-                                     call->argument(2),
-                                     /* if_null = */ Result::Error,
-                                     inv)};
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* max_access_size = */
+                                        call->argument(2),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
     }
     case ar::Intrinsic::LibcStrcat: {
       return {this->check_string_access(call,
@@ -594,11 +594,12 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                         call->argument(0),
                                         /* if_null = */ Result::Error,
                                         inv),
-              this->check_mem_access(call,
-                                     call->argument(1),
-                                     call->argument(2),
-                                     /* if_null = */ Result::Error,
-                                     inv)};
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* max_access_size = */
+                                        call->argument(2),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
     }
     case ar::Intrinsic::LibcStrcmp: {
       return {this->check_string_access(call,
@@ -1164,6 +1165,26 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_string_access(
   /// well-formed.
   ///
   /// TODO: Improve checks for strings.
+  return this->check_mem_access(stmt, pointer, this->_size_one, if_null, inv);
+}
+
+BufferOverflowChecker::CheckResult BufferOverflowChecker::check_string_access(
+    ar::Statement* stmt,
+    ar::Value* pointer,
+    ar::Value* max_access_size,
+    Result if_null,
+    const value::AbstractDomain& inv) {
+  /// Notes:
+  ///
+  /// Since we do not keep track of null-terminated string lengths, we cannot
+  /// prove if a string access is safe. Thus, we use one for the access size,
+  /// checking only if the first byte is accessible.
+  ///
+  /// ASSUMPTION: If the first byte of a string is accessible, the string is
+  /// well-formed.
+  ///
+  /// TODO: Improve checks for strings.
+  ikos_ignore(max_access_size);
   return this->check_mem_access(stmt, pointer, this->_size_one, if_null, inv);
 }
 

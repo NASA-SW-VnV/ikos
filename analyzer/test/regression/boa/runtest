@@ -225,4 +225,5 @@ if __name__ == '__main__':
                line_checks=[(20, 'ok', 'warning')]))
     t.add(Test('test-57.c', 'test-57.c', 'boa', 'safe'))
     t.add(Test('test-57-unsafe.c', 'test-57-unsafe.c', 'boa', 'error'))
+    t.add(Test('test-58.c', 'test-58.c', 'boa', 'safe'))
     t.run()
