@@ -1847,6 +1847,8 @@ if (( ! found_llvm )); then
             "$build_dir/llvm-$llvm_install_version"
         download_extract "http://llvm.org/releases/$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/tools/clang"
+        download_extract "http://llvm.org/releases/$llvm_install_version/clang-tools-extra-$llvm_install_version.src.tar.xz" \
+            "$build_dir/llvm-$llvm_install_version/tools/clang/tools/extra"
         download_extract "http://llvm.org/releases/$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/projects/compiler-rt"
 
