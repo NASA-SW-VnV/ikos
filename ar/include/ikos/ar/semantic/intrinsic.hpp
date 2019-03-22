@@ -79,6 +79,7 @@ public:
     IkosNonDetUi32,
     IkosCounterInit,
     IkosCounterIncr,
+    IkosCheckMemAccess,
     IkosPrintInvariant,
     IkosPrintValues,
     _EndIkosIntrinsic,

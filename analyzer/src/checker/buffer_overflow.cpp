@@ -278,7 +278,16 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
     case ar::Intrinsic::IkosNonDetSi32:
     case ar::Intrinsic::IkosNonDetUi32:
     case ar::Intrinsic::IkosCounterInit:
-    case ar::Intrinsic::IkosCounterIncr:
+    case ar::Intrinsic::IkosCounterIncr: {
+      return {};
+    }
+    case ar::Intrinsic::IkosCheckMemAccess: {
+      return {this->check_mem_access(call,
+                                     call->argument(0),
+                                     call->argument(1),
+                                     /* if_null = */ Result::Error,
+                                     inv)};
+    }
     case ar::Intrinsic::IkosPrintInvariant:
     case ar::Intrinsic::IkosPrintValues: {
       return {};

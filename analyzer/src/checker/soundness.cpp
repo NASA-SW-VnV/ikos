@@ -274,6 +274,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
     case ar::Intrinsic::IkosNonDetUi32:
     case ar::Intrinsic::IkosCounterInit:
     case ar::Intrinsic::IkosCounterIncr:
+    case ar::Intrinsic::IkosCheckMemAccess:
     case ar::Intrinsic::IkosPrintInvariant:
     case ar::Intrinsic::IkosPrintValues: {
       return {};

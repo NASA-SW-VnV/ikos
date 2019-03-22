@@ -46,6 +46,8 @@
 
 #pragma once
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -76,6 +78,14 @@ extern int __ikos_nondet_int(void) IKOS_NOEXCEPT;
 
 /// \brief Return a non-deterministic unsigned integer
 extern unsigned __ikos_nondet_uint(void) IKOS_NOEXCEPT;
+
+/// \brief Check if a memory access is valid
+///
+/// The buffer overflow checker (ikos -a boa) will check if the memory at
+/// [ptr, ptr + size - 1] is accessible.
+///
+/// The nullity checker (ikos -a nullity) will check if the pointer is null.
+extern void __ikos_check_mem_access(void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Print the invariant at the function call
 ///

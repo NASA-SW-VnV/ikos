@@ -61,6 +61,9 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosNonDetSi32);
     } else if (name == "__ikos_nondet_uint") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosNonDetUi32);
+    } else if (name == "__ikos_check_mem_access") {
+      return this->_bundle->intrinsic_function(
+          ar::Intrinsic::IkosCheckMemAccess);
     } else if (name == "__ikos_print_invariant") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosPrintInvariant);
