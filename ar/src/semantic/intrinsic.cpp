@@ -515,6 +515,7 @@ const char* Intrinsic::short_name(ID id) {
       return "eh.typeid.for";
     case Trap:
       return "trap";
+    // <ikos/analyzer/intrinsic.h>
     case IkosAssert:
       return "ikos.assert";
     case IkosAssume:
@@ -533,6 +534,7 @@ const char* Intrinsic::short_name(ID id) {
       return "ikos.print_invariant";
     case IkosPrintValues:
       return "ikos.print_values";
+    // <stdlib.h>
     case LibcMalloc:
       return "libc.malloc";
     case LibcCalloc:
@@ -545,14 +547,30 @@ const char* Intrinsic::short_name(ID id) {
       return "libc.realloc";
     case LibcFree:
       return "libc.free";
+    case LibcAbs:
+      return "libc.abs";
+    case LibcRand:
+      return "libc.rand";
+    case LibcSrand:
+      return "libc.srand";
+    case LibcExit:
+      return "libc.exit";
+    case LibcAbort:
+      return "libc.abort";
+    // <errno.h>
+    case LibcErrnoLocation:
+      return "libc.errno_location";
+    // <fcntl.h>
     case LibcOpen:
       return "libc.open";
+    // <unistd.h>
     case LibcClose:
       return "libc.close";
     case LibcRead:
       return "libc.read";
     case LibcWrite:
       return "libc.write";
+    // <stdio.h>
     case LibcGets:
       return "libc.gets";
     case LibcFgets:
@@ -591,6 +609,7 @@ const char* Intrinsic::short_name(ID id) {
       return "libc.fclose";
     case LibcFflush:
       return "libc.fflush";
+    // <string.h>
     case LibcStrlen:
       return "libc.strlen";
     case LibcStrnlen:
@@ -625,18 +644,6 @@ const char* Intrinsic::short_name(ID id) {
       return "libc.memset.check";
     case LibcStrcatCheck:
       return "libc.strcat.check";
-    case LibcAbs:
-      return "libc.abs";
-    case LibcRand:
-      return "libc.rand";
-    case LibcSrand:
-      return "libc.srand";
-    case LibcExit:
-      return "libc.exit";
-    case LibcAbort:
-      return "libc.abort";
-    case LibcErrnoLocation:
-      return "libc.errno_location";
     case LibcppNew:
       return "libcpp.new";
     case LibcppNewArray:
