@@ -222,6 +222,10 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
     case LibcAbort: {
       ret_ty = void_ty; // ret
     } break;
+    // <errno.h>
+    case LibcErrnoLocation: {
+      ret_ty = PointerType::get(ctx, si32_ty); // ret
+    } break;
     // <fcntl.h>
     case LibcOpen: {
       ret_ty = si32_ty;              // ret
@@ -631,6 +635,8 @@ const char* Intrinsic::short_name(ID id) {
       return "libc.exit";
     case LibcAbort:
       return "libc.abort";
+    case LibcErrnoLocation:
+      return "libc.errno_location";
     case LibcppNew:
       return "libcpp.new";
     case LibcppNewArray:

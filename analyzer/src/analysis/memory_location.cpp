@@ -99,17 +99,6 @@ void AggregateMemoryLocation::dump(std::ostream& o) const {
   this->_var->dump(o);
 }
 
-// VaArgMemoryLocation
-
-VaArgMemoryLocation::VaArgMemoryLocation(std::string sv)
-    : MemoryLocation(VaArgMemoryKind), _sv(std::move(sv)) {
-  ikos_assert(!this->_sv.empty());
-}
-
-void VaArgMemoryLocation::dump(std::ostream& o) const {
-  o << this->_sv;
-}
-
 // AbsoluteZeroMemoryLocation
 
 AbsoluteZeroMemoryLocation::AbsoluteZeroMemoryLocation()
@@ -125,6 +114,26 @@ ArgvMemoryLocation::ArgvMemoryLocation() : MemoryLocation(ArgvMemoryKind) {}
 
 void ArgvMemoryLocation::dump(std::ostream& o) const {
   o << "argv";
+}
+
+// VaArgMemoryLocation
+
+VaArgMemoryLocation::VaArgMemoryLocation(std::string sv)
+    : MemoryLocation(VaArgMemoryKind), _sv(std::move(sv)) {
+  ikos_assert(!this->_sv.empty());
+}
+
+void VaArgMemoryLocation::dump(std::ostream& o) const {
+  o << this->_sv;
+}
+
+// LibcErrnoMemoryLocation
+
+LibcErrnoMemoryLocation::LibcErrnoMemoryLocation()
+    : MemoryLocation(LibcErrnoMemoryKind) {}
+
+void LibcErrnoMemoryLocation::dump(std::ostream& o) const {
+  o << "libc.errno";
 }
 
 // DynAllocMemoryLocation
@@ -156,8 +165,9 @@ void DynAllocMemoryLocation::dump(std::ostream& o) const {
 // MemoryFactory
 
 MemoryFactory::MemoryFactory()
-    : _absolute_zero_memory(std::make_unique< AbsoluteZeroMemoryLocation >()),
-      _argv_memory(std::make_unique< ArgvMemoryLocation >()) {}
+    : _absolute_zero(std::make_unique< AbsoluteZeroMemoryLocation >()),
+      _argv(std::make_unique< ArgvMemoryLocation >()),
+      _libc_errno(std::make_unique< LibcErrnoMemoryLocation >()) {}
 
 MemoryFactory::~MemoryFactory() = default;
 
@@ -216,6 +226,14 @@ AggregateMemoryLocation* MemoryFactory::get_aggregate(
   }
 }
 
+AbsoluteZeroMemoryLocation* MemoryFactory::get_absolute_zero() {
+  return this->_absolute_zero.get();
+}
+
+ArgvMemoryLocation* MemoryFactory::get_argv() {
+  return this->_argv.get();
+}
+
 VaArgMemoryLocation* MemoryFactory::get_va_arg(llvm::StringRef sv) {
   auto it = this->_va_arg_map.find(sv);
   if (it == this->_va_arg_map.end()) {
@@ -228,12 +246,8 @@ VaArgMemoryLocation* MemoryFactory::get_va_arg(llvm::StringRef sv) {
   }
 }
 
-AbsoluteZeroMemoryLocation* MemoryFactory::get_absolute_zero() {
-  return this->_absolute_zero_memory.get();
-}
-
-ArgvMemoryLocation* MemoryFactory::get_argv() {
-  return this->_argv_memory.get();
+LibcErrnoMemoryLocation* MemoryFactory::get_libc_errno() {
+  return this->_libc_errno.get();
 }
 
 DynAllocMemoryLocation* MemoryFactory::get_dyn_alloc(ar::CallBase* call,

@@ -301,9 +301,10 @@ class MemoryLocationKind:
     GLOBAL = auto()
     FUNCTION = auto()
     AGGREGATE = auto()
-    VA_ARG = auto()
     ABSOLUTE_ZERO = auto()
     ARGV = auto()
+    VA_ARG = auto()
+    LIBC_ERRNO = auto()
     DYN_ALLOC = auto()
 
 

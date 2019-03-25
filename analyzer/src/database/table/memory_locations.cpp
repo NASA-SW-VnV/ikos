@@ -183,11 +183,13 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
     return {{"id", this->_functions.insert(fun)}};
   } else if (isa< AggregateMemoryLocation >(mem_loc)) {
     return {};
-  } else if (isa< VaArgMemoryLocation >(mem_loc)) {
-    return {};
   } else if (isa< AbsoluteZeroMemoryLocation >(mem_loc)) {
     return {};
   } else if (isa< ArgvMemoryLocation >(mem_loc)) {
+    return {};
+  } else if (isa< VaArgMemoryLocation >(mem_loc)) {
+    return {};
+  } else if (isa< LibcErrnoMemoryLocation >(mem_loc)) {
     return {};
   } else if (auto dyn_alloc_mem_loc =
                  dyn_cast< DynAllocMemoryLocation >(mem_loc)) {

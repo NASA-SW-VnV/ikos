@@ -228,4 +228,5 @@ if __name__ == '__main__':
     t.add(Test('test-58.c', 'test-58.c', 'boa', 'safe'))
     t.add(Test('test-59.c', 'test-59.c', 'boa', 'safe'))
     t.add(Test('test-59-unsafe.c', 'test-59-unsafe.c', 'boa', 'error'))
+    t.add(Test('test-60.c', 'test-60.c', 'boa', 'safe'))
     t.run()

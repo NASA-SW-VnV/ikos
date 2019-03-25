@@ -2053,6 +2053,10 @@ public:
       case ar::Intrinsic::LibcAbort: {
         this->exec_abort(call);
       } break;
+      // <errno.h>
+      case ar::Intrinsic::LibcErrnoLocation: {
+        this->exec_errno_location(call);
+      } break;
       // <fcntl.h>
       case ar::Intrinsic::LibcOpen: {
         this->exec_unknown_call(call,
@@ -2870,6 +2874,32 @@ private:
   /// the signal SIGABRT is being caught and the signal handler does not return.
   void exec_abort(ar::CallBase* /*call*/) {
     this->_inv.set_normal_flow_to_bottom();
+  }
+
+  /// \brief Execute a call to libc errno_location
+  ///
+  /// #include <errno.h>
+  /// int* __errno_location(void);
+  ///
+  /// The __errno_location() function returns a pointer to the errno variable.
+  void exec_errno_location(ar::CallBase* call) {
+    // Forget the current value of errno
+    MemoryLocation* addr = this->_mem_factory.get_libc_errno();
+    this->_inv.normal().forget_mem(addr);
+
+    // Assign the result
+    if (!call->has_result()) {
+      return;
+    }
+
+    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+    ikos_assert_msg(lhs.is_pointer_var(),
+                    "left hand side is not a pointer variable");
+
+    this->assign_pointer(lhs.var(),
+                         addr,
+                         Nullity::non_null(),
+                         Uninitialized::initialized());
   }
 
   /// \brief Execute a call to libc read

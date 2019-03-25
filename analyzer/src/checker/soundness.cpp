@@ -299,6 +299,10 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
     case ar::Intrinsic::LibcAbort: {
       return {};
     }
+    // <errno.h>
+    case ar::Intrinsic::LibcErrnoLocation: {
+      return {};
+    }
     // <fcntl.h>
     case ar::Intrinsic::LibcOpen: {
       return {};

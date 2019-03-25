@@ -337,15 +337,19 @@ Result PointerAlignmentChecker::check_memory_location_alignment(
     return Result::Error;
   } else if (isa< AggregateMemoryLocation >(memloc)) {
     return Result::Error;
-  } else if (isa< VaArgMemoryLocation >(memloc)) {
-    // We suppose that the arguments array has the best possible alignment
-    pto_in_alignment_req = offset_c.leq(alignment_req_c);
-    alignment_req_in_pto = alignment_req_c.leq(offset_c);
   } else if (isa< AbsoluteZeroMemoryLocation >(memloc)) {
     pto_in_alignment_req = offset_c.leq(alignment_req_c);
     alignment_req_in_pto = alignment_req_c.leq(offset_c);
   } else if (isa< ArgvMemoryLocation >(memloc)) {
     // We suppose that argv has the best possible alignment
+    pto_in_alignment_req = offset_c.leq(alignment_req_c);
+    alignment_req_in_pto = alignment_req_c.leq(offset_c);
+  } else if (isa< VaArgMemoryLocation >(memloc)) {
+    // We suppose that the arguments array has the best possible alignment
+    pto_in_alignment_req = offset_c.leq(alignment_req_c);
+    alignment_req_in_pto = alignment_req_c.leq(offset_c);
+  } else if (isa< LibcErrnoMemoryLocation >(memloc)) {
+    // We suppose that errno has the best possible alignment
     pto_in_alignment_req = offset_c.leq(alignment_req_c);
     alignment_req_in_pto = alignment_req_c.leq(offset_c);
   } else if (isa< DynAllocMemoryLocation >(memloc)) {

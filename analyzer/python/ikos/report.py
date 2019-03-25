@@ -1061,12 +1061,14 @@ def memory_location_str(mem_loc):
         return "function '%s'" % function.pretty_name()
     elif mem_loc.kind == MemoryLocationKind.AGGREGATE:
         return 'aggregate variable'
-    elif mem_loc.kind == MemoryLocationKind.VA_ARG:
-        return 'variable argument list'
     elif mem_loc.kind == MemoryLocationKind.ABSOLUTE_ZERO:
         return 'zero'
     elif mem_loc.kind == MemoryLocationKind.ARGV:
         return "'argv'"
+    elif mem_loc.kind == MemoryLocationKind.VA_ARG:
+        return 'variable argument list'
+    elif mem_loc.kind == MemoryLocationKind.LIBC_ERRNO:
+        return "'errno'"
     elif mem_loc.kind == MemoryLocationKind.DYN_ALLOC:
         call = mem_loc.db.statements[info['call_id']]
         function = call.function()

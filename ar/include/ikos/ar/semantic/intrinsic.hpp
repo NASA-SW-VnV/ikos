@@ -96,6 +96,8 @@ public:
     LibcSrand,
     LibcExit,
     LibcAbort,
+    // <errno.h>
+    LibcErrnoLocation,
     // <fcntl.h>
     LibcOpen,
     // <unistd.h>

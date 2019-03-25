@@ -270,6 +270,10 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     case ar::Intrinsic::LibcAbort: {
       return {};
     }
+    // <errno.h>
+    case ar::Intrinsic::LibcErrnoLocation: {
+      return {};
+    }
     // <fcntl.h>
     case ar::Intrinsic::LibcOpen: {
       return {this->check_null(call, call->argument(0), inv)};

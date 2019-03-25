@@ -310,6 +310,10 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
     case ar::Intrinsic::LibcAbort: {
       return {};
     }
+    // <errno.h>
+    case ar::Intrinsic::LibcErrnoLocation: {
+      return {};
+    }
     // <fcntl.h>
     case ar::Intrinsic::LibcOpen: {
       return {this->check_string_access(call,
@@ -1286,6 +1290,9 @@ void BufferOverflowChecker::init_global_alloc_size(
     inv.normal().integers().assign(size_var, size);
   } else if (isa< FunctionMemoryLocation >(addr)) {
     MachineInt size(0, this->_data_layout.pointers.bit_width, Unsigned);
+    inv.normal().integers().assign(size_var, size);
+  } else if (isa< LibcErrnoMemoryLocation >(addr)) {
+    MachineInt size(4, this->_data_layout.pointers.bit_width, Unsigned);
     inv.normal().integers().assign(size_var, size);
   }
 }

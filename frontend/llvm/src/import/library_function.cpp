@@ -98,6 +98,11 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
     } else if (name == "abort") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAbort);
     }
+    // <errno.h>
+    if (name == "__errno_location" || name == "__error") {
+      return this->_bundle->intrinsic_function(
+          ar::Intrinsic::LibcErrnoLocation);
+    }
     // <fcntl.h>
     if (name == "open") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcOpen);

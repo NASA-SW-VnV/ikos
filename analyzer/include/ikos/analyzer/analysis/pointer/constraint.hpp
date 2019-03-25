@@ -717,6 +717,10 @@ private:
         case ar::Intrinsic::LibcExit:
         case ar::Intrinsic::LibcAbort:
           break; // do nothing
+        // <errno.h>
+        case ar::Intrinsic::LibcErrnoLocation: {
+          this->process_errno_location(s);
+        } break;
         // <fcntl.h>
         case ar::Intrinsic::LibcOpen:
           break; // do nothing
@@ -856,6 +860,16 @@ private:
                                          Unsigned);
       this->_csts.add(
           AssignCst::create(lhs.var(), VarOp::create(ptr.var(), top)));
+    }
+
+    void process_errno_location(ar::CallBase* s) {
+      if (!s->has_result()) {
+        return;
+      }
+
+      MemoryLocation* addr = _ctx.mem_factory->get_libc_errno();
+      Variable* var = _ctx.var_factory->get_internal(s->result());
+      this->_csts.add(AssignCst::create(var, AddrOp::create(addr, zero())));
     }
 
     void process_intern_call(ar::CallBase* s, ar::Function* fun) {

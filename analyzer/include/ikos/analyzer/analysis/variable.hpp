@@ -167,7 +167,7 @@ public:
 /// \brief Local variable
 class LocalVariable final : public Variable {
 protected:
-  /// \brief Local Variable AR Representation
+  /// \brief AR Local Variable
   ar::LocalVariable* _var;
 
 public:
@@ -190,7 +190,7 @@ public:
 /// \brief Global variable
 class GlobalVariable final : public Variable {
 protected:
-  /// \brief Global Variable AR Representation
+  /// \brief AR Global Variable
   ar::GlobalVariable* _var;
 
 public:
@@ -213,7 +213,7 @@ public:
 /// \brief Internal variable
 class InternalVariable final : public Variable {
 protected:
-  /// \brief Internal Variable AR Representation
+  /// \brief AR Internal Variable
   ar::InternalVariable* _var;
 
 public:
