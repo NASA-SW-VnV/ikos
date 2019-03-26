@@ -84,7 +84,6 @@ public:
     AggregateMemoryKind,
     AbsoluteZeroMemoryKind,
     ArgvMemoryKind,
-    VaArgMemoryKind,
     LibcErrnoMemoryKind,
     DynAllocMemoryKind,
   };
@@ -245,29 +244,6 @@ public:
 
 }; // end class ArgvMemoryLocation
 
-/// \brief Variable argument memory location
-class VaArgMemoryLocation final : public MemoryLocation {
-private:
-  /// \brief Shadow variable string
-  std::string _sv;
-
-public:
-  /// \brief Default constructor
-  explicit VaArgMemoryLocation(std::string sv);
-
-  /// \brief Shadow variable getter
-  const std::string& shadow_var() const { return this->_sv; }
-
-  /// \brief Dump the memory location, for debugging purpose
-  void dump(std::ostream&) const override;
-
-  /// \brief Method for type support (isa, cast, dyn_cast)
-  static bool classof(const MemoryLocation* ml) {
-    return ml->kind() == VaArgMemoryKind;
-  }
-
-}; // end class VaArgMemoryLocation
-
 /// \brief Libc errno memory location
 class LibcErrnoMemoryLocation final : public MemoryLocation {
 public:
@@ -333,8 +309,6 @@ private:
 
   std::unique_ptr< ArgvMemoryLocation > _argv;
 
-  llvm::StringMap< std::unique_ptr< VaArgMemoryLocation > > _va_arg_map;
-
   std::unique_ptr< LibcErrnoMemoryLocation > _libc_errno;
 
   llvm::DenseMap< std::pair< ar::CallBase*, CallContext* >,
@@ -381,9 +355,6 @@ public:
 
   /// \brief Get or create a ArgvMemoryLocation
   ArgvMemoryLocation* get_argv();
-
-  /// \brief Get or create a VaArgMemoryLocation
-  VaArgMemoryLocation* get_va_arg(llvm::StringRef sv);
 
   /// \brief Get or create a LibcErrnoMemoryLocation
   LibcErrnoMemoryLocation* get_libc_errno();

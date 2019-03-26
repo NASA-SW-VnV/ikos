@@ -116,17 +116,6 @@ void ArgvMemoryLocation::dump(std::ostream& o) const {
   o << "argv";
 }
 
-// VaArgMemoryLocation
-
-VaArgMemoryLocation::VaArgMemoryLocation(std::string sv)
-    : MemoryLocation(VaArgMemoryKind), _sv(std::move(sv)) {
-  ikos_assert(!this->_sv.empty());
-}
-
-void VaArgMemoryLocation::dump(std::ostream& o) const {
-  o << this->_sv;
-}
-
 // LibcErrnoMemoryLocation
 
 LibcErrnoMemoryLocation::LibcErrnoMemoryLocation()
@@ -232,18 +221,6 @@ AbsoluteZeroMemoryLocation* MemoryFactory::get_absolute_zero() {
 
 ArgvMemoryLocation* MemoryFactory::get_argv() {
   return this->_argv.get();
-}
-
-VaArgMemoryLocation* MemoryFactory::get_va_arg(llvm::StringRef sv) {
-  auto it = this->_va_arg_map.find(sv);
-  if (it == this->_va_arg_map.end()) {
-    auto ml = new VaArgMemoryLocation(sv);
-    this->_va_arg_map.try_emplace(sv,
-                                  std::unique_ptr< VaArgMemoryLocation >(ml));
-    return ml;
-  } else {
-    return it->second.get();
-  }
 }
 
 LibcErrnoMemoryLocation* MemoryFactory::get_libc_errno() {

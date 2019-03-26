@@ -303,7 +303,6 @@ class MemoryLocationKind:
     AGGREGATE = auto()
     ABSOLUTE_ZERO = auto()
     ARGV = auto()
-    VA_ARG = auto()
     LIBC_ERRNO = auto()
     DYN_ALLOC = auto()
 

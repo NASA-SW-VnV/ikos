@@ -1065,8 +1065,6 @@ def memory_location_str(mem_loc):
         return 'zero'
     elif mem_loc.kind == MemoryLocationKind.ARGV:
         return "'argv'"
-    elif mem_loc.kind == MemoryLocationKind.VA_ARG:
-        return 'variable argument list'
     elif mem_loc.kind == MemoryLocationKind.LIBC_ERRNO:
         return "'errno'"
     elif mem_loc.kind == MemoryLocationKind.DYN_ALLOC:
