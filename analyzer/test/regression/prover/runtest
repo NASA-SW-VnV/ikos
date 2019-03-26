@@ -180,4 +180,14 @@ if __name__ == '__main__':
     t.add(Test('test-23.c', 'test-23.c', 'prover', 'safe'))
     t.add(Test('test-24.c', 'test-24.c', 'prover', 'safe'))
     t.add(Test('test-25.c', 'test-25.c', 'prover', 'unsafe'))
+    t.add(Test('test-26.c', 'test-26.c', 'prover', 'unsafe',
+               line_checks=[(17, 'ok'),
+                            (18, 'ok'),
+                            (19, 'ok'),
+                            (22, 'warning'),
+                            (23, 'warning'),
+                            (24, 'ok'),
+                            (27, 'warning'),
+                            (28, 'warning'),
+                            (29, 'ok', 'warning')]))
     t.run()

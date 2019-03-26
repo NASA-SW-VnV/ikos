@@ -281,7 +281,9 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
     case ar::Intrinsic::IkosCounterIncr: {
       return {};
     }
-    case ar::Intrinsic::IkosCheckMemAccess: {
+    case ar::Intrinsic::IkosCheckMemAccess:
+    case ar::Intrinsic::IkosForgetMemory:
+    case ar::Intrinsic::IkosAbstractMemory: {
       return {this->check_mem_access(call,
                                      call->argument(0),
                                      call->argument(1),

@@ -168,6 +168,16 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(void_ptr_ty); // ptr
       params.push_back(size_ty);     // size
     } break;
+    case IkosForgetMemory: {
+      ret_ty = void_ty;              // ret
+      params.push_back(void_ptr_ty); // ptr
+      params.push_back(size_ty);     // size
+    } break;
+    case IkosAbstractMemory: {
+      ret_ty = void_ty;              // ret
+      params.push_back(void_ptr_ty); // ptr
+      params.push_back(size_ty);     // size
+    } break;
     case IkosPrintInvariant: {
       ret_ty = void_ty; // ret
     } break;
@@ -530,6 +540,10 @@ const char* Intrinsic::short_name(ID id) {
       return "ikos.counter.incr";
     case IkosCheckMemAccess:
       return "ikos.check_mem_access";
+    case IkosForgetMemory:
+      return "ikos.forget_memory";
+    case IkosAbstractMemory:
+      return "ikos.abstract_memory";
     case IkosPrintInvariant:
       return "ikos.print_invariant";
     case IkosPrintValues:

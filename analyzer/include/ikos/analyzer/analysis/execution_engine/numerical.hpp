@@ -2004,7 +2004,19 @@ public:
       case ar::Intrinsic::IkosCounterIncr: {
         this->exec_ikos_counter_incr(call);
       } break;
-      case ar::Intrinsic::IkosCheckMemAccess:
+      case ar::Intrinsic::IkosCheckMemAccess: {
+        this->exec_unknown_call(call,
+                                /* may_write_params = */ false,
+                                /* ignore_unknown_write = */ false,
+                                /* may_write_globals = */ false,
+                                /* may_throw_exc = */ false);
+      } break;
+      case ar::Intrinsic::IkosForgetMemory: {
+        this->exec_ikos_forget_memory(call);
+      } break;
+      case ar::Intrinsic::IkosAbstractMemory: {
+        this->exec_ikos_abstract_memory(call);
+      } break;
       case ar::Intrinsic::IkosPrintInvariant:
       case ar::Intrinsic::IkosPrintValues: {
         this->exec_unknown_call(call,
@@ -2535,6 +2547,58 @@ private:
 
     this->_inv.normal().integers().incr_counter(ret.var(), incr.machine_int());
     this->_inv.normal().uninitialized().assign_initialized(ret.var());
+  }
+
+  /// \brief Execute a call to ikos.forget_memory
+  void exec_ikos_forget_memory(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore ikos.forget_memory, analysis could be unsound.
+      // See CheckKind::UnknownMemoryAccess
+    } else if (size.is_machine_int()) {
+      this->_inv.normal().forget_reachable_mem(ptr.var(), size.machine_int());
+    } else if (size.is_machine_int_var()) {
+      IntInterval size_intv =
+          this->_inv.normal().integers().to_interval(size.var());
+      this->_inv.normal().forget_reachable_mem(ptr.var(), size_intv.ub());
+    } else {
+      ikos_unreachable("unreachable");
+    }
+  }
+
+  /// \brief Execute a call to ikos.abstract_memory
+  void exec_ikos_abstract_memory(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+      // Ignore ikos.abstract_memory, analysis could be unsound.
+      // See CheckKind::UnknownMemoryAccess
+    } else if (size.is_machine_int()) {
+      this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
+    } else if (size.is_machine_int_var()) {
+      IntInterval size_intv =
+          this->_inv.normal().integers().to_interval(size.var());
+      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+    } else {
+      ikos_unreachable("unreachable");
+    }
   }
 
   /// \brief Execute a dynamic allocation
