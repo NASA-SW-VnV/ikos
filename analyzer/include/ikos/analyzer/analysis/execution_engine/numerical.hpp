@@ -2004,7 +2004,8 @@ public:
       case ar::Intrinsic::IkosCounterIncr: {
         this->exec_ikos_counter_incr(call);
       } break;
-      case ar::Intrinsic::IkosCheckMemAccess: {
+      case ar::Intrinsic::IkosCheckMemAccess:
+      case ar::Intrinsic::IkosCheckStringAccess: {
         this->exec_unknown_call(call,
                                 /* may_write_params = */ false,
                                 /* ignore_unknown_write = */ false,

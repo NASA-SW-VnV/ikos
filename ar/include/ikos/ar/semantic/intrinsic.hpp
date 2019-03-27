@@ -80,6 +80,7 @@ public:
     IkosCounterInit,
     IkosCounterIncr,
     IkosCheckMemAccess,
+    IkosCheckStringAccess,
     IkosForgetMemory,
     IkosAbstractMemory,
     IkosPrintInvariant,

@@ -87,18 +87,26 @@ extern unsigned __ikos_nondet_uint(void) IKOS_NOEXCEPT;
 /// The nullity checker (ikos -a nullity) will check if the pointer is null.
 extern void __ikos_check_mem_access(void* ptr, size_t size) IKOS_NOEXCEPT;
 
+/// \brief Check if a null-terminated string access is valid
+///
+/// The buffer overflow checker (ikos -a boa) will check if the given string
+/// access leads to a buffer overflow.
+///
+/// The nullity checker (ikos -a nullity) will check if the pointer is null.
+extern void __ikos_check_string_access(const char* str) IKOS_NOEXCEPT;
+
 /// \brief Forget the memory contents at `[ptr, ptr + size - 1]`
 ///
 /// Assume the memory now contains random bytes.
 ///
-/// This loads to undefined behavior if the pointer is null.
+/// This is undefined behavior if the pointer is null.
 extern void __ikos_forget_mem(void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Abstract the memory contents at `[ptr, ptr + size - 1]`
 ///
 /// Assume the memory now contains random bytes, but no valid pointers.
 ///
-/// This loads to undefined behavior if the pointer is null.
+/// This is undefined behavior if the pointer is null.
 extern void __ikos_abstract_mem(void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Print the invariant at the function call
