@@ -80,10 +80,10 @@ public:
   /// \brief Return true if x is deallocated, otherwise false
   virtual bool is_deallocated(MemoryLocationRef x) const = 0;
 
-  /// \brief Set the lifetime value of a memory location
+  /// \brief Set the lifetime of a memory location
   virtual void set(MemoryLocationRef x, const Lifetime& value) = 0;
 
-  /// \brief Forget a memory location
+  /// \brief Forget the lifetime of a memory location
   virtual void forget(MemoryLocationRef x) = 0;
 
   /// \brief Normalize the abstract value

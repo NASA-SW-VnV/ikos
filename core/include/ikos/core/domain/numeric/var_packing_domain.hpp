@@ -131,6 +131,15 @@ private:
   using Parent =
       numeric::AbstractDomain< Number, VariableRef, VarPackingDomain >;
 
+  /// \brief Result of a call to EquivalenceRelation::forget(v)
+  enum class ForgetResult {
+    /// \brief Success
+    Success,
+
+    /// \brief Bottom was found
+    Bottom,
+  };
+
   /*
    * Implementation of Union-Find
    */
@@ -371,16 +380,18 @@ private:
     }
 
     /// \brief Forget the given variable
-    void forget(VariableRef v) {
+    ///
+    /// Note: calling forget() on an equivalence class might reduce it to bottom
+    ForgetResult forget(VariableRef v) {
       auto it = this->_parents.find(v);
 
       if (it == this->_parents.end()) {
-        return;
+        return ForgetResult::Success;
       }
 
       if (it->second != v) {
         // v is not the root of the equivalence class
-        VariableRef root = this->find_root_var(v);
+        VariableRef root = this->find_root_var(it->second);
 
         // update parents
         for (auto& p : this->_parents) {
@@ -410,12 +421,19 @@ private:
           equiv_class.copy_domain();
           equiv_class.domain->forget(v);
           this->_classes.emplace(*new_root, std::move(equiv_class));
+        } else {
+          EquivalenceClass& equiv_class = this->_classes[v];
+          if (equiv_class.domain->is_bottom()) {
+            // In that case, do nothing
+            return ForgetResult::Bottom;
+          }
         }
 
         this->_classes.erase(v);
       }
 
       this->_parents.erase(v);
+      return ForgetResult::Success;
     }
 
     /// \brief Forget the equivalence class containing the given variable
@@ -694,7 +712,7 @@ private:
     // forget() might invalidate iterators
     for (VariableRef v : result._equiv_relation.variables()) {
       if (!other._equiv_relation.contains(v)) {
-        result.forget(v);
+        result._equiv_relation.forget(v);
       }
     }
 
@@ -703,7 +721,7 @@ private:
     // forget() might invalidate iterators
     for (VariableRef v : other._equiv_relation.variables()) {
       if (!result._equiv_relation.contains(v)) {
-        other.forget(v);
+        other._equiv_relation.forget(v);
       }
     }
 
@@ -929,7 +947,12 @@ public:
       return;
     }
 
-    this->forget(x);
+    auto result = this->_equiv_relation.forget(x);
+    if (result == ForgetResult::Bottom) {
+      this->set_to_bottom();
+      return;
+    }
+
     this->_equiv_relation.add_equiv_class(x);
     this->_equiv_relation.find_domain(x)->assign(x, n);
     this->_is_normalized = false;
@@ -948,9 +971,13 @@ public:
       this->_equiv_relation.add_equiv_class(y);
     }
 
-    this->forget(x);
-    this->_equiv_relation.add_var_to_equiv_class(x, y);
+    auto result = this->_equiv_relation.forget(x);
+    if (result == ForgetResult::Bottom) {
+      this->set_to_bottom();
+      return;
+    }
 
+    this->_equiv_relation.add_var_to_equiv_class(x, y);
     EquivalenceClass& equiv_class = this->_equiv_relation.find_equiv_class(y);
     equiv_class.copy_domain();
     equiv_class.domain->assign(x, y);
@@ -978,7 +1005,12 @@ public:
     }
 
     if (e.factor(x) == 0) {
-      this->forget(x);
+      auto result = this->_equiv_relation.forget(x);
+      if (result == ForgetResult::Bottom) {
+        this->set_to_bottom();
+        return;
+      }
+
       this->_equiv_relation.add_var_to_equiv_class(x, *root);
     }
 
@@ -1001,7 +1033,12 @@ private:
     this->merge_unexisting_equiv_classes(root, z);
 
     if (x != y && x != z) {
-      this->forget(x);
+      auto result = this->_equiv_relation.forget(x);
+      if (result == ForgetResult::Bottom) {
+        this->_is_bottom = true;
+        return this->_equiv_relation.find_domain(x);
+      }
+
       this->_equiv_relation.add_var_to_equiv_class(x, *root);
     }
     // otherwise, x has already been merged
@@ -1019,7 +1056,11 @@ private:
     }
 
     if (x != y) {
-      this->forget(x);
+      auto result = this->_equiv_relation.forget(x);
+      if (result == ForgetResult::Bottom) {
+        this->_is_bottom = true;
+        return this->_equiv_relation.find_domain(x);
+      }
       this->_equiv_relation.add_var_to_equiv_class(x, y);
     }
 
@@ -1109,7 +1150,12 @@ public:
       return;
     }
 
-    this->forget(x);
+    auto result = this->_equiv_relation.forget(x);
+    if (result == ForgetResult::Bottom) {
+      this->set_to_bottom();
+      return;
+    }
+
     if (value.is_top()) {
       return;
     }
@@ -1129,7 +1175,12 @@ public:
       return;
     }
 
-    this->forget(x);
+    auto result = this->_equiv_relation.forget(x);
+    if (result == ForgetResult::Bottom) {
+      this->set_to_bottom();
+      return;
+    }
+
     if (value.is_top()) {
       return;
     }
@@ -1149,7 +1200,12 @@ public:
       return;
     }
 
-    this->forget(x);
+    auto result = this->_equiv_relation.forget(x);
+    if (result == ForgetResult::Bottom) {
+      this->set_to_bottom();
+      return;
+    }
+
     if (value.is_top()) {
       return;
     }
@@ -1235,7 +1291,12 @@ public:
   }
 
   void forget(VariableRef x) override {
-    this->_equiv_relation.forget(x);
+    if (this->_is_bottom) {
+      return;
+    }
+
+    auto result = this->_equiv_relation.forget(x);
+    this->_is_bottom = (result == ForgetResult::Bottom);
     this->_is_normalized = false;
   }
 
@@ -1243,7 +1304,6 @@ private:
   /// \brief Forget the equivalence class containing `x`
   void forget_equiv_class(VariableRef x) {
     this->_equiv_relation.forget_equiv_class(x);
-    this->_is_normalized = false;
   }
 
 public:

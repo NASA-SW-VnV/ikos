@@ -94,7 +94,7 @@ public:
   /// \brief Refine the nullity value of a variable
   virtual void refine(VariableRef x, const Nullity& value) = 0;
 
-  /// \brief Forget a variable
+  /// \brief Forget the nullity of a variable
   virtual void forget(VariableRef x) = 0;
 
   /// \brief Normalize the abstract value
