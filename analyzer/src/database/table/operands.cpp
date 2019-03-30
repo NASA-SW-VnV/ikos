@@ -177,7 +177,8 @@ std::string escape_string(llvm::StringRef s) {
   std::string r;
   r.reserve(s.size() + 2);
   r.push_back('"');
-  for (const char c : s) {
+  for (auto it = s.begin(), et = s.end(); it != et; ++it) {
+    const char c = *it;
     if (c == '"' || c == '\\') {
       r.push_back('\\');
       r.push_back(c);
@@ -193,6 +194,8 @@ std::string escape_string(llvm::StringRef s) {
       r.append("\\f");
     } else if (c == '\r') {
       r.append("\\r");
+    } else if (c == '\0' && std::next(it) == et) {
+      continue; // Skip ending null-byte
     } else {
       r.push_back('\\');
       r.push_back(hexdigit(static_cast< unsigned char >(c) >> 4));
