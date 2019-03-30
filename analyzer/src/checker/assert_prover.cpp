@@ -41,6 +41,8 @@
  *
  ******************************************************************************/
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include <ikos/analyzer/analysis/literal.hpp>
 #include <ikos/analyzer/checker/assert_prover.hpp>
 #include <ikos/analyzer/database/table/operands.hpp>
@@ -180,6 +182,17 @@ static std::string deref(std::string s) {
   }
 }
 
+/// \brief Fix the string textual representations
+///
+/// This transforms &"xxx"[0] into "xxx"
+static std::string fix_string_repr(std::string s) {
+  if (boost::starts_with(s, "&\"") && boost::ends_with(s, "\"[0]")) {
+    return s.substr(1, s.size() - 4);
+  } else {
+    return s;
+  }
+}
+
 /// \brief Textual representation of a memory location
 static std::string memory_location_repr(MemoryLocation* mem) {
   if (auto local_mem = dyn_cast< LocalMemoryLocation >(mem)) {
@@ -232,7 +245,7 @@ static void print_points_to(
       msg << memory_location_repr(*it);
       ++it;
       if (it != et) {
-        msg << "; ";
+        msg << ", ";
       }
     }
     msg << "}\n";
@@ -276,7 +289,7 @@ void AssertProverChecker::exec_print_values(ar::IntrinsicCall* call,
   this->display_stmt_location(msg, call);
   msg << "__ikos_print_values(";
   for (auto it = call->arg_begin(), et = call->arg_end(); it != et;) {
-    msg << OperandsTable::repr(*it);
+    msg << fix_string_repr(OperandsTable::repr(*it));
     ++it;
     if (it != et) {
       msg << ", ";
