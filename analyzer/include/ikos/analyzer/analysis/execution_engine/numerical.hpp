@@ -1930,10 +1930,6 @@ public:
     ikos_assert(fun->is_declaration());
     ikos_assert(ar::TypeVerifier::is_valid_call(call, fun->type()));
 
-    if (this->_inv.is_normal_flow_bottom()) {
-      return;
-    }
-
     if (fun->is_intrinsic()) {
       this->exec_intrinsic_call(call, fun->intrinsic_id());
     } else {
@@ -1943,6 +1939,10 @@ public:
 
   /// \brief Execute a call to the given intrinsic function
   void exec_intrinsic_call(ar::CallBase* call, ar::Intrinsic::ID id) override {
+    if (this->_inv.is_normal_flow_bottom()) {
+      return;
+    }
+
     switch (id) {
       case ar::Intrinsic::MemoryCopy:
       case ar::Intrinsic::MemoryMove: {
@@ -2842,6 +2842,11 @@ private:
       }
     }
 
+    if (this->_inv.is_normal_flow_bottom()) {
+      // If the mem_copy generated an error
+      return;
+    }
+
     // Free the pointer
     this->exec_free(call);
   }
@@ -3325,10 +3330,6 @@ private:
   /// maxlen, whichever is smaller.
   void exec_strnlen(ar::CallBase* call) {
     this->exec_strlen(call);
-
-    if (this->_inv.is_normal_flow_bottom()) {
-      return;
-    }
 
     if (!call->has_result()) {
       return;
