@@ -4,13 +4,13 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 2.8.12.2
+# cmake 3.5.1
 # gmp 5.1.3
 # boost 1.55.0
 # python 2.7.6
 # sqlite 3.8.2
-# llvm 7.0.1
-# clang 7.0.1
+# llvm 8.0.0
+# clang 8.0.0
 # gcc 8.1.0
 
 # Upgrade
@@ -23,16 +23,20 @@ RUN apt-get install -y software-properties-common
 # Add ppa for gcc-8 and g++-8
 RUN add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
-# Add ppa for llvm 7.0
-RUN add-apt-repository -y "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main"
+# Add ppa for llvm 8.0
+RUN add-apt-repository -y "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main"
+
+# Add llvm repository key
+RUN apt-get install -y wget gnupg
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 
 # Refresh cache
 RUN apt-get update
 
 # Install all dependencies
-RUN apt-get install -y --force-yes gcc-8 g++-8 cmake libgmp-dev libboost1.55-dev \
+RUN apt-get install -y gcc-8 g++-8 cmake3 libgmp-dev libboost1.55-dev \
         libboost-filesystem1.55-dev libboost-test1.55-dev python python-pygments \
-        libsqlite3-dev libz-dev libedit-dev llvm-7 llvm-7-dev llvm-7-tools clang-7
+        libsqlite3-dev libz-dev libedit-dev llvm-8 llvm-8-dev llvm-8-tools clang-8
 
 # Add ikos source code
 ADD . /root/ikos
@@ -46,7 +50,7 @@ RUN cmake \
         -DCMAKE_BUILD_TYPE="$build_type" \
         -DCMAKE_C_COMPILER="gcc-8" \
         -DCMAKE_CXX_COMPILER="g++-8" \
-        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-7/bin/llvm-config" \
+        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" \
         ..
 RUN make
 RUN make install

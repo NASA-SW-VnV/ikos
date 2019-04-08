@@ -702,12 +702,12 @@ ReprResult repr(llvm::Value* value, ValueSet seen) {
 
   if (auto arg = llvm::dyn_cast< llvm::Argument >(value)) {
     // Check for llvm.dbg.declare and llvm.dbg.addr
-    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
         llvm::FindDbgAddrUses(arg);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgInfoIntrinsic* dbg) {
+                     [](llvm::DbgVariableIntrinsic* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 
@@ -736,12 +736,12 @@ ReprResult repr(llvm::Value* value, ValueSet seen) {
   if (auto inst = llvm::dyn_cast< llvm::Instruction >(value)) {
     if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(inst)) {
       // Check for llvm.dbg.declare and llvm.dbg.addr
-      llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+      llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
           llvm::FindDbgAddrUses(alloca);
       auto dbg_addr =
           std::find_if(dbg_addrs.begin(),
                        dbg_addrs.end(),
-                       [](llvm::DbgInfoIntrinsic* dbg) {
+                       [](llvm::DbgVariableIntrinsic* dbg) {
                          return dbg->getExpression()->getNumElements() == 0;
                        });
 
@@ -1044,12 +1044,12 @@ struct OperandReprVisitor {
     auto alloca = llvm::cast< llvm::AllocaInst >(value);
 
     // Check for llvm.dbg.declare and llvm.dbg.addr
-    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
         llvm::FindDbgAddrUses(alloca);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgInfoIntrinsic* dbg) {
+                     [](llvm::DbgVariableIntrinsic* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 

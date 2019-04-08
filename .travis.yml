@@ -7,11 +7,11 @@ addons:
     update: true
     sources:
     - ubuntu-toolchain-r-test
-    - llvm-toolchain-trusty-7
+    - llvm-toolchain-trusty-8
     packages:
     - gcc-8
     - g++-8
-    - cmake
+    - cmake3
     - libgmp-dev
     - libboost1.55-dev
     - libboost-filesystem1.55-dev
@@ -21,10 +21,10 @@ addons:
     - libsqlite3-dev
     - libz-dev
     - libedit-dev
-    - llvm-7
-    - llvm-7-dev
-    - llvm-7-tools
-    - clang-7
+    - llvm-8
+    - llvm-8-dev
+    - llvm-8-tools
+    - clang-8
   homebrew:
     update: true
     taps: nasa-sw-vnv/core
@@ -32,13 +32,13 @@ addons:
     - cmake
     - gmp
     - boost
-    - llvm@7
+    - llvm@8
     - apron
 script:
   - mkdir build
   - cd build
-  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_C_COMPILER="gcc-8" -DCMAKE_CXX_COMPILER="g++-8" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-7/bin/llvm-config" ..; fi
-  - if [ $TRAVIS_OS_NAME == osx ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/local/opt/llvm@7/bin/llvm-config" ..; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_C_COMPILER="gcc-8" -DCMAKE_CXX_COMPILER="g++-8" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" ..; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/local/opt/llvm@8/bin/llvm-config" ..; fi
   - make
   - make install
   - make check

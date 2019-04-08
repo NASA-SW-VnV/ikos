@@ -13,7 +13,7 @@ $ sudo apt-get upgrade
 Now, you will need to add the LLVM repository to your apt `sources.list`:
 
 ```
-$ echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main" | sudo tee -a /etc/apt/sources.list
+$ echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" | sudo tee -a /etc/apt/sources.list
 ```
 
 You also need to trust the LLVM repository key:
@@ -28,7 +28,7 @@ Then, run the following commands:
 $ sudo apt-get update
 $ sudo apt-get install gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
     libboost-test-dev python python-pygments libsqlite3-dev libz-dev libedit-dev \
-    llvm-7 llvm-7-dev llvm-7-tools clang-7
+    llvm-8 llvm-8-dev llvm-8-tools clang-8
 ```
 
 When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
@@ -36,7 +36,7 @@ When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABL
 ```
 $ cmake \
     -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
-    -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-7/bin/llvm-config" \
+    -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" \
     ..
 ```
 

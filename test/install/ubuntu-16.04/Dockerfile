@@ -9,24 +9,28 @@ ARG build_type=Release
 # boost 1.58.0
 # python 2.7.12
 # sqlite 3.11.0
-# llvm 7.0.1
-# clang 7.0.1
+# llvm 8.0.0
+# clang 8.0.0
 # gcc 5.4.0
 
 # Upgrade
 RUN apt-get update
 RUN apt-get upgrade -y
 
-# Add ppa for llvm 7.0
-RUN echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main" >> /etc/apt/sources.list
+# Add ppa for llvm 8.0
+RUN echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main" >> /etc/apt/sources.list
+
+# Add llvm repository key
+RUN apt-get install -y wget gnupg
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 
 # Refresh cache
 RUN apt-get update
 
 # Install all dependencies
-RUN apt-get install -y --allow-unauthenticated gcc g++ cmake libgmp-dev libboost-dev \
+RUN apt-get install -y gcc g++ cmake libgmp-dev libboost-dev \
         libboost-filesystem-dev libboost-test-dev python python-pygments \
-        libsqlite3-dev libz-dev libedit-dev llvm-7 llvm-7-dev llvm-7-tools clang-7
+        libsqlite3-dev libz-dev libedit-dev llvm-8 llvm-8-dev llvm-8-tools clang-8
 
 # Add ikos source code
 ADD . /root/ikos
@@ -38,7 +42,7 @@ ENV MAKEFLAGS "-j$njobs"
 RUN cmake \
         -DCMAKE_INSTALL_PREFIX="/opt/ikos" \
         -DCMAKE_BUILD_TYPE="$build_type" \
-        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-7/bin/llvm-config" \
+        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" \
         ..
 RUN make
 RUN make install

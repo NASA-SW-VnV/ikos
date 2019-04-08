@@ -1,5 +1,5 @@
-; ModuleID = 'aggregate-in-reg.cpp.pp.bc'
-source_filename = "aggregate-in-reg.cpp"
+; ModuleID = 'aggregate-in-reg-1.pp.bc'
+source_filename = "aggregate-in-reg-1.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.13.0"
 
@@ -274,25 +274,25 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
-attributes #2 = { noinline ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #3 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { noinline ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #4 = { argmemonly nounwind }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
-!1 = !DIFile(filename: "aggregate-in-reg.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!1 = !DIFile(filename: "aggregate-in-reg-1.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 19, type: !9, isLocal: false, isDefinition: true, scopeLine: 19, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
+!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 19, type: !9, scopeLine: 19, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !12}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -313,17 +313,17 @@ attributes #4 = { argmemonly nounwind }
 !26 = !DIBasicType(name: "float", size: 32, encoding: DW_ATE_float)
 !27 = !DIDerivedType(tag: DW_TAG_member, name: "_y", scope: !23, file: !1, line: 4, baseType: !26, size: 32, offset: 32)
 !28 = !DIDerivedType(tag: DW_TAG_member, name: "_z", scope: !23, file: !1, line: 4, baseType: !26, size: 32, offset: 64)
-!29 = !DISubprogram(name: "Vector3", scope: !23, file: !1, line: 7, type: !30, isLocal: false, isDefinition: false, scopeLine: 7, flags: DIFlagPublic | DIFlagPrototyped, isOptimized: false)
+!29 = !DISubprogram(name: "Vector3", scope: !23, file: !1, line: 7, type: !30, scopeLine: 7, flags: DIFlagPublic | DIFlagPrototyped, spFlags: 0)
 !30 = !DISubroutineType(types: !31)
 !31 = !{null, !32, !26, !26, !26}
 !32 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !23, size: 64, flags: DIFlagArtificial | DIFlagObjectPointer)
 !33 = !{!34}
 !34 = !DITemplateTypeParameter(name: "T", type: !26)
-!35 = !DISubprogram(name: "Foo", scope: !20, file: !1, line: 15, type: !36, isLocal: false, isDefinition: false, scopeLine: 15, flags: DIFlagPublic | DIFlagPrototyped, isOptimized: false)
+!35 = !DISubprogram(name: "Foo", scope: !20, file: !1, line: 15, type: !36, scopeLine: 15, flags: DIFlagPublic | DIFlagPrototyped, spFlags: 0)
 !36 = !DISubroutineType(types: !37)
 !37 = !{null, !38, !26, !26, !26}
 !38 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !20, size: 64, flags: DIFlagArtificial | DIFlagObjectPointer)
-!39 = !DISubprogram(name: "get_coord", linkageName: "_ZN3Foo9get_coordEv", scope: !20, file: !1, line: 16, type: !40, isLocal: false, isDefinition: false, scopeLine: 16, flags: DIFlagPublic | DIFlagPrototyped, isOptimized: false)
+!39 = !DISubprogram(name: "get_coord", linkageName: "_ZN3Foo9get_coordEv", scope: !20, file: !1, line: 16, type: !40, scopeLine: 16, flags: DIFlagPublic | DIFlagPrototyped, spFlags: 0)
 !40 = !DISubroutineType(types: !41)
 !41 = !{!23, !38}
 !42 = !DILocation(line: 20, column: 7, scope: !8)
@@ -331,7 +331,7 @@ attributes #4 = { argmemonly nounwind }
 !44 = !DILocation(line: 21, column: 20, scope: !8)
 !45 = !DILocation(line: 21, column: 30, scope: !8)
 !46 = !DILocation(line: 22, column: 3, scope: !8)
-!47 = distinct !DISubprogram(name: "Foo", linkageName: "_ZN3FooC1Efff", scope: !20, file: !1, line: 15, type: !36, isLocal: false, isDefinition: true, scopeLine: 15, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, retainedNodes: !2)
+!47 = distinct !DISubprogram(name: "Foo", linkageName: "_ZN3FooC1Efff", scope: !20, file: !1, line: 15, type: !36, scopeLine: 15, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, declaration: !35, retainedNodes: !2)
 !48 = !DILocalVariable(name: "this", arg: 1, scope: !47, type: !49, flags: DIFlagArtificial | DIFlagObjectPointer)
 !49 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !20, size: 64)
 !50 = !DILocation(line: 0, scope: !47)
@@ -343,12 +343,12 @@ attributes #4 = { argmemonly nounwind }
 !56 = !DILocation(line: 15, column: 31, scope: !47)
 !57 = !DILocation(line: 15, column: 69, scope: !47)
 !58 = !DILocation(line: 15, column: 70, scope: !47)
-!59 = distinct !DISubprogram(name: "get_coord", linkageName: "_ZN3Foo9get_coordEv", scope: !20, file: !1, line: 16, type: !40, isLocal: false, isDefinition: true, scopeLine: 16, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !39, retainedNodes: !2)
+!59 = distinct !DISubprogram(name: "get_coord", linkageName: "_ZN3Foo9get_coordEv", scope: !20, file: !1, line: 16, type: !40, scopeLine: 16, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, declaration: !39, retainedNodes: !2)
 !60 = !DILocalVariable(name: "this", arg: 1, scope: !59, type: !49, flags: DIFlagArtificial | DIFlagObjectPointer)
 !61 = !DILocation(line: 0, scope: !59)
 !62 = !DILocation(line: 16, column: 41, scope: !59)
 !63 = !DILocation(line: 16, column: 34, scope: !59)
-!64 = distinct !DISubprogram(name: "Foo", linkageName: "_ZN3FooC2Efff", scope: !20, file: !1, line: 15, type: !36, isLocal: false, isDefinition: true, scopeLine: 15, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !35, retainedNodes: !2)
+!64 = distinct !DISubprogram(name: "Foo", linkageName: "_ZN3FooC2Efff", scope: !20, file: !1, line: 15, type: !36, scopeLine: 15, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, declaration: !35, retainedNodes: !2)
 !65 = !DILocalVariable(name: "this", arg: 1, scope: !64, type: !49, flags: DIFlagArtificial | DIFlagObjectPointer)
 !66 = !DILocation(line: 0, scope: !64)
 !67 = !DILocalVariable(name: "x", arg: 2, scope: !64, file: !1, line: 15, type: !26)
@@ -363,7 +363,7 @@ attributes #4 = { argmemonly nounwind }
 !76 = !DILocation(line: 15, column: 65, scope: !64)
 !77 = !DILocation(line: 15, column: 42, scope: !64)
 !78 = !DILocation(line: 15, column: 70, scope: !64)
-!79 = distinct !DISubprogram(name: "Vector3", linkageName: "_ZN7Vector3IfEC1Efff", scope: !23, file: !1, line: 7, type: !30, isLocal: false, isDefinition: true, scopeLine: 7, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !29, retainedNodes: !2)
+!79 = distinct !DISubprogram(name: "Vector3", linkageName: "_ZN7Vector3IfEC1Efff", scope: !23, file: !1, line: 7, type: !30, scopeLine: 7, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, declaration: !29, retainedNodes: !2)
 !80 = !DILocalVariable(name: "this", arg: 1, scope: !79, type: !81, flags: DIFlagArtificial | DIFlagObjectPointer)
 !81 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !23, size: 64)
 !82 = !DILocation(line: 0, scope: !79)
@@ -375,7 +375,7 @@ attributes #4 = { argmemonly nounwind }
 !88 = !DILocation(line: 7, column: 28, scope: !79)
 !89 = !DILocation(line: 7, column: 53, scope: !79)
 !90 = !DILocation(line: 7, column: 54, scope: !79)
-!91 = distinct !DISubprogram(name: "Vector3", linkageName: "_ZN7Vector3IfEC2Efff", scope: !23, file: !1, line: 7, type: !30, isLocal: false, isDefinition: true, scopeLine: 7, flags: DIFlagPrototyped, isOptimized: false, unit: !0, declaration: !29, retainedNodes: !2)
+!91 = distinct !DISubprogram(name: "Vector3", linkageName: "_ZN7Vector3IfEC2Efff", scope: !23, file: !1, line: 7, type: !30, scopeLine: 7, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, declaration: !29, retainedNodes: !2)
 !92 = !DILocalVariable(name: "this", arg: 1, scope: !91, type: !81, flags: DIFlagArtificial | DIFlagObjectPointer)
 !93 = !DILocation(line: 0, scope: !91)
 !94 = !DILocalVariable(name: "x", arg: 2, scope: !91, file: !1, line: 7, type: !26)

@@ -1,4 +1,4 @@
-; ModuleID = 'var-args.c.pp.bc'
+; ModuleID = 'var-args.pp.bc'
 source_filename = "var-args.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.13.0"
@@ -286,7 +286,7 @@ declare i32 @vprintf(i8*, %struct.__va_list_tag*) #4
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { nounwind }
 attributes #3 = { allocsize(0) "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
@@ -297,7 +297,7 @@ attributes #5 = { allocsize(0) }
 !llvm.module.flags = !{!6, !7, !8, !9}
 !llvm.ident = !{!10}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3, nameTableKind: GNU)
 !1 = !DIFile(filename: "var-args.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{!4}
@@ -307,8 +307,8 @@ attributes #5 = { allocsize(0) }
 !7 = !{i32 2, !"Debug Info Version", i32 3}
 !8 = !{i32 1, !"wchar_size", i32 4}
 !9 = !{i32 7, !"PIC Level", i32 2}
-!10 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
-!11 = distinct !DISubprogram(name: "PrintInts", scope: !1, file: !1, line: 8, type: !12, isLocal: false, isDefinition: true, scopeLine: 8, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
+!10 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!11 = distinct !DISubprogram(name: "PrintInts", scope: !1, file: !1, line: 8, type: !12, scopeLine: 8, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !12 = !DISubroutineType(types: !13)
 !13 = !{null, !14, null}
 !14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -327,9 +327,9 @@ attributes #5 = { allocsize(0) }
 !27 = !DILocation(line: 12, column: 13, scope: !11)
 !28 = !DILocalVariable(name: "vl", scope: !11, file: !1, line: 13, type: !29)
 !29 = !DIDerivedType(tag: DW_TAG_typedef, name: "va_list", file: !30, line: 32, baseType: !31)
-!30 = !DIFile(filename: "/usr/include/sys/_types/_va_list.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
+!30 = !DIFile(filename: "/usr/include/sys/_types/_va_list.h", directory: "")
 !31 = !DIDerivedType(tag: DW_TAG_typedef, name: "__darwin_va_list", file: !32, line: 98, baseType: !33)
-!32 = !DIFile(filename: "/usr/include/i386/_types.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
+!32 = !DIFile(filename: "/usr/include/i386/_types.h", directory: "")
 !33 = !DIDerivedType(tag: DW_TAG_typedef, name: "__builtin_va_list", file: !1, line: 13, baseType: !34)
 !34 = !DICompositeType(tag: DW_TAG_array_type, baseType: !35, size: 192, elements: !43)
 !35 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__va_list_tag", file: !1, line: 13, size: 192, elements: !36)
@@ -389,7 +389,7 @@ attributes #5 = { allocsize(0) }
 !89 = !DILocation(line: 35, column: 3, scope: !11)
 !90 = !DILocation(line: 37, column: 3, scope: !11)
 !91 = !DILocation(line: 38, column: 1, scope: !11)
-!92 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 40, type: !93, isLocal: false, isDefinition: true, scopeLine: 40, isOptimized: false, unit: !0, retainedNodes: !2)
+!92 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 40, type: !93, scopeLine: 40, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !93 = !DISubroutineType(types: !94)
 !94 = !{!14}
 !95 = !DILocation(line: 41, column: 3, scope: !92)

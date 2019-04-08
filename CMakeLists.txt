@@ -38,14 +38,7 @@
 #
 #*****************************************************************************/
 
-cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
-
-if (POLICY CMP0025)
-  cmake_policy(SET CMP0025 NEW) # recognize Apple Clang
-endif()
-if (POLICY CMP0056)
-  cmake_policy(SET CMP0056 NEW)
-endif()
+cmake_minimum_required(VERSION 3.4.3 FATAL_ERROR)
 
 project(ikos)
 set(PACKAGE_VERSION "2.1")
@@ -69,6 +62,7 @@ endif()
 
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "CMake version: ${CMAKE_VERSION}")
 message(STATUS "CMake generator: ${CMAKE_GENERATOR}")
 
 # Add path for custom modules

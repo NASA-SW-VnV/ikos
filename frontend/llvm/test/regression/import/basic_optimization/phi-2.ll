@@ -1,4 +1,4 @@
-; ModuleID = 'phi-2.c.pp.bc'
+; ModuleID = 'phi-2.pp.bc'
 source_filename = "phi-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.13.0"
@@ -33,7 +33,7 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; <label>:4:                                      ; preds = %36, %2
   %.02 = phi i32 [ 0, %2 ], [ %37, %36 ], !dbg !39
   call void @llvm.dbg.value(metadata i32 %.02, metadata !35, metadata !DIExpression()), !dbg !36
-  %5 = icmp slt i32 %.02, 10, !dbg !41
+  %5 = icmp slt i32 %.02, 10, !dbg !40
   br i1 %5, label %6, label %38, !dbg !42
 
 ; <label>:6:                                      ; preds = %4
@@ -43,7 +43,7 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; <label>:7:                                      ; preds = %33, %6
   %.01 = phi i32 [ 0, %6 ], [ %34, %33 ], !dbg !48
   call void @llvm.dbg.value(metadata i32 %.01, metadata !43, metadata !DIExpression()), !dbg !44
-  %8 = icmp slt i32 %.01, 10, !dbg !50
+  %8 = icmp slt i32 %.01, 10, !dbg !49
   br i1 %8, label %9, label %35, !dbg !51
 
 ; <label>:9:                                      ; preds = %7
@@ -53,7 +53,7 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; <label>:10:                                     ; preds = %30, %9
   %.0 = phi i32 [ 0, %9 ], [ %31, %30 ], !dbg !57
   call void @llvm.dbg.value(metadata i32 %.0, metadata !52, metadata !DIExpression()), !dbg !53
-  %11 = icmp slt i32 %.0, 9, !dbg !59
+  %11 = icmp slt i32 %.0, 9, !dbg !58
   br i1 %11, label %12, label %32, !dbg !60
 
 ; <label>:12:                                     ; preds = %10
@@ -106,7 +106,7 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; <label>:39:                                     ; preds = %53, %38
   %.1 = phi i32 [ 0, %38 ], [ %54, %53 ], !dbg !87
   call void @llvm.dbg.value(metadata i32 %.1, metadata !35, metadata !DIExpression()), !dbg !36
-  %40 = icmp slt i32 %.1, 10, !dbg !89
+  %40 = icmp slt i32 %.1, 10, !dbg !88
   br i1 %40, label %41, label %55, !dbg !90
 
 ; <label>:41:                                     ; preds = %39
@@ -218,7 +218,7 @@ declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
@@ -226,15 +226,15 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.0 (tags/RELEASE_700/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "phi-2.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 7.0.0 (tags/RELEASE_700/final)"}
-!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 18, type: !9, isLocal: false, isDefinition: true, scopeLine: 18, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
+!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 18, type: !9, scopeLine: 18, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !12}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -265,30 +265,30 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !36 = !DILocation(line: 19, column: 7, scope: !8)
 !37 = !DILocation(line: 21, column: 8, scope: !38)
 !38 = distinct !DILexicalBlock(scope: !8, file: !1, line: 21, column: 3)
-!39 = !DILocation(line: 0, scope: !40)
-!40 = distinct !DILexicalBlock(scope: !38, file: !1, line: 21, column: 3)
-!41 = !DILocation(line: 21, column: 17, scope: !40)
+!39 = !DILocation(line: 0, scope: !38)
+!40 = !DILocation(line: 21, column: 17, scope: !41)
+!41 = distinct !DILexicalBlock(scope: !38, file: !1, line: 21, column: 3)
 !42 = !DILocation(line: 21, column: 3, scope: !38)
 !43 = !DILocalVariable(name: "j", scope: !8, file: !1, line: 19, type: !11)
 !44 = !DILocation(line: 19, column: 10, scope: !8)
 !45 = !DILocation(line: 22, column: 10, scope: !46)
 !46 = distinct !DILexicalBlock(scope: !47, file: !1, line: 22, column: 5)
-!47 = distinct !DILexicalBlock(scope: !40, file: !1, line: 21, column: 35)
-!48 = !DILocation(line: 0, scope: !49)
-!49 = distinct !DILexicalBlock(scope: !46, file: !1, line: 22, column: 5)
-!50 = !DILocation(line: 22, column: 19, scope: !49)
+!47 = distinct !DILexicalBlock(scope: !41, file: !1, line: 21, column: 35)
+!48 = !DILocation(line: 0, scope: !46)
+!49 = !DILocation(line: 22, column: 19, scope: !50)
+!50 = distinct !DILexicalBlock(scope: !46, file: !1, line: 22, column: 5)
 !51 = !DILocation(line: 22, column: 5, scope: !46)
 !52 = !DILocalVariable(name: "k", scope: !8, file: !1, line: 19, type: !11)
 !53 = !DILocation(line: 19, column: 13, scope: !8)
 !54 = !DILocation(line: 23, column: 12, scope: !55)
 !55 = distinct !DILexicalBlock(scope: !56, file: !1, line: 23, column: 7)
-!56 = distinct !DILexicalBlock(scope: !49, file: !1, line: 22, column: 37)
-!57 = !DILocation(line: 0, scope: !58)
-!58 = distinct !DILexicalBlock(scope: !55, file: !1, line: 23, column: 7)
-!59 = !DILocation(line: 23, column: 21, scope: !58)
+!56 = distinct !DILexicalBlock(scope: !50, file: !1, line: 22, column: 37)
+!57 = !DILocation(line: 0, scope: !55)
+!58 = !DILocation(line: 23, column: 21, scope: !59)
+!59 = distinct !DILexicalBlock(scope: !55, file: !1, line: 23, column: 7)
 !60 = !DILocation(line: 23, column: 7, scope: !55)
 !61 = !DILocation(line: 24, column: 11, scope: !62)
-!62 = distinct !DILexicalBlock(scope: !58, file: !1, line: 23, column: 43)
+!62 = distinct !DILexicalBlock(scope: !59, file: !1, line: 23, column: 43)
 !63 = !DILocation(line: 24, column: 9, scope: !62)
 !64 = !DILocation(line: 24, column: 22, scope: !62)
 !65 = !DILocation(line: 25, column: 19, scope: !62)
@@ -297,34 +297,34 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !68 = !DILocation(line: 25, column: 13, scope: !62)
 !69 = !DILocation(line: 25, column: 15, scope: !62)
 !70 = !DILocation(line: 26, column: 7, scope: !62)
-!71 = !DILocation(line: 23, column: 39, scope: !58)
-!72 = !DILocation(line: 23, column: 7, scope: !58)
+!71 = !DILocation(line: 23, column: 39, scope: !59)
+!72 = !DILocation(line: 23, column: 7, scope: !59)
 !73 = distinct !{!73, !60, !74}
 !74 = !DILocation(line: 26, column: 7, scope: !55)
 !75 = !DILocation(line: 27, column: 5, scope: !56)
-!76 = !DILocation(line: 22, column: 33, scope: !49)
-!77 = !DILocation(line: 22, column: 5, scope: !49)
+!76 = !DILocation(line: 22, column: 33, scope: !50)
+!77 = !DILocation(line: 22, column: 5, scope: !50)
 !78 = distinct !{!78, !51, !79}
 !79 = !DILocation(line: 27, column: 5, scope: !46)
 !80 = !DILocation(line: 28, column: 3, scope: !47)
-!81 = !DILocation(line: 21, column: 31, scope: !40)
-!82 = !DILocation(line: 21, column: 3, scope: !40)
+!81 = !DILocation(line: 21, column: 31, scope: !41)
+!82 = !DILocation(line: 21, column: 3, scope: !41)
 !83 = distinct !{!83, !42, !84}
 !84 = !DILocation(line: 28, column: 3, scope: !38)
 !85 = !DILocation(line: 30, column: 8, scope: !86)
 !86 = distinct !DILexicalBlock(scope: !8, file: !1, line: 30, column: 3)
-!87 = !DILocation(line: 0, scope: !88)
-!88 = distinct !DILexicalBlock(scope: !86, file: !1, line: 30, column: 3)
-!89 = !DILocation(line: 30, column: 17, scope: !88)
+!87 = !DILocation(line: 0, scope: !86)
+!88 = !DILocation(line: 30, column: 17, scope: !89)
+!89 = distinct !DILexicalBlock(scope: !86, file: !1, line: 30, column: 3)
 !90 = !DILocation(line: 30, column: 3, scope: !86)
 !91 = !DILocation(line: 31, column: 22, scope: !92)
-!92 = distinct !DILexicalBlock(scope: !88, file: !1, line: 30, column: 35)
+!92 = distinct !DILexicalBlock(scope: !89, file: !1, line: 30, column: 35)
 !93 = !DILocation(line: 31, column: 20, scope: !92)
 !94 = !DILocation(line: 31, column: 32, scope: !92)
 !95 = !DILocation(line: 31, column: 5, scope: !92)
 !96 = !DILocation(line: 32, column: 3, scope: !92)
-!97 = !DILocation(line: 30, column: 31, scope: !88)
-!98 = !DILocation(line: 30, column: 3, scope: !88)
+!97 = !DILocation(line: 30, column: 31, scope: !89)
+!98 = !DILocation(line: 30, column: 3, scope: !89)
 !99 = distinct !{!99, !90, !100}
 !100 = !DILocation(line: 32, column: 3, scope: !86)
 !101 = !DILocation(line: 34, column: 3, scope: !8)

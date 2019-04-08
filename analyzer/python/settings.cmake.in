@@ -40,9 +40,7 @@
 #
 ################################################################################
 
-if (POLICY CMP0012)
-  cmake_policy(SET CMP0012 NEW)
-endif()
+cmake_minimum_required(VERSION 3.4.3 FATAL_ERROR)
 
 set(SRC_DIR "@CMAKE_CURRENT_SOURCE_DIR@")
 set(BIN_DIR "@CMAKE_CURRENT_BINARY_DIR@")

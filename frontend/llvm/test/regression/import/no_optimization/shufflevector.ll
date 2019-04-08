@@ -1,4 +1,4 @@
-; ModuleID = 'shufflevector.c.pp.bc'
+; ModuleID = 'shufflevector.pp.bc'
 source_filename = "shufflevector.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.13.0"
@@ -97,12 +97,12 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !llvm.module.flags = !{!11, !12, !13, !14}
 !llvm.ident = !{!15}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 7.0.1 (tags/RELEASE_701/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3, nameTableKind: GNU)
 !1 = !DIFile(filename: "shufflevector.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{!4, !10}
 !4 = !DIDerivedType(tag: DW_TAG_typedef, name: "__m128", file: !5, line: 31, baseType: !6)
-!5 = !DIFile(filename: "/Users/marthaud/Homebrew/Cellar/llvm/7.0.1/lib/clang/7.0.1/include/xmmintrin.h", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
+!5 = !DIFile(filename: "Homebrew/Cellar/llvm/8.0.0/lib/clang/8.0.0/include/xmmintrin.h", directory: "/Users/marthaud")
 !6 = !DICompositeType(tag: DW_TAG_array_type, baseType: !7, size: 128, flags: DIFlagVector, elements: !8)
 !7 = !DIBasicType(name: "float", size: 32, encoding: DW_ATE_float)
 !8 = !{!9}
@@ -112,8 +112,8 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !12 = !{i32 2, !"Debug Info Version", i32 3}
 !13 = !{i32 1, !"wchar_size", i32 4}
 !14 = !{i32 7, !"PIC Level", i32 2}
-!15 = !{!"clang version 7.0.1 (tags/RELEASE_701/final)"}
-!16 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 5, type: !17, isLocal: false, isDefinition: true, scopeLine: 5, flags: DIFlagPrototyped, isOptimized: false, unit: !0, retainedNodes: !2)
+!15 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!16 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 5, type: !17, scopeLine: 5, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !17 = !DISubroutineType(types: !18)
 !18 = !{!19, !19, !20}
 !19 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)

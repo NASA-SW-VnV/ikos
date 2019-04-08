@@ -13,40 +13,40 @@ ikos_import_opts="-format=text -order-globals -allow-dbg-mismatch"
 set -e
 
 function run {
-    echo "#" $@
-    $@
+    echo "#" "$@"
+    "$@"
 }
 
 for filename in *.c
 do
     echo "[*] $filename ..."
-    filename_ll="${filename%.c}.ll"
+    filename="${filename%.c}"
 
-    if [[ -f "$filename_ll" ]]; then
-        echo "$filename_ll already exists, skipping"
+    if [[ -f "$filename.ll" ]]; then
+        echo "$filename.ll already exists, skipping"
         continue
     fi
 
-    run "$clang" $cflags "$filename" -o "$filename.bc"
+    run "$clang" $cflags "$filename.c" -o "$filename.bc"
     run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
-    run "$opt" -S "$filename.pp.bc" -o "$filename_ll"
-    "$ikos_import" $ikos_import_opts "$filename_ll" | sed 's/^/; CHECK: /' >> "$filename_ll"
+    run "$opt" -S "$filename.pp.bc" -o "$filename.ll"
+    "$ikos_import" $ikos_import_opts "$filename.ll" | sed 's/^/; CHECK: /' >> "$filename.ll"
+    rm -f "$filename.bc" "$filename.pp.bc"
 done
 
 for filename in *.cpp
 do
     echo "[*] $filename ..."
-    filename_ll="${filename%.cpp}.ll"
+    filename="${filename%.cpp}"
 
-    if [[ -f "$filename_ll" ]]; then
-        echo "$filename_ll already exists, skipping"
+    if [[ -f "$filename.ll" ]]; then
+        echo "$filename.ll already exists, skipping"
         continue
     fi
 
-    run "$clang" $cxxflags "$filename" -o "$filename.bc"
+    run "$clang" $cxxflags "$filename.cpp" -o "$filename.bc"
     run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
-    run "$opt" -S "$filename.pp.bc" -o "$filename_ll"
-    "$ikos_import" $ikos_import_opts "$filename_ll" | sed 's/^/; CHECK: /' >> "$filename_ll"
+    run "$opt" -S "$filename.pp.bc" -o "$filename.ll"
+    "$ikos_import" $ikos_import_opts "$filename.ll" | sed 's/^/; CHECK: /' >> "$filename.ll"
+    rm -f "$filename.bc" "$filename.pp.bc"
 done
-
-rm -f *.bc

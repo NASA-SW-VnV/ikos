@@ -4,14 +4,14 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.11.2
+# cmake 3.14.0
 # gmp 6.1.2
 # boost 1.66.0
 # python 2.7.15
 # sqlite 3.22.0
-# llvm 7.0.1
-# clang 7.0.1
-# gcc 8.2.1
+# llvm 8.0.0
+# clang 8.0.0
+# gcc 8.3.1
 
 # Upgrade
 RUN dnf -y update

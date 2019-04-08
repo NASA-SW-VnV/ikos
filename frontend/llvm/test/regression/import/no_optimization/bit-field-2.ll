@@ -1,4 +1,4 @@
-; ModuleID = 'bit-field-2.c.pp.bc'
+; ModuleID = 'bit-field-2.pp.bc'
 source_filename = "bit-field-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.13.0"
@@ -23,7 +23,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "b", scope: !2, file: !3, line: 4, type: !6, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 7.0.1 (tags/RELEASE_701/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5)
+!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
 !3 = !DIFile(filename: "bit-field-2.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !4 = !{}
 !5 = !{!0}
@@ -39,4 +39,4 @@ target triple = "x86_64-apple-macosx10.13.0"
 !15 = !{i32 2, !"Debug Info Version", i32 3}
 !16 = !{i32 1, !"wchar_size", i32 4}
 !17 = !{i32 7, !"PIC Level", i32 2}
-!18 = !{!"clang version 7.0.1 (tags/RELEASE_701/final)"}
+!18 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}

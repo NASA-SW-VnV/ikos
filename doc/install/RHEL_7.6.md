@@ -42,14 +42,14 @@ After installation, the install directory will contain the following structure:
 .
 ├── activate-full
 ├── activate-minimal
-├── boost-1.68.0
+├── boost-1.69.0
 │   ├── include
 │   └── lib
-├── cmake-3.13.1
+├── cmake-3.13.4
 │   ├── bin
 │   ├── doc
 │   └── share
-├── gcc-8.2.0
+├── gcc-8.3.0
 │   ├── bin
 │   ├── include
 │   ├── lib
@@ -65,7 +65,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-7.0.1
+└── llvm-8.0.0
     ├── bin
     ├── include
     ├── lib

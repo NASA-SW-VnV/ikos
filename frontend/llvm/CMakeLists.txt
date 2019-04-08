@@ -38,14 +38,8 @@
 #
 #*****************************************************************************/
 
-cmake_minimum_required(VERSION 2.8.12.2 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.4.3 FATAL_ERROR)
 
-if (POLICY CMP0042)
-  cmake_policy(SET CMP0042 NEW)
-endif()
-if (POLICY CMP0056)
-  cmake_policy(SET CMP0056 NEW)
-endif()
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -75,6 +69,7 @@ endif()
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
   message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+  message(STATUS "CMake version: ${CMAKE_VERSION}")
   message(STATUS "CMake generator: ${CMAKE_GENERATOR}")
 endif()
 
@@ -123,8 +118,8 @@ include_directories(${AR_INCLUDE_DIR})
 find_package(LLVM REQUIRED)
 include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
 
-if ((LLVM_VERSION VERSION_LESS "7") OR (NOT (LLVM_VERSION VERSION_LESS "8")))
-  message(FATAL_ERROR "LLVM 7 is required.")
+if ((LLVM_VERSION VERSION_LESS "8") OR (NOT (LLVM_VERSION VERSION_LESS "9")))
+  message(FATAL_ERROR "LLVM 8 is required.")
 endif()
 
 # Add path to llvm cmake modules

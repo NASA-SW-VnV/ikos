@@ -1875,12 +1875,12 @@ ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
 ar::Type* FunctionImporter::infer_type_from_dbg(llvm::Value* value) {
   // Check for llvm.dbg.declare and llvm.dbg.addr
   if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
-    llvm::TinyPtrVector< llvm::DbgInfoIntrinsic* > dbg_addrs =
+    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
         llvm::FindDbgAddrUses(alloca);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgInfoIntrinsic* dbg) {
+                     [](llvm::DbgVariableIntrinsic* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 

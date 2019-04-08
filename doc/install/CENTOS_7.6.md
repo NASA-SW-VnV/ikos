@@ -26,14 +26,14 @@ $ sudo yum install centos-release-scl
 Now, you can install the following packages:
 
 ```
-$ sudo yum install devtoolset-7-gcc devtoolset-7-gcc-c++
+$ sudo yum install devtoolset-8-gcc devtoolset-8-gcc-c++
 ```
 
 You need to update your `PATH` and `LD_LIBRARY_PATH` to use devtoolset-7. Use the following commands (consider adding this in your `.bashrc`):
 
 ```
-$ PATH="/opt/rh/devtoolset-7/root/usr/bin:$PATH"
-$ export LD_LIBRARY_PATH="/opt/rh/devtoolset-7/root/usr/lib64:/opt/rh/devtoolset-7/root/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+$ PATH="/opt/rh/devtoolset-8/root/usr/bin:$PATH"
+$ export LD_LIBRARY_PATH="/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 In the next step, we will use the bootstrap script to build and install cmake, boost, llvm and IKOS.
@@ -58,10 +58,10 @@ After installation, the install directory will contain the following structure:
 .
 ├── activate-full
 ├── activate-minimal
-├── boost-1.68.0
+├── boost-1.69.0
 │   ├── include
 │   └── lib
-├── cmake-3.13.1
+├── cmake-3.13.4
 │   ├── bin
 │   ├── doc
 │   └── share
@@ -70,7 +70,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-7.0.1
+└── llvm-8.0.0
     ├── bin
     ├── include
     ├── lib

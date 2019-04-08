@@ -1,19 +1,19 @@
-FROM base/archlinux
+FROM archlinux/base
 MAINTAINER Maxime Arthaud <maxime.arthaud@nasa.gov>
 ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.13.1
+# cmake 3.14.1
 # gmp 6.1.2
-# mpfr 4.0.1
+# mpfr 4.0.2
 # ppl 1.2
 # apron 0.9.10
-# boost 1.68.0
-# python 3.7.1
-# sqlite 3.26.0
-# llvm 7.0.1
-# clang 7.0.1
+# boost 1.69.0
+# python 3.7.3
+# sqlite 3.27.2
+# llvm 8.0.0
+# clang 8.0.0
 # gcc 8.2.1
 
 # Upgrade

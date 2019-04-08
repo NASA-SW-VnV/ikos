@@ -175,6 +175,7 @@ int main(int argc, char** argv) {
   llvm::initializePreISelIntrinsicLoweringLegacyPassPass(registry);
   llvm::initializeGlobalMergePass(registry);
   llvm::initializeIndirectBrExpandPassPass(registry);
+  llvm::initializeInterleavedLoadCombinePass(registry);
   llvm::initializeInterleavedAccessPass(registry);
   llvm::initializeEntryExitInstrumenterPass(registry);
   llvm::initializePostInlineEntryExitInstrumenterPass(registry);

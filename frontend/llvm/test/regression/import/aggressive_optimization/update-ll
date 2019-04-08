@@ -1,10 +1,10 @@
 #!/bin/bash
-# Use this script to regenerate all the .ll files from the .c and .cpp files
+# Use this script to update all the .ll files from the .c and .cpp files
 
 clang="clang"
 ikos_pp="ikos-pp"
 opt="opt"
-opt_level="none"
+opt_level="aggressive"
 cflags="-c -emit-llvm -Wall -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone"
 cxxflags="$cflags -std=c++17"
 ikos_import="ikos-import"
@@ -22,16 +22,11 @@ do
     echo "[*] $filename ..."
     filename="${filename%.c}"
 
-    if [[ -f "$filename.ll" ]]; then
-        echo "$filename.ll already exists, skipping"
-        continue
-    fi
-
     run "$clang" $cflags "$filename.c" -o "$filename.bc"
     run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
-    run "$opt" -S "$filename.pp.bc" -o "$filename.ll"
-    "$ikos_import" $ikos_import_opts "$filename.ll" | sed 's/^/; CHECK: /' >> "$filename.ll"
-    rm -f "$filename.bc" "$filename.pp.bc"
+    run "$opt" -S "$filename.pp.bc" -o "$filename.new.ll"
+    vimdiff "$filename.ll" "$filename.new.ll"
+    rm -f "$filename.bc" "$filename.pp.bc" "$filename.new.ll"
 done
 
 for filename in *.cpp
@@ -39,14 +34,9 @@ do
     echo "[*] $filename ..."
     filename="${filename%.cpp}"
 
-    if [[ -f "$filename.ll" ]]; then
-        echo "$filename.ll already exists, skipping"
-        continue
-    fi
-
     run "$clang" $cxxflags "$filename.cpp" -o "$filename.bc"
     run "$ikos_pp" -opt=$opt_level "$filename.bc" -o "$filename.pp.bc"
-    run "$opt" -S "$filename.pp.bc" -o "$filename.ll"
-    "$ikos_import" $ikos_import_opts "$filename.ll" | sed 's/^/; CHECK: /' >> "$filename.ll"
-    rm -f "$filename.bc" "$filename.pp.bc"
+    run "$opt" -S "$filename.pp.bc" -o "$filename.new.ll"
+    vimdiff "$filename.ll" "$filename.new.ll"
+    rm -f "$filename.bc" "$filename.pp.bc" "$filename.new.ll"
 done
