@@ -483,6 +483,18 @@ ar::Type* TypeWithDebugInfoImporter::translate_basic_di_type(
                                        int_type->getBitWidth(),
                                        ar::Unsigned);
       } break;
+      case dwarf::DW_ATE_UTF: {
+        check_match(type->isIntegerTy(),
+                    "llvm DIBasicType with UTF encoding, but llvm type is "
+                    "not an integer type");
+        auto int_type = llvm::cast< llvm::IntegerType >(type);
+        check_match(di_type->getSizeInBits() == int_type->getBitWidth(),
+                    "llvm DIBasicType with UTF encoding and llvm integer "
+                    "type have a different bit-width");
+        ar_type = ar::IntegerType::get(this->_context,
+                                       int_type->getBitWidth(),
+                                       ar::Unsigned);
+      } break;
       case dwarf::DW_ATE_float: {
         check_match(type->isFloatingPointTy(),
                     "llvm DIBasicType with float encoding, but llvm type is "
