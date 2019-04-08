@@ -107,7 +107,8 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
       return this->_bundle->intrinsic_function(ar::Intrinsic::LibcAbort);
     }
     // <errno.h>
-    if (name == "__errno_location" || name == "__errno" || name == "__error") {
+    if (name == "__errno_location" || name == "__errno" || name == "_errno" ||
+        name == "__error") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::LibcErrnoLocation);
     }
