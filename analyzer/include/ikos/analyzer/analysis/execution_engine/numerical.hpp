@@ -494,9 +494,9 @@ private:
       return;
     }
 
-    auto pts = this->_inv.normal().pointers().points_to(var);
+    PointsToSet addrs = this->_inv.normal().pointers().points_to(var);
 
-    if (pts.contains(this->_mem_factory.get_absolute_zero())) {
+    if (addrs.contains(this->_mem_factory.get_absolute_zero())) {
       auto offset_interval = this->_inv.normal().integers().to_interval(
           this->_inv.normal().pointers().offset_var(var));
       MachineInt zero =
@@ -504,7 +504,7 @@ private:
 
       if (offset_interval.is_bottom()) {
         return;
-      } else if (pts.singleton()) {
+      } else if (addrs.singleton()) {
         if (offset_interval.singleton() ==
             boost::optional< MachineInt >(zero)) {
           // Pointer is definitely null (base is zero, offset = 0)
@@ -2012,6 +2012,9 @@ public:
                                 /* may_write_globals = */ false,
                                 /* may_throw_exc = */ false);
       } break;
+      case ar::Intrinsic::IkosAssumeMemSize: {
+        this->exec_ikos_assume_mem_size(call);
+      } break;
       case ar::Intrinsic::IkosForgetMemory: {
         this->exec_ikos_forget_memory(call);
       } break;
@@ -2550,6 +2553,44 @@ private:
     this->_inv.normal().uninitialized().assign_initialized(ret.var());
   }
 
+  /// \brief Execute a call to ikos.assume_mem_size
+  void exec_ikos_assume_mem_size(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    // Reduction between value and pointer analysis
+    this->refine_addresses(ptr.var());
+
+    PointsToSet addrs = this->_inv.normal().pointers().points_to(ptr.var());
+
+    if (addrs.is_bottom()) {
+      return;
+    } else if (addrs.is_top()) {
+      // Ignore (this is sound)
+      return;
+    }
+
+    for (auto addr : addrs) {
+      Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
+
+      if (size.is_machine_int()) {
+        this->_inv.normal().integers().assign(alloc_size_var,
+                                              size.machine_int());
+      } else if (size.is_machine_int_var()) {
+        this->_inv.normal().integers().assign(alloc_size_var, size.var());
+      } else {
+        ikos_unreachable("unreachable");
+      }
+    }
+  }
+
   /// \brief Execute a call to ikos.forget_memory
   void exec_ikos_forget_memory(ar::CallBase* call) {
     // Initialize lazily global objects
@@ -2880,11 +2921,11 @@ private:
     // Reduction between value and pointer analysis
     this->refine_addresses(ptr.var());
 
-    PointsToSet points_to = this->_inv.normal().pointers().points_to(ptr.var());
+    PointsToSet addrs = this->_inv.normal().pointers().points_to(ptr.var());
 
-    if (points_to.is_bottom()) {
+    if (addrs.is_bottom()) {
       return;
-    } else if (points_to.is_top()) {
+    } else if (addrs.is_top()) {
       // Ignored memory deallocation, analysis could be unsound.
       // See CheckKind::IgnoredFree
       return;
@@ -2896,9 +2937,9 @@ private:
     }
 
     // Forget the allocated size and set the new lifetime
-    for (auto addr : points_to) {
+    for (auto addr : addrs) {
       if (!isa< DynAllocMemoryLocation >(addr)) {
-        if (points_to.size() == 1) {
+        if (addrs.size() == 1) {
           // This is an error
           this->_inv.set_normal_flow_to_bottom();
           return;
@@ -2909,7 +2950,7 @@ private:
 
       Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
       this->_inv.normal().integers().forget(alloc_size_var);
-      if (points_to.size() == 1) {
+      if (addrs.size() == 1) {
         this->_inv.normal().lifetime().assign_deallocated(addr);
       } else {
         this->_inv.normal().lifetime().forget(addr);
@@ -3290,15 +3331,15 @@ private:
       return;
     }
 
-    PointsToSet points_to = this->_inv.normal().pointers().points_to(str.var());
+    PointsToSet addrs = this->_inv.normal().pointers().points_to(str.var());
 
-    if (points_to.is_top()) {
+    if (addrs.is_top()) {
       return;
     }
 
     AbstractDomain inv(AbstractDomain::bottom());
 
-    for (MemoryLocation* addr : points_to) {
+    for (MemoryLocation* addr : addrs) {
       AbstractDomain tmp(this->_inv);
 
       if (auto gv = dyn_cast< GlobalMemoryLocation >(addr)) {

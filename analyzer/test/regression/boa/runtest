@@ -236,4 +236,8 @@ if __name__ == '__main__':
                             (16, 'ok'),
                             (19, 'warning', 'ok'),
                             (21, 'error')]))
+    t.add(Test('test-62.c', 'test-62.c', 'boa', 'error',
+               line_checks=[(11, 'warning'),
+                            (13, 'ok'),
+                            (15, 'error')]))
     t.run()

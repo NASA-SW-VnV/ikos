@@ -67,6 +67,9 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
     } else if (name == "__ikos_check_string_access") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosCheckStringAccess);
+    } else if (name == "__ikos_assume_mem_size") {
+      return this->_bundle->intrinsic_function(
+          ar::Intrinsic::IkosAssumeMemSize);
     } else if (name == "__ikos_forget_mem") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosForgetMemory);
     } else if (name == "__ikos_abstract_mem") {

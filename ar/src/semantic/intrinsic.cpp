@@ -172,6 +172,11 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       ret_ty = void_ty;              // ret
       params.push_back(char_ptr_ty); // str
     } break;
+    case IkosAssumeMemSize: {
+      ret_ty = void_ty;              // ret
+      params.push_back(void_ptr_ty); // ptr
+      params.push_back(size_ty);     // size
+    } break;
     case IkosForgetMemory: {
       ret_ty = void_ty;              // ret
       params.push_back(void_ptr_ty); // ptr
@@ -546,6 +551,8 @@ const char* Intrinsic::short_name(ID id) {
       return "ikos.check_mem_access";
     case IkosCheckStringAccess:
       return "ikos.check_string_access";
+    case IkosAssumeMemSize:
+      return "ikos.assume_mem_size";
     case IkosForgetMemory:
       return "ikos.forget_memory";
     case IkosAbstractMemory:

@@ -294,6 +294,9 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                         /* if_null = */ Result::Error,
                                         inv)};
     }
+    case ar::Intrinsic::IkosAssumeMemSize: {
+      return {};
+    }
     case ar::Intrinsic::IkosForgetMemory:
     case ar::Intrinsic::IkosAbstractMemory: {
       return {this->check_mem_access(call,

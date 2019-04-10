@@ -81,6 +81,7 @@ public:
     IkosCounterIncr,
     IkosCheckMemAccess,
     IkosCheckStringAccess,
+    IkosAssumeMemSize,
     IkosForgetMemory,
     IkosAbstractMemory,
     IkosPrintInvariant,

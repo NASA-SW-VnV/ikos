@@ -700,6 +700,7 @@ private:
         case ar::Intrinsic::IkosCounterIncr:
         case ar::Intrinsic::IkosCheckMemAccess:
         case ar::Intrinsic::IkosCheckStringAccess:
+        case ar::Intrinsic::IkosAssumeMemSize:
         case ar::Intrinsic::IkosForgetMemory:
         case ar::Intrinsic::IkosAbstractMemory:
         case ar::Intrinsic::IkosPrintInvariant:

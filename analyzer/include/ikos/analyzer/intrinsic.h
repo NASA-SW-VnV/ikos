@@ -95,6 +95,9 @@ extern void __ikos_check_mem_access(void* ptr, size_t size) IKOS_NOEXCEPT;
 /// The nullity checker (ikos -a nullity) will check if the pointer is null.
 extern void __ikos_check_string_access(const char* str) IKOS_NOEXCEPT;
 
+/// \brief Assume that the memory pointed by `ptr` has the given size, in bytes
+extern void __ikos_assume_mem_size(void* ptr, size_t size) IKOS_NOEXCEPT;
+
 /// \brief Forget the memory contents at `[ptr, ptr + size - 1]`
 ///
 /// Assume the memory now contains random bytes.
