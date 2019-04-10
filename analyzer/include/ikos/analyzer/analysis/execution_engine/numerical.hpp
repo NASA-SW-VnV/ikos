@@ -2468,15 +2468,16 @@ private:
                                    size);
     } else {
       // Volatile
-      IntInterval s;
       if (size.is_machine_int()) {
-        s = IntInterval(size.machine_int());
+        this->_inv.normal().forget_reachable_mem(dest.var(),
+                                                 size.machine_int());
       } else if (size.is_machine_int_var()) {
-        s = this->_inv.normal().integers().to_interval(size.var());
+        IntInterval size_intv =
+            this->_inv.normal().integers().to_interval(size.var());
+        this->_inv.normal().forget_reachable_mem(dest.var(), size_intv.ub());
       } else {
         ikos_unreachable("unreachable");
       }
-      this->_inv.normal().forget_reachable_mem(dest.var(), s.ub());
     }
 
     if (call->has_result()) {
@@ -3421,7 +3422,7 @@ private:
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else {
       // Do not keep track of the content
-      this->_inv.normal().forget_reachable_mem(dest.var());
+      this->_inv.normal().abstract_reachable_mem(dest.var());
     }
 
     if (call->has_result()) {
@@ -3442,7 +3443,40 @@ private:
   /// `\0' characters. Otherwise, dst is not terminated.
   ///
   /// The strncpy() function returns dst.
-  void exec_strncpy(ar::CallBase* call) { this->exec_strcpy(call); }
+  void exec_strncpy(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+    this->init_global_operand(call->argument(1));
+
+    const ScalarLit& dest = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& src = this->_lit_factory.get_scalar(call->argument(1));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(2));
+
+    if (!this->prepare_mem_access(dest) || !this->prepare_mem_access(src)) {
+      return;
+    }
+
+    if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
+      // Ignore strncpy, analysis could be unsound.
+      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+    } else if (size.is_machine_int()) {
+      this->_inv.normal().abstract_reachable_mem(dest.var(),
+                                                 size.machine_int());
+    } else if (size.is_machine_int_var()) {
+      IntInterval size_intv =
+          this->_inv.normal().integers().to_interval(size.var());
+      this->_inv.normal().abstract_reachable_mem(dest.var(), size_intv.ub());
+    } else {
+      ikos_unreachable("unreachable");
+    }
+
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->assign(lhs, dest);
+    }
+  }
 
   /// \brief Execute a call to libc strcat
   ///
@@ -3471,7 +3505,7 @@ private:
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else {
       // Do not keep track of the content
-      this->_inv.normal().forget_reachable_mem(s1.var());
+      this->_inv.normal().abstract_reachable_mem(s1.var());
     }
 
     if (call->has_result()) {

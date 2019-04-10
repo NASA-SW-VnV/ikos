@@ -136,6 +136,7 @@ if __name__ == '__main__':
                line_checks=[(14, 'ok'), (15, 'ok'), (16, 'warning')],
                domain='gauge-interval-congruence'))
     t.add(Test('test-31-safe.c', 'test-31-safe.c', 'prover', 'safe'))
+    t.add(Test('test-32-safe.c', 'test-32-safe.c', 'prover', 'safe'))
     t.add(Test('mine-lctes06.c', 'mine-lctes06.c', 'prover', 'safe',
                expected='unsafe', line_checks=[(29, 'ok'), (30, 'ok', 'warning')]))
     t.add(Test('astree.c', 'astree.c', 'prover', 'safe',
