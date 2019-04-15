@@ -57,7 +57,7 @@ Most of them can be installed using your package manager.
 
 Installation instructions for Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat, Ubuntu and Windows are available in the [doc/install](doc/install) directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in [doc/install/ROOTLESS.md](doc/install/ROOTLESS.md).
 
-Note: If you build LLVM from source, you need to enable run-time type information (RTTI). You will also need CMake >= 3.4.3
+Note: If you build LLVM from source, you need to enable run-time type information (RTTI).
 
 Once you have all the required dependencies, move to the next section.
 
