@@ -85,7 +85,7 @@ extern unsigned __ikos_nondet_uint(void) IKOS_NOEXCEPT;
 /// `[ptr, ptr + size - 1]` is accessible.
 ///
 /// The nullity checker (ikos -a nullity) will check if the pointer is null.
-extern void __ikos_check_mem_access(void* ptr, size_t size) IKOS_NOEXCEPT;
+extern void __ikos_check_mem_access(const void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Check if a null-terminated string access is valid
 ///
@@ -96,7 +96,7 @@ extern void __ikos_check_mem_access(void* ptr, size_t size) IKOS_NOEXCEPT;
 extern void __ikos_check_string_access(const char* str) IKOS_NOEXCEPT;
 
 /// \brief Assume that the memory pointed by `ptr` has the given size, in bytes
-extern void __ikos_assume_mem_size(void* ptr, size_t size) IKOS_NOEXCEPT;
+extern void __ikos_assume_mem_size(const void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Forget the memory contents at `[ptr, ptr + size - 1]`
 ///
