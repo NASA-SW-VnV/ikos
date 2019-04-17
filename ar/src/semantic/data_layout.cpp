@@ -50,14 +50,14 @@ namespace ar {
 
 DataLayout::DataLayout(Endianness endianness_, DataLayoutInfo pointers_)
     : endianness(endianness_), pointers(pointers_) {
-  // default alignments for integers
+  // Default alignments for integers
   integers.emplace_back(DataLayoutInfo(1, 1, 1));
   integers.emplace_back(DataLayoutInfo(8, 1, 1));
   integers.emplace_back(DataLayoutInfo(16, 2, 2));
   integers.emplace_back(DataLayoutInfo(32, 4, 4));
   integers.emplace_back(DataLayoutInfo(64, 8, 8));
 
-  // default alignments for floats
+  // Default alignments for floats
   floats.emplace_back(DataLayoutInfo(16, 2, 2));
   floats.emplace_back(DataLayoutInfo(32, 4, 4));
   floats.emplace_back(DataLayoutInfo(64, 8, 8));
@@ -93,55 +93,48 @@ static ZNumber power_of_2_ceil(const ZNumber& n) {
 /// \brief Add a DataLayoutInfo into a vector of DataLayoutInfo
 static void update_data_layout_infos(std::vector< DataLayoutInfo >& v,
                                      DataLayoutInfo info) {
-  // update an existing entry
-  for (auto& i : v) {
-    if (i.bit_width == info.bit_width) {
-      i.abi_alignment = info.abi_alignment;
-      i.pref_alignment = info.pref_alignment;
-      return;
-    }
-  }
+  auto it = std::lower_bound(v.begin(),
+                             v.end(),
+                             info,
+                             [](const DataLayoutInfo& lhs,
+                                const DataLayoutInfo& rhs) {
+                               return lhs.bit_width < rhs.bit_width;
+                             });
 
-  // otherwise, create it
-  v.push_back(info);
+  if (it != v.end() && it->bit_width == info.bit_width) {
+    // Update an existing entry
+    it->abi_alignment = info.abi_alignment;
+    it->pref_alignment = info.pref_alignment;
+  } else {
+    // Otherwise, create it
+    v.insert(it, info);
+  }
 }
 
 /// \brief Find the best alignment for a bit width
 static unsigned find_alignment_info(const std::vector< DataLayoutInfo >& v,
                                     unsigned bit_width,
                                     bool abi) {
-  auto best_match = v.end();
-  auto largest = v.end();
+  ikos_assert(!v.empty());
 
-  for (auto it = v.begin(), et = v.end(); it != et; ++it) {
-    if (it->bit_width == bit_width) {
-      if (abi) {
-        return it->abi_alignment;
-      } else {
-        return it->pref_alignment;
-      }
-    }
+  auto it = std::lower_bound(v.begin(),
+                             v.end(),
+                             DataLayoutInfo(bit_width, 0, 0),
+                             [](const DataLayoutInfo& lhs,
+                                const DataLayoutInfo& rhs) {
+                               return lhs.bit_width < rhs.bit_width;
+                             });
 
-    // Lower bound
-    if (it->bit_width > bit_width &&
-        (best_match == v.end() || it->bit_width < best_match->bit_width)) {
-      best_match = it;
-    }
-
-    // Maximum
-    if (largest == v.end() || it->bit_width > largest->bit_width) {
-      largest = it;
-    }
+  if (it == v.end()) {
+    // If we didn't have a larger value, use the largest value we have
+    it = std::prev(v.end());
   }
-
-  if (best_match == v.end()) {
-    best_match = largest;
-  }
+  // Else, use the exact match or first larger value
 
   if (abi) {
-    return best_match->abi_alignment;
+    return it->abi_alignment;
   } else {
-    return best_match->pref_alignment;
+    return it->pref_alignment;
   }
 }
 
@@ -197,7 +190,7 @@ public:
 
   ZNumber operator()(StructType* type) const {
     if (type->packed()) {
-      // Packed structures have alignment 1
+      // Packed structures have alignment of 1 byte
       return ZNumber(1);
     }
 
@@ -210,7 +203,7 @@ public:
     }
 
     if (alignment == 0) {
-      // Empty structure
+      // Empty structures have alignment of 1 byte
       alignment = 1;
     }
 
@@ -287,13 +280,17 @@ public:
     // Get the last field
     auto it = type->field_rbegin();
 
-    // offset of last field (in bytes)
+    // Offset of last field (in bytes)
     ZNumber size = it->offset;
 
-    // size of last field type (in bytes)
+    // Size of last field type (in bytes)
     size += data_layout.alloc_size_in_bytes(it->type);
 
-    // in bits
+    // Add padding to the end of the struct so that it could be put in an array
+    // and all array elements would be aligned correctly.
+    size = align_to(size, data_layout.abi_alignment(type));
+
+    // In bits
     return size * 8;
   }
 

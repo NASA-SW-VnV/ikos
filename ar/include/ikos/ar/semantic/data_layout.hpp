@@ -107,10 +107,10 @@ public:
   /// \brief Information about pointers
   DataLayoutInfo pointers;
 
-  /// \brief Information about integer types
+  /// \brief Information about integer types (ordered by bit-width)
   std::vector< DataLayoutInfo > integers;
 
-  /// \brief Information about floating point types
+  /// \brief Information about floating point types (ordered by bit-width)
   std::vector< DataLayoutInfo > floats;
 
 private:
