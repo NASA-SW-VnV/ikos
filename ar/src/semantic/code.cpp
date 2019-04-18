@@ -90,12 +90,33 @@ void BasicBlock::insert_before(StatementIterator it,
 
 void BasicBlock::insert_after(StatementIterator it,
                               std::unique_ptr< Statement > stmt) {
+  ikos_assert(it != this->end());
   ++it;
   stmt->set_parent(this);
   this->_statements.insert(it.base(), std::move(stmt));
 }
 
+std::unique_ptr< Statement > BasicBlock::replace(
+    StatementIterator it, std::unique_ptr< Statement > stmt) {
+  ikos_assert(it != this->end());
+
+  // Create a non-const iterator on the statement
+  auto index = std::distance(this->_statements.cbegin(), it.base());
+  auto stmt_it = std::next(this->_statements.begin(), index);
+
+  // Remove current statement
+  std::unique_ptr< Statement > old = std::move(*stmt_it);
+  old->set_parent(nullptr);
+
+  // Add the new statement
+  stmt->set_parent(this);
+  *stmt_it = std::move(stmt);
+
+  return old;
+}
+
 void BasicBlock::remove(StatementIterator it) {
+  ikos_assert(it != this->end());
   (*it.base())->set_parent(nullptr);
   this->_statements.erase(it.base());
 }

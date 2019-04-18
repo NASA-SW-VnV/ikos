@@ -176,21 +176,39 @@ public:
   bool empty() const { return this->_statements.empty(); }
 
   /// \brief Insert a statement to the beginning
+  ///
+  /// Statement iterators are invalidated.
   void push_front(std::unique_ptr< Statement > stmt);
 
   /// \brief Add a statement to the end
+  ///
+  /// Statement iterators are invalidated.
   void push_back(std::unique_ptr< Statement > stmt);
 
-  /// \brief Insert a statement before it
+  /// \brief Insert a statement before `it`
+  ///
+  /// Statement iterators are invalidated.
   void insert_before(StatementIterator it, std::unique_ptr< Statement > stmt);
 
-  /// \brief Insert a statement after it
+  /// \brief Insert a statement after `it`
+  ///
+  /// Statement iterators are invalidated.
   void insert_after(StatementIterator it, std::unique_ptr< Statement > stmt);
 
-  /// \brief Remove the statement at it
+  /// \brief Replace the statement at `it`
+  ///
+  /// Return the previous statement
+  std::unique_ptr< Statement > replace(StatementIterator it,
+                                       std::unique_ptr< Statement > stmt);
+
+  /// \brief Remove the statement at `it`
+  ///
+  /// Statement iterators at or after `it` are invalidated.
   void remove(StatementIterator it);
 
   /// \brief Remove the last statement and return it
+  ///
+  /// The end() statement iterator is invalidated.
   std::unique_ptr< Statement > pop_back();
 
   /// \brief Remove all statements
