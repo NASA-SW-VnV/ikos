@@ -1340,7 +1340,7 @@ public:
       } break;
       case ar::BinaryOperation::UXor:
       case ar::BinaryOperation::SXor: {
-        this->exec_int_bin_operation(lhs, IntBinaryOperator::Add, left, right);
+        this->exec_int_bin_operation(lhs, IntBinaryOperator::Xor, left, right);
       } break;
       case ar::BinaryOperation::FAdd:
       case ar::BinaryOperation::FSub:
