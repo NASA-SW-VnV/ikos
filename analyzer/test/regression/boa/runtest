@@ -241,4 +241,5 @@ if __name__ == '__main__':
                             (13, 'ok'),
                             (15, 'error')]))
     t.add(Test('test-63.c', 'test-63.c', 'boa', 'safe'))
+    t.add(Test('test-64.c', 'test-64.c', 'boa', 'safe'))
     t.run()

@@ -642,16 +642,18 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                         inv)};
     }
     case ar::Intrinsic::LibcStrncmp: {
-      return {this->check_mem_access(call,
-                                     call->argument(0),
-                                     call->argument(2),
-                                     /* if_null = */ Result::Error,
-                                     inv),
-              this->check_mem_access(call,
-                                     call->argument(1),
-                                     call->argument(2),
-                                     /* if_null = */ Result::Error,
-                                     inv)};
+      return {this->check_string_access(call,
+                                        call->argument(0),
+                                        /* max_access_size = */
+                                        call->argument(2),
+                                        /* if_null = */ Result::Error,
+                                        inv),
+              this->check_string_access(call,
+                                        call->argument(1),
+                                        /* max_access_size = */
+                                        call->argument(2),
+                                        /* if_null = */ Result::Error,
+                                        inv)};
     }
     case ar::Intrinsic::LibcStrstr: {
       return {this->check_string_access(call,
