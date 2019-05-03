@@ -586,8 +586,13 @@ def parse_arguments(argv):
 
 
 def open_browser(url):
-    log.debug("Launching browser")
-    webbrowser.open_new_tab(url)
+    browser = webbrowser.get()
+
+    if browser.name in ('links', 'elinks', 'lynx', 'w3m'):
+        return
+
+    log.debug('Launching browser')
+    browser.open_new_tab(url)
 
 
 ######################
