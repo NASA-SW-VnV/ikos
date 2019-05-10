@@ -194,6 +194,7 @@ The list of available checks are:
 * **function call analysis**, `-a=fca`: checks for function calls through function pointers of the wrong type.
 * **dead code analysis**, `-a=dca`: checks for unreachable statements.
 * **double free analysis**, `-a=dfa`: checks for double free, invalid free, use after free and use after return.
+* **debugger**, `-a=dbg`: prints debug information, using `__ikos_print_values("desc", x)` and `__ikos_print_invariant()`.
 
 By default, all the checks are enabled except:
 

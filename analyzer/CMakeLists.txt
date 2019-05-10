@@ -237,6 +237,7 @@ add_executable(ikos-analyzer
   src/checker/buffer_overflow.cpp
   src/checker/checker.cpp
   src/checker/dead_code.cpp
+  src/checker/debug.cpp
   src/checker/division_by_zero.cpp
   src/checker/double_free.cpp
   src/checker/function_call.cpp

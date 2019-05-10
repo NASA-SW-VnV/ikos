@@ -72,6 +72,7 @@ ANALYSES = (
     'fca',
     'dca',
     'dfa',
+    'dbg',
 )
 
 # available colors

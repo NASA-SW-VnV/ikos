@@ -203,7 +203,10 @@ static llvm::cl::list< analyzer::CheckerName > Analyses(
                    checker_long_name(analyzer::CheckerName::DeadCode)),
         clEnumValN(analyzer::CheckerName::DoubleFree,
                    checker_short_name(analyzer::CheckerName::DoubleFree),
-                   checker_long_name(analyzer::CheckerName::DoubleFree))),
+                   checker_long_name(analyzer::CheckerName::DoubleFree)),
+        clEnumValN(analyzer::CheckerName::Debug,
+                   checker_short_name(analyzer::CheckerName::Debug),
+                   checker_long_name(analyzer::CheckerName::Debug))),
     llvm::cl::cat(AnalysisCategory));
 
 static llvm::cl::opt< analyzer::MachineIntDomainOption > Domain(

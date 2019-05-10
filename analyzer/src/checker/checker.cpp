@@ -45,6 +45,7 @@
 #include <ikos/analyzer/checker/buffer_overflow.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
 #include <ikos/analyzer/checker/dead_code.hpp>
+#include <ikos/analyzer/checker/debug.hpp>
 #include <ikos/analyzer/checker/division_by_zero.hpp>
 #include <ikos/analyzer/checker/double_free.hpp>
 #include <ikos/analyzer/checker/function_call.hpp>
@@ -125,6 +126,8 @@ std::unique_ptr< Checker > make_checker(Context& ctx, CheckerName name) {
       return std::make_unique< DeadCodeChecker >(ctx);
     case CheckerName::DoubleFree:
       return std::make_unique< DoubleFreeChecker >(ctx);
+    case CheckerName::Debug:
+      return std::make_unique< DebugChecker >(ctx);
     default:
       ikos_unreachable("unreachable");
   }

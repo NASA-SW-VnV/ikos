@@ -81,18 +81,20 @@ extern unsigned __ikos_nondet_uint(void) IKOS_NOEXCEPT;
 
 /// \brief Check if a memory access is valid
 ///
-/// The buffer overflow checker (ikos -a boa) will check if the memory at
+/// The buffer overflow analysis (ikos -a boa) will check if the memory at
 /// `[ptr, ptr + size - 1]` is accessible.
 ///
-/// The nullity checker (ikos -a nullity) will check if the pointer is null.
+/// The null pointer dereference analysis (ikos -a nullity) will check if the
+/// pointer is null.
 extern void __ikos_check_mem_access(const void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Check if a null-terminated string access is valid
 ///
-/// The buffer overflow checker (ikos -a boa) will check if the given string
+/// The buffer overflow analysis (ikos -a boa) will check if the given string
 /// access leads to a buffer overflow.
 ///
-/// The nullity checker (ikos -a nullity) will check if the pointer is null.
+/// The null pointer dereference analysis (ikos -a nullity) will check if the
+/// pointer is null.
 extern void __ikos_check_string_access(const char* str) IKOS_NOEXCEPT;
 
 /// \brief Assume that the memory pointed by `ptr` has the given size, in bytes
@@ -114,12 +116,12 @@ extern void __ikos_abstract_mem(void* ptr, size_t size) IKOS_NOEXCEPT;
 
 /// \brief Print the invariant at the function call
 ///
-/// The assertion prover (ikos -a prover) will print the current invariant.
+/// The debugger (ikos -a dbg) will print the current invariant.
 extern void __ikos_print_invariant(void) IKOS_NOEXCEPT;
 
 /// \brief Print the information on the given values at the function call
 ///
-/// The assertion prover (ikos -a prover) will print the information on the
+/// The debugger (ikos -a dbg) will print the information on the
 /// given values at the function call location.
 ///
 /// \param desc Description, for debugging purpose

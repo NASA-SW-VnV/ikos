@@ -152,6 +152,7 @@ analyses = (
     ('fca', 'Function Call Analysis'),
     ('dca', 'Dead Code Analysis'),
     ('dfa', 'Double Free Analysis'),
+    ('dbg', 'Debugger'),
 )
 
 default_analyses = (
@@ -166,6 +167,7 @@ default_analyses = (
     'fca',
     'dca',
     'dfa',
+    'dbg',
 )
 
 

@@ -224,6 +224,7 @@ class CheckerName:
     FUNCTION_CALL = auto()
     DEAD_CODE = auto()
     DOUBLE_FREE = auto()
+    DEBUG = auto()
 
     SHORT_NAME_LIST = [
         'boa',
@@ -241,6 +242,7 @@ class CheckerName:
         'fca',
         'dca',
         'dfa',
+        'dbg',
     ]
     SHORT_NAME_MAP = {v: k for k, v in enumerate(SHORT_NAME_LIST)}
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Assertion prover checker
+ * \brief Debug checker
  *
  * Author: Maxime Arthaud
  *
@@ -9,7 +9,7 @@
  *
  * Notices:
  *
- * Copyright (c) 2011-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -48,14 +48,11 @@
 namespace ikos {
 namespace analyzer {
 
-/// \brief Assertion prover checker
-class AssertProverChecker final : public Checker {
-private:
-  using IntInterval = core::machine_int::Interval;
-
+/// \brief Debug checker
+class DebugChecker final : public Checker {
 public:
   /// \brief Constructor
-  explicit AssertProverChecker(Context& ctx);
+  explicit DebugChecker(Context& ctx);
 
   /// \brief Get the checker name
   CheckerName name() const override;
@@ -69,22 +66,15 @@ public:
              CallContext* call_context) override;
 
 private:
-  /// \brief Check result
-  struct CheckResult {
-    CheckKind kind;
-    Result result;
-  };
+  /// \brief Execute an __ikos_print_invariant call
+  void exec_print_invariant(ar::IntrinsicCall* call,
+                            const value::AbstractDomain& inv);
 
-  /// \brief Check an assert call
-  CheckResult check_assert(ar::IntrinsicCall* call,
-                           const value::AbstractDomain& inv);
+  /// \brief Execute an __ikos_print_values call
+  void exec_print_values(ar::IntrinsicCall* call,
+                         const value::AbstractDomain& inv);
 
-private:
-  /// \brief Dispay the check for the given assert(), if requested
-  llvm::Optional< LogMessage > display_assert_check(
-      Result result, ar::IntrinsicCall* call) const;
-
-}; // end class AssertProverChecker
+}; // end class DebugChecker
 
 } // end namespace analyzer
 } // end namespace ikos
