@@ -2021,6 +2021,9 @@ public:
       case ar::Intrinsic::IkosAbstractMemory: {
         this->exec_ikos_abstract_memory(call);
       } break;
+      case ar::Intrinsic::IkosWatchMemory: {
+        this->exec_ikos_watch_memory(call);
+      } break;
       case ar::Intrinsic::IkosPrintInvariant:
       case ar::Intrinsic::IkosPrintValues: {
         this->exec_unknown_call(call,
@@ -2566,9 +2569,6 @@ private:
       return;
     }
 
-    // Reduction between value and pointer analysis
-    this->refine_addresses(ptr.var());
-
     PointsToSet addrs = this->_inv.normal().pointers().points_to(ptr.var());
 
     if (addrs.is_bottom()) {
@@ -2641,6 +2641,38 @@ private:
       this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
+    }
+  }
+
+  /// \brief Execute a call to ikos.watch_memory
+  void exec_ikos_watch_memory(ar::CallBase* call) {
+    // Initialize lazily global objects
+    this->init_global_operand(call->argument(0));
+
+    const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(ptr)) {
+      return;
+    }
+
+    // Save the watched pointer
+    Variable* watch_mem_ptr =
+        this->_var_factory.get_named_shadow(this->void_ptr_type(),
+                                            "shadow.watch_mem.ptr");
+    this->_inv.normal().pointers().assign(watch_mem_ptr, ptr.var());
+
+    // Save the watched size
+    Variable* watch_mem_size =
+        this->_var_factory.get_named_shadow(ar::IntegerType::size_type(
+                                                this->_ctx.bundle),
+                                            "shadow.watch_mem.size");
+    if (size.is_machine_int()) {
+      this->_inv.normal().integers().assign(watch_mem_size, size.machine_int());
+    } else if (size.is_machine_int_var()) {
+      this->_inv.normal().integers().assign(watch_mem_size, size.var());
+    } else {
+      ikos_unreachable("unexpected size parameter");
     }
   }
 

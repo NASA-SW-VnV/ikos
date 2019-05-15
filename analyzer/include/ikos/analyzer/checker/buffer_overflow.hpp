@@ -71,7 +71,7 @@ private:
   const ar::DataLayout& _data_layout;
 
   /// \brief The unsigned integer type with the bit-width of a pointer
-  ar::IntegerType* _offset_type;
+  ar::IntegerType* _size_type;
 
   /// \brief The integer constant 0 of type size_t
   ar::IntegerConstant* _size_zero;

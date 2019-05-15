@@ -106,7 +106,7 @@ IntOverflowCheckerBase::check_integer_overflow(
   }
 
   if (stmt->result()->type()->is_vector()) {
-    return {}; // TODO: Support checks on vector operations
+    return {}; // TODO(marthaud): Support checks on vector operations
   }
 
   const ScalarLit& left_lit = this->_lit_factory.get_scalar(stmt->left());

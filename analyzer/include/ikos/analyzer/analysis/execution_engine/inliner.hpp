@@ -202,25 +202,25 @@ private:
     ar::Value* called = call->called();
 
     if (isa< ar::UndefinedConstant >(called)) {
-      // call on undefined pointer: error
+      // Call on undefined pointer: error
       this->inv().set_normal_flow_to_bottom();
       return;
     } else if (isa< ar::NullConstant >(called)) {
-      // call on null pointer: error
+      // Call on null pointer: error
       this->inv().set_normal_flow_to_bottom();
       return;
     } else if (auto cst = dyn_cast< ar::FunctionPointerConstant >(called)) {
       callees = {_ctx.mem_factory->get_function(cst->function())};
     } else if (isa< ar::InlineAssemblyConstant >(called)) {
-      // call to assembly
+      // Call to assembly
       this->_engine.exec_unknown_extern_call(call);
       return;
     } else if (isa< ar::GlobalVariable >(called)) {
-      // call to global variable: error
+      // Call to global variable: error
       this->inv().set_normal_flow_to_bottom();
       return;
     } else if (isa< ar::LocalVariable >(called)) {
-      // call to global variable: error
+      // Call to local variable: error
       this->inv().set_normal_flow_to_bottom();
       return;
     } else if (auto ptr = dyn_cast< ar::InternalVariable >(called)) {

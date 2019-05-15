@@ -84,6 +84,7 @@ public:
     IkosAssumeMemSize,
     IkosForgetMemory,
     IkosAbstractMemory,
+    IkosWatchMemory,
     IkosPrintInvariant,
     IkosPrintValues,
     _EndIkosIntrinsic,

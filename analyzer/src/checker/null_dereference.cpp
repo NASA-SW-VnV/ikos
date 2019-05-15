@@ -253,7 +253,8 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     case ar::Intrinsic::IkosCheckStringAccess:
     case ar::Intrinsic::IkosAssumeMemSize:
     case ar::Intrinsic::IkosForgetMemory:
-    case ar::Intrinsic::IkosAbstractMemory: {
+    case ar::Intrinsic::IkosAbstractMemory:
+    case ar::Intrinsic::IkosWatchMemory: {
       return {this->check_null(call, call->argument(0), inv)};
     }
     case ar::Intrinsic::IkosPrintInvariant:

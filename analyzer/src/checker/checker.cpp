@@ -49,6 +49,7 @@
 #include <ikos/analyzer/checker/division_by_zero.hpp>
 #include <ikos/analyzer/checker/double_free.hpp>
 #include <ikos/analyzer/checker/function_call.hpp>
+#include <ikos/analyzer/checker/memory_watch.hpp>
 #include <ikos/analyzer/checker/null_dereference.hpp>
 #include <ikos/analyzer/checker/pointer_alignment.hpp>
 #include <ikos/analyzer/checker/pointer_compare.hpp>
@@ -128,6 +129,8 @@ std::unique_ptr< Checker > make_checker(Context& ctx, CheckerName name) {
       return std::make_unique< DoubleFreeChecker >(ctx);
     case CheckerName::Debug:
       return std::make_unique< DebugChecker >(ctx);
+    case CheckerName::MemoryWatch:
+      return std::make_unique< MemoryWatchChecker >(ctx);
     default:
       ikos_unreachable("unreachable");
   }

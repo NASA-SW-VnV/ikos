@@ -116,7 +116,7 @@ AbstractDomain init_main_invariant(Context& ctx,
                                               dl.pointers.bit_width,
                                               Unsigned));
 
-    // TODO: Create memory locations for argv[i] and set the size >= 1
+    // TODO(marthaud): Create memory locations for argv[i] and set the size >= 1
   }
 
   return inv;

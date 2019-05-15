@@ -114,6 +114,12 @@ extern void __ikos_forget_mem(void* ptr, size_t size) IKOS_NOEXCEPT;
 /// This is undefined behavior if the pointer is null.
 extern void __ikos_abstract_mem(void* ptr, size_t size) IKOS_NOEXCEPT;
 
+/// \brief Watch the memory writes at `[ptr, ptr + size - 1]`
+///
+/// The memory watcher (ikos -a watch) will print the location of statements
+/// that write at the given memory location.
+extern void __ikos_watch_mem(const void* ptr, size_t size) IKOS_NOEXCEPT;
+
 /// \brief Print the invariant at the function call
 ///
 /// The debugger (ikos -a dbg) will print the current invariant.

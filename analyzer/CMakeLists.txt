@@ -242,6 +242,7 @@ add_executable(ikos-analyzer
   src/checker/double_free.cpp
   src/checker/function_call.cpp
   src/checker/int_overflow_base.cpp
+  src/checker/memory_watch.cpp
   src/checker/null_dereference.cpp
   src/checker/pointer_alignment.cpp
   src/checker/pointer_compare.cpp

@@ -703,6 +703,7 @@ private:
         case ar::Intrinsic::IkosAssumeMemSize:
         case ar::Intrinsic::IkosForgetMemory:
         case ar::Intrinsic::IkosAbstractMemory:
+        case ar::Intrinsic::IkosWatchMemory:
         case ar::Intrinsic::IkosPrintInvariant:
         case ar::Intrinsic::IkosPrintValues:
           break; // do nothing

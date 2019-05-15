@@ -195,6 +195,7 @@ The list of available checks are:
 * **dead code analysis**, `-a=dca`: checks for unreachable statements.
 * **double free analysis**, `-a=dfa`: checks for double free, invalid free, use after free and use after return.
 * **debugger**, `-a=dbg`: prints debug information, using `__ikos_print_values("desc", x)` and `__ikos_print_invariant()`.
+* **memory watcher**, `-a=watch`: prints memory writes at a given memory location, using `__ikos_watch_mem(ptr, size)`.
 
 By default, all the checks are enabled except:
 
@@ -202,6 +203,7 @@ By default, all the checks are enabled except:
 * **uninitialized variable analysis**, because it currently generates a lot of false positives.
 * **unsigned integer overflow analysis**, because it is not an undefined behavior according to the C standard.
 * **pointer overflow analysis**, because it is redundant with the buffer overflow analysis.
+* **memory watcher**, because it is slow.
 
 If you want to run specific checks, use the `-a` parameter:
 

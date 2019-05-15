@@ -517,7 +517,7 @@ def attach_bitcode_path(obj_path, bc_path):
 
     # add a section in the object file
     if sys.platform.startswith('darwin'):
-        # TODO: use llvm-objcopy when they start supporting Mach-O
+        # TODO(marthaud): use llvm-objcopy when they start supporting Mach-O
         cmd = ['ld',
                '-r',
                '-keep_private_externs',
@@ -535,7 +535,7 @@ def attach_bitcode_path(obj_path, bc_path):
                obj_path]
         run(cmd)
     elif sys.platform.startswith('win'):
-        # TODO: use llvm-objcopy when they start supporting COFF/PE
+        # TODO(marthaud): use llvm-objcopy when they start supporting COFF/PE
         cmd = ['objcopy',
                '--add-section',
                '%s=%s' % (PE_SECTION_NAME, f.name),

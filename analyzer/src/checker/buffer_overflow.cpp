@@ -55,11 +55,11 @@ BufferOverflowChecker::BufferOverflowChecker(Context& ctx)
     : Checker(ctx),
       _ar_context(ctx.bundle->context()),
       _data_layout(ctx.bundle->data_layout()),
-      _offset_type(ar::IntegerType::size_type(ctx.bundle)),
+      _size_type(ar::IntegerType::size_type(ctx.bundle)),
       _size_zero(
-          ar::IntegerConstant::get(this->_ar_context, this->_offset_type, 0)),
+          ar::IntegerConstant::get(this->_ar_context, this->_size_type, 0)),
       _size_one(
-          ar::IntegerConstant::get(this->_ar_context, this->_offset_type, 1)) {}
+          ar::IntegerConstant::get(this->_ar_context, this->_size_type, 1)) {}
 
 CheckerName BufferOverflowChecker::name() const {
   return CheckerName::BufferOverflow;
@@ -305,6 +305,7 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                      /* if_null = */ Result::Error,
                                      inv)};
     }
+    case ar::Intrinsic::IkosWatchMemory:
     case ar::Intrinsic::IkosPrintInvariant:
     case ar::Intrinsic::IkosPrintValues: {
       return {};
@@ -862,10 +863,10 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
 
   // Add a shadow variable `offset_plus_size = offset + access_size`
   Variable* offset_plus_size =
-      _ctx.var_factory->get_named_shadow(this->_offset_type,
+      _ctx.var_factory->get_named_shadow(this->_size_type,
                                          "shadow.offset_plus_size");
 
-  if (access_size->type() == this->_offset_type) {
+  if (access_size->type() == this->_size_type) {
     if (size.is_machine_int_var()) {
       inv.normal().integers().apply(IntBinaryOperator::Add,
                                     offset_plus_size,
@@ -894,7 +895,7 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
                                     offset_plus_size,
                                     offset_var,
                                     size.machine_int()
-                                        .cast(this->_offset_type->bit_width(),
+                                        .cast(this->_size_type->bit_width(),
                                               ar::Unsigned));
     } else {
       ikos_unreachable("unexpected access size");
@@ -1196,7 +1197,7 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_string_access(
   /// ASSUMPTION: If the first byte of a string is accessible, the string is
   /// well-formed.
   ///
-  /// TODO: Improve checks for strings.
+  /// TODO(marthaud): Improve checks for strings.
   return this->check_mem_access(stmt, pointer, this->_size_one, if_null, inv);
 }
 
@@ -1215,7 +1216,7 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_string_access(
   /// ASSUMPTION: If the first byte of a string is accessible, the string is
   /// well-formed.
   ///
-  /// TODO: Improve checks for strings.
+  /// TODO(marthaud): Improve checks for strings.
   ikos_ignore(max_access_size);
   return this->check_mem_access(stmt, pointer, this->_size_one, if_null, inv);
 }
@@ -1245,8 +1246,8 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_realloc(
   ///
   /// ASSUMPTION: calls to `realloc` are memory safe.
   ///
-  /// TODO: Add checks that the pointer offset is zero.
-  /// TODO: Add checks that the pointer was dynamically allocated.
+  /// TODO(marthaud): Add checks that the pointer offset is zero.
+  /// TODO(marthaud): Add checks that the pointer was dynamically allocated.
   return this->check_mem_access(call,
                                 pointer,
                                 this->_size_zero,
@@ -1270,11 +1271,11 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_file_access(
 
 ar::IntegerConstant* BufferOverflowChecker::store_size(ar::Type* type) const {
   return ar::IntegerConstant::get(this->_ar_context,
-                                  this->_offset_type,
+                                  this->_size_type,
                                   MachineInt(this->_data_layout
                                                  .store_size_in_bytes(type),
-                                             this->_offset_type->bit_width(),
-                                             this->_offset_type->sign()));
+                                             this->_size_type->bit_width(),
+                                             this->_size_type->sign()));
 }
 
 void BufferOverflowChecker::init_global_ptr(value::AbstractDomain& inv,
@@ -1341,8 +1342,8 @@ boost::optional< MachineInt > BufferOverflowChecker::is_array_access(
   }
 
   MachineInt element_size(this->_data_layout.store_size_in_bytes(access_type),
-                          this->_offset_type->bit_width(),
-                          this->_offset_type->sign());
+                          this->_size_type->bit_width(),
+                          this->_size_type->sign());
 
   // Offset is a multiple of the element size
   if (!is_multiple(offset_intv, element_size)) {

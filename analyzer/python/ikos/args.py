@@ -153,6 +153,7 @@ analyses = (
     ('dca', 'Dead Code Analysis'),
     ('dfa', 'Double Free Analysis'),
     ('dbg', 'Debugger'),
+    ('watch', 'Memory Watcher'),
 )
 
 default_analyses = (

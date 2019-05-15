@@ -75,6 +75,8 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
     } else if (name == "__ikos_abstract_mem") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosAbstractMemory);
+    } else if (name == "__ikos_watch_mem") {
+      return this->_bundle->intrinsic_function(ar::Intrinsic::IkosWatchMemory);
     } else if (name == "__ikos_print_invariant") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosPrintInvariant);

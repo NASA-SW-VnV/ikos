@@ -73,6 +73,7 @@ ANALYSES = (
     'dca',
     'dfa',
     'dbg',
+    'watch',
 )
 
 # available colors
