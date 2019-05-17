@@ -467,6 +467,11 @@ def parse_arguments(argv):
         else:
             opt.log_level = 'all'
 
+    # quiet mode does not display the timing results and the analysis summary
+    if opt.verbosity <= 0:
+        opt.display_times = 'no'
+        opt.display_summary = 'no'
+
     # default value for generate-dot-dir
     if opt.generate_dot and not opt.generate_dot_dir:
         if opt.temp_dir and opt.save_temps:
@@ -972,10 +977,8 @@ def main(argv):
 
     # report
     if opt.format != 'no':
-        if opt.report_file is sys.stdout:
-            if not first:
-                printf('\n')
-            printf(colors.bold('# Results') + '\n')
+        if not first and opt.report_file is sys.stdout:
+            printf('\n' + colors.bold('# Results') + '\n')
             first = False
 
         # setup colors again (in case opt.color = 'auto')
