@@ -206,6 +206,11 @@ def parse_arguments(argv):
                           metavar='',
                           help='Use the specified warning options',
                           action='append')
+    compiler.add_argument('-w',
+                          dest='compiler_disable_warnings',
+                          help='Suppress all compiler warnings',
+                          action='store_true',
+                          default=False)
     compiler.add_argument('-m',
                           dest='compiler_machine_flags',
                           metavar='',
@@ -593,6 +598,7 @@ def clang(
     include_flags=None,
     define_flags=None,
     warning_flags=None,
+    disable_warnings=False,
     machine_flags=None,
     colors=True,
 ):
@@ -612,6 +618,8 @@ def clang(
         cmd += ['-D%s' % d for d in define_flags]
     if warning_flags:
         cmd += ['-W%s' % w for w in warning_flags]
+    if disable_warnings:
+        cmd.append('-w')
     if machine_flags:
         cmd += ['-m%s' % m for m in machine_flags]
 
@@ -863,6 +871,7 @@ def main(argv):
                       opt.compiler_include_flags,
                       opt.compiler_define_flags,
                       opt.compiler_warning_flags,
+                      opt.compiler_disable_warnings,
                       opt.compiler_machine_flags,
                       colors.ENABLE)
         except subprocess.CalledProcessError as e:
