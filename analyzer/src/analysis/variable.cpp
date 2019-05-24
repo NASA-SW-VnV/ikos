@@ -280,13 +280,14 @@ FunctionPointerVariable* VariableFactory::get_function_ptr(
 
 CellVariable* VariableFactory::get_cell(MemoryLocation* address,
                                         const MachineInt& offset,
-                                        const MachineInt& size) {
+                                        const MachineInt& size,
+                                        Signedness sign) {
   auto key = std::make_tuple(address, offset, size);
   auto it = this->_cell_map.find(key);
   if (it == this->_cell_map.end()) {
     // Create a memory cell variable
     // A cell can be either an integer, a float or a pointer
-    // The integer type should have the right bit-width and be signed
+    // The integer type should have the right bit-width and the given signedness
     // The parameter `size` is in bytes, compute bit-width = size * 8
     bool overflow;
     MachineInt eight(8, size.bit_width(), Unsigned);
@@ -296,7 +297,7 @@ CellVariable* VariableFactory::get_cell(MemoryLocation* address,
     }
     ar::Type* type = ar::IntegerType::get(this->_ar_context,
                                           bit_width.to< unsigned >(),
-                                          Signed);
+                                          sign);
     auto vn = new CellVariable(type, address, offset, size);
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn));

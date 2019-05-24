@@ -538,7 +538,8 @@ public:
   /// \brief Get or Create a CellVariable
   CellVariable* get_cell(MemoryLocation* address,
                          const MachineInt& offset,
-                         const MachineInt& size);
+                         const MachineInt& size,
+                         Signedness sign);
 
   /// \brief Get or Create an AllocSizeVariable
   AllocSizeVariable* get_alloc_size(MemoryLocation* address);
@@ -674,8 +675,9 @@ struct CellFactoryTraits< analyzer::Variable*,
   static analyzer::Variable* cell(analyzer::VariableFactory& vfac,
                                   analyzer::MemoryLocation* base,
                                   const MachineInt& offset,
-                                  const MachineInt& size) {
-    return vfac.get_cell(base, offset, size);
+                                  const MachineInt& size,
+                                  Signedness sign) {
+    return vfac.get_cell(base, offset, size, sign);
   }
 };
 

@@ -68,8 +68,10 @@ namespace memory {
 /// static VariableRef cell(VariableFactory& vfac,
 ///                         MemoryLocationRef base,
 ///                         const MachineInt& offset,
-///                         const MachineInt& size)
+///                         const MachineInt& size,
+///                         Signedness sign)
 ///   Get or create the cell with the given base address, offset and size
+///   If a new cell is created, it will have the given signedness
 template < typename VariableRef,
            typename MemoryLocationRef,
            typename VariableFactory >
@@ -94,8 +96,8 @@ struct CellFactoryTraits {};
 /// address `base`, starting at offset `offset` up to `offset + size - 1`. A
 /// memory cell is represented by a variable implementing
 /// `memory::CellVariableTraits`. The variable doesn't have a fixed type. It is
-/// either a signed machine integer of 8*size bits, a floating points of 8*size
-/// bits or a pointer.
+/// either an integer of 8*size bits, a floating point of 8*size bits or a
+/// pointer.
 template < typename VariableRef,
            typename MemoryLocationRef,
            typename VariableFactory,
@@ -215,7 +217,7 @@ public:
         _pointer_sets(MemLocToPointerSetT::top()),
         _pointer(std::move(pointer)),
         _uninitialized(std::move(uninitialized)),
-        _lifetime(lifetime) {
+        _lifetime(std::move(lifetime)) {
     this->normalize();
   }
 
@@ -439,17 +441,17 @@ private:
     const MachineInt& offset = CellVariableTrait::offset(cell);
     const MachineInt& size = CellVariableTrait::size(cell);
     MachineInt one(1, offset.bit_width(), Unsigned);
-    return Interval(offset, offset + size - one);
+    return Interval(offset, offset + (size - one));
   }
 
   /// \brief Return true if the given cell overlaps with the given byte range
-  bool cell_overlap(VariableRef cell, const Interval& range) {
+  bool cell_overlap(VariableRef cell, const Interval& range) const {
     Interval meet = this->cell_range(cell).meet(range);
     return !meet.is_bottom();
   }
 
   /// \brief Return true if the given cells overlap
-  bool cell_overlap(VariableRef a, VariableRef b) {
+  bool cell_overlap(VariableRef a, VariableRef b) const {
     return this->cell_overlap(a, this->cell_range(b));
   }
 
@@ -464,7 +466,7 @@ private:
   ///   * If Cell{o,4,4}, offset=[0, 8], offset=4Z+1, size=4, returns false
   bool cell_realizes_once(VariableRef cell,
                           VariableRef offset,
-                          const MachineInt& size) {
+                          const MachineInt& size) const {
     const MachineInt& cell_offset = CellVariableTrait::offset(cell);
     const MachineInt& cell_size = CellVariableTrait::size(cell);
     MachineInt one(1, size.bit_width(), Unsigned);
@@ -497,18 +499,20 @@ private:
   }
 
   /// \brief Get or create the cell with the given base address, offset and size
+  ///
+  /// If a new cell is created, it will have the given signedness
   VariableRef cell(VariableFactory& vfac,
                    MemoryLocationRef base,
                    const MachineInt& offset,
-                   const MachineInt& size) {
+                   const MachineInt& size,
+                   Signedness sign) {
     ikos_assert(offset.sign() == Unsigned);
     ikos_assert(size.sign() == Unsigned);
     ikos_assert(size.is_strictly_positive());
-    VariableRef c = CellFactoryTrait::cell(vfac, base, offset, size);
+    VariableRef c = CellFactoryTrait::cell(vfac, base, offset, size, sign);
     ikos_assert(MemVariableTrait::is_cell(c));
     ikos_assert(MachIntVariableTrait::bit_width(c) ==
                 size.to< unsigned >() * 8);
-    ikos_assert(MachIntVariableTrait::sign(c) == Signed);
     return c;
   }
 
@@ -516,8 +520,9 @@ private:
   VariableRef write_realize_single_cell(VariableFactory& vfac,
                                         MemoryLocationRef base,
                                         const MachineInt& offset,
-                                        const MachineInt& size) {
-    VariableRef new_cell = this->cell(vfac, base, offset, size);
+                                        const MachineInt& size,
+                                        Signedness sign) {
+    VariableRef new_cell = this->cell(vfac, base, offset, size, sign);
     const CellSetT& cells = this->_cells.get(base);
 
     if (cells.is_empty()) {
@@ -588,8 +593,9 @@ private:
   VariableRef read_realize_single_cell(VariableFactory& vfac,
                                        MemoryLocationRef base,
                                        const MachineInt& offset,
-                                       const MachineInt& size) {
-    VariableRef new_cell = this->cell(vfac, base, offset, size);
+                                       const MachineInt& size,
+                                       Signedness sign) {
+    VariableRef new_cell = this->cell(vfac, base, offset, size, sign);
     CellSetT cells = this->_cells.get(base);
     cells.add(new_cell);
     this->_cells.set(base, cells);
@@ -617,11 +623,11 @@ private:
 
     void machine_int(const MachineInt& rhs) {
       if (MachIntVariableTrait::bit_width(_lhs) == rhs.bit_width()) {
-        // Cell variables are signed integers
-        if (rhs.sign() == Signed) {
+        Signedness lhs_sign = MachIntVariableTrait::sign(_lhs);
+        if (lhs_sign == rhs.sign()) {
           _integer.assign(_lhs, rhs);
         } else {
-          _integer.assign(_lhs, rhs.sign_cast(Signed));
+          _integer.assign(_lhs, rhs.sign_cast(lhs_sign));
         }
       } else {
         _integer.forget(_lhs);
@@ -657,8 +663,8 @@ private:
     void machine_int_var(VariableRef rhs) {
       if (MachIntVariableTrait::bit_width(_lhs) ==
           MachIntVariableTrait::bit_width(rhs)) {
-        // Cell variables are signed integers
-        if (MachIntVariableTrait::sign(rhs) == Signed) {
+        if (MachIntVariableTrait::sign(_lhs) ==
+            MachIntVariableTrait::sign(rhs)) {
           _integer.assign(_lhs, rhs);
         } else {
           _integer.apply(machine_int::UnaryOperator::SignCast, _lhs, rhs);
@@ -728,8 +734,8 @@ private:
                                          MachIntVariableTrait::sign(lhs)));
       } else if (MachIntVariableTrait::bit_width(lhs) ==
                  MachIntVariableTrait::bit_width(_rhs)) {
-        // Cell variables are signed integers
-        if (MachIntVariableTrait::sign(lhs) == Signed) {
+        if (MachIntVariableTrait::sign(lhs) ==
+            MachIntVariableTrait::sign(_rhs)) {
           _integer.assign(lhs, _rhs);
         } else {
           _integer.apply(machine_int::UnaryOperator::SignCast, lhs, _rhs);
@@ -793,6 +799,42 @@ private:
     this->_uninitialized.join_with(uninitialized_inv);
   }
 
+  /// \brief Preferred signedness for a cell created from a literal
+  ///
+  /// For machine integers, return the integer sign
+  /// For pointers, return Unsigned
+  /// By default, return Signed
+  class LiteralPreferredSignedness
+      : public LiteralT::template Visitor< Signedness > {
+  public:
+    LiteralPreferredSignedness() = default;
+
+    Signedness machine_int(const MachineInt& i) const { return i.sign(); }
+
+    Signedness floating_point(const DummyNumber&) const { return Signed; }
+
+    Signedness memory_location(MemoryLocationRef) const { return Unsigned; }
+
+    Signedness null() const { return Unsigned; }
+
+    Signedness undefined() const { return Signed; }
+
+    Signedness machine_int_var(VariableRef var) const {
+      return MachIntVariableTrait::sign(var);
+    }
+
+    Signedness floating_point_var(VariableRef) const { return Signed; }
+
+    Signedness pointer_var(VariableRef) const { return Unsigned; }
+
+  }; // end class LiteralPreferredSignedness
+
+  /// \brief Return the preferred signedness for a cell creating from the given
+  /// literal
+  Signedness preferred_cell_sign(const LiteralT& lit) const {
+    return lit.apply_visitor(LiteralPreferredSignedness());
+  }
+
 public:
   void mem_write(VariableFactory& vfac,
                  VariableRef ptr,
@@ -838,11 +880,12 @@ public:
       // The offset has one possible value.
       //
       // We can perform the usual reduction and update.
-      MachineInt offset = *offset_intv.singleton();
+      const MachineInt& offset = *offset_intv.singleton();
+      Signedness sign = this->preferred_cell_sign(rhs);
 
       for (MemoryLocationRef addr : addrs) {
         VariableRef cell =
-            this->write_realize_single_cell(vfac, addr, offset, size);
+            this->write_realize_single_cell(vfac, addr, offset, size, sign);
 
         if (addrs.size() == 1) {
           this->strong_update(cell, rhs);
@@ -944,12 +987,13 @@ public:
       // The offset has one possible value.
       //
       // We can perform the usual reduction and update.
-      MachineInt offset = *offset_intv.singleton();
+      const MachineInt& offset = *offset_intv.singleton();
+      Signedness sign = this->preferred_cell_sign(lhs);
       bool first = true;
 
       for (MemoryLocationRef addr : addrs) {
         VariableRef cell =
-            this->read_realize_single_cell(vfac, addr, offset, size);
+            this->read_realize_single_cell(vfac, addr, offset, size, sign);
 
         if (first) {
           this->strong_update(lhs, cell);
@@ -1055,8 +1099,8 @@ public:
         !size_intv.lb().is_zero()) {
       // in that case, we can be more precise
       MemoryLocationRef dest_addr = *dest_addrs.singleton();
-      MachineInt dest_offset = *dest_intv.singleton();
-      MachineInt src_offset = *src_intv.singleton();
+      const MachineInt& dest_offset = *dest_intv.singleton();
+      const MachineInt& src_offset = *src_intv.singleton();
       const MachineInt& size_lb = size_intv.lb();
       MachineInt one(1, dest_intv.bit_width(), Unsigned);
       Interval src_range(src_offset, src_offset + (size_lb - one));
@@ -1077,9 +1121,10 @@ public:
               VariableRef new_cell =
                   this->cell(vfac,
                              dest_addr,
-                             dest_offset + CellVariableTrait::offset(cell) -
-                                 src_offset,
-                             CellVariableTrait::size(cell));
+                             dest_offset +
+                                 (CellVariableTrait::offset(cell) - src_offset),
+                             CellVariableTrait::size(cell),
+                             MachIntVariableTrait::sign(cell));
               dest_cells.add(new_cell);
               inv.integers().assign(new_cell, cell);
               inv.pointers().assign(new_cell, cell);
@@ -1186,8 +1231,8 @@ public:
       MachineInt one(1, size_lb.bit_width(), Unsigned);
 
       // offsets that are updated
-      Interval safe_range_lb(dest_intv.lb(), dest_intv.lb() + size_lb - one);
-      Interval safe_range_ub(dest_intv.ub(), dest_intv.ub() + size_lb - one);
+      Interval safe_range_lb(dest_intv.lb(), dest_intv.lb() + (size_lb - one));
+      Interval safe_range_ub(dest_intv.ub(), dest_intv.ub() + (size_lb - one));
       Interval safe_range = safe_range_lb.meet(safe_range_ub);
 
       // possibly updated offsets
@@ -1205,7 +1250,9 @@ public:
 
             if (range.leq(safe_range)) {
               LiteralT zero_lit = LiteralT::machine_int(
-                  MachineInt(0, MachIntVariableTrait::bit_width(cell), Signed));
+                  MachineInt(0,
+                             MachIntVariableTrait::bit_width(cell),
+                             MachIntVariableTrait::sign(cell)));
               if (addrs.singleton()) {
                 this->strong_update(cell, zero_lit);
               } else {
