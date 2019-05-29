@@ -384,9 +384,7 @@ class ClangArgumentParser:
         self.link_args.append(flag)
 
     def _warning_link_unary(self, flag):
-        printf('warning: flag "%s" cannot be used with ikos-scan, ignored.\n',
-               flag,
-               file=sys.stderr)
+        log.warning("Flag '%s' cannot be used with ikos-scan, ignored." % flag)
 
     @property
     def output_file(self):
@@ -502,6 +500,12 @@ def attach_bitcode_path(obj_path, bc_path):
 
     if ext not in ('.o', '.lo', '.os', '.So', '.po'):
         return  # unexpected file format
+
+    if not os.path.exists(obj_path):
+        log.warning(
+            "Cannot attach bitcode path to missing file '%s'" % obj_path
+        )
+        return
 
     abs_bc_path = os.path.abspath(bc_path)
 
