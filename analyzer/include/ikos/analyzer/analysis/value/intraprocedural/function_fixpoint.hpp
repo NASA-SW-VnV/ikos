@@ -94,7 +94,9 @@ public:
                              AbstractDomain after) override;
 
   /// \brief Check if the decreasing iterations fixpoint is reached
-  bool is_decreasing_iterations_fixpoint(const AbstractDomain& before,
+  bool is_decreasing_iterations_fixpoint(ar::BasicBlock* head,
+                                         unsigned iteration,
+                                         const AbstractDomain& before,
                                          const AbstractDomain& after) override;
 
   /// \brief Propagate the invariant through the basic block

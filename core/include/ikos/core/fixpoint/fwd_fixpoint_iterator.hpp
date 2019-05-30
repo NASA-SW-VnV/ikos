@@ -184,20 +184,29 @@ public:
                                     AbstractValue before,
                                     AbstractValue after) {
     ikos_ignore(head);
+
     if (iteration <= 1) {
       before.join_iter_with(after);
     } else {
       before.widen_with(after);
     }
+
     return before;
   }
 
   /// \brief Check if the increasing iterations fixpoint is reached
   ///
+  /// \param head Head of the cycle
+  /// \param iteration Iteration number
   /// \param before Abstract value before the iteration
   /// \param after Abstract value after the iteration
-  virtual bool is_increasing_iterations_fixpoint(const AbstractValue& before,
+  virtual bool is_increasing_iterations_fixpoint(NodeRef head,
+                                                 unsigned iteration,
+                                                 const AbstractValue& before,
                                                  const AbstractValue& after) {
+    ikos_ignore(head);
+    ikos_ignore(iteration);
+
     return after.leq(before);
   }
 
@@ -220,16 +229,24 @@ public:
                                AbstractValue after) {
     ikos_ignore(head);
     ikos_ignore(iteration);
+
     before.narrow_with(after);
     return before;
   }
 
   /// \brief Check if the decreasing iterations fixpoint is reached
   ///
+  /// \param head Head of the cycle
+  /// \param iteration Iteration number
   /// \param before Abstract value before the iteration
   /// \param after Abstract value after the iteration
-  virtual bool is_decreasing_iterations_fixpoint(const AbstractValue& before,
+  virtual bool is_decreasing_iterations_fixpoint(NodeRef head,
+                                                 unsigned iteration,
+                                                 const AbstractValue& before,
                                                  const AbstractValue& after) {
+    ikos_ignore(head);
+    ikos_ignore(iteration);
+
     return before.leq(after);
   }
 
@@ -399,7 +416,10 @@ public:
 
       if (kind == FixpointIterationKind::Increasing) {
         // Increasing iteration with widening
-        if (this->_iterator.is_increasing_iterations_fixpoint(pre, new_pre)) {
+        if (this->_iterator.is_increasing_iterations_fixpoint(head,
+                                                              iteration,
+                                                              pre,
+                                                              new_pre)) {
           // Post-fixpoint reached
           // Use this iteration as a decreasing iteration
           kind = FixpointIterationKind::Decreasing;
@@ -416,7 +436,10 @@ public:
         // Decreasing iteration with narrowing
         new_pre =
             this->_iterator.refine(head, iteration, pre, std::move(new_pre));
-        if (this->_iterator.is_decreasing_iterations_fixpoint(pre, new_pre)) {
+        if (this->_iterator.is_decreasing_iterations_fixpoint(head,
+                                                              iteration,
+                                                              pre,
+                                                              new_pre)) {
           // No more refinement possible
           this->_iterator.set_pre(head, std::move(new_pre));
           break;

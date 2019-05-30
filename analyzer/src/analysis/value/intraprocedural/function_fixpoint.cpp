@@ -84,11 +84,14 @@ AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
 }
 
 bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
-    const AbstractDomain& before, const AbstractDomain& after) {
+    ar::BasicBlock* /*head*/,
+    unsigned iteration,
+    const AbstractDomain& before,
+    const AbstractDomain& after) {
   if (machine_int_domain_option_has_narrowing(_ctx.opts.machine_int_domain)) {
     return before.leq(after);
   } else {
-    return true; // stop after the first decreasing iteration
+    return iteration >= 2; // stop after the second decreasing iteration
   }
 }
 
