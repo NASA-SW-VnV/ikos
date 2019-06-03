@@ -83,6 +83,18 @@ public:
     return tmp;
   }
 
+  /// \brief Perform the narrowing of two abstract values with a threshold
+  virtual void narrow_threshold_with(const Derived& other,
+                                     const MachineInt& threshold) = 0;
+
+  /// \brief Perform the narrowing of two abstract values with a threshold
+  virtual Derived narrowing_threshold(const Derived& other,
+                                      const MachineInt& threshold) const {
+    Derived tmp(static_cast< const Derived& >(*this));
+    tmp.narrow_threshold_with(other, threshold);
+    return tmp;
+  }
+
   /// \brief Assign `x = n`
   virtual void assign(VariableRef x, const MachineInt& n) = 0;
 

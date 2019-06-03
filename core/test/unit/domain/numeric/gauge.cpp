@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening) {
                                 ZInterval(ZBound(1), ZBound::plus_infinity()));
 }
 
-BOOST_AUTO_TEST_CASE(gauge_domain_widening_threshold) {
+BOOST_AUTO_TEST_CASE(gauge_domain_widening_narrowing_threshold) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
@@ -744,6 +744,16 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening_threshold) {
   test_gauge_domain_to_interval(d3, x, ZInterval(ZBound(0), ZBound(20)));
   test_gauge_domain_get(d3, y, Gauge(GaugeBound(1) + GaugeBound(3, i)));
   test_gauge_domain_to_interval(d3, y, ZInterval(ZBound(1), ZBound(31)));
+
+  GaugeDomain d4 = d3;
+  d4.add(VariableExpression(i) <= 5);
+  d4 = d4.narrowing_threshold(d3, ZNumber(10));
+  test_gauge_domain_get(d4, i, Gauge(GaugeBound(i)));
+  test_gauge_domain_to_interval(d4, i, ZInterval(ZBound(0), ZBound(5)));
+  test_gauge_domain_get(d4, x, Gauge(GaugeBound(2, i)));
+  test_gauge_domain_to_interval(d4, x, ZInterval(ZBound(0), ZBound(10)));
+  test_gauge_domain_get(d4, y, Gauge(GaugeBound(1) + GaugeBound(3, i)));
+  test_gauge_domain_to_interval(d4, y, ZInterval(ZBound(1), ZBound(16)));
 }
 
 BOOST_AUTO_TEST_CASE(gauge_domain_add) {

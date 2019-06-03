@@ -151,13 +151,31 @@ public:
       before.join_iter_with(after);
       return before;
     }
+
     if (iteration == 2 && this->_profile) {
       if (auto threshold = this->_profile->widening_hint(head)) {
         before.widen_threshold_with(after, *threshold);
         return before;
       }
     }
+
     before.widen_with(after);
+    return before;
+  }
+
+  /// \brief Refine the new state after a decreasing iteration
+  AbstractDomainT refine(ar::BasicBlock* head,
+                         unsigned iteration,
+                         AbstractDomainT before,
+                         AbstractDomainT after) override {
+    if (iteration == 1 && this->_profile) {
+      if (auto threshold = this->_profile->widening_hint(head)) {
+        before.narrow_threshold_with(after, *threshold);
+        return before;
+      }
+    }
+
+    before.narrow_with(after);
     return before;
   }
 

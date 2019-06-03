@@ -128,6 +128,11 @@ public:
     return this->meet_with(other);
   }
 
+  void narrow_threshold_with(const DummyDomain& other,
+                             const MachineInt& /*threshold*/) override {
+    return this->meet_with(other);
+  }
+
   void assign(VariableRef, const MachineInt&) override {}
 
   void assign(VariableRef, VariableRef) override {}

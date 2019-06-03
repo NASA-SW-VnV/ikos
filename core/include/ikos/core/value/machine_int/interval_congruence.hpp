@@ -379,6 +379,21 @@ public:
     this->normalize();
   }
 
+  IntervalCongruence narrowing_threshold(const IntervalCongruence& other,
+                                         const MachineInt& threshold) const {
+    assert_compatible(*this, other);
+    return IntervalCongruence(this->_i.narrowing_threshold(other._i, threshold),
+                              this->_c.narrowing(other._c));
+  }
+
+  void narrow_threshold_with(const IntervalCongruence& other,
+                             const MachineInt& threshold) {
+    assert_compatible(*this, other);
+    this->_i.narrow_threshold_with(other._i, threshold);
+    this->_c.narrow_with(other._c);
+    this->normalize();
+  }
+
   /// \name Unary Operators
   /// @{
 

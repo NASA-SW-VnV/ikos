@@ -526,3 +526,42 @@ BOOST_AUTO_TEST_CASE(test_widening_threshold) {
           .widening_threshold(ZInterval(ZBound(-1), ZBound(0)), ZNumber(-1)) ==
       ZInterval(ZBound(-1), ZBound(0)));
 }
+
+BOOST_AUTO_TEST_CASE(test_narrowing_threshold) {
+  BOOST_CHECK(
+      ZInterval(ZBound(0), ZBound::plus_infinity())
+          .narrowing_threshold(ZInterval(ZBound(0), ZBound(10)), ZNumber(20)) ==
+      ZInterval(ZBound(0), ZBound(10)));
+  BOOST_CHECK(
+      ZInterval(ZBound(0), ZBound(20))
+          .narrowing_threshold(ZInterval(ZBound(0), ZBound(10)), ZNumber(20)) ==
+      ZInterval(ZBound(0), ZBound(10)));
+  BOOST_CHECK(
+      ZInterval(ZBound(0), ZBound(30))
+          .narrowing_threshold(ZInterval(ZBound(0), ZBound(10)), ZNumber(20)) ==
+      ZInterval(ZBound(0), ZBound(30)));
+  BOOST_CHECK(ZInterval(ZBound::minus_infinity(), ZBound(0))
+                  .narrowing_threshold(ZInterval(ZBound(-10), ZBound(0)),
+                                       ZNumber(-20)) ==
+              ZInterval(ZBound(-10), ZBound(0)));
+  BOOST_CHECK(ZInterval(ZBound(-20), ZBound(0))
+                  .narrowing_threshold(ZInterval(ZBound(-10), ZBound(0)),
+                                       ZNumber(-20)) ==
+              ZInterval(ZBound(-10), ZBound(0)));
+  BOOST_CHECK(ZInterval(ZBound(-30), ZBound(0))
+                  .narrowing_threshold(ZInterval(ZBound(-10), ZBound(0)),
+                                       ZNumber(-20)) ==
+              ZInterval(ZBound(-30), ZBound(0)));
+  BOOST_CHECK(
+      ZInterval(ZBound::minus_infinity(), ZBound::plus_infinity())
+          .narrowing_threshold(ZInterval(ZBound(0), ZBound(10)), ZNumber(20)) ==
+      ZInterval(ZBound(0), ZBound(10)));
+  BOOST_CHECK(
+      ZInterval(ZBound(-20), ZBound(20))
+          .narrowing_threshold(ZInterval(ZBound(0), ZBound(10)), ZNumber(20)) ==
+      ZInterval(ZBound(-20), ZBound(10)));
+  BOOST_CHECK(ZInterval(ZBound(-20), ZBound(20))
+                  .narrowing_threshold(ZInterval(ZBound(0), ZBound(10)),
+                                       ZNumber(-20)) ==
+              ZInterval(ZBound(0), ZBound(20)));
+}

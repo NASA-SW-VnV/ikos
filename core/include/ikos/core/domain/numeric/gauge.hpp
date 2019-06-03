@@ -292,6 +292,31 @@ public:
     }
   }
 
+  // \brief Narrowing interval-like with a threshold
+  void narrow_interval_threshold_with(const GaugeSemiLattice& other,
+                                      const Number& threshold) {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      try {
+        this->_tree.join_with(other._tree,
+                              [threshold](const GaugeT& x, const GaugeT& y) {
+                                GaugeT z =
+                                    x.narrowing_interval_threshold(y,
+                                                                   threshold);
+                                if (z.is_bottom()) {
+                                  throw BottomFound();
+                                }
+                                return boost::optional< GaugeT >(z);
+                              });
+      } catch (BottomFound&) {
+        this->set_to_bottom();
+      }
+    }
+  }
+
   /// \brief Increment counter `v` by `k`
   void incr_counter(VariableRef v, const Number& k) {
     if (this->is_bottom()) {
@@ -740,6 +765,24 @@ public:
       GaugeDomain other_copy = other;
       uniformize_counters(*this, other_copy);
       this->narrow_with(other_copy);
+    }
+  }
+
+  void narrow_threshold_with(const GaugeDomain& other,
+                             const Number& threshold) override {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else if (this->_counters.equals(other._counters)) {
+      this->_sections.narrow_threshold_with(other._sections, threshold);
+      this->_gauges.narrow_interval_threshold_with(other._gauges, threshold);
+      this->_counters.join_with(other._counters);
+      this->_intervals.narrow_threshold_with(other._intervals, threshold);
+    } else {
+      GaugeDomain other_copy = other;
+      uniformize_counters(*this, other_copy);
+      this->narrow_threshold_with(other_copy, threshold);
     }
   }
 

@@ -302,6 +302,19 @@ public:
     }
   }
 
+  void narrow_threshold_with(const PointerDomain& other,
+                             const MachineInt& threshold) override {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->_points_to_map.narrow_with(other._points_to_map);
+      this->_nullity.narrow_with(other._nullity);
+      this->_inv.narrow_threshold_with(other._inv, threshold);
+    }
+  }
+
   /*
    * Implement pointer::AbstractDomain
    */

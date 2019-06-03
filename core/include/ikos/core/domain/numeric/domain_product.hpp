@@ -199,6 +199,20 @@ public:
     this->_product.narrow_with(other._product);
   }
 
+  void narrow_threshold_with(const DomainProduct2& other,
+                             const Number& threshold) override {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->_product.first().narrow_threshold_with(other._product.first(),
+                                                   threshold);
+      this->_product.second().narrow_threshold_with(other._product.second(),
+                                                    threshold);
+    }
+  }
+
   void assign(VariableRef x, int n) override {
     this->_product.first().assign(x, n);
     this->_product.second().assign(x, n);
@@ -523,6 +537,11 @@ public:
 
   void narrow_with(const DomainProduct3& other) override {
     this->_product.narrow_with(other._product);
+  }
+
+  void narrow_threshold_with(const DomainProduct3& other,
+                             const Number& threshold) override {
+    this->_product.narrow_threshold_with(other._product, threshold);
   }
 
   void assign(VariableRef x, int n) override { this->_product.assign(x, n); }

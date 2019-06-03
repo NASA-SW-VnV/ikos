@@ -173,6 +173,11 @@ public:
     this->_inv.narrow_with(other._inv);
   }
 
+  void narrow_threshold_with(const NumericDomainAdapter& other,
+                             const MachineInt& threshold) override {
+    this->_inv.narrow_threshold_with(other._inv, threshold.to_z_number());
+  }
+
 private:
   /// \brief Return 2**n
   static ZNumber power_of_2(unsigned n) { return ZNumber(1) << n; }

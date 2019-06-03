@@ -301,6 +301,30 @@ public:
     }
   }
 
+  void narrow_threshold_with(const MemLocToPointerSet& other,
+                             const MachineInt& threshold) {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      try {
+        this->_tree.join_with(other._tree,
+                              [threshold](const PointerSetT& x,
+                                          const PointerSetT& y) {
+                                PointerSetT z =
+                                    x.narrowing_threshold(y, threshold);
+                                if (z.is_bottom()) {
+                                  throw BottomFound();
+                                }
+                                return boost::optional< PointerSetT >(z);
+                              });
+      } catch (BottomFound&) {
+        this->set_to_bottom();
+      }
+    }
+  }
+
   /// \brief Get the pointer set for the given memory location
   PointerSetT get(MemoryLocationRef addr,
                   unsigned bit_width,

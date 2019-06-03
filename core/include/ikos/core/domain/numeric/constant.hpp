@@ -167,6 +167,11 @@ public:
     this->_inv.narrow_with(other._inv);
   }
 
+  void narrow_threshold_with(const ConstantDomain& other,
+                             const Number& threshold) override {
+    this->_inv.narrow_threshold_with(other._inv, threshold);
+  }
+
   void assign(VariableRef x, int n) override { this->_inv.assign(x, n); }
 
   void assign(VariableRef x, const Number& n) override {

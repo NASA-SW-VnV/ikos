@@ -274,6 +274,19 @@ public:
     }
   }
 
+  void narrow_threshold_with(const DummyDomain& other,
+                             const MachineInt& threshold) override {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->_pointer.narrow_threshold_with(other._pointer, threshold);
+      this->_uninitialized.narrow_with(other._uninitialized);
+      this->_lifetime.narrow_with(other._lifetime);
+    }
+  }
+
   /*
    * Implement memory::AbstractDomain
    */

@@ -300,6 +300,28 @@ public:
     }
   }
 
+  void narrow_threshold_with(const SeparateDomain& other,
+                             const MachineInt& threshold) {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      try {
+        this->_tree.join_with(other._tree,
+                              [threshold](const Value& x, const Value& y) {
+                                Value z = x.narrowing_threshold(y, threshold);
+                                if (z.is_bottom()) {
+                                  throw BottomFound();
+                                }
+                                return boost::optional< Value >(z);
+                              });
+      } catch (BottomFound&) {
+        this->set_to_bottom();
+      }
+    }
+  }
+
   /// \brief Get the abstract value for the given variable
   Value get(VariableRef x) const {
     if (this->is_bottom()) {

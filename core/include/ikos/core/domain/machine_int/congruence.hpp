@@ -145,6 +145,11 @@ public:
     this->_inv.narrow_with(other._inv);
   }
 
+  void narrow_threshold_with(const CongruenceDomain& other,
+                             const MachineInt& threshold) override {
+    this->_inv.narrow_threshold_with(other._inv, threshold);
+  }
+
   void assign(VariableRef x, const MachineInt& n) override {
     this->_inv.assign(x, n);
   }

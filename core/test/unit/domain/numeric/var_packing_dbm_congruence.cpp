@@ -448,6 +448,70 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.widening_threshold(inv2, ZNumber(10)) == inv3));
   BOOST_CHECK((inv2.widening_threshold(inv1, ZNumber(10)) == inv2));
+
+  VarPackingDBMCongruence inv4, inv5, inv6;
+  inv4.set(x, Interval(Bound(-1), Bound(0)));
+  inv5.set(x, Interval(Bound(-2), Bound(0)));
+  inv6.set(x, Interval(Bound(-10), Bound(0)));
+  BOOST_CHECK((inv4.widening_threshold(inv5, ZNumber(10)) == inv6));
+  BOOST_CHECK((inv5.widening_threshold(inv4, ZNumber(10)) == inv5));
+}
+
+BOOST_AUTO_TEST_CASE(narrowing_threshold) {
+  VariableFactory vfac;
+  Variable x(vfac.get("x"));
+  Variable y(vfac.get("y"));
+  Variable z(vfac.get("z"));
+  Variable w(vfac.get("w"));
+
+  BOOST_CHECK(
+      (VarPackingDBMCongruence::bottom()
+           .narrowing_threshold(VarPackingDBMCongruence::top(), ZNumber(10)) ==
+       VarPackingDBMCongruence::bottom()));
+  BOOST_CHECK((VarPackingDBMCongruence::bottom()
+                   .narrowing_threshold(VarPackingDBMCongruence::bottom(),
+                                        ZNumber(10)) ==
+               VarPackingDBMCongruence::bottom()));
+  BOOST_CHECK(
+      (VarPackingDBMCongruence::top()
+           .narrowing_threshold(VarPackingDBMCongruence::top(), ZNumber(10)) ==
+       VarPackingDBMCongruence::top()));
+  BOOST_CHECK((VarPackingDBMCongruence::top()
+                   .narrowing_threshold(VarPackingDBMCongruence::bottom(),
+                                        ZNumber(10)) ==
+               VarPackingDBMCongruence::bottom()));
+
+  VarPackingDBMCongruence inv1;
+  inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
+  BOOST_CHECK((inv1.narrowing_threshold(VarPackingDBMCongruence::top(),
+                                        ZNumber(10)) == inv1));
+  BOOST_CHECK((inv1.narrowing_threshold(VarPackingDBMCongruence::bottom(),
+                                        ZNumber(10)) ==
+               VarPackingDBMCongruence::bottom()));
+  BOOST_CHECK(
+      (VarPackingDBMCongruence::top().narrowing_threshold(inv1, ZNumber(10)) ==
+       inv1));
+  BOOST_CHECK(
+      (VarPackingDBMCongruence::bottom().narrowing_threshold(inv1,
+                                                             ZNumber(10)) ==
+       VarPackingDBMCongruence::bottom()));
+  BOOST_CHECK((inv1.narrowing_threshold(inv1, ZNumber(10)) == inv1));
+
+  VarPackingDBMCongruence inv2, inv3;
+  inv2.set(x, Interval(Bound(0), Bound(1)));
+  inv3.set(x, Interval(Bound(0), Bound(10)));
+  BOOST_CHECK((inv1.narrowing_threshold(inv2, ZNumber(10)) == inv2));
+  BOOST_CHECK((inv1.narrowing_threshold(inv3, ZNumber(10)) == inv3));
+  BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(10)) == inv2));
+  BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(20)) == inv3));
+  BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(5)) == inv3));
+
+  VarPackingDBMCongruence inv4, inv5;
+  inv4.set(x, Interval(Bound(-10), Bound(0)));
+  inv5.set(x, Interval(Bound(-1), Bound(0)));
+  BOOST_CHECK((inv4.narrowing_threshold(inv5, ZNumber(10)) == inv5));
+  BOOST_CHECK((inv4.narrowing_threshold(inv5, ZNumber(20)) == inv4));
+  BOOST_CHECK((inv4.narrowing_threshold(inv5, ZNumber(5)) == inv4));
 }
 
 BOOST_AUTO_TEST_CASE(meet) {

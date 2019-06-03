@@ -236,12 +236,12 @@ public:
     } else if (other.is_bottom()) {
       return *this;
     } else {
-      BoundT tmp = BoundT(threshold);
+      BoundT th = BoundT(threshold);
 
       BoundT lb = this->_lb;
       if (other._lb < this->_lb) {
-        if (tmp <= other._lb) {
-          lb = tmp;
+        if (th <= other._lb) {
+          lb = th;
         } else {
           lb = BoundT::minus_infinity();
         }
@@ -249,8 +249,8 @@ public:
 
       BoundT ub = this->_ub;
       if (other._ub > this->_ub) {
-        if (tmp >= other._ub) {
-          ub = tmp;
+        if (th >= other._ub) {
+          ub = th;
         } else {
           ub = BoundT::plus_infinity();
         }
@@ -280,17 +280,31 @@ public:
     if (this->is_bottom() || other.is_bottom()) {
       return bottom();
     } else {
-      return Interval(this->_lb.is_infinite() && other._lb.is_finite()
-                          ? other._lb
-                          : this->_lb,
-                      this->_ub.is_infinite() && other._ub.is_finite()
-                          ? other._ub
-                          : this->_ub);
+      return Interval(this->_lb.is_infinite() ? other._lb : this->_lb,
+                      this->_ub.is_infinite() ? other._ub : this->_ub);
     }
   }
 
   void narrow_with(const Interval& other) override {
     this->operator=(this->narrowing(other));
+  }
+
+  Interval narrowing_threshold(const Interval& other,
+                               const Number& threshold) const {
+    if (this->is_bottom() || other.is_bottom()) {
+      return bottom();
+    } else {
+      return Interval(this->_lb.is_infinite() || this->_lb == BoundT(threshold)
+                          ? other._lb
+                          : this->_lb,
+                      this->_ub.is_infinite() || this->_ub == BoundT(threshold)
+                          ? other._ub
+                          : this->_ub);
+    }
+  }
+
+  void narrow_threshold_with(const Interval& other, const Number& threshold) {
+    this->operator=(this->narrowing_threshold(other, threshold));
   }
 
   /// \brief Unary minus

@@ -143,6 +143,12 @@ public:
                              AbstractDomain before,
                              AbstractDomain after) override;
 
+  /// \brief Refine the new state after a decreasing iteration
+  AbstractDomain refine(ar::BasicBlock* head,
+                        unsigned iteration,
+                        AbstractDomain before,
+                        AbstractDomain after) override;
+
   /// \brief Check if the decreasing iterations fixpoint is reached
   bool is_decreasing_iterations_fixpoint(ar::BasicBlock* head,
                                          unsigned iteration,

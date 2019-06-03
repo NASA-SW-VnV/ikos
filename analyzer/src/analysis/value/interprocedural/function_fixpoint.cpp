@@ -137,13 +137,30 @@ AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
     before.join_iter_with(after);
     return before;
   }
+
   if (iteration == 2 && this->_profile) {
     if (auto threshold = this->_profile->widening_hint(head)) {
       before.widen_threshold_with(after, *threshold);
       return before;
     }
   }
+
   before.widen_with(after);
+  return before;
+}
+
+AbstractDomain FunctionFixpoint::refine(ar::BasicBlock* head,
+                                        unsigned iteration,
+                                        AbstractDomain before,
+                                        AbstractDomain after) {
+  if (iteration == 1 && this->_profile) {
+    if (auto threshold = this->_profile->widening_hint(head)) {
+      before.narrow_threshold_with(after, *threshold);
+      return before;
+    }
+  }
+
+  before.narrow_with(after);
   return before;
 }
 

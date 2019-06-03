@@ -574,6 +574,27 @@ private:
     }
   };
 
+  struct NarrowingThresholdOperator {
+    BoundT threshold;
+
+    explicit NarrowingThresholdOperator(const Number& threshold_)
+        : threshold(threshold_) {}
+
+    bool meet_semantic() const { return true; }
+
+    BoundT operator()() const { return BoundT::plus_infinity(); }
+
+    BoundT operator()(const BoundT& x) const { return x; }
+
+    BoundT operator()(const BoundT& x, const BoundT& y) const {
+      if (x.is_plus_infinity() || x == threshold) {
+        return y;
+      } else {
+        return x;
+      }
+    }
+  };
+
 public:
   DBM join(const DBM& other) const override {
     // Requires normalization
@@ -664,6 +685,25 @@ public:
 
   void narrow_with(const DBM& other) override {
     this->operator=(this->narrowing(other));
+  }
+
+  DBM narrowing_threshold(const DBM& other,
+                          const Number& threshold) const override {
+    // Requires normalization
+    this->normalize();
+    other.normalize();
+
+    if (this->_is_bottom || other._is_bottom) {
+      return bottom();
+    } else {
+      return this->pointwise_binary_op(other,
+                                       NarrowingThresholdOperator{threshold});
+    }
+  }
+
+  void narrow_threshold_with(const DBM& other,
+                             const Number& threshold) override {
+    this->operator=(this->narrowing_threshold(other, threshold));
   }
 
 private:

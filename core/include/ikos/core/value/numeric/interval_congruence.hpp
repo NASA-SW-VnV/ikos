@@ -302,6 +302,20 @@ public:
     this->reduce();
   }
 
+  IntervalCongruence narrowing_threshold(const IntervalCongruence& other,
+                                         const ZNumber& threshold) const {
+    return IntervalCongruence(this->_i.narrowing_threshold(other._i, threshold),
+                              this->_c.narrowing_threshold(other._c,
+                                                           threshold));
+  }
+
+  void narrow_threshold_with(const IntervalCongruence& other,
+                             const ZNumber& threshold) {
+    this->_i.narrow_threshold_with(other._i, threshold);
+    this->_c.narrow_threshold_with(other._c, threshold);
+    this->reduce();
+  }
+
   /// \brief Unary minus
   IntervalCongruence operator-() const {
     return IntervalCongruence(-this->_i, -this->_c);

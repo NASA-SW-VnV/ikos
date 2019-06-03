@@ -242,12 +242,12 @@ public:
     } else if (other.is_bottom()) {
       return *this;
     } else {
-      MachineInt tmp = threshold.cast(this->bit_width(), this->sign());
+      MachineInt th = threshold.cast(this->bit_width(), this->sign());
 
       MachineInt lb = this->_lb;
       if (other._lb < this->_lb) {
-        if (tmp <= other._lb) {
-          lb = tmp;
+        if (th <= other._lb) {
+          lb = th;
         } else {
           lb = MachineInt::min(this->bit_width(), this->sign());
         }
@@ -255,8 +255,8 @@ public:
 
       MachineInt ub = this->_ub;
       if (other._ub > this->_ub) {
-        if (tmp >= other._ub) {
-          ub = tmp;
+        if (th >= other._ub) {
+          ub = th;
         } else {
           ub = MachineInt::max(this->bit_width(), this->sign());
         }
@@ -292,15 +292,35 @@ public:
     } else if (other.is_bottom()) {
       return other;
     } else {
-      return Interval(this->_lb.is_min() && !other._lb.is_min() ? other._lb
-                                                                : this->_lb,
-                      this->_ub.is_max() && !other._ub.is_max() ? other._ub
-                                                                : this->_ub);
+      return Interval(this->_lb.is_min() ? other._lb : this->_lb,
+                      this->_ub.is_max() ? other._ub : this->_ub);
     }
   }
 
   void narrow_with(const Interval& other) override {
     this->operator=(this->narrowing(other));
+  }
+
+  Interval narrowing_threshold(const Interval& other,
+                               const MachineInt& threshold) const {
+    assert_compatible(*this, other);
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      MachineInt th = threshold.cast(this->bit_width(), this->sign());
+
+      return Interval(this->_lb.is_min() || this->_lb == th ? other._lb
+                                                            : this->_lb,
+                      this->_ub.is_max() || this->_ub == th ? other._ub
+                                                            : this->_ub);
+    }
+  }
+
+  void narrow_threshold_with(const Interval& other,
+                             const MachineInt& threshold) {
+    this->operator=(this->narrowing_threshold(other, threshold));
   }
 
   /// \name Unary Operators

@@ -116,6 +116,18 @@ public:
     return tmp;
   }
 
+  /// \brief Perform the narrowing of two abstract values with a threshold
+  virtual void narrow_threshold_with(const Derived& other,
+                                     const MachineInt& threshold) = 0;
+
+  /// \brief Perform the narrowing of two abstract values with a threshold
+  virtual Derived narrowing_threshold(const Derived& other,
+                                      const MachineInt& threshold) const {
+    Derived tmp(static_cast< const Derived& >(*this));
+    tmp.narrow_threshold_with(other, threshold);
+    return tmp;
+  }
+
   /// \brief Assign `p` to an address (i.e, memory location)
   ///
   /// This is equivalent to `p = &x` or `p = malloc()`

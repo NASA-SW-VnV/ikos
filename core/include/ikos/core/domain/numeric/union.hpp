@@ -377,6 +377,22 @@ public:
     this->operator=(this->narrowing(other));
   }
 
+  UnionDomain narrowing_threshold(const UnionDomain& other,
+                                  const Number& threshold) const override {
+    if (this->is_bottom() || other.is_bottom()) {
+      return bottom();
+    } else {
+      return UnionDomain(
+          make_leaf(merge(this->_tree)
+                        .narrowing_threshold(merge(other._tree), threshold)));
+    }
+  }
+
+  void narrow_threshold_with(const UnionDomain& other,
+                             const Number& threshold) override {
+    this->operator=(this->narrowing_threshold(other, threshold));
+  }
+
   void assign(VariableRef x, int n) override {
     this->_tree = transform(this->_tree, [&](NumericDomain inv) {
       inv.assign(x, n);

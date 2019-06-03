@@ -285,6 +285,12 @@ public:
     this->reduce();
   }
 
+  void narrow_threshold_with(const VarPackingDBMCongruence& other,
+                             const Number& threshold) override {
+    this->_product.narrow_threshold_with(other._product, threshold);
+    this->reduce();
+  }
+
   void assign(VariableRef x, int n) override { this->_product.assign(x, n); }
 
   void assign(VariableRef x, const Number& n) override {

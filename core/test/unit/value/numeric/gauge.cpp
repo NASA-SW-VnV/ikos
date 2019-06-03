@@ -2191,3 +2191,106 @@ BOOST_AUTO_TEST_CASE(gauge_widening_interval_threshold) {
                                          ZNumber(10),
                                          Gauge::top());
 }
+
+#define test_gauge_narrowing_interval_threshold(x, y, t, z) \
+  BOOST_CHECK((x).narrowing_interval_threshold(y, t) == (z))
+
+BOOST_AUTO_TEST_CASE(gauge_narrowing_interval_threshold) {
+  VariableFactory vfac;
+  Variable x(vfac.get("x"));
+  Variable y(vfac.get("y"));
+  Variable z(vfac.get("z"));
+  Variable i(vfac.get("i"));
+  Variable k(vfac.get("k"));
+
+  test_gauge_narrowing_interval_threshold(Gauge::top(),
+                                          Gauge::bottom(),
+                                          ZNumber(10),
+                                          Gauge::bottom());
+  test_gauge_narrowing_interval_threshold(Gauge::top(),
+                                          Gauge::top(),
+                                          ZNumber(10),
+                                          Gauge::top());
+  test_gauge_narrowing_interval_threshold(Gauge::top(),
+                                          Gauge(GaugeBound(0), GaugeBound(1)),
+                                          ZNumber(10),
+                                          Gauge(GaugeBound(0), GaugeBound(1)));
+  test_gauge_narrowing_interval_threshold(Gauge::top(),
+                                          Gauge(GaugeBound(0),
+                                                GaugeBound(2, i)),
+                                          ZNumber(10),
+                                          Gauge(GaugeBound(0),
+                                                GaugeBound(2, i)));
+  test_gauge_narrowing_interval_threshold(Gauge::bottom(),
+                                          Gauge::bottom(),
+                                          ZNumber(10),
+                                          Gauge::bottom());
+  test_gauge_narrowing_interval_threshold(Gauge::bottom(),
+                                          Gauge::top(),
+                                          ZNumber(10),
+                                          Gauge::bottom());
+  test_gauge_narrowing_interval_threshold(Gauge::bottom(),
+                                          Gauge(GaugeBound(0), GaugeBound(1)),
+                                          ZNumber(10),
+                                          Gauge::bottom());
+  test_gauge_narrowing_interval_threshold(Gauge::bottom(),
+                                          Gauge(GaugeBound(0),
+                                                GaugeBound(2, i)),
+                                          ZNumber(10),
+                                          Gauge::bottom());
+  test_gauge_narrowing_interval_threshold(Gauge(0),
+                                          Gauge(1),
+                                          ZNumber(10),
+                                          Gauge(0));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(0),
+                                                GaugeBound::plus_infinity()),
+                                          Gauge(GaugeBound(0), GaugeBound(90)),
+                                          ZNumber(100),
+                                          Gauge(GaugeBound(0), GaugeBound(90)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(0), GaugeBound(100)),
+                                          Gauge(GaugeBound(0), GaugeBound(90)),
+                                          ZNumber(100),
+                                          Gauge(GaugeBound(0), GaugeBound(90)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(0), GaugeBound(110)),
+                                          Gauge(GaugeBound(0), GaugeBound(90)),
+                                          ZNumber(100),
+                                          Gauge(GaugeBound(0),
+                                                GaugeBound(110)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound::minus_infinity(),
+                                                GaugeBound(0)),
+                                          Gauge(GaugeBound(-90), GaugeBound(0)),
+                                          ZNumber(-100),
+                                          Gauge(GaugeBound(-90),
+                                                GaugeBound(0)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(-100),
+                                                GaugeBound(0)),
+                                          Gauge(GaugeBound(-90), GaugeBound(0)),
+                                          ZNumber(-100),
+                                          Gauge(GaugeBound(-90),
+                                                GaugeBound(0)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(-110),
+                                                GaugeBound(0)),
+                                          Gauge(GaugeBound(-90), GaugeBound(0)),
+                                          ZNumber(-100),
+                                          Gauge(GaugeBound(-110),
+                                                GaugeBound(0)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(4, i),
+                                                GaugeBound::plus_infinity()),
+                                          Gauge(GaugeBound(4, i),
+                                                GaugeBound(90)),
+                                          ZNumber(100),
+                                          Gauge(GaugeBound(4, i),
+                                                GaugeBound(90)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(0),
+                                                GaugeBound(4, i)),
+                                          Gauge(GaugeBound(0),
+                                                GaugeBound(3, i)),
+                                          ZNumber(100),
+                                          Gauge(GaugeBound(0),
+                                                GaugeBound(4, i)));
+  test_gauge_narrowing_interval_threshold(Gauge(GaugeBound(4, i)),
+                                          Gauge(GaugeBound(3, i),
+                                                GaugeBound(4, i)),
+                                          ZNumber(100),
+                                          Gauge(GaugeBound(4, i)));
+}

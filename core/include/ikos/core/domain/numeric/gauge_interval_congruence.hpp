@@ -223,6 +223,11 @@ public:
     this->_product.narrow_with(other._product);
   }
 
+  void narrow_threshold_with(const GaugeIntervalCongruenceDomain& other,
+                             const Number& threshold) override {
+    this->_product.narrow_threshold_with(other._product, threshold);
+  }
+
   void assign(VariableRef x, int n) override { this->_product.assign(x, n); }
 
   void assign(VariableRef x, const Number& n) override {

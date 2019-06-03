@@ -956,6 +956,18 @@ public:
     this->operator=(this->narrowing(other));
   }
 
+  Octagon narrowing_threshold(const Octagon& other,
+                              const Number& /*threshold*/) const override {
+    // TODO(marthaud): Implement
+    return this->narrowing(other);
+  }
+
+  void narrow_threshold_with(const Octagon& other,
+                             const Number& /*threshold*/) override {
+    // TODO(marthaud): Implement
+    this->narrow_with(other);
+  }
+
 private:
   /// \brief Abstract the variable
   boost::optional< typename VarIndexMap::iterator > abstract(VariableRef v) {

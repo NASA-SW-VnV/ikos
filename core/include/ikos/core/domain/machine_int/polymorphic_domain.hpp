@@ -140,6 +140,10 @@ private:
     /// \brief Perform the narrowing of two abstract values
     virtual void narrow_with(const PolymorphicBase& other) = 0;
 
+    /// \brief Perform the narrowing of two abstract values with a threshold
+    virtual void narrow_threshold_with(const PolymorphicBase& other,
+                                       const MachineInt& threshold) = 0;
+
     /// \brief Assign `x = n`
     virtual void assign(VariableRef x, const MachineInt& n) = 0;
 
@@ -358,6 +362,17 @@ private:
       this->assert_compatible(other);
       this->_inv.narrow_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
+    }
+
+    /// \brief Perform the narrowing of two abstract values with a threshold
+    void narrow_threshold_with(const PolymorphicBase& other,
+                               const MachineInt& threshold) override {
+      this->assert_compatible(other);
+      this->_inv
+          .narrow_threshold_with(static_cast< const PolymorphicDerivedT& >(
+                                     other)
+                                     ._inv,
+                                 threshold);
     }
 
     /// \brief Assign `x = n`
@@ -689,6 +704,17 @@ public:
       this->_ptr->set_to_bottom();
     } else {
       this->_ptr->narrow_with(*other._ptr);
+    }
+  }
+
+  void narrow_threshold_with(const PolymorphicDomain& other,
+                             const MachineInt& threshold) override {
+    if (this->_ptr == nullptr) {
+      return;
+    } else if (other._ptr == nullptr) {
+      this->_ptr->set_to_bottom();
+    } else {
+      this->_ptr->narrow_threshold_with(*other._ptr, threshold);
     }
   }
 

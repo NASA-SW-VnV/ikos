@@ -1150,32 +1150,6 @@ public:
     this->operator=(this->meet(other));
   }
 
-  Gauge narrowing(const Gauge& other) const override {
-    if (this->is_bottom() || other.is_bottom()) {
-      return bottom();
-    } else {
-      GaugeBoundT lb = this->_lb.is_infinite() && other._lb.is_finite()
-                           ? other._lb
-                           : this->_lb;
-      GaugeBoundT ub = this->_ub.is_infinite() && other._ub.is_finite()
-                           ? other._ub
-                           : this->_ub;
-
-      if (lb.is_infinite() || ub.is_infinite() ||
-          (lb.is_constant() && ub.is_constant())) {
-        // in that case, it is safe to use [lb, ub]
-        return Gauge(lb, ub);
-      } else {
-        // use max(lb, ub) so that the gauge is not empty
-        return Gauge(lb, max(lb, ub));
-      }
-    }
-  }
-
-  void narrow_with(const Gauge& other) override {
-    this->operator=(this->narrowing(other));
-  }
-
   /// \brief Unary minus
   Gauge operator-() const {
     if (this->is_bottom()) {
@@ -1478,12 +1452,12 @@ public:
     } else if (other.is_bottom()) {
       return *this;
     } else {
-      GaugeBoundT tmp = GaugeBoundT(threshold);
+      GaugeBoundT th = GaugeBoundT(threshold);
 
       GaugeBoundT lb = this->_lb;
       if (other._lb < this->_lb) {
-        if (tmp <= other._lb) {
-          lb = tmp;
+        if (th <= other._lb) {
+          lb = th;
         } else {
           lb = GaugeBoundT::minus_infinity();
         }
@@ -1491,8 +1465,8 @@ public:
 
       GaugeBoundT ub = this->_ub;
       if (other._ub > this->_ub) {
-        if (tmp >= other._ub) {
-          ub = tmp;
+        if (th >= other._ub) {
+          ub = th;
         } else {
           ub = GaugeBoundT::plus_infinity();
         }
@@ -1511,6 +1485,52 @@ public:
 
   void widen_with(const Gauge& other) override {
     this->operator=(this->widening(other));
+  }
+
+  Gauge narrowing(const Gauge& other) const override {
+    if (this->is_bottom() || other.is_bottom()) {
+      return bottom();
+    } else {
+      GaugeBoundT lb = this->_lb.is_infinite() ? other._lb : this->_lb;
+      GaugeBoundT ub = this->_ub.is_infinite() ? other._ub : this->_ub;
+
+      if (lb.is_infinite() || ub.is_infinite() ||
+          (lb.is_constant() && ub.is_constant())) {
+        // in that case, it is safe to use [lb, ub]
+        return Gauge(lb, ub);
+      } else {
+        // use max(lb, ub) so that the gauge is not empty
+        return Gauge(lb, max(lb, ub));
+      }
+    }
+  }
+
+  void narrow_with(const Gauge& other) override {
+    this->operator=(this->narrowing(other));
+  }
+
+  /// \brief Interval-like narrowing with a threshold
+  Gauge narrowing_interval_threshold(const Gauge& other,
+                                     const Number& threshold) const {
+    if (this->is_bottom() || other.is_bottom()) {
+      return bottom();
+    } else {
+      GaugeBoundT th = GaugeBoundT(threshold);
+
+      GaugeBoundT lb =
+          this->_lb.is_infinite() || this->_lb == th ? other._lb : this->_lb;
+      GaugeBoundT ub =
+          this->_ub.is_infinite() || this->_ub == th ? other._ub : this->_ub;
+
+      if (lb.is_infinite() || ub.is_infinite() ||
+          (lb.is_constant() && ub.is_constant())) {
+        // in that case, it is safe to use [lb, ub]
+        return Gauge(lb, ub);
+      } else {
+        // use max(lb, ub) so that the gauge is not empty
+        return Gauge(lb, max(lb, ub));
+      }
+    }
   }
 
   /// \brief If the gauge is a singleton [n, n], return n, otherwise return

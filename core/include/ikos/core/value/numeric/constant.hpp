@@ -201,11 +201,25 @@ public:
   }
 
   Constant narrowing(const Constant& other) const override {
+    // equivalent to meet, domain is flat
     return this->meet(other);
   }
 
   void narrow_with(const Constant& other) override {
-    this->operator=(this->narrowing(other));
+    // equivalent to meet, domain is flat
+    this->meet_with(other);
+  }
+
+  Constant narrowing_threshold(const Constant& other,
+                               const Number& /*threshold*/) const {
+    // equivalent to meet, domain is flat
+    return this->meet(other);
+  }
+
+  void narrow_threshold_with(const Constant& other,
+                             const Number& /*threshold*/) {
+    // equivalent to meet, domain is flat
+    this->meet_with(other);
   }
 
   /// \brief Unary minus

@@ -285,7 +285,20 @@ public:
   }
 
   void narrow_with(const Congruence& other) override {
-    this->operator=(this->narrowing(other));
+    // equivalent to meet, domain is flat
+    this->meet_with(other);
+  }
+
+  Congruence narrowing_threshold(const Congruence& other,
+                                 const ZNumber& /*threshold*/) const {
+    // equivalent to meet, domain is flat
+    return this->meet(other);
+  }
+
+  void narrow_threshold_with(const Congruence& other,
+                             const ZNumber& /*threshold*/) {
+    // equivalent to meet, domain is flat
+    this->meet_with(other);
   }
 
   /// \brief Unary minus
@@ -771,6 +784,11 @@ public:
 
   void narrow_with(const Congruence& other) override {
     this->_cst.narrow_with(other._cst);
+  }
+
+  void narrow_threshold_with(const Congruence& other,
+                             const QNumber& threshold) {
+    this->_cst.narrow_threshold_with(other._cst, threshold);
   }
 
   Congruence operator-() const { return Congruence(-this->_cst); }

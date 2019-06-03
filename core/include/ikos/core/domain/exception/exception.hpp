@@ -221,6 +221,17 @@ public:
     this->_propagated_exceptions.narrow_with(other._propagated_exceptions);
   }
 
+  /// \brief Perform the narrowing of two abstract values with a threshold
+  template < typename Threshold >
+  void narrow_threshold_with(const ExceptionDomain& other,
+                             const Threshold& threshold) {
+    this->_normal.narrow_threshold_with(other._normal, threshold);
+    this->_caught_exceptions.narrow_threshold_with(other._caught_exceptions,
+                                                   threshold);
+    this->_propagated_exceptions
+        .narrow_threshold_with(other._propagated_exceptions, threshold);
+  }
+
   /*
    * Implement exception::AbstractDomain
    */

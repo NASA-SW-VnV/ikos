@@ -234,6 +234,18 @@ public:
     }
   }
 
+  void narrow_threshold_with(const DummyDomain& other,
+                             const MachineInt& threshold) override {
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->_machine_int.narrow_threshold_with(other._machine_int, threshold);
+      this->_nullity.narrow_with(other._nullity);
+    }
+  }
+
   MachineIntDomain& integers() override { return this->_machine_int; }
 
   const MachineIntDomain& integers() const override {

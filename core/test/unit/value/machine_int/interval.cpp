@@ -3710,3 +3710,77 @@ BOOST_AUTO_TEST_CASE(test_widening_threshold) {
                               Int(257, 32, Unsigned)) ==
       Interval(Int(0, 8, Signed), Int(127, 8, Signed)));
 }
+
+BOOST_AUTO_TEST_CASE(test_narrowing_threshold) {
+  BOOST_CHECK(Interval(Int(0, 8, Unsigned), Int(255, 8, Unsigned))
+                  .narrowing_threshold(Interval(Int(0, 8, Unsigned),
+                                                Int(200, 8, Unsigned)),
+                                       Int(100, 8, Unsigned)) ==
+              Interval(Int(0, 8, Unsigned), Int(200, 8, Unsigned)));
+
+  BOOST_CHECK(Interval(Int(0, 8, Unsigned), Int(100, 8, Unsigned))
+                  .narrowing_threshold(Interval(Int(0, 8, Unsigned),
+                                                Int(80, 8, Unsigned)),
+                                       Int(100, 8, Unsigned)) ==
+              Interval(Int(0, 8, Unsigned), Int(80, 8, Unsigned)));
+
+  BOOST_CHECK(Interval(Int(0, 8, Unsigned), Int(150, 8, Unsigned))
+                  .narrowing_threshold(Interval(Int(0, 8, Unsigned),
+                                                Int(80, 8, Unsigned)),
+                                       Int(100, 8, Unsigned)) ==
+              Interval(Int(0, 8, Unsigned), Int(150, 8, Unsigned)));
+
+  BOOST_CHECK(Interval(Int(0, 8, Unsigned), Int(100, 8, Unsigned))
+                  .narrowing_threshold(Interval(Int(5, 8, Unsigned),
+                                                Int(100, 8, Unsigned)),
+                                       Int(10, 8, Unsigned)) ==
+              Interval(Int(5, 8, Unsigned), Int(100, 8, Unsigned)));
+
+  BOOST_CHECK(Interval(Int(10, 8, Unsigned), Int(100, 8, Unsigned))
+                  .narrowing_threshold(Interval(Int(20, 8, Unsigned),
+                                                Int(100, 8, Unsigned)),
+                                       Int(10, 8, Unsigned)) ==
+              Interval(Int(20, 8, Unsigned), Int(100, 8, Unsigned)));
+
+  BOOST_CHECK(Interval(Int(20, 8, Unsigned), Int(100, 8, Unsigned))
+                  .narrowing_threshold(Interval(Int(30, 8, Unsigned),
+                                                Int(100, 8, Unsigned)),
+                                       Int(10, 8, Unsigned)) ==
+              Interval(Int(20, 8, Unsigned), Int(100, 8, Unsigned)));
+
+  BOOST_CHECK(
+      Interval(Int(0, 8, Signed), Int(127, 8, Signed))
+          .narrowing_threshold(Interval(Int(0, 8, Signed), Int(120, 8, Signed)),
+                               Int(100, 8, Signed)) ==
+      Interval(Int(0, 8, Signed), Int(120, 8, Signed)));
+
+  BOOST_CHECK(
+      Interval(Int(0, 8, Signed), Int(100, 8, Signed))
+          .narrowing_threshold(Interval(Int(0, 8, Signed), Int(80, 8, Signed)),
+                               Int(100, 8, Signed)) ==
+      Interval(Int(0, 8, Signed), Int(80, 8, Signed)));
+
+  BOOST_CHECK(
+      Interval(Int(0, 8, Signed), Int(100, 8, Signed))
+          .narrowing_threshold(Interval(Int(0, 8, Signed), Int(80, 8, Signed)),
+                               Int(90, 8, Signed)) ==
+      Interval(Int(0, 8, Signed), Int(100, 8, Signed)));
+
+  BOOST_CHECK(Interval(Int(-128, 8, Signed), Int(100, 8, Signed))
+                  .narrowing_threshold(Interval(Int(-120, 8, Signed),
+                                                Int(100, 8, Signed)),
+                                       Int(-100, 8, Signed)) ==
+              Interval(Int(-120, 8, Signed), Int(100, 8, Signed)));
+
+  BOOST_CHECK(Interval(Int(-100, 8, Signed), Int(100, 8, Signed))
+                  .narrowing_threshold(Interval(Int(-80, 8, Signed),
+                                                Int(100, 8, Signed)),
+                                       Int(-100, 8, Signed)) ==
+              Interval(Int(-80, 8, Signed), Int(100, 8, Signed)));
+
+  BOOST_CHECK(Interval(Int(-90, 8, Signed), Int(100, 8, Signed))
+                  .narrowing_threshold(Interval(Int(-80, 8, Signed),
+                                                Int(100, 8, Signed)),
+                                       Int(-100, 8, Signed)) ==
+              Interval(Int(-90, 8, Signed), Int(100, 8, Signed)));
+}

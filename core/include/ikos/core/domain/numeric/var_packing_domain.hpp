@@ -851,6 +851,16 @@ private:
     }
   };
 
+  struct NarrowingThresholdOperator {
+    const Number& threshold;
+
+    void operator()(Domain& result, Domain& left, Domain& right) const {
+      left.normalize();
+      right.normalize();
+      result = left.narrowing_threshold(right, threshold);
+    }
+  };
+
 public:
   VarPackingDomain join(const VarPackingDomain& other) const override {
     // Requires normalization
@@ -938,6 +948,24 @@ public:
 
   void narrow_with(const VarPackingDomain& other) override {
     this->operator=(this->narrowing(other));
+  }
+
+  VarPackingDomain narrowing_threshold(const VarPackingDomain& other,
+                                       const Number& threshold) const override {
+    // Requires normalization
+    this->normalize();
+    other.normalize();
+
+    if (this->is_bottom() || other.is_bottom()) {
+      return VarPackingDomain::bottom();
+    } else {
+      return this->meet_binary_op(other, NarrowingThresholdOperator{threshold});
+    }
+  }
+
+  void narrow_threshold_with(const VarPackingDomain& other,
+                             const Number& threshold) override {
+    this->operator=(this->narrowing_threshold(other, threshold));
   }
 
   void assign(VariableRef x, int n) override { this->assign(x, Number(n)); }

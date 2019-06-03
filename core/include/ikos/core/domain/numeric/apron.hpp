@@ -653,8 +653,8 @@ public:
   }
 
   void widen_threshold_with(const ApronDomain& other,
-                            const Number& threshold) override {
-    this->operator=(this->widening_threshold(other, threshold));
+                            const Number& /*threshold*/) override {
+    this->widen_with(other);
   }
 
   ApronDomain meet(const ApronDomain& other) const override {
@@ -699,6 +699,16 @@ public:
 
   void narrow_with(const ApronDomain& other) override {
     this->operator=(this->narrowing(other));
+  }
+
+  ApronDomain narrowing_threshold(const ApronDomain& other,
+                                  const Number& /*threshold*/) const override {
+    return this->narrowing(other);
+  }
+
+  void narrow_threshold_with(const ApronDomain& other,
+                             const Number& /*threshold*/) override {
+    this->narrow_with(other);
   }
 
   void assign(VariableRef x, int n) override {
