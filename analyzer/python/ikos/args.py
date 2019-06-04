@@ -134,6 +134,30 @@ class VersionAction(argparse.Action):
         parser.exit()
 
 
+def Integer(min=None, max=None):
+    def parser(string):
+        try:
+            value = int(string)
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                "invalid integer value: '%s'" % string
+            )
+
+        if min is not None and value < min:
+            raise argparse.ArgumentTypeError(
+                "invalid integer value: %d < %d" % (value, min)
+            )
+
+        if max is not None and value > max:
+            raise argparse.ArgumentTypeError(
+                "invalid integer value: %d > %d" % (value, max)
+            )
+
+        return value
+
+    return parser
+
+
 # Analysis options choices
 
 analyses = (

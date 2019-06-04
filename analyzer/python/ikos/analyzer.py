@@ -186,7 +186,7 @@ def parse_arguments(argv):
                           dest='argc',
                           metavar='',
                           help='Specify a value for argc',
-                          type=int)
+                          type=args.Integer(min=0))
 
     # Compile options
     compiler = parser.add_argument_group('Compile Options')
@@ -426,21 +426,18 @@ def parse_arguments(argv):
                         dest='report_verbosity',
                         metavar='[1-4]',
                         help='Report verbosity (default: 1)',
-                        default=None,
-                        type=int)
+                        type=args.Integer(min=1, max=4))
 
     # Resource options
     resource = parser.add_argument_group('Resources Options')
     resource.add_argument('--cpu',
                           dest='cpu',
-                          type=int,
                           help='CPU time limit (seconds)',
-                          default=-1)
+                          type=args.Integer(min=1))
     resource.add_argument('--mem',
                           dest='mem',
-                          type=int,
                           help='MEM limit (MB)',
-                          default=-1)
+                          type=args.Integer(min=1))
 
     opt = parser.parse_args(argv)
 
@@ -772,7 +769,7 @@ def ikos_analyzer(db_path, pp_path, opt):
     cmd += [pp_path, '-o', db_path]
 
     # set resource limit, if requested
-    if opt.mem > 0:
+    if opt.mem:
         import resource  # fails on Windows
 
         def set_limits():
@@ -794,7 +791,7 @@ def ikos_analyzer(db_path, pp_path, opt):
     p = subprocess.Popen(cmd, preexec_fn=set_limits)
     timer = threading.Timer(opt.cpu, kill, [p])
 
-    if opt.cpu > 0:
+    if opt.cpu:
         timer.start()
 
     try:
@@ -941,9 +938,9 @@ def main(argv):
         ('use-simplify-upcast-comparison',
          json.dumps(not opt.no_simplify_upcast_comparison)),
     ]
-    if opt.cpu > 0:
+    if opt.cpu:
         settings_rows.append(('cpu-limit', opt.cpu))
-    if opt.mem > 0:
+    if opt.mem:
         settings_rows.append(('mem-limit', opt.mem))
     db.insert_settings(settings_rows)
 
