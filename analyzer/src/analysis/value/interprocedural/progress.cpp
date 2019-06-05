@@ -331,8 +331,10 @@ void InteractiveProgressLogger::clear_displayed_stack_frame() {
   // Move cursor to the beginning of the line
   this->_out << "\r";
 
-  // Move cursor up `size - 1` lines
-  this->_out << "\033[" << (this->_displayed_stack_frame.size() - 1) << "A";
+  if (this->_displayed_stack_frame.size() > 1) {
+    // Move cursor up `size - 1` lines
+    this->_out << "\033[" << (this->_displayed_stack_frame.size() - 1) << "A";
+  }
 
   // Clear everything down
   this->_out << "\033[J";
