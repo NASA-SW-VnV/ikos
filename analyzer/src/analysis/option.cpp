@@ -73,7 +73,23 @@ void AnalysisOptions::save(SettingsTable& table) {
                                                           .end(),
                                                       function_name)));
 
+  table.insert("machine-int-domain",
+               machine_int_domain_option_str(this->machine_int_domain));
+
   table.insert("procedural", procedural_str(this->procedural));
+
+  table.insert("widening-strategy",
+               widening_strategy_str(this->widening_strategy));
+
+  table.insert("narrowing-strategy",
+               narrowing_strategy_str(this->narrowing_strategy));
+
+  table.insert("loop-iterations", std::to_string(this->loop_iterations));
+
+  if (this->narrowing_iterations) {
+    table.insert("narrowing-iterations",
+                 std::to_string(*this->narrowing_iterations));
+  }
 
   table.insert("use-liveness", this->use_liveness);
 
@@ -87,9 +103,6 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("globals-init-policy",
                globals_init_policy_str(this->globals_init_policy));
-
-  table.insert("machine-int-domain",
-               machine_int_domain_option_str(this->machine_int_domain));
 
   table.insert("hardware-addresses",
                hardware_addresses_str(this->hardware_addresses));

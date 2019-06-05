@@ -55,6 +55,7 @@ namespace intraprocedural {
 FunctionFixpoint::FunctionFixpoint(Context& ctx, ar::Function* function)
     : FwdFixpointIterator(function->body()),
       _ctx(ctx),
+      _opts(ctx.opts),
       _function(function),
       _empty_call_context(ctx.call_context_factory->get_empty()),
       _profile(ctx.fixpoint_profiler == nullptr
@@ -69,35 +70,64 @@ AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
                                              unsigned iteration,
                                              AbstractDomain before,
                                              AbstractDomain after) {
-  if (iteration <= 1) {
+  if (iteration <= _opts.loop_iterations) {
+    // Fixed number of iterations using join
     before.join_iter_with(after);
     return before;
   }
 
-  if (iteration == 2 && this->_profile) {
-    if (auto threshold = this->_profile->widening_hint(head)) {
-      before.widen_threshold_with(after, *threshold);
+  switch (_opts.widening_strategy) {
+    case WideningStrategy::Widen: {
+      if (iteration == _opts.loop_iterations + 1 && this->_profile) {
+        if (auto threshold = this->_profile->widening_hint(head)) {
+          // One iteration using widening with threshold
+          before.widen_threshold_with(after, *threshold);
+          return before;
+        }
+      }
+
+      // Iterations using widening until convergence
+      before.widen_with(after);
       return before;
     }
+    case WideningStrategy::Join: {
+      // Iterations using join until convergence
+      before.join_iter_with(after);
+      return before;
+    }
+    default: {
+      ikos_unreachable("unexpected strategy");
+    }
   }
-
-  before.widen_with(after);
-  return before;
 }
 
 AbstractDomain FunctionFixpoint::refine(ar::BasicBlock* head,
                                         unsigned iteration,
                                         AbstractDomain before,
                                         AbstractDomain after) {
-  if (iteration == 1 && this->_profile) {
-    if (auto threshold = this->_profile->widening_hint(head)) {
-      before.narrow_threshold_with(after, *threshold);
+  switch (_opts.narrowing_strategy) {
+    case NarrowingStrategy::Narrow: {
+      if (iteration == 1 && this->_profile) {
+        if (auto threshold = this->_profile->widening_hint(head)) {
+          // First iteration using narrowing with threshold
+          before.narrow_threshold_with(after, *threshold);
+          return before;
+        }
+      }
+
+      // Iterations using narrowing
+      before.narrow_with(after);
       return before;
     }
+    case NarrowingStrategy::Meet: {
+      // Iterations using meet
+      before.meet_with(after);
+      return before;
+    }
+    default: {
+      ikos_unreachable("unexpected strategy");
+    }
   }
-
-  before.narrow_with(after);
-  return before;
 }
 
 bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
@@ -105,11 +135,10 @@ bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
     unsigned iteration,
     const AbstractDomain& before,
     const AbstractDomain& after) {
-  if (machine_int_domain_option_has_narrowing(_ctx.opts.machine_int_domain)) {
-    return before.leq(after);
-  } else {
-    return iteration >= 2; // stop after the second decreasing iteration
-  }
+  // Check if we reached the number of requested iterations, or convergence
+  return (_opts.narrowing_iterations &&
+          iteration >= *_opts.narrowing_iterations) ||
+         before.leq(after);
 }
 
 AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,

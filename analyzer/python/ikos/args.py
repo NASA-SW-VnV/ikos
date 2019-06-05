@@ -268,6 +268,25 @@ proceduralities = (
 
 default_procedurality = 'inter'
 
+widening_strategies = (
+    ('widen', 'Widening operator'),
+    ('join', 'Join operator'),
+)
+
+default_widening_strategy = 'widen'
+
+narrowing_strategies = (
+    ('narrow', 'Narrowing operator'),
+    ('meet', 'Meet operator'),
+    ('auto', 'Narrowing if available, otherwise meet'),
+)
+
+default_narrowing_strategy = 'auto'
+
+default_loop_iterations = 1
+
+meet_iterations_if_no_narrowing = 2
+
 # Preprocessing options choices
 
 opt_levels = (

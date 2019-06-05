@@ -71,6 +71,9 @@ private:
   /// \brief Analysis context
   Context& _ctx;
 
+  /// \brief Analysis options
+  const AnalysisOptions& _opts;
+
   /// \brief Analyzed function
   ar::Function* _function;
 

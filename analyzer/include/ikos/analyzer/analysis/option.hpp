@@ -136,22 +136,70 @@ inline const char* machine_int_domain_option_str(MachineIntDomainOption d) {
   }
 }
 
-/// \brief Return true if the MachineIntDomainOption has a narrowing operator
-inline bool machine_int_domain_option_has_narrowing(MachineIntDomainOption d) {
-  switch (d) {
-    case MachineIntDomainOption::ApronPolkaPolyhedra:
-    case MachineIntDomainOption::ApronPolkaLinearEqualities:
-    case MachineIntDomainOption::ApronPplPolyhedra:
-    case MachineIntDomainOption::ApronPplLinearCongruences:
-    case MachineIntDomainOption::ApronPkgridPolyhedraLinearCongruences:
-    case MachineIntDomainOption::VarPackApronPolkaPolyhedra:
-    case MachineIntDomainOption::VarPackApronPolkaLinearEqualities:
-    case MachineIntDomainOption::VarPackApronPplPolyhedra:
-    case MachineIntDomainOption::VarPackApronPplLinearCongruences:
-    case MachineIntDomainOption::VarPackApronPkgridPolyhedraLinearCongruences:
-      return false;
-    default:
-      return true;
+/// \brief Either Interprocedural or Intraprocedural
+enum class Procedural {
+  /// \brief Analyzes function by taking into account other functions
+  Interprocedural,
+
+  /// \brief Analyze function independently
+  Intraprocedural,
+};
+
+/// \brief Return a string representing a Procedural
+inline const char* procedural_str(Procedural proc) {
+  switch (proc) {
+    case Procedural::Interprocedural:
+      return "interprocedural";
+    case Procedural::Intraprocedural:
+      return "intraprocedural";
+    default: {
+      ikos_unreachable("unreachable");
+    }
+  }
+}
+
+/// \brief Strategy for the increasing iterations (before reaching a fixpoint)
+enum class WideningStrategy {
+  /// \brief Widening operator
+  Widen,
+
+  /// \brief Join operator
+  Join,
+};
+
+/// \brief Return a string representing a WideningStrategy
+inline const char* widening_strategy_str(WideningStrategy widening_strategy) {
+  switch (widening_strategy) {
+    case WideningStrategy::Widen:
+      return "widen";
+    case WideningStrategy::Join:
+      return "join";
+    default: {
+      ikos_unreachable("unreachable");
+    }
+  }
+}
+
+/// \brief Strategy for the decreasing iterations (after reaching a fixpoint)
+enum class NarrowingStrategy {
+  /// \brief Narrowing operator
+  Narrow,
+
+  /// \brief Meet operator
+  Meet,
+};
+
+/// \brief Return a string representing a NarrowingStrategy
+inline const char* narrowing_strategy_str(
+    NarrowingStrategy narrowing_strategy) {
+  switch (narrowing_strategy) {
+    case NarrowingStrategy::Narrow:
+      return "narrow";
+    case NarrowingStrategy::Meet:
+      return "meet";
+    default: {
+      ikos_unreachable("unreachable");
+    }
   }
 }
 
@@ -176,28 +224,6 @@ inline const char* precision_str(Precision p) {
       return "ptr";
     case Precision::Memory:
       return "mem";
-    default: {
-      ikos_unreachable("unreachable");
-    }
-  }
-}
-
-/// \brief Either Interprocedural or Intraprocedural
-enum class Procedural {
-  /// \brief Analyzes function by taking into account other functions
-  Interprocedural,
-
-  /// \brief Analyze function independently
-  Intraprocedural,
-};
-
-/// \brief Return a string representing a Procedural
-inline const char* procedural_str(Procedural proc) {
-  switch (proc) {
-    case Procedural::Interprocedural:
-      return "interprocedural";
-    case Procedural::Intraprocedural:
-      return "intraprocedural";
     default: {
       ikos_unreachable("unreachable");
     }
@@ -278,7 +304,7 @@ enum class DisplayOption {
 /// \brief Hold all the analysis options
 struct AnalysisOptions {
 public:
-  /// \brief List of checkers requested
+  /// \brief List of checkers
   std::vector< CheckerName > analyses;
 
   /// \brief List of entry points
@@ -292,6 +318,20 @@ public:
 
   /// \brief Is the analysis interprocedural or intraprocedural
   Procedural procedural;
+
+  /// \brief Strategy for the increasing iterations (before reaching a fixpoint)
+  WideningStrategy widening_strategy;
+
+  /// \brief Strategy for the decreasing iterations (after reaching a fixpoint)
+  NarrowingStrategy narrowing_strategy;
+
+  /// \brief Number of loop iterations before applying the widening strategy
+  unsigned loop_iterations;
+
+  /// \brief Fixed number of narrowing iterations to perform
+  ///
+  /// boost::none to perform narrowing iterations until convergence
+  boost::optional< unsigned > narrowing_iterations;
 
   /// \brief Wether we should use a liveness analysis or not
   bool use_liveness;

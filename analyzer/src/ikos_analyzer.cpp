@@ -345,6 +345,45 @@ static llvm::cl::opt< analyzer::Procedural > Procedural(
     llvm::cl::init(analyzer::Procedural::Interprocedural),
     llvm::cl::cat(AnalysisCategory));
 
+static llvm::cl::opt< analyzer::WideningStrategy > WideningStrategy(
+    "widening-strategy",
+    llvm::cl::desc("Strategy for increasing iterations"),
+    llvm::cl::values(
+        clEnumValN(analyzer::WideningStrategy::Widen,
+                   widening_strategy_str(analyzer::WideningStrategy::Widen),
+                   "Widening operator (default)"),
+        clEnumValN(analyzer::WideningStrategy::Join,
+                   widening_strategy_str(analyzer::WideningStrategy::Join),
+                   "Join operator")),
+    llvm::cl::init(analyzer::WideningStrategy::Widen),
+    llvm::cl::cat(AnalysisCategory));
+
+static llvm::cl::opt< analyzer::NarrowingStrategy > NarrowingStrategy(
+    "narrowing-strategy",
+    llvm::cl::desc("Strategy for decreasing iterations"),
+    llvm::cl::values(
+        clEnumValN(analyzer::NarrowingStrategy::Narrow,
+                   narrowing_strategy_str(analyzer::NarrowingStrategy::Narrow),
+                   "Narrowing operator (default)"),
+        clEnumValN(analyzer::NarrowingStrategy::Meet,
+                   narrowing_strategy_str(analyzer::NarrowingStrategy::Meet),
+                   "Meet operator")),
+    llvm::cl::init(analyzer::NarrowingStrategy::Narrow),
+    llvm::cl::cat(AnalysisCategory));
+
+static llvm::cl::opt< unsigned > LoopIterations(
+    "loop-iterations",
+    llvm::cl::desc(
+        "Number of loop iterations before using the widening strategy"),
+    llvm::cl::init(1),
+    llvm::cl::cat(AnalysisCategory));
+
+static llvm::cl::opt< int > NarrowingIterations(
+    "narrowing-iterations",
+    llvm::cl::desc("Perform a fixed number of narrowing iterations"),
+    llvm::cl::init(-1),
+    llvm::cl::cat(AnalysisCategory));
+
 static llvm::cl::opt< bool > NoLiveness(
     "no-liveness",
     llvm::cl::desc("Disable the liveness analysis"),
@@ -665,6 +704,13 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .no_init_globals = parse_function_names(NoInitGlobals, bundle),
       .machine_int_domain = Domain,
       .procedural = Procedural,
+      .widening_strategy = WideningStrategy,
+      .narrowing_strategy = NarrowingStrategy,
+      .loop_iterations = LoopIterations,
+      .narrowing_iterations =
+          ((NarrowingIterations >= 0)
+               ? boost::optional< unsigned >(NarrowingIterations)
+               : boost::none),
       .use_liveness = !NoLiveness,
       .use_pointer = !NoPointer,
       .use_fixpoint_profiles = !NoFixpointProfiles,

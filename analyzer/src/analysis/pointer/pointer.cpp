@@ -117,6 +117,9 @@ private:
   /// \brief Analysis context
   Context& _ctx;
 
+  /// \brief Analysis options
+  const AnalysisOptions& _opts;
+
   /// \brief Empty call context
   CallContext* _empty_call_context;
 
@@ -133,6 +136,7 @@ public:
                           ar::Code* code)
       : FwdFixpointIterator(code),
         _ctx(ctx),
+        _opts(ctx.opts),
         _empty_call_context(ctx.call_context_factory->get_empty()),
         _function_pointer(function_pointer),
         _profile(ctx.fixpoint_profiler != nullptr && code->is_function_body()
@@ -147,20 +151,35 @@ public:
                               unsigned iteration,
                               AbstractDomainT before,
                               AbstractDomainT after) override {
-    if (iteration <= 1) {
+    if (iteration <= _opts.loop_iterations) {
+      // Fixed number of iterations using join
       before.join_iter_with(after);
       return before;
     }
 
-    if (iteration == 2 && this->_profile) {
-      if (auto threshold = this->_profile->widening_hint(head)) {
-        before.widen_threshold_with(after, *threshold);
+    switch (_opts.widening_strategy) {
+      case WideningStrategy::Widen: {
+        if (iteration == _opts.loop_iterations + 1 && this->_profile) {
+          if (auto threshold = this->_profile->widening_hint(head)) {
+            // One iteration using widening with threshold
+            before.widen_threshold_with(after, *threshold);
+            return before;
+          }
+        }
+
+        // Iterations using widening until convergence
+        before.widen_with(after);
         return before;
       }
+      case WideningStrategy::Join: {
+        // Iterations using join until convergence
+        before.join_iter_with(after);
+        return before;
+      }
+      default: {
+        ikos_unreachable("unexpected strategy");
+      }
     }
-
-    before.widen_with(after);
-    return before;
   }
 
   /// \brief Refine the new state after a decreasing iteration
@@ -168,15 +187,39 @@ public:
                          unsigned iteration,
                          AbstractDomainT before,
                          AbstractDomainT after) override {
-    if (iteration == 1 && this->_profile) {
-      if (auto threshold = this->_profile->widening_hint(head)) {
-        before.narrow_threshold_with(after, *threshold);
+    switch (_opts.narrowing_strategy) {
+      case NarrowingStrategy::Narrow: {
+        if (iteration == 1 && this->_profile) {
+          if (auto threshold = this->_profile->widening_hint(head)) {
+            // First iteration using narrowing with threshold
+            before.narrow_threshold_with(after, *threshold);
+            return before;
+          }
+        }
+
+        // Iterations using narrowing
+        before.narrow_with(after);
         return before;
       }
+      case NarrowingStrategy::Meet: {
+        // Iterations using meet
+        before.meet_with(after);
+        return before;
+      }
+      default: {
+        ikos_unreachable("unexpected strategy");
+      }
     }
+  }
 
-    before.narrow_with(after);
-    return before;
+  bool is_decreasing_iterations_fixpoint(ar::BasicBlock* /*head*/,
+                                         unsigned iteration,
+                                         const AbstractDomainT& before,
+                                         const AbstractDomainT& after) {
+    // Check if we reached the number of requested iterations, or convergence
+    return (_opts.narrowing_iterations &&
+            iteration >= *_opts.narrowing_iterations) ||
+           before.leq(after);
   }
 
   /// \brief Propagate the invariant through the basic block

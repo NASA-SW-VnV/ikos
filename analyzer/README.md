@@ -306,6 +306,27 @@ Each analysis can be executed using one of the following levels of precision, pr
 
 By default, IKOS uses the precision `mem`. Provide `--prec {reg,ptr,mem}` if you want to use another level of precision.
 
+### Fixpoint engine parameters
+
+The analyzer uses the theory of Abstract Interpretation to compute a fixpoint of the semantic of the program. The fixpoint engine can be tuned using several parameters.
+
+When visiting a loop, the engine will first compute a fixed number of iterations, then use a widening strategy to approximate the behavior of the loop, until convergence.
+
+The fixed number of iterations can be set using `--loop-iterations`. By default, it is 1.
+
+The widening strategy can be set using `--widening-strategy=`:
+* **widen**: Use the widening operator to approximate the behavior of the loop (default)
+* **join**: Use the join operator, effectively computing all iterations (very slow)
+
+After reaching a fixpoint, the engine will perform extra iterations to regain precision using a narrowing strategy, until convergence.
+
+The narrowing strategy can be set using `--narrowing-strategy=`:
+* **narrow**: Use the narrowing operator, ensuring a fast convergence
+* **meet**: Use the meet operator, convergence can be slow
+* **auto**: Use the narrowing operator if available for the numerical abstract domain. Otherwise, perform 2 iterations using the meet operator (default)
+
+You can specify a fixed number of narrowing iterations to perform using `--narrowing-iterations`.
+
 ### Hardware addresses
 
 In C code for embedded systems, it is usual to read or write at specific addresses to communicate with the hardware. By default, IKOS treats memory accesses at specific addresses as errors.

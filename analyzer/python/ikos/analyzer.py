@@ -171,6 +171,36 @@ def parse_arguments(argv):
                                          args.default_procedurality),
                           choices=args.choices(args.proceduralities),
                           default=args.default_procedurality)
+    analysis.add_argument('--widening-strategy',
+                          dest='widening_strategy',
+                          metavar='',
+                          help=args.help('Strategy for increasing iterations:',
+                                         args.widening_strategies,
+                                         args.default_widening_strategy),
+                          choices=args.choices(args.widening_strategies),
+                          default=args.default_widening_strategy)
+    analysis.add_argument('--narrowing-strategy',
+                          dest='narrowing_strategy',
+                          metavar='',
+                          help=args.help('Strategy for decreasing iterations:',
+                                         args.narrowing_strategies,
+                                         args.default_narrowing_strategy),
+                          choices=args.choices(args.narrowing_strategies),
+                          default=args.default_narrowing_strategy)
+    analysis.add_argument('--loop-iterations',
+                          dest='loop_iterations',
+                          metavar='',
+                          help='Number of loop iterations before using the'
+                               ' widening strategy (default: %d)'
+                               % args.default_loop_iterations,
+                          default=args.default_loop_iterations,
+                          type=args.Integer(min=0))
+    analysis.add_argument('--narrowing-iterations',
+                          dest='narrowing_iterations',
+                          metavar='',
+                          help='Perform a fixed number of narrowing'
+                               ' iterations',
+                          type=args.Integer(min=0))
     analysis.add_argument('--hardware-addresses',
                           dest='hardware_addresses',
                           metavar='',
@@ -566,6 +596,25 @@ def signal_name(signum):
     return str(signum)
 
 
+def is_apron_domain(domain):
+    ''' Return True if the given domain is an APRON numerical domain '''
+    return domain.startswith('apron-')
+
+
+domains_without_narrowing = (
+    'apron-polka-polyhedra',
+    'apron-polka-linear-equalities',
+    'apron-ppl-polyhedra',
+    'apron-ppl-linear-congruences',
+    'apron-pkgrid-polyhedra-lin-cong',
+    'var-pack-apron-polka-polyhedra',
+    'var-pack-apron-polka-linear-equalities',
+    'var-pack-apron-ppl-polyhedra',
+    'var-pack-apron-ppl-linear-congruences',
+    'var-pack-apron-pkgrid-polyhedra-lin-cong',
+)
+
+
 def clang_emit_llvm_flags():
     ''' Clang flags to emit llvm bitcode '''
     return ['-c', '-emit-llvm']
@@ -689,7 +738,24 @@ def ikos_analyzer(db_path, pp_path, opt):
             '-entry-points=%s' % ','.join(opt.entry_points),
             '-globals-init=%s' % opt.globals_init,
             '-prec=%s' % opt.precision_level,
-            '-proc=%s' % opt.procedural]
+            '-proc=%s' % opt.procedural,
+            '-widening-strategy=%s' % opt.widening_strategy,
+            '-loop-iterations=%d' % opt.loop_iterations]
+
+    if opt.narrowing_strategy == 'auto':
+        if opt.domain in domains_without_narrowing:
+            cmd.append('-narrowing-strategy=meet')
+        else:
+            cmd.append('-narrowing-strategy=narrow')
+    else:
+        cmd.append('-narrowing-strategy=%s' % opt.narrowing_strategy)
+
+    if opt.narrowing_iterations is not None:
+        cmd.append('-narrowing-iterations=%d' % opt.narrowing_iterations)
+    elif (opt.narrowing_strategy == 'auto' and
+            opt.domain in domains_without_narrowing):
+        cmd.append('-narrowing-iterations=%d'
+                   % args.meet_iterations_if_no_narrowing)
 
     if opt.no_init_globals:
         cmd.append('-no-init-globals=%s' % ','.join(opt.no_init_globals))
@@ -851,7 +917,7 @@ def main(argv):
     colors.setup(opt.color, file=log.out)
     log.setup(opt.log_level)
 
-    if opt.domain.startswith('apron-') and not settings.HAS_APRON:
+    if is_apron_domain(opt.domain) and not settings.HAS_APRON:
         printf('%s: error: cannot use apron abstract domains.\n'
                'ikos was compiled without apron support, '
                'see analyzer/README.md\n',
