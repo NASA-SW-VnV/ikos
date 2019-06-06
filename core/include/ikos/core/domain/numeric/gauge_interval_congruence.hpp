@@ -101,14 +101,14 @@ private:
     }
 
     IntervalT i = this->_product.first().to_interval(v);
-    i.meet_with(this->_product.second().to_interval(v));
+    IntervalT j = this->_product.second().to_interval(v);
     CongruenceT c = this->_product.third().to_congruence(v);
-    IntervalCongruenceT val(i, c);
+    IntervalCongruenceT val(i.meet(j), c);
 
     if (val.is_bottom()) {
       this->set_to_bottom();
     } else {
-      if (val.interval() != i) {
+      if (val.interval() != j) {
         this->_product.second().set(v, val.interval());
       }
       if (val.congruence() != c) {
