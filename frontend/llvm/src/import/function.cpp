@@ -2611,18 +2611,11 @@ void BasicBlockTranslation::add_conditional_output_bb(
   // Create output basic block
   ar::BasicBlock* ar_dest = this->add_output_basic_block(src, llvm_dest);
 
-  // Remove assignment if the variable is only used for the branching statement
-  llvm::Value* llvm_condition = br->getCondition();
-  bool remove_assign =
-      llvm_condition->hasOneUse() && *llvm_condition->user_begin() == br;
-
-  // Add assignment for the result of the comparison
-  if (!remove_assign) {
-    std::unique_ptr< ar::Comparison > cmp =
-        create_bool_cmp(src->context(), cond, value);
-    cmp->set_frontend< llvm::Value >(llvm_condition);
-    ar_dest->push_back(std::move(cmp));
-  }
+  // Push comparison
+  std::unique_ptr< ar::Comparison > cmp =
+      create_bool_cmp(src->context(), cond, value);
+  cmp->set_frontend< llvm::Value >(br);
+  ar_dest->push_back(std::move(cmp));
 }
 
 void BasicBlockTranslation::add_invoke_branching(
