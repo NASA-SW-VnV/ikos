@@ -33,7 +33,7 @@ Source Code Formatting
 * Avoid `std::endl` ([LLVM Coding Standards](http://llvm.org/docs/CodingStandards.html#avoid-std-endl))
 * Naming conventions are specified in the [.clang-tidy](../.clang-tidy) configuration file
 * Use K&R style:
-```
+```c
 if (cond) {
   f();
 } else if (cond1) {
@@ -47,6 +47,7 @@ Automatic Formatting
 --------------------
 
 IKOS developers should use [clang-format](https://clang.llvm.org/docs/ClangFormat.html) to format the source code with a predefined set of style rules.
+
 See [.clang-format](../.clang-format) for the set of rules.
 
 Always run the following command before committing any changes:
@@ -58,6 +59,7 @@ Static Analysis
 ---------------
 
 IKOS developers should use [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) to perform diagnosis for typical programming errors, style violation, interface misuse, etc.
+
 See [.clang-tidy](../.clang-tidy) for the set of checks.
 
 To run clang-tidy on the whole repository, use:
