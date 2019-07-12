@@ -8,7 +8,7 @@ IKOS provides a **bootstrap** script that is able to detect your current configu
 Minimal requirements
 --------------------
 
-The **bootstrap** script should work on any UNIX environment. It has been tested under Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat and Ubuntu.
+The **bootstrap** script should work on any UNIX environment. It has been tested under Arch Linux, CentOS, Debian, Fedora, Mac OS X, Red Hat and Ubuntu.
 
 The script requires some binary utilities to work properly.
 

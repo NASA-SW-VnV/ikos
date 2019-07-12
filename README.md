@@ -55,7 +55,7 @@ To build and run the analyzer, you will need the following dependencies:
 
 Most of them can be installed using your package manager.
 
-Installation instructions for Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat, Ubuntu and Windows are available in the [doc/install](doc/install) directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in [doc/install/ROOTLESS.md](doc/install/ROOTLESS.md).
+Installation instructions for Arch Linux, CentOS, Debian, Fedora, Mac OS X, Red Hat, Ubuntu and Windows are available in the [doc/install](doc/install) directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in [doc/install/ROOTLESS.md](doc/install/ROOTLESS.md).
 
 Note: If you build LLVM from source, you need to enable run-time type information (RTTI).
 
@@ -220,6 +220,11 @@ Publications
 * Guillaume Brat, Jorge Navas, Nija Shi and Arnaud Venet. **IKOS: a Framework for Static Analysis based on Abstract Interpretation.** In _Proceedings of the International Conference on Software Engineering and Formal Methods (SEFM 2014)_, Grenoble, France ([PDF](http://ti.arc.nasa.gov/publications/16610/download/)).
 
 * Arnaud Venet. **The Gauge Domain: Scalable Analysis of Linear Inequality Invariants.** In _Proceedings of Computer Aided Verification (CAV 2012)_, Berkeley, California, USA 2012. Lecture Notes in Computer Science, pages 139-154, volume 7358, Springer 2012 ([PDF](http://ti.arc.nasa.gov/publications/4767/download/)).
+
+Coding Standards
+----------------
+
+See [doc/CODING_STANDARDS.md](doc/CODING_STANDARDS.md)
 
 Overview of the source code
 ---------------------------

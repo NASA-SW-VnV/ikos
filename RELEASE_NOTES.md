@@ -237,7 +237,7 @@ List of changes
 ### Other changes
 
 * Improved the bootstrap script. It is now able to build and install zlib, ncurses, libedit, GMP, SQLite and Python.
-* Added installation instructions for Archlinux, CentOS, Debian, Fedora, Mac OS X, Red Hat and Ubuntu.
+* Added installation instructions for Arch Linux, CentOS, Debian, Fedora, Mac OS X, Red Hat and Ubuntu.
 * Added support for gcc 4.9.2 and boost 1.55.0.
 
 
