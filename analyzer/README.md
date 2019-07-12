@@ -134,8 +134,8 @@ The `ikos` command takes a source file (`.c`, `.cpp`) or a LLVM bitcode file (`.
 In the report, each line has one of the following status:
 
 * **safe**: the statement is proven safe;
-* **error**: the statement always results into an error;
-* **unreachable**: the statement is never executed (dead code);
+* **error**: the statement always results into an error (or is unreachable);
+* **unreachable**: the statement is never executed;
 * **warning** may mean three things:
    1. the statement results into an error for some executions, or
    2. the static analyzer did not have enough information to conclude (check dependent on an external input, for instance), or
