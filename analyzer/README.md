@@ -6,7 +6,9 @@ This folder contains the implementation of the analyzer.
 Introduction
 ------------
 
-The IKOS Analyzer is an abstract interpretation-based static analyzer that aims at proving the absence of runtime errors in C and C++ programs. See [Checks](#checks) for the full list of available checks.
+The IKOS Analyzer is an abstract interpretation-based static analyzer that aims at proving the absence of runtime errors in C and C++ programs.
+
+See [Checks](#checks) for the full list of available checks.
 
 Installation
 ------------
@@ -447,6 +449,27 @@ Note that if you want syntax highlighting, you will need to install [Pygments](h
 ```
 $ pip install --user pygments
 ```
+
+Analysis Assumptions
+--------------------
+
+This section describes the assumptions made by the analyzer about the code.
+
+First, the analyzed code is compiled with the **Clang** compiler using the host target. Thus, Clang is responsible for specifying the data model (size of types), the data layout (alignments), the endianness, the signedness of `char`, the semantic of floating points, etc. depending on the host target. The analyzer uses the generated LLVM bitcode from Clang. This means that you can get different results depending on your host target.
+
+During the analysis, the analyzer will make the following assumptions:
+* The program is single-threaded.
+* The program does not receive signals.
+* Extern functions (without implementation) do not update global variables.
+* Extern functions can write on their pointer parameters, but only with one level of indirection:
+```c
+extern void f(int** p); // Assume to write on *p but not **p
+```
+* Extern functions do not call user-defined functions (no callbacks).
+* Extern functions return well-initialized values.
+* Recursive function calls are treated as extern function calls.
+* Assembly codes are treated as extern function calls.
+* C standard library functions do not throw exceptions.
 
 Overview of the source code
 ---------------------------
