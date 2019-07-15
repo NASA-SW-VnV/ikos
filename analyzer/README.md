@@ -3,6 +3,39 @@ IKOS Analyzer
 
 This folder contains the implementation of the analyzer.
 
+Table of contents
+-----------------
+
+* [Introduction](#introduction)
+* [Installation](#installation)
+  - [Dependencies](#dependencies)
+  - [Build and Install](#build-and-install)
+  - [Tests](#tests)
+  - [Documentation](#documentation)
+* [How to run IKOS](#how-to-run-ikos)
+* [Analyze a whole project with ikos-scan](#analyze-a-whole-project-with-ikos-scan)
+* [Examine a report with ikos-view](#examine-a-report-with-ikos-view)
+* [Analysis Options](#analysis-options)
+  - [Checks](#checks)
+  - [Numerical abstract domains](#numerical-abstract-domains)
+  - [Entry points](#entry-points)
+  - [Optimization level](#optimization-level)
+  - [Inter-procedural vs Intra-procedural](#inter-procedural-vs-intra-procedural)
+  - [Degree of precision](#degree-of-precision)
+  - [Fixpoint engine parameters](#fixpoint-engine-parameters)
+  - [Hardware addresses](#hardware-addresses)
+  - [Other analysis options](#other-analysis-options)
+* [Report Options](#report-options)
+  - [Format](#format)
+  - [File](#file)
+  - [Status Filter](#status-filter)
+  - [Analysis Filter](#analysis-filter)
+  - [Verbosity](#verbosity)
+  - [Other report options](#other-report-options)
+* [APRON Support](#apron-support)
+* [Analysis Assumptions](#analysis-assumptions)
+* [Overview of the source code](#overview-of-the-source-code)
+
 Introduction
 ------------
 
@@ -171,6 +204,27 @@ Analyze pkg-config? [Y/n]
 ```
 
 ikos-scan will produce a `.bc` file for each executable in your project. You can analyze them with specific options using `ikos [options] program.bc`.
+
+Examine a report with ikos-view
+-------------------------------
+
+ikos-view provides a web interface to examine IKOS results. It is available directly in the analyzer.
+
+The web interface shows the source code with syntax highlighting, and allows you to filter the warnings by checks.
+
+To use ikos-view, first run the analyzer on your project to generate a result database `output.db`, then simply run:
+
+```
+$ ikos-view output.db
+```
+
+It will start a web server. You can then launch your favorite web browser and visit [http://localhost:8080](http://localhost:8080)
+
+Note that if you want syntax highlighting, you will need to install [Pygments](http://pygments.org):
+
+```
+$ pip install --user pygments
+```
 
 Analysis Options
 ----------------
@@ -428,27 +482,6 @@ cmake \
 ```
 
 See [Numerical abstract domains](#numerical-abstract-domains) for the list of numerical abstract domains.
-
-Examine a report with ikos-view
--------------------------------
-
-ikos-view provides a web interface to examine IKOS results. It is available directly in the analyzer.
-
-The web interface shows the source code with syntax highlighting, and allows you to filter the warnings by checks.
-
-To use ikos-view, first run the analyzer on your project to generate a result database `output.db`, then simply run:
-
-```
-$ ikos-view output.db
-```
-
-It will start a web server. You can then launch your favorite web browser and visit [http://localhost:8080](http://localhost:8080)
-
-Note that if you want syntax highlighting, you will need to install [Pygments](http://pygments.org):
-
-```
-$ pip install --user pygments
-```
 
 Analysis Assumptions
 --------------------
