@@ -34,6 +34,7 @@ Table of contents
   - [Other report options](#other-report-options)
 * [APRON Support](#apron-support)
 * [Analysis Assumptions](#analysis-assumptions)
+* [Analyze an embedded software requiring a cross-compiler](#analyze-an-embedded-software-requiring-a-cross-compiler)
 * [Overview of the source code](#overview-of-the-source-code)
 
 Introduction
@@ -330,11 +331,13 @@ Please also note that:
 
 ### Entry points
 
-By default, IKOS assumes the entry point of the program is `main`. You can specify a list of entry points using the `--entry-points` parameter:
+By default, the analyzer assumes the entry point of the program is `main`. You can specify a list of entry points using the `--entry-points` parameter:
 
 ```
 $ ikos --entry-points=foo,bar test.c
 ```
+
+IKOS analyses each entry point independently, as if they were running in different processes.
 
 ### Optimization level
 
@@ -493,6 +496,7 @@ First, the analyzed code is compiled with the **Clang** compiler using the host 
 During the analysis, the analyzer will make the following assumptions:
 * The program is single-threaded.
 * The program does not receive signals.
+* The program does not receive interrupts.
 * Extern functions (without implementation) do not update global variables.
 * Extern functions can write on their pointer parameters, but only with one level of indirection:
 ```c
@@ -503,6 +507,40 @@ extern void f(int** p); // Assume to write on *p but not **p
 * Recursive function calls are treated as extern function calls.
 * Assembly codes are treated as extern function calls.
 * C standard library functions do not throw exceptions.
+
+Analyze an embedded software requiring a cross-compiler
+-------------------------------------------------------
+
+Running IKOS on an embedded software that requires a cross-compiler can be challenging.
+
+You should try to use [ikos-scan](#analyze-a-whole-project-with-ikos-scan) first, but this will probably fail with compiler errors.
+
+To solve this issue, you will need to create an alternative build file that compiles everything to LLVM bitcode. For instance, if you use `make`, you could create `Makefile.llvm` based on `Makefile`.
+
+In the alternative build file:
+* Locate the build rules that generate intermediate object files (`.o`).
+* In these rules, add the flag `-save-temps=obj` to the cross-compiler commands. This will generate a preprocessed file `.i` in addition to the `.o`.
+* At the end of these rules, add a command to compile the preprocessed file `.i` to LLVM bitcode `.bc` using: `clang -c -emit-llvm -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone <file.i> -o <file.bc>`.
+* Locate the build rules that link the intermediate object files into binaries or shared libraries.
+* At the end of these rules, link the LLVM bitcodes `.bc` together using `llvm-link`.
+
+For instance, in `Makefile.llvm`:
+```
+%.o: %.c
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) -save-temps=obj $< -o $@
+	clang -c -emit-llvm -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone $(subst .o,.i,$@) -o $(subst .o,.bc,$@)
+
+program: a.o b.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) a.o b.o -o $@
+	llvm-link a.bc b.bc -o $@.bc
+
+clean:
+	rm -f *.o *.i *.s *.bc
+```
+
+Then, run your build tool using the alternative build file to generate the LLVM bitcode (e.g, `make -f Makefile.llvm`).
+
+You can finally analyze your program by running ikos on the generated LLVM bitcode file (e.g, `ikos program.bc`).
 
 Overview of the source code
 ---------------------------
