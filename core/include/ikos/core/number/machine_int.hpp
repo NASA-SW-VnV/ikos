@@ -1089,13 +1089,8 @@ inline MachineInt mul(const MachineInt& lhs,
         overflow = false;
       }
     } else {
-      if (lhs.is_signed()) {
-        overflow = !lhs.is_zero() && !rhs.is_zero() &&
-                   (div(result, rhs) != lhs || div(result, lhs) != rhs);
-      } else {
-        overflow = !lhs.is_zero() && !rhs.is_zero() &&
-                   (div(result, rhs) != lhs || div(result, lhs) != rhs);
-      }
+      overflow = !lhs.is_zero() && !rhs.is_zero() &&
+                 (div(result, rhs) != lhs || div(result, lhs) != rhs);
     }
     return result;
   } else {

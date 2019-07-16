@@ -895,7 +895,7 @@ public:
       // The offset has one possible value.
       //
       // We can perform the usual reduction and update.
-      const MachineInt& offset = *offset_intv.singleton();
+      MachineInt offset = *offset_intv.singleton();
       Signedness sign = this->preferred_cell_sign(rhs);
 
       for (MemoryLocationRef addr : addrs) {
@@ -1002,7 +1002,7 @@ public:
       // The offset has one possible value.
       //
       // We can perform the usual reduction and update.
-      const MachineInt& offset = *offset_intv.singleton();
+      MachineInt offset = *offset_intv.singleton();
       Signedness sign = this->preferred_cell_sign(lhs);
       bool first = true;
 
@@ -1114,8 +1114,8 @@ public:
         !size_intv.lb().is_zero()) {
       // in that case, we can be more precise
       MemoryLocationRef dest_addr = *dest_addrs.singleton();
-      const MachineInt& dest_offset = *dest_intv.singleton();
-      const MachineInt& src_offset = *src_intv.singleton();
+      MachineInt dest_offset = *dest_intv.singleton();
+      MachineInt src_offset = *src_intv.singleton();
       const MachineInt& size_lb = size_intv.lb();
       MachineInt one(1, dest_intv.bit_width(), Unsigned);
       Interval src_range(src_offset, src_offset + (size_lb - one));
