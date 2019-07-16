@@ -212,7 +212,8 @@ Further information:
   - [Other report options](analyzer/README.md#other-report-options)
 * [APRON Support](analyzer/README.md#apron-support)
 * [Analysis Assumptions](analyzer/README.md#analysis-assumptions)
-* [Analyze an embedded software requiring a cross-compiler](#analyze-an-embedded-software-requiring-a-cross-compiler)
+* [Analyze an embedded software requiring a cross-compiler](analyzer/README.md#analyze-an-embedded-software-requiring-a-cross-compiler)
+* [Model library functions to reduce warnings](analyzer/README.md#model-library-functions-to-reduce-warnings)
 
 Current and Past contributors
 -----------------------------

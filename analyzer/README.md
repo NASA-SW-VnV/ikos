@@ -35,6 +35,7 @@ Table of contents
 * [APRON Support](#apron-support)
 * [Analysis Assumptions](#analysis-assumptions)
 * [Analyze an embedded software requiring a cross-compiler](#analyze-an-embedded-software-requiring-a-cross-compiler)
+* [Model library functions to reduce warnings](#model-library-functions-to-reduce-warnings)
 * [Overview of the source code](#overview-of-the-source-code)
 
 Introduction
@@ -511,7 +512,7 @@ extern void f(int** p); // Assume to write on *p but not **p
 Analyze an embedded software requiring a cross-compiler
 -------------------------------------------------------
 
-Running IKOS on an embedded software that requires a cross-compiler can be challenging.
+Running the analyzer on an embedded software that requires a cross-compiler can be challenging.
 
 You should try to use [ikos-scan](#analyze-a-whole-project-with-ikos-scan) first, but this will probably fail with compiler errors.
 
@@ -541,6 +542,31 @@ clean:
 Then, run your build tool using the alternative build file to generate the LLVM bitcode (e.g, `make -f Makefile.llvm`).
 
 You can finally analyze your program by running ikos on the generated LLVM bitcode file (e.g, `ikos program.bc`).
+
+Model library functions to reduce warnings
+------------------------------------------
+
+The analyzer doesn't require the libraries used by your program. It will consider library functions as unknown extern functions and make some [assumptions](#analysis-assumptions) about them.
+
+The analyzer will produce a warning for each call to an unknown function. You can use `ikos-report --analyses-filter=sound output.db` to list these warnings, or filter the "ignored call side effect" in ikos-view.
+
+You can model library functions to improve the precision of the analysis and reduce the number of warnings. To model a library function, simply write a small implementation for it and link it in your program. This is usually called a "stub".
+
+For instance, a stub for `fgets` could be:
+```c
+#include <ikos/analyzer/intrinsic.h>
+
+char* fgets(char* restrict str, int size, FILE* restrict stream) {
+    __ikos_assert(size >= 0);
+    __ikos_forget_mem(stream, sizeof(FILE));
+    __ikos_abstract_mem(str, size);
+    return __ikos_nondet_int() ? str : NULL;
+}
+```
+
+The analyzer provides helper functions to implement these stubs, see [include/ikos/analyzer/intrinsic.h](include/ikos/analyzer/intrinsic.h)
+
+Note that most functions of the C standard library are already modeled, but not all of them.
 
 Overview of the source code
 ---------------------------
