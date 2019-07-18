@@ -193,7 +193,7 @@ install(FILES include/ikos/analyzer/intrinsic.h
 add_executable(ikos-analyzer
   src/ikos_analyzer.cpp
   src/analysis/call_context.cpp
-  src/analysis/fixpoint_profile.cpp
+  src/analysis/fixpoint_parameters.cpp
   src/analysis/hardware_addresses.cpp
   src/analysis/literal.cpp
   src/analysis/liveness.cpp
@@ -215,6 +215,7 @@ add_executable(ikos-analyzer
   src/analysis/value/machine_int_domain/apron_octagon.cpp
   src/analysis/value/machine_int_domain/apron_pkgrid_polyhedra_lin_cong.cpp
   src/analysis/value/machine_int_domain/apron_polka_linear_equalities.cpp
+  src/analysis/widening_hint.cpp
   src/analysis/value/machine_int_domain/apron_polka_polyhedra.cpp
   src/analysis/value/machine_int_domain/apron_ppl_linear_congruences.cpp
   src/analysis/value/machine_int_domain/apron_ppl_polyhedra.cpp

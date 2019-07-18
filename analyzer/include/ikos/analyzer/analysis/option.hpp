@@ -339,8 +339,8 @@ public:
   /// \brief Wether we should use a pointer analysis or not
   bool use_pointer;
 
-  /// \brief Wether we should use a fixpoint profile analysis or not
-  bool use_fixpoint_profiles;
+  /// \brief Wether we should use widening hints or not
+  bool use_widening_hints;
 
   /// \brief Wether we should save fixpoints on called functions or not
   bool use_fixpoint_cache;

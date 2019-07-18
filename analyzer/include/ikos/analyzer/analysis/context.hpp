@@ -61,7 +61,7 @@ class CallContextFactory;
 class LivenessAnalysis;
 class FunctionPointerAnalysis;
 class PointerAnalysis;
-class FixpointProfileAnalysis;
+class FixpointParameters;
 
 /// \brief Global analysis context
 ///
@@ -92,17 +92,17 @@ public:
   /// \brief Call context factory
   CallContextFactory* call_context_factory;
 
-  /// \brief Liveness analysis
+  /// \brief Fixpoint parameters
+  FixpointParameters* fixpoint_parameters;
+
+  /// \brief Liveness analysis, or null
   LivenessAnalysis* liveness;
 
-  /// \brief Function pointer analysis
+  /// \brief Function pointer analysis, or null
   FunctionPointerAnalysis* function_pointer;
 
-  /// \brief Pointer analysis
+  /// \brief Pointer analysis, or null
   PointerAnalysis* pointer;
-
-  /// \brief Fixpoint Profile Analysis;
-  FixpointProfileAnalysis* fixpoint_profiler;
 
 public:
   /// \brief Constructor
@@ -113,7 +113,8 @@ public:
           MemoryFactory& mem_factory_,
           VariableFactory& var_factory_,
           LiteralFactory& lit_factory_,
-          CallContextFactory& call_context_factory_)
+          CallContextFactory& call_context_factory_,
+          FixpointParameters& fixpoint_parameters_)
       : bundle(bundle_),
         opts(std::move(opts_)),
         wd(std::move(wd_)),
@@ -122,10 +123,10 @@ public:
         var_factory(&var_factory_),
         lit_factory(&lit_factory_),
         call_context_factory(&call_context_factory_),
+        fixpoint_parameters(&fixpoint_parameters_),
         liveness(nullptr),
         function_pointer(nullptr),
-        pointer(nullptr),
-        fixpoint_profiler(nullptr) {}
+        pointer(nullptr) {}
 
   /// \brief Deleted copy constructor
   Context(const Context&) = delete;

@@ -55,12 +55,9 @@ namespace intraprocedural {
 FunctionFixpoint::FunctionFixpoint(Context& ctx, ar::Function* function)
     : FwdFixpointIterator(function->body()),
       _ctx(ctx),
-      _opts(ctx.opts),
       _function(function),
       _empty_call_context(ctx.call_context_factory->get_empty()),
-      _profile(ctx.fixpoint_profiler == nullptr
-                   ? boost::none
-                   : ctx.fixpoint_profiler->profile(function)) {}
+      _fixpoint_parameters(ctx.fixpoint_parameters->get(function)) {}
 
 void FunctionFixpoint::run(AbstractDomain inv) {
   FwdFixpointIterator::run(std::move(inv));
@@ -70,16 +67,17 @@ AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
                                              unsigned iteration,
                                              AbstractDomain before,
                                              AbstractDomain after) {
-  if (iteration <= _opts.loop_iterations) {
+  if (iteration <= this->_fixpoint_parameters.loop_iterations) {
     // Fixed number of iterations using join
     before.join_iter_with(after);
     return before;
   }
 
-  switch (_opts.widening_strategy) {
+  switch (this->_fixpoint_parameters.widening_strategy) {
     case WideningStrategy::Widen: {
-      if (iteration == _opts.loop_iterations + 1 && this->_profile) {
-        if (auto threshold = this->_profile->widening_hint(head)) {
+      if (iteration == this->_fixpoint_parameters.loop_iterations + 1) {
+        if (auto threshold =
+                this->_fixpoint_parameters.widening_hints.get(head)) {
           // One iteration using widening with threshold
           before.widen_threshold_with(after, *threshold);
           return before;
@@ -105,10 +103,11 @@ AbstractDomain FunctionFixpoint::refine(ar::BasicBlock* head,
                                         unsigned iteration,
                                         AbstractDomain before,
                                         AbstractDomain after) {
-  switch (_opts.narrowing_strategy) {
+  switch (this->_fixpoint_parameters.narrowing_strategy) {
     case NarrowingStrategy::Narrow: {
-      if (iteration == 1 && this->_profile) {
-        if (auto threshold = this->_profile->widening_hint(head)) {
+      if (iteration == 1) {
+        if (auto threshold =
+                this->_fixpoint_parameters.widening_hints.get(head)) {
           // First iteration using narrowing with threshold
           before.narrow_threshold_with(after, *threshold);
           return before;
@@ -136,8 +135,8 @@ bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
     const AbstractDomain& before,
     const AbstractDomain& after) {
   // Check if we reached the number of requested iterations, or convergence
-  return (_opts.narrowing_iterations &&
-          iteration >= *_opts.narrowing_iterations) ||
+  return (this->_fixpoint_parameters.narrowing_iterations &&
+          iteration >= *this->_fixpoint_parameters.narrowing_iterations) ||
          before.leq(after);
 }
 

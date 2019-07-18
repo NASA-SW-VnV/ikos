@@ -145,9 +145,9 @@ def parse_arguments(argv):
                           help='Disable the pointer analysis',
                           action='store_true',
                           default=False)
-    analysis.add_argument('--no-fixpoint-profiles',
-                          dest='no_fixpoint_profiles',
-                          help='Disable the fixpoint profiles analysis',
+    analysis.add_argument('--no-widening-hints',
+                          dest='no_widening_hints',
+                          help='Disable the widening hint analysis',
                           action='store_true',
                           default=False)
     analysis.add_argument('--no-fixpoint-cache',
@@ -334,9 +334,9 @@ def parse_arguments(argv):
                        help='Display pointer analysis results',
                        action='store_true',
                        default=False)
-    debug.add_argument('--display-fixpoint-profiles',
-                       dest='display_fixpoint_profiles',
-                       help='Display fixpoint profiles analysis results',
+    debug.add_argument('--display-fixpoint-parameters',
+                       dest='display_fixpoint_parameters',
+                       help='Display fixpoint parameters',
                        action='store_true',
                        default=False)
     debug.add_argument('--display-checks',
@@ -763,8 +763,8 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-liveness')
     if opt.no_pointer:
         cmd.append('-no-pointer')
-    if opt.no_fixpoint_profiles:
-        cmd.append('-no-fixpoint-profiles')
+    if opt.no_widening_hints:
+        cmd.append('-no-widening-hints')
     if opt.no_fixpoint_cache:
         cmd.append('-no-fixpoint-cache')
     if opt.hardware_addresses:
@@ -807,8 +807,8 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-display-function-pointer')
     if opt.display_pointer:
         cmd.append('-display-pointer')
-    if opt.display_fixpoint_profiles:
-        cmd.append('-display-fixpoint-profiles')
+    if opt.display_fixpoint_parameters:
+        cmd.append('-display-fixpoint-parameters')
     if opt.generate_dot:
         cmd += ['-generate-dot', '-generate-dot-dir', opt.generate_dot_dir]
 
@@ -816,7 +816,7 @@ def ikos_analyzer(db_path, pp_path, opt):
     if (opt.display_checks in ('all', 'fail') or
             opt.display_inv in ('all', 'fail') or
             opt.display_liveness or
-            opt.display_fixpoint_profiles or
+            opt.display_fixpoint_parameters or
             opt.display_function_pointer or
             opt.display_pointer or
             opt.display_raw_checks):

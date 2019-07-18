@@ -71,7 +71,7 @@
 
 #include <ikos/analyzer/analysis/call_context.hpp>
 #include <ikos/analyzer/analysis/context.hpp>
-#include <ikos/analyzer/analysis/fixpoint_profile.hpp>
+#include <ikos/analyzer/analysis/fixpoint_parameters.hpp>
 #include <ikos/analyzer/analysis/hardware_addresses.hpp>
 #include <ikos/analyzer/analysis/literal.hpp>
 #include <ikos/analyzer/analysis/liveness.hpp>
@@ -83,6 +83,7 @@
 #include <ikos/analyzer/analysis/value/interprocedural/interprocedural.hpp>
 #include <ikos/analyzer/analysis/value/intraprocedural/intraprocedural.hpp>
 #include <ikos/analyzer/analysis/variable.hpp>
+#include <ikos/analyzer/analysis/widening_hint.hpp>
 #include <ikos/analyzer/checker/name.hpp>
 #include <ikos/analyzer/database/output.hpp>
 #include <ikos/analyzer/util/color.hpp>
@@ -394,9 +395,9 @@ static llvm::cl::opt< bool > NoPointer(
     llvm::cl::desc("Disable the pointer analysis"),
     llvm::cl::cat(AnalysisCategory));
 
-static llvm::cl::opt< bool > NoFixpointProfiles(
-    "no-fixpoint-profiles",
-    llvm::cl::desc("Disable the fixpoint profiles analysis"),
+static llvm::cl::opt< bool > NoWideningHints(
+    "no-widening-hints",
+    llvm::cl::desc("Disable the widening hint analysis"),
     llvm::cl::cat(AnalysisCategory));
 
 static llvm::cl::opt< bool > NoFixpointCache(
@@ -548,9 +549,9 @@ static llvm::cl::opt< bool > DisplayPointer(
     llvm::cl::desc("Display pointer analysis results"),
     llvm::cl::cat(DebugCategory));
 
-static llvm::cl::opt< bool > DisplayFixpointProfiles(
-    "display-fixpoint-profiles",
-    llvm::cl::desc("Display fixpoint profiles analysis results"),
+static llvm::cl::opt< bool > DisplayFixpointParameters(
+    "display-fixpoint-parameters",
+    llvm::cl::desc("Display fixpoint parameters"),
     llvm::cl::cat(DebugCategory));
 
 static llvm::cl::opt< bool > DisplayAR(
@@ -713,7 +714,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
                : boost::none),
       .use_liveness = !NoLiveness,
       .use_pointer = !NoPointer,
-      .use_fixpoint_profiles = !NoFixpointProfiles,
+      .use_widening_hints = !NoWideningHints,
       .use_fixpoint_cache = !NoFixpointCache,
       .precision = Precision,
       .globals_init_policy = GlobalsInitPolicy,
@@ -926,6 +927,9 @@ int main(int argc, char** argv) {
     analyzer::LiteralFactory lit_factory(var_factory, bundle->data_layout());
     analyzer::CallContextFactory call_context_factory;
 
+    // Fixpoint parameters
+    analyzer::FixpointParameters fixpoint_parameters(opts);
+
     // Analysis context
     analyzer::Context ctx(bundle,
                           opts,
@@ -934,9 +938,10 @@ int main(int argc, char** argv) {
                           mem_factory,
                           var_factory,
                           lit_factory,
-                          call_context_factory);
+                          call_context_factory,
+                          fixpoint_parameters);
 
-    // First, run a liveness analysis
+    // Run a liveness analysis
     //
     // The goal is to detect unused variables to speed up the following
     // analyses
@@ -952,19 +957,18 @@ int main(int argc, char** argv) {
       liveness.dump(analyzer::log::msg().stream());
     }
 
-    // Run the fixpoint profile analysis
+    // Run a widening hint analysis
     //
     // This is used to detect widening hints, useful for other analyses
-    analyzer::FixpointProfileAnalysis profiler(ctx);
-    if (!NoFixpointProfiles) {
-      analyzer::log::info("Running fixpoint profile analysis");
+    if (!NoWideningHints) {
+      analyzer::WideningHintAnalysis widening_hint(ctx);
+      analyzer::log::info("Running widening hint analysis");
       analyzer::ScopeTimerDatabase t(output_db.times,
-                                     "ikos-analyzer.fixpoint-profile-analysis");
-      profiler.run();
-      ctx.fixpoint_profiler = &profiler;
+                                     "ikos-analyzer.widening-hint-analysis");
+      widening_hint.run();
     }
-    if (DisplayFixpointProfiles) {
-      profiler.dump(analyzer::log::msg().stream());
+    if (DisplayFixpointParameters) {
+      fixpoint_parameters.dump(analyzer::log::msg().stream());
     }
 
     // Run a fast intraprocedural function pointer analysis

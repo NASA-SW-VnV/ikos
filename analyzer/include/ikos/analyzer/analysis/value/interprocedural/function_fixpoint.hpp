@@ -52,7 +52,7 @@
 #include <ikos/analyzer/analysis/context.hpp>
 #include <ikos/analyzer/analysis/execution_engine/inliner.hpp>
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
-#include <ikos/analyzer/analysis/fixpoint_profile.hpp>
+#include <ikos/analyzer/analysis/fixpoint_parameters.hpp>
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
 #include <ikos/analyzer/analysis/value/interprocedural/progress.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
@@ -81,17 +81,14 @@ private:
   /// \brief Analysis context
   Context& _ctx;
 
-  /// \brief Analysis options
-  const AnalysisOptions& _opts;
-
   /// \brief Analyzed function
   ar::Function* _function;
 
   /// \brief Current call context
   CallContext* _call_context;
 
-  /// \brief Fixpoint profile
-  boost::optional< const FixpointProfile& > _profile;
+  /// \brief Fixpoint parameters
+  const CodeFixpointParameters& _fixpoint_parameters;
 
   /// \brief Function currently analyzed
   ///

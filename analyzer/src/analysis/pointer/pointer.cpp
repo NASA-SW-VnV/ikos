@@ -56,7 +56,7 @@
 #include <ikos/analyzer/analysis/execution_engine/context_insensitive.hpp>
 #include <ikos/analyzer/analysis/execution_engine/engine.hpp>
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
-#include <ikos/analyzer/analysis/fixpoint_profile.hpp>
+#include <ikos/analyzer/analysis/fixpoint_parameters.hpp>
 #include <ikos/analyzer/analysis/pointer/constraint.hpp>
 #include <ikos/analyzer/analysis/pointer/function.hpp>
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
@@ -117,17 +117,14 @@ private:
   /// \brief Analysis context
   Context& _ctx;
 
-  /// \brief Analysis options
-  const AnalysisOptions& _opts;
-
   /// \brief Empty call context
   CallContext* _empty_call_context;
 
+  /// \brief Fixpoint parameters
+  const CodeFixpointParameters& _fixpoint_parameters;
+
   /// \brief Previously computed function pointer analysis
   const FunctionPointerAnalysis& _function_pointer;
-
-  /// \brief Fixpoint profile
-  boost::optional< const FixpointProfile& > _profile;
 
 public:
   /// \brief Constructor
@@ -136,12 +133,12 @@ public:
                           ar::Code* code)
       : FwdFixpointIterator(code),
         _ctx(ctx),
-        _opts(ctx.opts),
         _empty_call_context(ctx.call_context_factory->get_empty()),
-        _function_pointer(function_pointer),
-        _profile(ctx.fixpoint_profiler != nullptr && code->is_function_body()
-                     ? ctx.fixpoint_profiler->profile(code->function())
-                     : boost::none) {}
+        _fixpoint_parameters(
+            code->is_function_body()
+                ? ctx.fixpoint_parameters->get(code->function())
+                : ctx.fixpoint_parameters->default_params()),
+        _function_pointer(function_pointer) {}
 
   /// \brief Compute an intra-procedural fixpoint on the given code
   void run() { FwdFixpointIterator::run(AbstractDomainT::top_no_exceptions()); }
@@ -151,16 +148,17 @@ public:
                               unsigned iteration,
                               AbstractDomainT before,
                               AbstractDomainT after) override {
-    if (iteration <= _opts.loop_iterations) {
+    if (iteration <= this->_fixpoint_parameters.loop_iterations) {
       // Fixed number of iterations using join
       before.join_iter_with(after);
       return before;
     }
 
-    switch (_opts.widening_strategy) {
+    switch (this->_fixpoint_parameters.widening_strategy) {
       case WideningStrategy::Widen: {
-        if (iteration == _opts.loop_iterations + 1 && this->_profile) {
-          if (auto threshold = this->_profile->widening_hint(head)) {
+        if (iteration == this->_fixpoint_parameters.loop_iterations + 1) {
+          if (auto threshold =
+                  this->_fixpoint_parameters.widening_hints.get(head)) {
             // One iteration using widening with threshold
             before.widen_threshold_with(after, *threshold);
             return before;
@@ -187,10 +185,11 @@ public:
                          unsigned iteration,
                          AbstractDomainT before,
                          AbstractDomainT after) override {
-    switch (_opts.narrowing_strategy) {
+    switch (this->_fixpoint_parameters.narrowing_strategy) {
       case NarrowingStrategy::Narrow: {
-        if (iteration == 1 && this->_profile) {
-          if (auto threshold = this->_profile->widening_hint(head)) {
+        if (iteration == 1) {
+          if (auto threshold =
+                  this->_fixpoint_parameters.widening_hints.get(head)) {
             // First iteration using narrowing with threshold
             before.narrow_threshold_with(after, *threshold);
             return before;
@@ -212,13 +211,14 @@ public:
     }
   }
 
-  bool is_decreasing_iterations_fixpoint(ar::BasicBlock* /*head*/,
-                                         unsigned iteration,
-                                         const AbstractDomainT& before,
-                                         const AbstractDomainT& after) {
+  bool is_decreasing_iterations_fixpoint(
+      ar::BasicBlock* /*head*/,
+      unsigned iteration,
+      const AbstractDomainT& before,
+      const AbstractDomainT& after) override {
     // Check if we reached the number of requested iterations, or convergence
-    return (_opts.narrowing_iterations &&
-            iteration >= *_opts.narrowing_iterations) ||
+    return (this->_fixpoint_parameters.narrowing_iterations &&
+            iteration >= *this->_fixpoint_parameters.narrowing_iterations) ||
            before.leq(after);
   }
 

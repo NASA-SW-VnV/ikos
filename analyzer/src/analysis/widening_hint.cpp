@@ -1,9 +1,11 @@
 /*******************************************************************************
  *
  * \file
- * \brief FixpointProfileAnalysis implementation used by the analysis
+ * \brief Widening hint analysis implementation
  *
  * Author: Thomas Bailleux
+ *
+ * Contributor: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
@@ -45,10 +47,10 @@
 
 #include <ikos/ar/semantic/statement.hpp>
 
-#include <ikos/analyzer/analysis/fixpoint_profile.hpp>
+#include <ikos/analyzer/analysis/fixpoint_parameters.hpp>
+#include <ikos/analyzer/analysis/widening_hint.hpp>
 #include <ikos/analyzer/support/cast.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
-#include <ikos/analyzer/util/log.hpp>
 #include <ikos/analyzer/util/progress.hpp>
 
 namespace ikos {
@@ -56,39 +58,33 @@ namespace analyzer {
 
 namespace {
 
-class FixpointProfileWtoVisitor
-    : public core::WtoComponentVisitor< ar::Code* > {
+/// \brief Weak topological visitor to find widening hints
+class WideningHintWtoVisitor : public core::WtoComponentVisitor< ar::Code* > {
 private:
   using WtoVertexT = core::WtoVertex< ar::Code* >;
   using WtoCycleT = core::WtoCycle< ar::Code* >;
 
 private:
-  llvm::DenseMap< ar::BasicBlock*, std::unique_ptr< core::MachineInt > >*
-      _collector;
+  WideningHints& _hints;
 
 public:
-  /// \brief Default constructor
-  explicit FixpointProfileWtoVisitor(
-      llvm::DenseMap< ar::BasicBlock*, std::unique_ptr< core::MachineInt > >*
-          collector) {
-    this->_collector = collector;
-  }
+  /// \brief Constructor
+  explicit WideningHintWtoVisitor(WideningHints& hints) : _hints(hints) {}
 
-  /// \brief Default copy constructor
-  FixpointProfileWtoVisitor(const FixpointProfileWtoVisitor&) = delete;
+  /// \brief Copy constructor
+  WideningHintWtoVisitor(const WideningHintWtoVisitor&) = delete;
 
-  /// \brief Default move constructor
-  FixpointProfileWtoVisitor(FixpointProfileWtoVisitor&&) = delete;
+  /// \brief Move constructor
+  WideningHintWtoVisitor(WideningHintWtoVisitor&&) = delete;
 
-  /// \brief Delete copy assignment operator
-  FixpointProfileWtoVisitor& operator=(const FixpointProfileWtoVisitor&) =
-      delete;
+  /// \brief Copy assignment operator
+  WideningHintWtoVisitor& operator=(const WideningHintWtoVisitor&) = delete;
 
-  /// \brief Delete move assignment operator
-  FixpointProfileWtoVisitor& operator=(FixpointProfileWtoVisitor&&) = delete;
+  /// \brief Move assignment operator
+  WideningHintWtoVisitor& operator=(WideningHintWtoVisitor&&) = delete;
 
   /// \brief Destructor
-  ~FixpointProfileWtoVisitor() override = default;
+  ~WideningHintWtoVisitor() override = default;
 
   void visit(const WtoVertexT&) override {}
 
@@ -98,9 +94,7 @@ public:
     if (head->num_successors() > 1) {
       auto successor = *(head->successor_begin());
       if (auto constant = this->extract_constant(successor)) {
-        this->_collector->try_emplace(head,
-                                      std::make_unique< ar::MachineInt >(
-                                          *constant));
+        this->_hints.add(head, *constant);
       }
     }
 
@@ -162,12 +156,12 @@ public:
     }
   }
 
-}; // end class FixpointProfileWtoVisitor
+}; // end class WideningHintWtoVisitor
 
 } // end anonymous namespace
 
-void FixpointProfileAnalysis::run() {
-  auto bundle = this->_ctx.bundle;
+void WideningHintAnalysis::run() {
+  ar::Bundle* bundle = this->_ctx.bundle;
 
   // Setup a progress logger
   std::unique_ptr< ProgressLogger > progress =
@@ -186,71 +180,23 @@ void FixpointProfileAnalysis::run() {
        ++it) {
     ar::Function* fun = *it;
     if (fun->is_definition()) {
-      progress->start_task("Running fixpoint profile analysis on function '" +
+      progress->start_task("Running widening hint analysis on function '" +
                            demangle(fun->name()) + "'");
-      if (auto profile = this->analyze_function(fun)) {
-        this->_map.try_emplace(fun, std::move(profile));
-      }
+      this->run(fun);
     }
   }
 }
 
-void FixpointProfileAnalysis::dump(std::ostream& o) const {
-  for (const auto& item : this->_map) {
-    o << "function " << item.first->name() << ":\n";
-    item.second->dump(o);
-    o << "\n";
-  }
-}
-
-std::unique_ptr< FixpointProfile > FixpointProfileAnalysis::analyze_function(
-    ar::Function* fun) {
+void WideningHintAnalysis::run(ar::Function* fun) {
   if (!fun->is_definition()) {
-    return nullptr;
+    return;
   }
 
-  std::unique_ptr< FixpointProfile > profile(new FixpointProfile(fun));
-  FixpointProfileWtoVisitor visitor(&profile->_widening_hints);
+  CodeFixpointParameters& parameters = this->_ctx.fixpoint_parameters->get(fun);
+  WideningHintWtoVisitor visitor(parameters.widening_hints);
   core::Wto< ar::Code* > wto(fun->body());
   wto.accept(visitor);
-  if (!profile->empty()) {
-    return profile;
-  } else {
-    return nullptr;
-  }
 }
 
-boost::optional< const FixpointProfile& > FixpointProfileAnalysis::profile(
-    ar::Function* fun) const {
-  auto it = this->_map.find(fun);
-  if (it != this->_map.end()) {
-    return *(it->second);
-  } else {
-    return boost::none;
-  }
-}
-
-boost::optional< const core::MachineInt& > FixpointProfile::widening_hint(
-    ar::BasicBlock* bb) const {
-  auto it = this->_widening_hints.find(bb);
-  if (it == this->_widening_hints.end()) {
-    return boost::none;
-  } else {
-    return *it->second;
-  }
-}
-
-bool FixpointProfile::empty() const {
-  return this->_widening_hints.empty();
-}
-
-void FixpointProfile::dump(std::ostream& o) const {
-  for (const auto& item : this->_widening_hints) {
-    o << " • ";
-    item.first->dump(o);
-    o << ": " << *item.second << "\n";
-  }
-}
-
-} // namespace analyzer
+} // end namespace analyzer
 } // end namespace ikos

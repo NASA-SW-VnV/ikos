@@ -50,7 +50,7 @@
 
 #include <ikos/analyzer/analysis/call_context.hpp>
 #include <ikos/analyzer/analysis/context.hpp>
-#include <ikos/analyzer/analysis/fixpoint_profile.hpp>
+#include <ikos/analyzer/analysis/fixpoint_parameters.hpp>
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
 
@@ -71,17 +71,14 @@ private:
   /// \brief Analysis context
   Context& _ctx;
 
-  /// \brief Analysis options
-  const AnalysisOptions& _opts;
-
   /// \brief Analyzed function
   ar::Function* _function;
 
   /// \brief Empty call context
   CallContext* _empty_call_context;
 
-  /// \brief Fixpoint profile
-  boost::optional< const FixpointProfile& > _profile;
+  /// \brief Fixpoint parameters
+  const CodeFixpointParameters& _fixpoint_parameters;
 
 public:
   /// \brief Create a function fixpoint iterator

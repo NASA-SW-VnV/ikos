@@ -153,8 +153,8 @@ if __name__ == '__main__':
                options=['--no-simplify-upcast-comparison'],
                line_checks=[(13, 'ok'), (21, 'ok', 'warning'), (29, 'ok'), (37, 'ok', 'warning'), (45, 'ok')],
                expected='unsafe'))
-    t.add(Test('test-27.c', 'test-27.c (no fixpoint profiles)', 'boa', 'safe',
-               options=['--no-fixpoint-profiles'],
+    t.add(Test('test-27.c', 'test-27.c (no widening hints)', 'boa', 'safe',
+               options=['--no-widening-hints'],
                line_checks=[(13, 'ok'), (21, 'ok'), (29, 'ok', 'warning'), (37, 'ok', 'warning'), (45, 'ok', 'warning')],
                expected='unsafe'))
     t.add(Test('test-28.c', 'test-28.c (hardware addresses)', 'boa', 'safe', options=['--hardware-addresses=0x40-0x45']))

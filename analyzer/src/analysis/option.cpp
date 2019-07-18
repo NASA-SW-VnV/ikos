@@ -95,7 +95,7 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("use-pointer-analysis", this->use_pointer);
 
-  table.insert("use-fixpoint-profiles", this->use_fixpoint_profiles);
+  table.insert("use-widening-hints", this->use_widening_hints);
 
   table.insert("use-fixpoint-cache", this->use_fixpoint_cache);
 

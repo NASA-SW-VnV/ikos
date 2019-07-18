@@ -142,7 +142,7 @@ You shall see the following output. IKOS reports two occurrences of buffer overf
 [*] Running ikos analyzer
 [*] Translating LLVM bitcode to AR
 [*] Running liveness analysis
-[*] Running fixpoint profile analysis
+[*] Running widening hint analysis
 [*] Running interprocedural value analysis
 [*] Analyzing entry point 'main'
 [*] Checking properties for entry point 'main'
