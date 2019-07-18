@@ -279,13 +279,13 @@ private:
     /// \brief Copy constructor
     Binding(const Binding&) = default;
 
-    /// \brief Deleted move constructor
+    /// \brief No move constructor
     Binding(Binding&&) = delete;
 
-    /// \brief Deleted copy assignment operator
+    /// \brief No copy assignment operator
     Binding& operator=(const Binding&) = delete;
 
-    /// \brief Deleted move assignment operator
+    /// \brief No move assignment operator
     Binding& operator=(Binding&&) = delete;
 
     /// \brief Destructor

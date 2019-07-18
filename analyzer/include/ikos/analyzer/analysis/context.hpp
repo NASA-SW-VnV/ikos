@@ -128,16 +128,16 @@ public:
         function_pointer(nullptr),
         pointer(nullptr) {}
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Context(const Context&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Context(Context&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Context& operator=(const Context&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Context& operator=(Context&&) = delete;
 
   /// \brief Destructor

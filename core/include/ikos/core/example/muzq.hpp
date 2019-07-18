@@ -97,16 +97,16 @@ protected:
   explicit Statement(StatementKind kind) : _kind(kind) {}
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Statement(const Statement&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Statement(Statement&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Statement& operator=(const Statement&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Statement& operator=(Statement&&) = delete;
 
   /// \brief Destructor
@@ -440,16 +440,16 @@ private:
   explicit BasicBlock(std::string name) : _name(std::move(name)) {}
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   BasicBlock(const BasicBlock&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   BasicBlock(BasicBlock&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   BasicBlock& operator=(const BasicBlock&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   BasicBlock& operator=(BasicBlock&&) = delete;
 
   /// \brief Destructor

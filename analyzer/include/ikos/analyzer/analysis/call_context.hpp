@@ -74,16 +74,16 @@ private:
   }
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   CallContext(const CallContext&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   CallContext(CallContext&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   CallContext& operator=(const CallContext&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   CallContext& operator=(CallContext&&) = delete;
 
   /// \brief Destructor
@@ -125,16 +125,16 @@ public:
   /// \brief Constructor
   CallContextFactory();
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   CallContextFactory(const CallContextFactory&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   CallContextFactory(CallContextFactory&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   CallContextFactory& operator=(const CallContextFactory&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   CallContextFactory& operator=(CallContextFactory&&) = delete;
 
   /// \brief Destructor

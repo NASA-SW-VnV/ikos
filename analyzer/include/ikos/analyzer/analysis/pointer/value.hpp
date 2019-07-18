@@ -86,16 +86,16 @@ public:
   /// \brief Constructor
   PointerInfo(const ar::DataLayout& data_layout);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   PointerInfo(const PointerInfo&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   PointerInfo(PointerInfo&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   PointerInfo& operator=(const PointerInfo&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   PointerInfo& operator=(PointerInfo&&) = delete;
 
   /// \brief Destructor

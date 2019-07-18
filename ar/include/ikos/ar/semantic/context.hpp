@@ -67,16 +67,16 @@ public:
   /// \brief Default constructor
   Context();
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Context(const Context&) = delete;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Context(Context&&) noexcept = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Context& operator=(const Context&) = delete;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   Context& operator=(Context&&) noexcept = default;
 
   /// \brief Destructor

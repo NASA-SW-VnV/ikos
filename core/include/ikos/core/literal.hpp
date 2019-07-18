@@ -144,7 +144,7 @@ private:
   explicit Literal(Lit lit) : _lit(std::move(lit)) {}
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   Literal() = delete;
 
   /// \brief Copy constructor

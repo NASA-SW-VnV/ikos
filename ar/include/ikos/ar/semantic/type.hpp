@@ -96,16 +96,16 @@ protected:
   explicit Type(TypeKind kind);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Type(const Type&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Type(Type&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Type& operator=(const Type&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Type& operator=(Type&&) = delete;
 
   /// \brief Destructor

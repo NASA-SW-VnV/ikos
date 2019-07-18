@@ -101,14 +101,14 @@ public:
   explicit InterleavedFwdFixpointIterator(GraphRef cfg)
       : _cfg(cfg), _wto(cfg) {}
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   InterleavedFwdFixpointIterator(const InterleavedFwdFixpointIterator&) =
       delete;
 
   /// \brief Move constructor
   InterleavedFwdFixpointIterator(InterleavedFwdFixpointIterator&&) = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   InterleavedFwdFixpointIterator& operator=(
       const InterleavedFwdFixpointIterator&) = delete;
 

@@ -86,16 +86,16 @@ protected:
   explicit Operand(OperandKind kind) : _kind(kind) {}
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Operand(const Operand&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Operand(Operand&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Operand& operator=(const Operand&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Operand& operator=(Operand&&) = delete;
 
   /// \brief Destructor
@@ -212,16 +212,16 @@ protected:
   explicit Constraint(ConstraintKind kind) : _kind(kind) {}
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Constraint(const Constraint&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Constraint(Constraint&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Constraint& operator=(const Constraint&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Constraint& operator=(Constraint&&) = delete;
 
   /// \brief Destructor
@@ -450,13 +450,13 @@ public:
   ConstraintSystem(unsigned offsets_bit_width, Signedness offsets_sign)
       : _offsets_bit_width(offsets_bit_width), _offsets_sign(offsets_sign) {}
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   ConstraintSystem(const ConstraintSystem&) = delete;
 
   /// \brief Move constructor
   ConstraintSystem(ConstraintSystem&&) = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   ConstraintSystem& operator=(const ConstraintSystem&) = delete;
 
   /// \brief Move assignment operator

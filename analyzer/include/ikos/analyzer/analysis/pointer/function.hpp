@@ -69,16 +69,16 @@ public:
   /// \brief Constructor
   explicit FunctionPointerAnalysis(Context& ctx);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   FunctionPointerAnalysis(const FunctionPointerAnalysis&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   FunctionPointerAnalysis(FunctionPointerAnalysis&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   FunctionPointerAnalysis& operator=(const FunctionPointerAnalysis&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   FunctionPointerAnalysis& operator=(FunctionPointerAnalysis&&) = delete;
 
   /// \brief Destructor

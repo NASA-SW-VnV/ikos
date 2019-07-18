@@ -79,16 +79,16 @@ public:
       : _frontend(reinterpret_cast< void* >(frontend)),
         _frontend_type_info(&typeid(T)) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   Traceable(const Traceable&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Traceable(Traceable&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   Traceable& operator=(const Traceable&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   Traceable& operator=(Traceable&&) noexcept = default;
 
   /// \brief Destructor

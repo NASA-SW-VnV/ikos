@@ -89,7 +89,7 @@ public:
              PrivateTag)
         : _name(std::move(name)), _bit_width(bit_width), _sign(sign), _id(id) {}
 
-    /// \brief Deleted default constructor, copy constructors, etc.
+    /// \brief No default constructor, copy constructors, etc.
     Variable() = delete;
     Variable(const Variable&) = delete;
     Variable(Variable&&) = delete;
@@ -130,7 +130,7 @@ public:
   /// \brief Create a variable factory, starting with the given index
   explicit VariableFactory(Index start_id) : _next_id(start_id) {}
 
-  /// \brief Delete copy constructor, copy assignment constructor, etc.
+  /// \brief No copy constructor, copy assignment operator, etc.
   VariableFactory(const VariableFactory&) = delete;
   VariableFactory(VariableFactory&&) = delete;
   VariableFactory& operator=(const VariableFactory&) = delete;

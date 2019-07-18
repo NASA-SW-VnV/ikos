@@ -75,16 +75,16 @@ public:
   /// \brief Default constructor
   explicit SymbolTable() = default;
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   SymbolTable(const SymbolTable&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   SymbolTable(SymbolTable&&) = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   SymbolTable& operator=(const SymbolTable&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   SymbolTable& operator=(SymbolTable&&) = default;
 
   /// \brief Destructor

@@ -119,16 +119,16 @@ protected:
             std::initializer_list< Value* > operands);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Statement(const Statement&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Statement(Statement&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Statement& operator=(const Statement&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Statement& operator=(Statement&&) = delete;
 
   /// \brief Destructor

@@ -162,16 +162,16 @@ public:
   /// \brief Constructor
   FixpointParameters(const AnalysisOptions& opts);
 
-  /// \brief Copy constructor
+  /// \brief No copy constructor
   FixpointParameters(const FixpointParameters&) = delete;
 
-  /// \brief Move constructor
+  /// \brief No move constructor
   FixpointParameters(FixpointParameters&&) = delete;
 
-  /// \brief Copy assignment operator
+  /// \brief No copy assignment operator
   FixpointParameters& operator=(const FixpointParameters&) = delete;
 
-  /// \brief Move assignment operator
+  /// \brief No move assignment operator
   FixpointParameters& operator=(FixpointParameters&&) = delete;
 
   /// \brief Destructor

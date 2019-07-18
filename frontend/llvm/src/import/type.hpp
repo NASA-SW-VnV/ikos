@@ -114,19 +114,19 @@ public:
   /// \brief Public constructor
   explicit TypeWithSignImporter(ImportContext& ctx);
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   TypeWithSignImporter() = delete;
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   TypeWithSignImporter(const TypeWithSignImporter&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   TypeWithSignImporter(TypeWithSignImporter&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   TypeWithSignImporter& operator=(const TypeWithSignImporter&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   TypeWithSignImporter& operator=(TypeWithSignImporter&&) = delete;
 
   /// \brief Destructor
@@ -228,7 +228,7 @@ public:
   explicit TypeWithDebugInfoImporter(ImportContext& ctx,
                                      TypeWithSignImporter& type_sign_imp);
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   TypeWithDebugInfoImporter() = delete;
 
 private:
@@ -236,14 +236,14 @@ private:
   TypeWithDebugInfoImporter(const TypeWithDebugInfoImporter&) = default;
 
 public:
-  /// \brief Default move constructor
+  /// \brief Move constructor
   TypeWithDebugInfoImporter(TypeWithDebugInfoImporter&&) = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   TypeWithDebugInfoImporter& operator=(const TypeWithDebugInfoImporter&) =
       delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   TypeWithDebugInfoImporter& operator=(TypeWithDebugInfoImporter&&) = delete;
 
   /// \brief Destructor
@@ -339,19 +339,19 @@ public:
   /// \brief Public constructor
   explicit TypeMatcher(ImportContext& ctx);
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   TypeMatcher() = delete;
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   TypeMatcher(const TypeMatcher&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   TypeMatcher(TypeMatcher&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   TypeMatcher& operator=(const TypeMatcher&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   TypeMatcher& operator=(TypeMatcher&&) = delete;
 
   /// \brief Destructor

@@ -61,16 +61,16 @@ public:
   /// \brief Public constructor
   explicit DotFormatter(FormatOptions opts = DefaultFormat) : Formatter(opts) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   DotFormatter(const DotFormatter&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   DotFormatter(DotFormatter&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   DotFormatter& operator=(const DotFormatter&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   DotFormatter& operator=(DotFormatter&&) = default;
 
   /// \brief Destructor

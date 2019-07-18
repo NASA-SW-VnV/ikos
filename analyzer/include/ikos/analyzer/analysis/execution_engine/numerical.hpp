@@ -217,10 +217,10 @@ public:
   /// \brief Public move constructor
   NumericalExecutionEngine(NumericalExecutionEngine&&) = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   NumericalExecutionEngine& operator=(const NumericalExecutionEngine&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   NumericalExecutionEngine& operator=(NumericalExecutionEngine&&) = delete;
 
   /// \brief Destructor

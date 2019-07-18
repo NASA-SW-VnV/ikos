@@ -58,17 +58,17 @@ public:
   /// \brief Constructor
   explicit IntraproceduralValueAnalysis(Context& ctx);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   IntraproceduralValueAnalysis(const IntraproceduralValueAnalysis&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   IntraproceduralValueAnalysis(IntraproceduralValueAnalysis&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   IntraproceduralValueAnalysis& operator=(const IntraproceduralValueAnalysis&) =
       delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   IntraproceduralValueAnalysis& operator=(IntraproceduralValueAnalysis&&) =
       delete;
 

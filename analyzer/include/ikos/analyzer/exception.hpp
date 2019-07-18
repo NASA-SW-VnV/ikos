@@ -97,7 +97,7 @@ public:
   explicit LogicError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   LogicError() = delete;
 
   /// \brief Copy constructor
@@ -141,7 +141,7 @@ public:
   explicit ArgumentError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   ArgumentError() = delete;
 
   /// \brief Copy constructor
@@ -185,7 +185,7 @@ public:
   explicit FrontendError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   FrontendError() = delete;
 
   /// \brief Copy constructor

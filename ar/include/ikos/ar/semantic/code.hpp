@@ -106,16 +106,16 @@ private:
   explicit BasicBlock(Code* code);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   BasicBlock(const BasicBlock&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   BasicBlock(BasicBlock&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   BasicBlock& operator=(const BasicBlock&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   BasicBlock& operator=(BasicBlock&&) = delete;
 
   /// \brief Destructor
@@ -333,16 +333,16 @@ private:
   explicit Code(GlobalVariable* gv);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Code(const Code&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Code(Code&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Code& operator=(const Code&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Code& operator=(Code&&) = delete;
 
   /// \brief Destructor

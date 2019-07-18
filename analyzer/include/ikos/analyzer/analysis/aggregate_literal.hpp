@@ -119,19 +119,19 @@ private:
       : _lit(std::move(lit)), _size(std::move(size)) {}
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   AggregateLiteral() = delete;
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   AggregateLiteral(const AggregateLiteral&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   AggregateLiteral(AggregateLiteral&&) = default;
 
-  /// \brief Default copy assignment constructor
+  /// \brief Copy assignment operator
   AggregateLiteral& operator=(const AggregateLiteral&) = default;
 
-  /// \brief Default move assignment constructor
+  /// \brief Move assignment operator
   AggregateLiteral& operator=(AggregateLiteral&&) = default;
 
   /// \brief Destructor

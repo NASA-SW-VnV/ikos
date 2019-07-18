@@ -69,7 +69,7 @@ public:
   explicit NumberError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   NumberError() = delete;
 
   /// \brief Copy constructor

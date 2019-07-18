@@ -81,16 +81,16 @@ private:
     /// \brief Default constructor
     PolymorphicBase() = default;
 
-    /// \brief Copy constructor
+    /// \brief No copy constructor
     PolymorphicBase(const PolymorphicBase&) = delete;
 
-    /// \brief Move constructor
+    /// \brief No move constructor
     PolymorphicBase(PolymorphicBase&&) = delete;
 
-    /// \brief Copy assignment operator
+    /// \brief No copy assignment operator
     PolymorphicBase& operator=(const PolymorphicBase&) = delete;
 
-    /// \brief Move assignment operator
+    /// \brief No move assignment operator
     PolymorphicBase& operator=(PolymorphicBase&&) = delete;
 
     /// \brief Destructor

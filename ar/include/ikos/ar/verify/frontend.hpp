@@ -66,16 +66,16 @@ public:
   /// \param all Find all errors, do not stop at the first one
   explicit FrontendVerifier(bool all = true) : _all(all) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   FrontendVerifier(const FrontendVerifier&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   FrontendVerifier(FrontendVerifier&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   FrontendVerifier& operator=(const FrontendVerifier&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   FrontendVerifier& operator=(FrontendVerifier&&) noexcept = default;
 
   /// \brief Destructor

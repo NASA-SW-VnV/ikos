@@ -66,16 +66,16 @@ public:
   /// \param all Find all errors, do not stop at the first one
   explicit TypeVerifier(bool all = true) : _all(all) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   TypeVerifier(const TypeVerifier&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   TypeVerifier(TypeVerifier&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   TypeVerifier& operator=(const TypeVerifier&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   TypeVerifier& operator=(TypeVerifier&&) noexcept = default;
 
   /// \brief Destructor

@@ -55,19 +55,19 @@ public:
   /// \brief Default constructor
   Pass() = default;
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   Pass(const Pass&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Pass(Pass&&) noexcept = default;
 
-  /// \brief Default copy assignment opreator
+  /// \brief Copy assignment operator
   Pass& operator=(const Pass&) = default;
 
-  /// \brief Default move assignment opreator
+  /// \brief Move assignment operator
   Pass& operator=(Pass&&) noexcept = default;
 
-  /// \brief Virtual destructor
+  /// \brief Destructor
   virtual ~Pass() = default;
 
   /// \brief Run the pass on the given Bundle

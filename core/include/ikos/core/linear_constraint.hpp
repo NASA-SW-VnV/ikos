@@ -75,7 +75,7 @@ private:
   Kind _kind;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   LinearConstraint() = delete;
 
   /// \brief Constructor

@@ -100,16 +100,16 @@ public:
   /// \brief Public constructor
   explicit Importer(ar::Context& ctx) : _context(ctx) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   Importer(const Importer&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Importer(Importer&&) noexcept = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Importer& operator=(const Importer&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Importer& operator=(Importer&&) = delete;
 
   /// \brief Destructor

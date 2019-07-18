@@ -175,16 +175,16 @@ public:
   /// \brief Default constructor
   ContextImpl();
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   ContextImpl(const ContextImpl&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   ContextImpl(ContextImpl&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   ContextImpl& operator=(const ContextImpl&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   ContextImpl& operator=(ContextImpl&&) = delete;
 
   /// \brief Destructor

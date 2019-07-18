@@ -71,16 +71,16 @@ public:
   /// \brief Constructor
   explicit WideningHintWtoVisitor(WideningHints& hints) : _hints(hints) {}
 
-  /// \brief Copy constructor
+  /// \brief No copy constructor
   WideningHintWtoVisitor(const WideningHintWtoVisitor&) = delete;
 
-  /// \brief Move constructor
+  /// \brief No move constructor
   WideningHintWtoVisitor(WideningHintWtoVisitor&&) = delete;
 
-  /// \brief Copy assignment operator
+  /// \brief No copy assignment operator
   WideningHintWtoVisitor& operator=(const WideningHintWtoVisitor&) = delete;
 
-  /// \brief Move assignment operator
+  /// \brief No move assignment operator
   WideningHintWtoVisitor& operator=(WideningHintWtoVisitor&&) = delete;
 
   /// \brief Destructor

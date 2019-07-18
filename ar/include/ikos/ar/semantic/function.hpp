@@ -106,16 +106,16 @@ private:
            Intrinsic::ID intrinsic_id);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Function(const Function&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Function(Function&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Function& operator=(const Function&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Function& operator=(Function&&) = delete;
 
   /// \brief Destructor

@@ -80,16 +80,16 @@ public:
   PointerAnalysis(Context& ctx,
                   const FunctionPointerAnalysis& function_pointer);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   PointerAnalysis(const PointerAnalysis&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   PointerAnalysis(PointerAnalysis&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   PointerAnalysis& operator=(const PointerAnalysis&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   PointerAnalysis& operator=(PointerAnalysis&&) = delete;
 
   /// \brief Destructor

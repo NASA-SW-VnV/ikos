@@ -142,7 +142,7 @@ public:
                                       HardwareAddressesExceptionKind kind,
                                       unsigned n_line);
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   HardwareAddressesException() = delete;
 
   /// \brief Copy constructor

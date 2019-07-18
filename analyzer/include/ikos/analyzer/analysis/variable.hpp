@@ -130,16 +130,16 @@ protected:
   Variable(VariableKind kind, ar::Type* type);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Variable(const Variable&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Variable(Variable&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Variable& operator=(const Variable&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Variable& operator=(Variable&&) = delete;
 
   /// \brief Destructor
@@ -501,16 +501,16 @@ public:
   /// \brief Constructor
   explicit VariableFactory(ar::Bundle* bundle);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   VariableFactory(const VariableFactory&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   VariableFactory(VariableFactory&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   VariableFactory& operator=(const VariableFactory&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   VariableFactory& operator=(VariableFactory&&) = delete;
 
   /// \brief Destructor

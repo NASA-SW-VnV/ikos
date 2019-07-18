@@ -65,16 +65,16 @@ public:
   /// \brief Constructor
   Timer() = default;
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   Timer(const Timer&) = default;
 
-  /// \brief Delete move constructor
+  /// \brief No move constructor
   Timer(Timer&&) = delete;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   Timer& operator=(const Timer&) = default;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Timer& operator=(Timer&&) = delete;
 
   /// \brief Destructor
@@ -111,16 +111,16 @@ public:
     this->_timer.start();
   }
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   ScopeTimer(const ScopeTimer&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   ScopeTimer(ScopeTimer&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   ScopeTimer& operator=(const ScopeTimer&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   ScopeTimer& operator=(ScopeTimer&&) = delete;
 
   /// \brief Destructor
@@ -154,16 +154,16 @@ public:
   /// \param name Timer name
   ScopeTimerDatabase(TimesTable& table, std::string name);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   ScopeTimerDatabase(const ScopeTimerDatabase&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   ScopeTimerDatabase(ScopeTimerDatabase&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   ScopeTimerDatabase& operator=(const ScopeTimerDatabase&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   ScopeTimerDatabase& operator=(ScopeTimerDatabase&&) = delete;
 
   /// \brief Destructor

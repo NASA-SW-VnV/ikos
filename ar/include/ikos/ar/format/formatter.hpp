@@ -80,16 +80,16 @@ public:
   /// \brief Public constructor
   explicit Formatter(FormatOptions opts = DefaultFormat) : _opts(opts) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   Formatter(const Formatter&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Formatter(Formatter&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   Formatter& operator=(const Formatter&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   Formatter& operator=(Formatter&&) noexcept = default;
 
   /// \brief Destructor

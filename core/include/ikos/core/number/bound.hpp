@@ -88,7 +88,7 @@ private:
   }
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   Bound() = delete;
 
   /// \brief Create a bound

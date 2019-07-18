@@ -77,7 +77,7 @@ private:
   std::shared_ptr< const std::string > _what;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   DbError() = delete;
 
   /// \brief Constructor
@@ -168,22 +168,22 @@ private:
   std::size_t _inserted_rows = 0;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   DbConnection() = delete;
 
   /// \brief Open a database connection
   explicit DbConnection(std::string filename);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   DbConnection(const DbConnection&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   DbConnection(DbConnection&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   DbConnection& operator=(const DbConnection&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   DbConnection& operator=(DbConnection&&) = delete;
 
   /// \brief Destructor
@@ -262,7 +262,7 @@ private:
   int _current_column = 1;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   DbOstream() = delete;
 
   /// \brief Constructor
@@ -272,16 +272,16 @@ public:
   /// \param columns Number of columns
   DbOstream(DbConnection& db, StringRef table_name, int columns);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   DbOstream(const DbOstream&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   DbOstream(DbOstream&&) = delete;
 
-  /// \brief Deleted copy assignment constructor
+  /// \brief No copy assignment operator
   DbOstream& operator=(const DbOstream&) = delete;
 
-  /// \brief Deleted move assignment constructor
+  /// \brief No move assignment operator
   DbOstream& operator=(DbOstream&&) = delete;
 
   /// \brief Destructor
@@ -372,7 +372,7 @@ private:
   int _current_column;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   DbIstream() = delete;
 
   /// \brief Constructor
@@ -381,16 +381,16 @@ public:
   /// \param query SQL query
   DbIstream(DbConnection& db, std::string query);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   DbIstream(const DbIstream&) = delete;
 
-  /// \brief Delete copy constructor
+  /// \brief No copy constructor
   DbIstream(DbIstream&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   DbIstream& operator=(const DbIstream&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   DbIstream& operator=(DbIstream&&) = delete;
 
   /// \brief Destructor

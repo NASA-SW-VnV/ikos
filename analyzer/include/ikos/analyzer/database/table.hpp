@@ -60,7 +60,7 @@ protected:
   std::string _name;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   DatabaseTable() = delete;
 
   /// \brief Constructor
@@ -75,16 +75,16 @@ public:
       llvm::ArrayRef< std::pair< StringRef, sqlite::DbColumnType > > cols,
       llvm::ArrayRef< StringRef > indexes);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   DatabaseTable(const DatabaseTable&) = delete;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   DatabaseTable(DatabaseTable&&) = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   DatabaseTable& operator=(const DatabaseTable&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   DatabaseTable& operator=(DatabaseTable&&) = delete;
 
   /// \brief Destructor

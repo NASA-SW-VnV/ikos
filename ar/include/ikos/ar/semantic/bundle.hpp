@@ -96,16 +96,16 @@ private:
          std::string triple);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Bundle(const Bundle&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Bundle(Bundle&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Bundle& operator=(const Bundle&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Bundle& operator=(Bundle&&) = delete;
 
   /// \brief Destructor

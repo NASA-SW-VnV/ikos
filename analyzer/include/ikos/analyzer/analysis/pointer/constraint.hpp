@@ -81,16 +81,16 @@ public:
   /// \brief Constructor
   explicit PointerConstraints(const ar::DataLayout& dl);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   PointerConstraints(const PointerConstraints&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   PointerConstraints(PointerConstraints&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   PointerConstraints& operator=(const PointerConstraints&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   PointerConstraints& operator=(PointerConstraints&&) = delete;
 
   /// \brief Destructor

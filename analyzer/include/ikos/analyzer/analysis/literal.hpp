@@ -86,16 +86,16 @@ public:
   /// \brief Create an aggregate literal
   explicit Literal(AggregateLit lit) : _lit(std::move(lit)) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   Literal(const Literal&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Literal(Literal&&) = default;
 
-  /// \brief Default copy assignment constructor
+  /// \brief Copy assignment operator
   Literal& operator=(const Literal&) = default;
 
-  /// \brief Default move assignment constructor
+  /// \brief Move assignment operator
   Literal& operator=(Literal&&) = default;
 
   /// \brief Destructor
@@ -332,16 +332,16 @@ public:
   /// \brief Constructor
   LiteralFactory(VariableFactory& vfac, const ar::DataLayout& data_layout);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   LiteralFactory(const LiteralFactory&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   LiteralFactory(LiteralFactory&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   LiteralFactory& operator=(const LiteralFactory&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   LiteralFactory& operator=(LiteralFactory&&) = delete;
 
   /// \brief Destructor

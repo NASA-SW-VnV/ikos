@@ -118,16 +118,16 @@ private:
   DataLayout(Endianness endianness, DataLayoutInfo pointers);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   DataLayout(const DataLayout&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   DataLayout(DataLayout&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   DataLayout& operator=(const DataLayout&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   DataLayout& operator=(DataLayout&&) = delete;
 
   /// \brief Destructor

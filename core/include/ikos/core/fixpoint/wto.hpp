@@ -533,13 +533,13 @@ public:
     this->build_nesting();
   }
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Wto(const Wto& other) = delete;
 
   /// \brief Move constructor
   Wto(Wto&& other) = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Wto& operator=(const Wto& other) = delete;
 
   /// \brief Move assignment operator

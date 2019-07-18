@@ -99,7 +99,7 @@ public:
   explicit LogicError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   LogicError() = delete;
 
   /// \brief Copy constructor

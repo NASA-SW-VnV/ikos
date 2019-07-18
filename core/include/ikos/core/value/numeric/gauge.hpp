@@ -104,7 +104,7 @@ private:
   }
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   GaugeBound() = delete;
 
   /// \brief Create the gauge bound `n`

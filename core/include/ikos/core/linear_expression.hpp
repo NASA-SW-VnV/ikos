@@ -70,22 +70,22 @@ private:
   VariableRef _var;
 
 public:
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   VariableExpression() = delete;
 
   /// \brief Constructor
   explicit VariableExpression(VariableRef var) : _var(std::move(var)) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   VariableExpression(const VariableExpression&) noexcept = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   VariableExpression(VariableExpression&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   VariableExpression& operator=(const VariableExpression&) noexcept = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   VariableExpression& operator=(VariableExpression&&) noexcept = default;
 
   /// \brief Destructor

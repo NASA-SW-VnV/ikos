@@ -88,16 +88,16 @@ protected:
         _display_checks(ctx.opts.display_checks) {}
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Checker(const Checker&) = delete;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   Checker(Checker&&) noexcept = default;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Checker& operator=(const Checker&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Checker& operator=(Checker&&) = delete;
 
   /// \brief Destructor

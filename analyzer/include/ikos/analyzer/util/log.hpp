@@ -87,7 +87,7 @@ private:
   }
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   LogMessage(const LogMessage&) = delete;
 
   /// \brief Move constructor
@@ -96,10 +96,10 @@ public:
     o._out = nullptr;
   }
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   LogMessage& operator=(const LogMessage&) = delete;
 
-  /// \brief Deleted assignment operator
+  /// \brief No move assignment operator
   LogMessage& operator=(LogMessage&&) = delete;
 
   /// \brief Return the output stream of the message
@@ -144,16 +144,16 @@ public:
   /// \brief constructor
   Logger(std::ostream& out) : _out(out) {}
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Logger(const Logger&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Logger(Logger&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Logger& operator=(const Logger&) = delete;
 
-  /// \brief Deleted assignment operator
+  /// \brief No move assignment operator
   Logger& operator=(Logger&&) = delete;
 
   /// \brief Destructor
@@ -209,16 +209,16 @@ public:
   /// \brief Constructor
   explicit ScopeLogger(Logger& logger);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   ScopeLogger(const ScopeLogger&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   ScopeLogger(ScopeLogger&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   ScopeLogger& operator=(const ScopeLogger&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   ScopeLogger& operator=(ScopeLogger&&) = delete;
 
   /// \brief Destructor

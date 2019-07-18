@@ -74,16 +74,16 @@ public:
     ikos_assert(loc != nullptr && loc->isResolved());
   }
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   SourceLocation(const SourceLocation&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   SourceLocation(SourceLocation&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   SourceLocation& operator=(const SourceLocation&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   SourceLocation& operator=(SourceLocation&&) noexcept = default;
 
   /// \brief Destructor

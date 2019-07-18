@@ -73,19 +73,19 @@ public:
   explicit ImportError(const char* msg)
       : _msg(std::make_shared< const std::string >(msg)) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   ImportError() = delete;
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   ImportError(const ImportError&) noexcept = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   ImportError(ImportError&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   ImportError& operator=(const ImportError&) noexcept = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   ImportError& operator=(ImportError&&) noexcept = default;
 
   /// \brief Get the explanatory string
@@ -109,20 +109,20 @@ public:
   /// \param msg Explanatory message
   explicit TypeDebugInfoMismatch(const char* msg) : ImportError(msg) {}
 
-  /// \brief Deleted default constructor
+  /// \brief No default constructor
   TypeDebugInfoMismatch() = delete;
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   TypeDebugInfoMismatch(const TypeDebugInfoMismatch&) noexcept = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   TypeDebugInfoMismatch(TypeDebugInfoMismatch&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   TypeDebugInfoMismatch& operator=(const TypeDebugInfoMismatch&) noexcept =
       default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   TypeDebugInfoMismatch& operator=(TypeDebugInfoMismatch&&) noexcept = default;
 
   /// \brief Destructor

@@ -64,16 +64,16 @@ public:
   explicit TextFormatter(FormatOptions opts = DefaultFormat)
       : Formatter(opts) {}
 
-  /// \brief Default copy constructor
+  /// \brief Copy constructor
   TextFormatter(const TextFormatter&) = default;
 
-  /// \brief Default move constructor
+  /// \brief Move constructor
   TextFormatter(TextFormatter&&) noexcept = default;
 
-  /// \brief Default copy assignment operator
+  /// \brief Copy assignment operator
   TextFormatter& operator=(const TextFormatter&) = default;
 
-  /// \brief Default move assignment operator
+  /// \brief Move assignment operator
   TextFormatter& operator=(TextFormatter&&) noexcept = default;
 
   /// \brief Destructor

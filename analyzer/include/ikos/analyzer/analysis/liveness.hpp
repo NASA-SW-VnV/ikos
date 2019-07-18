@@ -82,16 +82,16 @@ public:
   /// \brief Constructor
   explicit LivenessAnalysis(Context& ctx);
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   LivenessAnalysis(const LivenessAnalysis&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   LivenessAnalysis(LivenessAnalysis&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   LivenessAnalysis& operator=(const LivenessAnalysis&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   LivenessAnalysis& operator=(LivenessAnalysis&&) = delete;
 
   /// \brief Destructor

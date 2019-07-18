@@ -97,16 +97,16 @@ protected:
   explicit MemoryLocation(MemoryLocationKind kind);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   MemoryLocation(const MemoryLocation&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   MemoryLocation(MemoryLocation&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   MemoryLocation& operator=(const MemoryLocation&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   MemoryLocation& operator=(MemoryLocation&&) = delete;
 
   /// \brief Destructor
@@ -316,19 +316,19 @@ private:
       _dyn_alloc_map;
 
 public:
-  /// \brief Default constructor for factory
+  /// \brief Default constructor
   MemoryFactory();
 
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   MemoryFactory(const MemoryFactory&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   MemoryFactory(MemoryFactory&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   MemoryFactory& operator=(const MemoryFactory&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   MemoryFactory& operator=(MemoryFactory&&) = delete;
 
   /// \brief Destructor

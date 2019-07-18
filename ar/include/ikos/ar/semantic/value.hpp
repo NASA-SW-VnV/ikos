@@ -105,16 +105,16 @@ protected:
   Value(ValueKind kind, Type* type);
 
 public:
-  /// \brief Deleted copy constructor
+  /// \brief No copy constructor
   Value(const Value&) = delete;
 
-  /// \brief Deleted move constructor
+  /// \brief No move constructor
   Value(Value&&) = delete;
 
-  /// \brief Deleted copy assignment operator
+  /// \brief No copy assignment operator
   Value& operator=(const Value&) = delete;
 
-  /// \brief Deleted move assignment operator
+  /// \brief No move assignment operator
   Value& operator=(Value&&) = delete;
 
   /// \brief Destructor
