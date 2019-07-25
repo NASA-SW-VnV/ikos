@@ -96,13 +96,13 @@ if (NOT PPL_FOUND)
 
   if (PPL_INCLUDE_DIR)
     file(WRITE "${PROJECT_BINARY_DIR}/FindPPLVersion.c" "
-      #include \"stdio.h\"
-      #include \"ppl_c.h\"
+      #include <stdio.h>
+      #include <ppl_c.h>
 
       int main() {
-        char* p;
-        ppl_version(&p);
-        fputs(p, stdout);
+        char* version;
+        ppl_version(&version);
+        printf(\"%s\", version);
         return 0;
       }
     ")

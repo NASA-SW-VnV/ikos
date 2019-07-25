@@ -57,11 +57,11 @@ if (NOT MPFR_FOUND)
 
   if (MPFR_INCLUDE_DIR AND MPFR_LIB)
     file(WRITE "${PROJECT_BINARY_DIR}/FindMPFRVersion.c" "
-      #include \"stdio.h\"
-      #include \"mpfr.h\"
+      #include <stdio.h>
+      #include <mpfr.h>
 
       int main() {
-        fputs(mpfr_get_version(), stdout);
+        printf(\"%s\", mpfr_get_version());
         return 0;
       }
     ")

@@ -69,11 +69,14 @@ if (NOT GMP_FOUND)
 
   if (GMP_INCLUDE_DIR AND GMP_LIB)
     file(WRITE "${PROJECT_BINARY_DIR}/FindGMPVersion.c" "
-      #include \"stdio.h\"
-      #include \"gmp.h\"
+      #include <stdio.h>
+      #include <gmp.h>
 
       int main() {
-        fputs(gmp_version, stdout);
+        mpz_t n;
+        mpz_init(n);
+        mpz_clear(n);
+        printf(\"%s\", gmp_version);
         return 0;
       }
     ")

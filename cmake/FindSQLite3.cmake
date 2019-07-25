@@ -57,11 +57,14 @@ if (NOT SQLITE3_FOUND)
 
   if (SQLITE3_INCLUDE_DIR AND SQLITE3_LIB)
     file(WRITE "${PROJECT_BINARY_DIR}/FindSQLite3Version.c" "
-      #include \"stdio.h\"
-      #include \"sqlite3.h\"
+      #include <stdio.h>
+      #include <string.h>
+      #include <assert.h>
+      #include <sqlite3.h>
 
       int main() {
-        fputs(sqlite3_version, stdout);
+        assert(strcmp(SQLITE_VERSION, sqlite3_libversion()) == 0);
+        printf(\"%s\", sqlite3_libversion());
         return 0;
       }
     ")

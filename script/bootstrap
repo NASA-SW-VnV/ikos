@@ -537,7 +537,7 @@ function gmp_version_compile() {
             mpz_t n;
             mpz_init(n);
             mpz_clear(n);
-            printf("%d.%d.%d", __GNU_MP_VERSION, __GNU_MP_VERSION_MINOR, __GNU_MP_VERSION_PATCHLEVEL);
+            printf("%s", gmp_version);
             return 0;
         }
 EOF
