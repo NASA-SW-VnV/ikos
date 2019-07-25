@@ -55,29 +55,35 @@ if (NOT MPFR_FOUND)
     DOC "Path to mpfr library"
   )
 
-  if (MPFR_INCLUDE_DIR)
-    # Detect the version using mpfr.h
-    file(READ "${MPFR_INCLUDE_DIR}/mpfr.h" MPFR_HEADER)
+  if (MPFR_INCLUDE_DIR AND MPFR_LIB)
+    file(WRITE "${PROJECT_BINARY_DIR}/FindMPFRVersion.c" "
+      #include \"stdio.h\"
+      #include \"mpfr.h\"
 
-    if (MPFR_HEADER MATCHES "define[ \t]+MPFR_VERSION_MAJOR[ \t]+([0-9]+)")
-      set(MPFR_MAJOR_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find MPFR_VERSION_MAJOR in ${MPFR_INCLUDE_DIR}/mpfr.h")
+      int main() {
+        fputs(mpfr_get_version(), stdout);
+        return 0;
+      }
+    ")
+
+    try_run(
+      RUN_RESULT
+      COMPILE_RESULT
+      "${PROJECT_BINARY_DIR}"
+      "${PROJECT_BINARY_DIR}/FindMPFRVersion.c"
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${MPFR_INCLUDE_DIR}"
+        "-DLINK_LIBRARIES:STRING=${MPFR_LIB}"
+      COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE MPFR_VERSION
+    )
+
+    if (NOT COMPILE_RESULT)
+      message(FATAL_ERROR "error when trying to compile a program with MPFR:\n${COMPILE_OUTPUT}")
     endif()
-
-    if (MPFR_HEADER MATCHES "define[ \t]+MPFR_VERSION_MINOR[ \t]+([0-9]+)")
-      set(MPFR_MINOR_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find MPFR_VERSION_MINOR in ${MPFR_INCLUDE_DIR}/mpfr.h")
+    if (RUN_RESULT)
+      message(FATAL_ERROR "error when running a program linked with MPFR:\n${MPFR_VERSION}")
     endif()
-
-    if (MPFR_HEADER MATCHES "define[ \t]+MPFR_VERSION_PATCHLEVEL[ \t]+([0-9]+)")
-      set(MPFR_PATCHLEVEL_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find MPFR_VERSION_PATCHLEVEL in ${MPFR_INCLUDE_DIR}/mpfr.h")
-    endif()
-
-    set(MPFR_VERSION "${MPFR_MAJOR_VERSION}.${MPFR_MINOR_VERSION}.${MPFR_PATCHLEVEL_VERSION}")
   endif()
 
   include(FindPackageHandleStandardArgs)

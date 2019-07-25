@@ -95,34 +95,36 @@ if (NOT PPL_FOUND)
   )
 
   if (PPL_INCLUDE_DIR)
-    # Detect the version using ppl_c.h
-    file(READ "${PPL_INCLUDE_DIR}/ppl_c.h" PPL_HEADER)
+    file(WRITE "${PROJECT_BINARY_DIR}/FindPPLVersion.c" "
+      #include \"stdio.h\"
+      #include \"ppl_c.h\"
 
-    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_MAJOR[ \t]+([0-9]+)")
-      set(PPL_MAJOR_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find PPL_VERSION_MAJOR in ${PPL_INCLUDE_DIR}/ppl_c.h")
+      int main() {
+        char* p;
+        ppl_version(&p);
+        fputs(p, stdout);
+        return 0;
+      }
+    ")
+
+    try_run(
+      RUN_RESULT
+      COMPILE_RESULT
+      "${PROJECT_BINARY_DIR}"
+      "${PROJECT_BINARY_DIR}/FindPPLVersion.c"
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${PPL_INCLUDE_DIR}"
+        "-DLINK_LIBRARIES:STRING=${PPL_C_LIB}"
+      COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE PPL_VERSION
+    )
+
+    if (NOT COMPILE_RESULT)
+      message(FATAL_ERROR "error when trying to compile a program with PPL:\n${COMPILE_OUTPUT}")
     endif()
-
-    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_MINOR[ \t]+([0-9]+)")
-      set(PPL_MINOR_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find PPL_VERSION_MINOR in ${PPL_INCLUDE_DIR}/ppl_c.h")
+    if (RUN_RESULT)
+      message(FATAL_ERROR "error when running a program linked with PPL:\n${PPL_VERSION}")
     endif()
-
-    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_REVISION[ \t]+([0-9]+)")
-      set(PPL_REVISION_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find PPL_VERSION_REVISION in ${PPL_INCLUDE_DIR}/ppl_c.h")
-    endif()
-
-    if (PPL_HEADER MATCHES "define[ \t]+PPL_VERSION_BETA[ \t]+([0-9]+)")
-      set(PPL_BETA_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find PPL_VERSION_BETA in ${PPL_INCLUDE_DIR}/ppl_c.h")
-    endif()
-
-    set(PPL_VERSION "${PPL_MAJOR_VERSION}.${PPL_MINOR_VERSION}.${PPL_REVISION_VERSION}.${PPL_BETA_VERSION}")
   endif()
 
   include(FindPackageHandleStandardArgs)

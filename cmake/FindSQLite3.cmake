@@ -55,14 +55,34 @@ if (NOT SQLITE3_FOUND)
     DOC "Path to sqlite3 library"
   )
 
-  if (SQLITE3_INCLUDE_DIR)
-    # Detect the version using sqlite3.h
-    file(READ "${SQLITE3_INCLUDE_DIR}/sqlite3.h" SQLITE3_HEADER)
+  if (SQLITE3_INCLUDE_DIR AND SQLITE3_LIB)
+    file(WRITE "${PROJECT_BINARY_DIR}/FindSQLite3Version.c" "
+      #include \"stdio.h\"
+      #include \"sqlite3.h\"
 
-    if (SQLITE3_HEADER MATCHES "define[ \t]+SQLITE_VERSION[ \t]+\"([0-9]+(\\.[0-9]+)*)\"")
-      set(SQLITE3_VERSION "${CMAKE_MATCH_1}")
-    else()
-      message(FATAL_ERROR "could not find SQLITE_VERSION in ${SQLITE3_INCLUDE_DIR}/sqlite3.h")
+      int main() {
+        fputs(sqlite3_version, stdout);
+        return 0;
+      }
+    ")
+
+    try_run(
+      RUN_RESULT
+      COMPILE_RESULT
+      "${PROJECT_BINARY_DIR}"
+      "${PROJECT_BINARY_DIR}/FindSQLite3Version.c"
+      CMAKE_FLAGS
+        "-DINCLUDE_DIRECTORIES:STRING=${SQLITE3_INCLUDE_DIR}"
+        "-DLINK_LIBRARIES:STRING=${SQLITE3_LIB}"
+      COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
+      RUN_OUTPUT_VARIABLE SQLITE3_VERSION
+    )
+
+    if (NOT COMPILE_RESULT)
+      message(FATAL_ERROR "error when trying to compile a program with SQLite3:\n${COMPILE_OUTPUT}")
+    endif()
+    if (RUN_RESULT)
+      message(FATAL_ERROR "error when running a program linked with SQLite3:\n${SQLITE3_VERSION}")
     endif()
   endif()
 
