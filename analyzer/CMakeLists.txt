@@ -95,6 +95,8 @@ endmacro()
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
+find_package(Threads REQUIRED)
+
 set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation")
 if (CUSTOM_BOOST_ROOT)
   set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
@@ -285,6 +287,7 @@ else()
   )
 endif()
 target_link_libraries(ikos-analyzer
+  Threads::Threads
   ${FRONTEND_LLVM_TO_AR_LIB}
   ${IKOS_ANALYZER_LLVM_LIBS}
   ${SQLITE3_LIB}
