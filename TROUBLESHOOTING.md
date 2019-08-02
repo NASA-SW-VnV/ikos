@@ -57,6 +57,12 @@ Unfortunately, this doesn't work because LLVM uses global constructors to regist
 
 Compiling IKOS with both `-DBUILD_SHARED_LIBS=ON` and `-DIKOS_LINK_LLVM_DYLIB=ON` should fix the issue by linking against the libLLVM shared library.
 
+### "/usr/bin/ld: cannot find -lLLVMCore" while running Make
+
+Your LLVM library was built as one single shared library `libLLVM.so` (`LLVM_BUILD_LLVM_DYLIB=1`), but CMake was configured to query specific library components and match link flags against them.
+
+Compiling IKOS with both `-DBUILD_SHARED_LIBS=ON` and `-DIKOS_LINK_LLVM_DYLIB=ON` should fix the issue by linking against the single libLLVM shared library.
+
 Analysis issues
 ---------------
 
