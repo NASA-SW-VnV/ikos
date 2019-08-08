@@ -16,7 +16,7 @@ Government Agency Original Software Designation: NASA Ames Research Center
 Government Agency Original Software Title: Inference Kernel for Open Static
 Analyzers (IKOS)
 User Registration Requested.  Please Visit http://opensource.arc.nasa.gov/
-Government Agency Point of Contact for Original Software: Arnaud J.P. Venet
+Government Agency Point of Contact for Original Software: Guillaume P. Brat
 
 1. DEFINITIONS
     A.
@@ -287,5 +287,5 @@ Government Agency Point of Contact for Original Software: Arnaud J.P. Venet
     F.
         Point of Contact: Any Recipient contact with Government Agency is to be
         directed to the designated representative as follows:
-        Arnaud J.P. Venet
-        Arnaud.J.Venet@nasa.gov
+        Guillaume P. Brat
+        guillaume.p.brat@nasa.gov
