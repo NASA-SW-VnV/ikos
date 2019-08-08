@@ -83,9 +83,12 @@ cmake_install_version="3.13.4"
 zlib_install_version="1.2.11"
 ncurses_install_version="6.1"
 libedit_install_version="2.11"
-gmp_required_version="4.3.1"
-gmp_install_version="6.1.2"
 m4_install_version="1.4.18"
+gmp_required_version="5.0.0"
+gmp_install_version="6.1.2"
+mpfr_install_version="4.0.2"
+ppl_install_version="1.2"
+apron_install_version="0.9.10"
 sqlite_required_version="3.6.20"
 sqlite_install_version="3.27.2"
 boost_required_version="1.55.0"
@@ -319,7 +322,7 @@ function extract() {
     }
 
     root_directory=$archive_filename
-    for ext in .gz .xz .bz2 .tar; do
+    for ext in .gz .xz .bz2 .tar .tgz; do
         root_directory=${root_directory%$ext}
     done
 
@@ -469,14 +472,14 @@ function cxx_compile() {
 # Compile a simple program using zlib
 function zlib_version_compile() {
     cc_compile -o "$tests_dir/zlib_version" -lz <<EOF
+        #include <assert.h>
         #include <stdio.h>
         #include <string.h>
-        #include <assert.h>
         #include <zlib.h>
 
         int main() {
             assert(strcmp(ZLIB_VERSION, zlibVersion()) == 0);
-            printf("%s", ZLIB_VERSION);
+            printf("%s", zlibVersion());
             return 0;
         }
 EOF
@@ -508,44 +511,22 @@ function ncurses_version() {
 # Compile a simple program using libedit
 function libedit_version_compile() {
     cc_compile -o "$tests_dir/libedit_version" -ledit <<EOF
+        #include <assert.h>
         #include <stdio.h>
         #include <histedit.h>
 
         int main(int argc, char** argv) {
-            EditLine *el = NULL;
-            el = el_init(*argv, stdin, stdout, stderr);
-
+            EditLine* el = el_init(argv[0], stdin, stdout, stderr);
+            assert(el != NULL);
             printf("%d.%d", LIBEDIT_MAJOR, LIBEDIT_MINOR);
             return 0;
         }
 EOF
 }
 
-
 # Detect the version of libedit
 function libedit_version() {
     libedit_version_compile && "$tests_dir/libedit_version"
-}
-
-# Compile a simple program using gmp
-function gmp_version_compile() {
-    cc_compile -o "$tests_dir/gmp_version" -lgmp <<EOF
-        #include <stdio.h>
-        #include <gmp.h>
-
-        int main() {
-            mpz_t n;
-            mpz_init(n);
-            mpz_clear(n);
-            printf("%s", gmp_version);
-            return 0;
-        }
-EOF
-}
-
-# Detect the version of gmp
-function gmp_version() {
-    gmp_version_compile && "$tests_dir/gmp_version"
 }
 
 # Parse and detect the version of m4, given the command name
@@ -557,12 +538,99 @@ function m4_parse_version() {
     echo "$version_output" | match "^((GNU M4)|(m4 \(GNU M4\))) ($version_regex)$" 4
 }
 
+# Compile a simple program using gmp
+function gmp_version_compile() {
+    cc_compile -o "$tests_dir/gmp_version" -lgmp <<EOF
+        #include <assert.h>
+        #include <stdio.h>
+        #include <gmp.h>
+
+        int main() {
+            mpz_t i, j, k;
+            mpz_init_set_str(i, "1a", 16);
+            mpz_init(j);
+            mpz_init(k);
+            mpz_sqrtrem(j, k, i);
+            assert(mpz_get_si(j) == 5 && mpz_get_si(k) == 1);
+            printf("%s", gmp_version);
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of gmp
+function gmp_version() {
+    gmp_version_compile && "$tests_dir/gmp_version"
+}
+
+# Compile a simple program using mpfr
+function mpfr_version_compile() {
+    cc_compile -o "$tests_dir/mpfr_version" -lmpfr <<EOF
+        #include <stdio.h>
+        #include <mpfr.h>
+
+        int main() {
+            mpfr_t x;
+            mpfr_init_set_ui(x, 2, MPFR_RNDN);
+            printf("%s", mpfr_get_version());
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of mpfr
+function mpfr_version() {
+    mpfr_version_compile && "$tests_dir/mpfr_version"
+}
+
+# Compile a simple program using ppl
+function ppl_version_compile() {
+    cc_compile -o "$tests_dir/ppl_version" -lppl_c <<EOF
+        #include <stdio.h>
+        #include <ppl_c.h>
+
+        int main() {
+            const char* version;
+            ppl_initialize();
+            ppl_version(&version);
+            printf("%s", version);
+            return ppl_finalize();
+        }
+EOF
+}
+
+# Detect the version of ppl
+function ppl_version() {
+    ppl_version_compile && "$tests_dir/ppl_version"
+}
+
+# Compile a simple program using apron
+function apron_compile() {
+    cc_compile -o "$tests_dir/apron" -lapron -lboxMPQ <<EOF
+        #include <ap_global0.h>
+        #include <box.h>
+
+        int main() {
+            ap_manager_t* manbox = box_manager_alloc();
+            ap_abstract0_t* top = ap_abstract0_top(manbox, 0, 0);
+            ap_abstract0_free(manbox, top);
+            ap_manager_free(manbox);
+            return 0;
+        }
+EOF
+}
+
+# Check if apron is available
+function has_apron() {
+    apron_compile && "$tests_dir/apron"
+}
+
 # Compile a simple program using sqlite
 function sqlite_version_compile() {
     cc_compile -o "$tests_dir/sqlite_version" -lsqlite3 <<EOF
+        #include <assert.h>
         #include <stdio.h>
         #include <string.h>
-        #include <assert.h>
         #include <sqlite3.h>
 
         int main() {
@@ -1429,6 +1497,56 @@ if (( ! found_libedit )); then
     success "${cgreen}libedit $libedit_install_version${coff}${cbold} successfully installed"
 fi
 
+############
+# Check m4 #
+############
+
+progress "Checking for M4"
+found_m4=0
+
+if command_exists m4; then
+    version=$(m4_parse_version m4) || error_parse_version m4
+    success "Found M4 $version"
+    found_m4=1
+fi
+
+###########################
+# Install m4 if necessary #
+###########################
+
+if (( ! found_m4 )); then
+    progress "Could NOT find M4"
+
+    if [[ -x "$install_dir/m4-$m4_install_version/bin/m4" ]]; then
+        progress "Using already built ${cgreen}m4 $m4_install_version"
+    else
+        progress "Installing ${cgreen}m4 $m4_install_version"
+
+        download_extract "https://ftp.gnu.org/gnu/m4/m4-$m4_install_version.tar.xz" \
+            "$build_dir/m4-$m4_install_version"
+
+        cd "$build_dir/m4-$m4_install_version"
+
+        progress_run ./configure \
+            --prefix="$install_dir/m4-$m4_install_version" \
+            --disable-dependency-tracking || error_configure m4
+
+        progress_run make || error_make m4
+
+        progress_run make install || error_install m4
+    fi
+
+    full_prepend_path "$install_dir/m4-$m4_install_version/bin"
+    full_prepend_manpath "$install_dir/m4-$m4_install_version/share/man"
+    full_prepend_infopath "$install_dir/m4-$m4_install_version/share/info"
+
+    (command_exists m4 && version=$(m4_parse_version m4) &&
+        [[ "$version" = "$m4_install_version" ]]) ||
+        assert_failed "m4 is not properly installed"
+
+    success "${cgreen}m4 $m4_install_version${coff}${cbold} successfully installed"
+fi
+
 #############
 # Check gmp #
 #############
@@ -1455,56 +1573,6 @@ if (( ! found_gmp )); then
     if [[ -f "$install_dir/gmp-$gmp_install_version/include/gmp.h" ]]; then
         progress "Using already built ${cgreen}gmp $gmp_install_version"
     else
-        ################################
-        # Check gmp build dependencies #
-        ################################
-
-        progress "Checking build dependencies for gmp: m4"
-        found_m4=0
-
-        if command_exists m4; then
-            version=$(m4_parse_version m4) || error_parse_version m4
-            success "Found m4 $version"
-            found_m4=1
-        fi
-
-        if (( ! found_m4 )); then
-            progress "Could NOT find m4"
-
-            if [[ -x "$install_dir/m4-$m4_install_version/bin/m4" ]]; then
-                progress "Using already built ${cgreen}m4 $m4_install_version"
-            else
-                progress "Installing build dependencies for gmp: ${cgreen}m4 $m4_install_version"
-
-                download_extract "https://ftp.gnu.org/gnu/m4/m4-$m4_install_version.tar.xz" \
-                    "$build_dir/m4-$m4_install_version"
-                
-                cd "$build_dir/m4-$m4_install_version"
-
-                progress_run ./configure \
-                    --prefix="$install_dir/m4-$m4_install_version" \
-                    --disable-dependency-tracking || error_configure m4
-
-                progress_run make || error_make m4
-
-                progress_run make install || error_install m4
-            fi
-
-            full_prepend_path "$install_dir/m4-$m4_install_version/bin"
-            full_prepend_manpath "$install_dir/m4-$m4_install_version/share/man"
-            full_prepend_infopath "$install_dir/m4-$m4_install_version/share/info"
-
-            (command_exists m4 && version=$(m4_parse_version m4) &&
-                [[ "$version" = "$m4_install_version" ]]) ||
-                assert_failed "m4 is not properly installed"
-
-            success "${cgreen}m4 $m4_install_version${coff}${cbold} successfully installed"
-        fi
-
-        #############
-        # Build gmp #
-        #############
-
         progress "Installing ${cgreen}gmp $gmp_install_version"
 
         download_extract "https://gmplib.org/download/gmp/gmp-$gmp_install_version.tar.xz" \
@@ -1530,6 +1598,261 @@ if (( ! found_gmp )); then
         assert_failed "gmp is not properly installed"
 
     success "${cgreen}gmp $gmp_install_version${coff}${cbold} successfully installed"
+fi
+
+##############
+# Check mpfr #
+##############
+
+progress "Checking for MPFR"
+found_mpfr=0
+
+if version=$(mpfr_version); then
+    found_mpfr=1
+    success "Found MPFR $version"
+fi
+
+#############################
+# Install mpfr if necessary #
+#############################
+
+if (( ! found_mpfr )); then
+    progress "Could NOT find MPFR"
+
+    if [[ -f "$install_dir/mpfr-$mpfr_install_version/include/mpfr.h" ]]; then
+        progress "Using already built ${cgreen}mpfr $mpfr_install_version"
+    else
+        progress "Installing ${cgreen}mpfr $mpfr_install_version"
+
+        download_extract "https://www.mpfr.org/mpfr-current/mpfr-$mpfr_install_version.tar.xz" \
+            "$build_dir/mpfr-$mpfr_install_version"
+
+        cd "$build_dir/mpfr-$mpfr_install_version"
+
+        progress_run ./configure \
+            --prefix="$install_dir/mpfr-$mpfr_install_version" \
+            --disable-dependency-tracking \
+            --disable-silent-rules || error_configure mpfr
+
+        progress_run make || error_make mpfr
+
+        progress_run make install || error_install mpfr
+    fi
+
+    custom_mpfr_root="$install_dir/mpfr-$mpfr_install_version"
+    full_prepend_infopath "$install_dir/mpfr-$mpfr_install_version/share/info"
+    prepend_include_path "$install_dir/mpfr-$mpfr_install_version/include"
+    prepend_library_path "$install_dir/mpfr-$mpfr_install_version/lib"
+
+    (version=$(mpfr_version) && [[ "$version" = "$mpfr_install_version" ]]) ||
+        assert_failed "mpfr is not properly installed"
+
+    success "${cgreen}mpfr $mpfr_install_version${coff}${cbold} successfully installed"
+fi
+
+#############
+# Check ppl #
+#############
+
+progress "Checking for PPL"
+found_ppl=0
+
+if version=$(ppl_version); then
+    found_ppl=1
+    success "Found PPL $version"
+fi
+
+############################
+# Install ppl if necessary #
+############################
+
+if (( ! found_ppl )); then
+    progress "Could NOT find PPL"
+
+    if [[ -f "$install_dir/ppl-$ppl_install_version/include/ppl_c.h" ]]; then
+        progress "Using already built ${cgreen}ppl $ppl_install_version"
+    else
+        progress "Installing ${cgreen}ppl $ppl_install_version"
+
+        download_extract "https://www.bugseng.com/external/ppl/download/ftp/releases/$ppl_install_version/ppl-$ppl_install_version.tar.xz" \
+            "$build_dir/ppl-$ppl_install_version"
+
+        cd "$build_dir/ppl-$ppl_install_version"
+
+        cat > fix-missing-template-typename.patch <<'EOF'
+--- src/Determinate_inlines.hh
++++ src/Determinate_inlines.hh
+@@ -289,8 +289,8 @@ operator()(Determinate& x, const Determinate& y) const {
+ 
+ template <typename PSET>
+ template <typename Binary_Operator_Assign>
+-inline
+-Determinate<PSET>::Binary_Operator_Assign_Lifter<Binary_Operator_Assign>
++inline typename
++Determinate<PSET>::template Binary_Operator_Assign_Lifter<Binary_Operator_Assign>
+ Determinate<PSET>::lift_op_assign(Binary_Operator_Assign op_assign) {
+   return Binary_Operator_Assign_Lifter<Binary_Operator_Assign>(op_assign);
+ }
+--- src/OR_Matrix_inlines.hh
++++ src/OR_Matrix_inlines.hh
+@@ -97,7 +97,7 @@ OR_Matrix<T>::Pseudo_Row<U>::Pseudo_Row(const Pseudo_Row<V>& y)
+ 
+ template <typename T>
+ template <typename U>
+-inline OR_Matrix<T>::Pseudo_Row<U>&
++inline typename OR_Matrix<T>::template Pseudo_Row<U>&
+ OR_Matrix<T>::Pseudo_Row<U>::operator=(const Pseudo_Row& y) {
+   first = y.first;
+ #if PPL_OR_MATRIX_EXTRA_DEBUG
+EOF
+
+        progress "Applying patch fix-missing-template-typename.patch"
+        run_log_quiet patch -p0 < fix-missing-template-typename.patch || error_patch ppl
+
+        progress_run ./configure \
+            --prefix="$install_dir/ppl-$ppl_install_version" \
+            --disable-dependency-tracking \
+            --disable-silent-rules || error_configure ppl
+
+        progress_run make || error_make ppl
+
+        progress_run make install || error_install ppl
+    fi
+
+    custom_ppl_root="$install_dir/ppl-$ppl_install_version"
+    full_prepend_path "$install_dir/ppl-$ppl_install_version/bin"
+    full_prepend_manpath "$install_dir/ppl-$ppl_install_version/share/man"
+    prepend_include_path "$install_dir/ppl-$ppl_install_version/include"
+    prepend_library_path "$install_dir/ppl-$ppl_install_version/lib"
+
+    (version=$(ppl_version) && [[ "$version" = "$ppl_install_version" ]]) ||
+        assert_failed "ppl is not properly installed"
+
+    success "${cgreen}ppl $ppl_install_version${coff}${cbold} successfully installed"
+fi
+
+###############
+# Check apron #
+###############
+
+progress "Checking for APRON"
+found_apron=0
+
+if has_apron; then
+    found_apron=1
+    success "Found APRON"
+fi
+
+##############################
+# Install apron if necessary #
+##############################
+
+if (( ! found_apron )); then
+    progress "Could NOT find APRON"
+
+    if [[ -f "$install_dir/apron-$apron_install_version/include/ap_abstract0.h" ]]; then
+        progress "Using already built ${cgreen}apron $apron_install_version"
+    else
+        progress "Installing ${cgreen}apron $apron_install_version"
+
+        download_extract "http://apron.cri.ensmp.fr/library/apron-$apron_install_version.tgz" \
+            "$build_dir/apron-$apron_install_version"
+
+        cd "$build_dir/apron-$apron_install_version"
+
+        cat > fix-invalid-operands-to-binary-expression.patch <<'EOF'
+--- ppl/ppl_user.cc
++++ ppl/ppl_user.cc
+@@ -320,7 +320,12 @@
+       exact = false;
+     }
+     /* singleton */
+-    else r.insert(Constraint(Variable(i)==temp));
++    else {
++      /* integerness check */
++      mpz_class temp2 = mpz_class(temp);
++      if (temp==temp2) r.insert(Constraint(Variable(i)==temp2));
++      else exact = false;
++    }
+   }
+   return exact;
+ }
+EOF
+
+        cat > fix-linker-error.patch <<'EOF'
+--- products/Makefile
++++ products/Makefile
+@@ -117,9 +117,9 @@
+ 	$(AR) rcs $@ $^
+ 	$(RANLIB) $@
+ libap_pkgrid.so: ap_pkgrid.o
+-	$(CXX) $(CXXFLAGS) -shared -o $@ $^ $(LIBS)
++	$(CXX) $(CXXFLAGS) -shared -o $@ $^ -L../newpolka -lpolkaMPQ $(LIBS)
+ libap_pkgrid_debug.so: ap_pkgrid_debug.o
+-	$(CXX) $(CXXFLAGS_DEBUG) -shared -o $@ $^ $(LIBS_DEBUG)
++	$(CXX) $(CXXFLAGS_DEBUG) -shared -o $@ $^ -L../newpolka -lpolkaMPQ $(LIBS_DEBUG)
+
+ #---------------------------------------
+ # C rules
+EOF
+
+        cat > fix-missing-mpfr.patch <<'EOF'
+--- apron/Makefile
++++ apron/Makefile
+@@ -191,7 +191,7 @@
+ ap_scalar.o: ap_scalar.c ap_scalar.h ap_config.h
+ ap_interval.o: ap_interval.c ap_interval.h \
+   ap_config.h \
+-  ap_scalar.h $(MPFR_PREFIX)/include/mpfr.h
++  ap_scalar.h
+ ap_coeff.o: ap_coeff.c ap_coeff.h \
+   ap_config.h \
+   ap_scalar.h \
+@@ -287,7 +287,7 @@
+ ap_scalar_debug.o: ap_scalar.c ap_scalar.h ap_config.h
+ ap_interval_debug.o: ap_interval.c ap_interval.h \
+   ap_config.h \
+-  ap_scalar.h $(MPFR_PREFIX)/include/mpfr.h
++  ap_scalar.h
+ ap_coeff_debug.o: ap_coeff.c ap_coeff.h \
+   ap_config.h \
+   ap_scalar.h \
+EOF
+
+        progress "Applying patch fix-invalid-operands-to-binary-expression.patch"
+        run_log_quiet patch -p0 < fix-invalid-operands-to-binary-expression.patch || error_patch apron
+
+        progress "Applying patch fix-linker-error.patch"
+        run_log_quiet patch -p0 < fix-linker-error.patch || error_patch apron
+
+        progress "Applying patch fix-missing-mpfr.patch"
+        run_log_quiet patch -p0 < fix-missing-mpfr.patch || error_patch apron
+
+        run_log_quiet cp Makefile.config.model Makefile.config || error_configure apron
+
+        progress_run make \
+            APRON_PREFIX="$install_dir/apron-$apron_install_version" \
+            GMP_PREFIX="$custom_gmp_root" \
+            MPFR_PREFIX="$custom_mpfr_root" \
+            PPL_PREFIX="$custom_ppl_root" \
+            HAS_OCAML= \
+            HAS_OCAMLOPT= \
+            HAS_JAVA= \
+            OCAMLFIND= \
+            HAS_PPL=1 \
+            all \
+            install \
+            -j1 || error_make apron
+    fi
+
+    custom_apron_root="$install_dir/apron-$apron_install_version"
+    full_prepend_path "$install_dir/apron-$apron_install_version/bin"
+    prepend_include_path "$install_dir/apron-$apron_install_version/include"
+    prepend_library_path "$install_dir/apron-$apron_install_version/lib"
+
+    has_apron || assert_failed "apron is not properly installed"
+
+    success "${cgreen}apron $apron_install_version${coff}${cbold} successfully installed"
 fi
 
 ################
@@ -1911,6 +2234,15 @@ else
     cmake_extra_args=()
     if [[ -n "$custom_gmp_root" ]]; then
         cmake_extra_args+=("-DGMP_ROOT=$custom_gmp_root")
+    fi
+    if [[ -n "$custom_mpfr_root" ]]; then
+        cmake_extra_args+=("-DMPFR_ROOT=$custom_mpfr_root")
+    fi
+    if [[ -n "$custom_ppl_root" ]]; then
+        cmake_extra_args+=("-DPPL_ROOT=$custom_ppl_root")
+    fi
+    if [[ -n "$custom_apron_root" ]]; then
+        cmake_extra_args+=("-DAPRON_ROOT=$custom_apron_root")
     fi
     if [[ -n "$custom_sqlite_root" ]]; then
         cmake_extra_args+=("-DSQLITE3_ROOT=$custom_sqlite_root")

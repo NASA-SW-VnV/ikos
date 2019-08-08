@@ -100,10 +100,11 @@ if (NOT PPL_FOUND)
       #include <ppl_c.h>
 
       int main() {
-        char* version;
+        const char* version;
+        ppl_initialize();
         ppl_version(&version);
         printf(\"%s\", version);
-        return 0;
+        return ppl_finalize();
       }
     ")
 
