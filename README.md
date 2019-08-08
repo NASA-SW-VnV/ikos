@@ -215,20 +215,10 @@ Further information:
 * [Analyze an embedded software requiring a cross-compiler](analyzer/README.md#analyze-an-embedded-software-requiring-a-cross-compiler)
 * [Model library functions to reduce warnings](analyzer/README.md#model-library-functions-to-reduce-warnings)
 
-Current and Past contributors
------------------------------
+Contributors
+------------
 
-* Maxime Arthaud
-* Thomas Bailleux
-* Guillaume Brat
-* Clément Decoodt
-* Arnaud Hamon
-* Jorge Navas
-* Elodie-Jane Simms
-* Nija Shi
-* Sarah Thompson
-* Arnaud Venet
-* Alexandre Wimmers
+See [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
 Publications
 ------------
