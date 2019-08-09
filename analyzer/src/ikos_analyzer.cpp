@@ -372,8 +372,8 @@ static llvm::cl::opt< analyzer::NarrowingStrategy > NarrowingStrategy(
     llvm::cl::init(analyzer::NarrowingStrategy::Narrow),
     llvm::cl::cat(AnalysisCategory));
 
-static llvm::cl::opt< unsigned > LoopIterations(
-    "loop-iterations",
+static llvm::cl::opt< unsigned > WideningDelay(
+    "widening-delay",
     llvm::cl::desc(
         "Number of loop iterations before using the widening strategy"),
     llvm::cl::init(1),
@@ -707,7 +707,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .procedural = Procedural,
       .widening_strategy = WideningStrategy,
       .narrowing_strategy = NarrowingStrategy,
-      .loop_iterations = LoopIterations,
+      .widening_delay = WideningDelay,
       .narrowing_iterations =
           ((NarrowingIterations >= 0)
                ? boost::optional< unsigned >(NarrowingIterations)

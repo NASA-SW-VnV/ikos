@@ -148,7 +148,7 @@ public:
                               unsigned iteration,
                               AbstractDomainT before,
                               AbstractDomainT after) override {
-    if (iteration <= this->_fixpoint_parameters.loop_iterations) {
+    if (iteration <= this->_fixpoint_parameters.widening_delay) {
       // Fixed number of iterations using join
       before.join_iter_with(after);
       return before;
@@ -156,7 +156,7 @@ public:
 
     switch (this->_fixpoint_parameters.widening_strategy) {
       case WideningStrategy::Widen: {
-        if (iteration == this->_fixpoint_parameters.loop_iterations + 1) {
+        if (iteration == this->_fixpoint_parameters.widening_delay + 1) {
           if (auto threshold =
                   this->_fixpoint_parameters.widening_hints.get(head)) {
             // One iteration using widening with threshold

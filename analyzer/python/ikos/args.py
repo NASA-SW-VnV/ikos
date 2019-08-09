@@ -283,7 +283,7 @@ narrowing_strategies = (
 
 default_narrowing_strategy = 'auto'
 
-default_loop_iterations = 1
+default_widening_delay = 1
 
 meet_iterations_if_no_narrowing = 2
 

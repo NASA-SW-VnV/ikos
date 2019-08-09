@@ -69,11 +69,11 @@ void WideningHints::add(ar::BasicBlock* head, const MachineInt& hint) {
 CodeFixpointParameters::CodeFixpointParameters(
     WideningStrategy widening_strategy_,
     NarrowingStrategy narrowing_strategy_,
-    unsigned loop_iterations_,
+    unsigned widening_delay_,
     boost::optional< unsigned > narrowing_iterations_)
     : widening_strategy(widening_strategy_),
       narrowing_strategy(narrowing_strategy_),
-      loop_iterations(loop_iterations_),
+      widening_delay(widening_delay_),
       narrowing_iterations(narrowing_iterations_) {}
 
 // FixpointParameters
@@ -81,7 +81,7 @@ CodeFixpointParameters::CodeFixpointParameters(
 FixpointParameters::FixpointParameters(const AnalysisOptions& opts)
     : _default_params(opts.widening_strategy,
                       opts.narrowing_strategy,
-                      opts.loop_iterations,
+                      opts.widening_delay,
                       opts.narrowing_iterations) {}
 
 FixpointParameters::~FixpointParameters() = default;
@@ -113,7 +113,7 @@ void FixpointParameters::dump(std::ostream& o) const {
     << widening_strategy_str(this->_default_params.widening_strategy) << "\n";
   o << "default narrowing strategy: "
     << narrowing_strategy_str(this->_default_params.narrowing_strategy) << "\n";
-  o << "default loop iterations: " << this->_default_params.loop_iterations
+  o << "default widening delay: " << this->_default_params.widening_delay
     << "\n";
   o << "default narrowing iterations: ";
   if (this->_default_params.narrowing_iterations) {
@@ -135,9 +135,8 @@ void FixpointParameters::dump(std::ostream& o) const {
       o << fun->name() << " narrowing strategy: "
         << narrowing_strategy_str(params.narrowing_strategy) << "\n";
     }
-    if (params.loop_iterations != this->_default_params.loop_iterations) {
-      o << fun->name() << " loop iterations: " << params.loop_iterations
-        << "\n";
+    if (params.widening_delay != this->_default_params.widening_delay) {
+      o << fun->name() << " widening delay: " << params.widening_delay << "\n";
     }
     if (params.narrowing_iterations !=
         this->_default_params.narrowing_iterations) {

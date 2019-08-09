@@ -114,7 +114,7 @@ public:
   NarrowingStrategy narrowing_strategy;
 
   /// \brief Number of loop iterations before applying the widening strategy
-  unsigned loop_iterations;
+  unsigned widening_delay;
 
   /// \brief Fixed number of narrowing iterations to perform
   ///
@@ -128,7 +128,7 @@ public:
   /// \brief Constructor
   CodeFixpointParameters(WideningStrategy widening_strategy_,
                          NarrowingStrategy narrowing_strategy_,
-                         unsigned loop_iterations_,
+                         unsigned widening_delay_,
                          boost::optional< unsigned > narrowing_iterations_);
 
   /// \brief Copy constructor

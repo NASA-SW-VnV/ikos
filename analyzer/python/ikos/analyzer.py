@@ -187,13 +187,13 @@ def parse_arguments(argv):
                                          args.default_narrowing_strategy),
                           choices=args.choices(args.narrowing_strategies),
                           default=args.default_narrowing_strategy)
-    analysis.add_argument('--loop-iterations',
-                          dest='loop_iterations',
+    analysis.add_argument('--widening-delay',
+                          dest='widening_delay',
                           metavar='',
                           help='Number of loop iterations before using the'
                                ' widening strategy (default: %d)'
-                               % args.default_loop_iterations,
-                          default=args.default_loop_iterations,
+                               % args.default_widening_delay,
+                          default=args.default_widening_delay,
                           type=args.Integer(min=0))
     analysis.add_argument('--narrowing-iterations',
                           dest='narrowing_iterations',
@@ -740,7 +740,7 @@ def ikos_analyzer(db_path, pp_path, opt):
             '-prec=%s' % opt.precision_level,
             '-proc=%s' % opt.procedural,
             '-widening-strategy=%s' % opt.widening_strategy,
-            '-loop-iterations=%d' % opt.loop_iterations]
+            '-widening-delay=%d' % opt.widening_delay]
 
     if opt.narrowing_strategy == 'auto':
         if opt.domain in domains_without_narrowing:

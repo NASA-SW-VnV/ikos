@@ -326,7 +326,7 @@ public:
   NarrowingStrategy narrowing_strategy;
 
   /// \brief Number of loop iterations before applying the widening strategy
-  unsigned loop_iterations;
+  unsigned widening_delay;
 
   /// \brief Fixed number of narrowing iterations to perform
   ///

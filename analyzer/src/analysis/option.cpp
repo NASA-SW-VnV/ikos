@@ -84,7 +84,7 @@ void AnalysisOptions::save(SettingsTable& table) {
   table.insert("narrowing-strategy",
                narrowing_strategy_str(this->narrowing_strategy));
 
-  table.insert("loop-iterations", std::to_string(this->loop_iterations));
+  table.insert("widening-delay", std::to_string(this->widening_delay));
 
   if (this->narrowing_iterations) {
     table.insert("narrowing-iterations",

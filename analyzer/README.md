@@ -372,7 +372,7 @@ The analyzer uses the theory of Abstract Interpretation to compute a fixpoint of
 
 When visiting a loop, the engine will first compute a fixed number of iterations, then use a widening strategy to approximate the behavior of the loop, until convergence.
 
-The fixed number of iterations can be set using `--loop-iterations`. By default, it is 1.
+The fixed number of iterations can be set using `--widening-delay`. By default, it is 1.
 
 The widening strategy can be set using `--widening-strategy=`:
 * **widen**: Use the widening operator to approximate the behavior of the loop (default)
