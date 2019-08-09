@@ -413,6 +413,9 @@ public:
     return this->_function;
   }
 
+  /// \brief Get the parent function if it is a body, or nullptr
+  Function* function_or_null() const { return this->_function; }
+
   /// \brief Is it the code for a global variable initializer?
   bool is_global_var_initializer() const {
     return this->_global_var != nullptr;
@@ -423,6 +426,9 @@ public:
     ikos_assert_msg(this->_global_var, "code is a function code");
     return this->_global_var;
   }
+
+  /// \brief Get the parent global variable if it is an initializer, or nullptr
+  GlobalVariable* global_var_or_null() const { return this->_global_var; }
 
   /// \brief Get the parent context
   Context& context() const { return this->bundle()->context(); }

@@ -59,7 +59,6 @@ FunctionFixpoint::FunctionFixpoint(
       _function(entry_point),
       _call_context(ctx.call_context_factory->get_empty()),
       _fixpoint_parameters(ctx.fixpoint_parameters->get(entry_point)),
-      _analyzed_functions{entry_point},
       _checkers(checkers),
       _logger(logger),
       _exec_engine(AbstractDomain::bottom(),
@@ -87,7 +86,6 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
       _call_context(
           ctx.call_context_factory->get_context(caller._call_context, call)),
       _fixpoint_parameters(ctx.fixpoint_parameters->get(callee)),
-      _analyzed_functions(caller._analyzed_functions),
       _checkers(caller._checkers),
       _logger(caller._logger),
       _exec_engine(AbstractDomain::bottom(),
@@ -102,9 +100,7 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
                         _exec_engine,
                         *this,
                         /* context_stable = */ context_stable,
-                        /* convergence_achieved = */ false) {
-  this->_analyzed_functions.push_back(callee);
-}
+                        /* convergence_achieved = */ false) {}
 
 void FunctionFixpoint::run(AbstractDomain inv) {
   if (!this->_call_context->empty()) {
@@ -277,12 +273,6 @@ void FunctionFixpoint::run_checks() {
   if (!this->_call_context->empty()) {
     this->_logger.end_callee(this->_call_context, this->_function);
   }
-}
-
-bool FunctionFixpoint::is_currently_analyzed(ar::Function* fun) const {
-  return std::find(this->_analyzed_functions.begin(),
-                   this->_analyzed_functions.end(),
-                   fun) != this->_analyzed_functions.end();
 }
 
 } // end namespace interprocedural

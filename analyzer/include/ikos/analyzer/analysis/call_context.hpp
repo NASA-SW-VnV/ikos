@@ -70,7 +70,8 @@ private:
   /// \brief Create a call context
   CallContext(CallContext* parent, ar::CallBase* call)
       : _parent(parent), _call(call) {
-    ikos_assert(this->_parent != nullptr && this->_call != nullptr);
+    ikos_assert(this->_parent != nullptr);
+    ikos_assert(this->_call != nullptr);
   }
 
 public:
@@ -105,6 +106,19 @@ public:
   ar::CallBase* call() const {
     ikos_assert_msg(!this->empty(), "call context is empty");
     return this->_call;
+  }
+
+  /// \brief Return true if the given function is within the call context
+  bool contains(ar::Function* fun) const {
+    const CallContext* context = this;
+
+    for (; context->_parent != nullptr; context = context->_parent) {
+      if (context->_call->code()->function_or_null() == fun) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
 private:

@@ -90,11 +90,6 @@ private:
   /// \brief Fixpoint parameters
   const CodeFixpointParameters& _fixpoint_parameters;
 
-  /// \brief Function currently analyzed
-  ///
-  /// This is used to avoid cycles.
-  std::vector< ar::Function* > _analyzed_functions;
-
   /// \brief List of property checks to run
   const std::vector< std::unique_ptr< Checker > >& _checkers;
 
@@ -189,8 +184,11 @@ public:
   /// \brief Mark that the calling context is stable
   void mark_context_stable() { this->_call_exec_engine.mark_context_stable(); }
 
-  /// \brief Return true if the given function is currently analyzed
-  bool is_currently_analyzed(ar::Function* fun) const;
+  /// \brief Return the function
+  ar::Function* function() const { return this->_function; }
+
+  /// \brief Return the call context
+  CallContext* call_context() const { return this->_call_context; }
 
   /// \brief Return the exit invariant, or bottom
   const AbstractDomain& exit_invariant() const {

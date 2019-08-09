@@ -304,7 +304,8 @@ private:
       }
       ikos_assert(callee->is_definition());
 
-      if (this->_caller.is_currently_analyzed(callee)) {
+      if (this->_caller.function() == callee ||
+          this->_caller.call_context()->contains(callee)) {
         // TODO(jnavas): we can be more precise by making top only lhs of
         // call_stmt, actual parameters of pointer type and any global variable
         // that might be touched by the recursive function.
