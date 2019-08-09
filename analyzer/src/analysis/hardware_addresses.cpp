@@ -133,27 +133,23 @@ void HardwareAddresses::add_range_from_file(const std::string& filepath) {
                                              CannotOpenFileKind);
   }
   // parse each line
-  char buffer[32];
-  unsigned n_line = 0;
-  for (; stream.getline(buffer, 32);) {
-    n_line++;
+  std::string line;
+  unsigned n_line = 1;
+  for (; std::getline(stream, line); n_line++) {
+    if (line.empty()) {
+      continue;
+    }
     std::cmatch rmatch;
-    if (std::regex_match(buffer, rmatch, RangeRegex)) {
+    if (std::regex_match(line.c_str(), rmatch, RangeRegex)) {
       this->add_range(
-          parse_range(buffer, n_line, this->_data_layout.pointers.bit_width));
+          parse_range(line, n_line, this->_data_layout.pointers.bit_width));
     } else {
-      throw HardwareAddressesException(buffer,
+      throw HardwareAddressesException(line,
                                        HardwareAddressesException::
                                            HardwareAddressesExceptionKind::
                                                InvalidFormatKind,
                                        n_line);
     }
-  }
-  if (n_line == 0) {
-    throw HardwareAddressesException(StringRef(),
-                                     HardwareAddressesException::
-                                         HardwareAddressesExceptionKind::
-                                             EmptyFileKind);
   }
 }
 
@@ -222,9 +218,6 @@ void HardwareAddressesException::create_errstr(StringRef pattern) {
     } break;
     case CannotOpenFileKind: {
       ss << "Cannot open hardware addresses file";
-    } break;
-    case EmptyFileKind: {
-      ss << "File is empty";
     } break;
   }
 

@@ -112,7 +112,6 @@ public:
     InvalidFormatKind,
     InvalidRangeKind,
     CannotOpenFileKind,
-    EmptyFileKind
   };
 
 private:
