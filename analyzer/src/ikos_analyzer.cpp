@@ -379,6 +379,12 @@ static llvm::cl::opt< unsigned > WideningDelay(
     llvm::cl::init(1),
     llvm::cl::cat(AnalysisCategory));
 
+static llvm::cl::opt< unsigned > WideningPeriod(
+    "widening-period",
+    llvm::cl::desc("Number of loop iterations between each widening"),
+    llvm::cl::init(1),
+    llvm::cl::cat(AnalysisCategory));
+
 static llvm::cl::opt< int > NarrowingIterations(
     "narrowing-iterations",
     llvm::cl::desc("Perform a fixed number of narrowing iterations"),
@@ -708,6 +714,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .widening_strategy = WideningStrategy,
       .narrowing_strategy = NarrowingStrategy,
       .widening_delay = WideningDelay,
+      .widening_period = WideningPeriod,
       .narrowing_iterations =
           ((NarrowingIterations >= 0)
                ? boost::optional< unsigned >(NarrowingIterations)

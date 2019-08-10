@@ -70,10 +70,12 @@ CodeFixpointParameters::CodeFixpointParameters(
     WideningStrategy widening_strategy_,
     NarrowingStrategy narrowing_strategy_,
     unsigned widening_delay_,
+    unsigned widening_period_,
     boost::optional< unsigned > narrowing_iterations_)
     : widening_strategy(widening_strategy_),
       narrowing_strategy(narrowing_strategy_),
       widening_delay(widening_delay_),
+      widening_period(std::max(widening_period_, 1u)),
       narrowing_iterations(narrowing_iterations_) {}
 
 // FixpointParameters
@@ -82,6 +84,7 @@ FixpointParameters::FixpointParameters(const AnalysisOptions& opts)
     : _default_params(opts.widening_strategy,
                       opts.narrowing_strategy,
                       opts.widening_delay,
+                      opts.widening_period,
                       opts.narrowing_iterations) {}
 
 FixpointParameters::~FixpointParameters() = default;
@@ -115,6 +118,8 @@ void FixpointParameters::dump(std::ostream& o) const {
     << narrowing_strategy_str(this->_default_params.narrowing_strategy) << "\n";
   o << "default widening delay: " << this->_default_params.widening_delay
     << "\n";
+  o << "default widening period: " << this->_default_params.widening_period
+    << "\n";
   o << "default narrowing iterations: ";
   if (this->_default_params.narrowing_iterations) {
     o << *this->_default_params.narrowing_iterations << "\n";
@@ -137,6 +142,10 @@ void FixpointParameters::dump(std::ostream& o) const {
     }
     if (params.widening_delay != this->_default_params.widening_delay) {
       o << fun->name() << " widening delay: " << params.widening_delay << "\n";
+    }
+    if (params.widening_period != this->_default_params.widening_period) {
+      o << fun->name() << " widening period: " << params.widening_period
+        << "\n";
     }
     if (params.narrowing_iterations !=
         this->_default_params.narrowing_iterations) {

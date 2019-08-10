@@ -370,9 +370,11 @@ By default, IKOS uses the precision `mem`. Provide `--prec {reg,ptr,mem}` if you
 
 The analyzer uses the theory of Abstract Interpretation to compute a fixpoint of the semantic of the program. The fixpoint engine can be tuned using several parameters.
 
-When visiting a loop, the engine will first compute a fixed number of iterations, then use a widening strategy to approximate the behavior of the loop, until convergence.
+When visiting a loop, the engine will first compute a fixed number of iterations, then use a widening strategy periodically to approximate the behavior of the loop, until convergence.
 
-The fixed number of iterations can be set using `--widening-delay`. By default, it is 1.
+The fixed number of iterations performed before the widening strategy can be set using `--widening-delay`. By default, it is 1.
+
+The period of the widening strategy can be set using `--widening-period`. By default, it is 1, thus the widening strategy is always applied.
 
 The widening strategy can be set using `--widening-strategy=`:
 * **widen**: Use the widening operator to approximate the behavior of the loop (default)

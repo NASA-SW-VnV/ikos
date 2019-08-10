@@ -86,6 +86,8 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("widening-delay", std::to_string(this->widening_delay));
 
+  table.insert("widening-period", std::to_string(this->widening_period));
+
   if (this->narrowing_iterations) {
     table.insert("narrowing-iterations",
                  std::to_string(*this->narrowing_iterations));

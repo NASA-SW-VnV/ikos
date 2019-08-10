@@ -285,6 +285,8 @@ default_narrowing_strategy = 'auto'
 
 default_widening_delay = 1
 
+default_widening_period = 1
+
 meet_iterations_if_no_narrowing = 2
 
 # Preprocessing options choices

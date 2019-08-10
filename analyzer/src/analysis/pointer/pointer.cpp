@@ -154,9 +154,18 @@ public:
       return before;
     }
 
+    iteration -= this->_fixpoint_parameters.widening_delay;
+    iteration--;
+
+    if (iteration % this->_fixpoint_parameters.widening_period != 0) {
+      // Not the period, iteration using join
+      before.join_iter_with(after);
+      return before;
+    }
+
     switch (this->_fixpoint_parameters.widening_strategy) {
       case WideningStrategy::Widen: {
-        if (iteration == this->_fixpoint_parameters.widening_delay + 1) {
+        if (iteration == 0) {
           if (auto threshold =
                   this->_fixpoint_parameters.widening_hints.get(head)) {
             // One iteration using widening with threshold

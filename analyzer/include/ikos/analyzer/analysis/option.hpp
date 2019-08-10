@@ -328,6 +328,9 @@ public:
   /// \brief Number of loop iterations before applying the widening strategy
   unsigned widening_delay;
 
+  /// \brief Number of loop iterations between each widening
+  unsigned widening_period;
+
   /// \brief Fixed number of narrowing iterations to perform
   ///
   /// boost::none to perform narrowing iterations until convergence
