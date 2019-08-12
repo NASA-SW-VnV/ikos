@@ -45,6 +45,7 @@
 
 #include <vector>
 
+#include <boost/container/flat_map.hpp>
 #include <boost/optional.hpp>
 
 #include <ikos/ar/semantic/function.hpp>
@@ -327,6 +328,10 @@ public:
 
   /// \brief Number of loop iterations before applying the widening strategy
   unsigned widening_delay;
+
+  /// \brief Widening delay for specific functions
+  boost::container::flat_map< ar::Function*, unsigned >
+      widening_delay_functions;
 
   /// \brief Number of loop iterations between each widening
   unsigned widening_period;

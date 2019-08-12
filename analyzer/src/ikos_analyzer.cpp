@@ -44,6 +44,7 @@
 
 #include <iostream>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
@@ -103,12 +104,12 @@ static llvm::cl::opt< std::string > InputFilename(
     llvm::cl::Positional,
     llvm::cl::desc("<input bitcode file>"),
     llvm::cl::Required,
-    llvm::cl::value_desc("filename"));
+    llvm::cl::value_desc("file"));
 
 static llvm::cl::opt< std::string > OutputFilename(
     "o",
     llvm::cl::desc("Output database filename (default: output.db)"),
-    llvm::cl::value_desc("filename"),
+    llvm::cl::value_desc("file"),
     llvm::cl::init("output.db"),
     llvm::cl::cat(MainCategory));
 
@@ -377,12 +378,21 @@ static llvm::cl::opt< unsigned > WideningDelay(
     llvm::cl::desc(
         "Number of loop iterations before using the widening strategy"),
     llvm::cl::init(1),
+    llvm::cl::value_desc("int"),
+    llvm::cl::cat(AnalysisCategory));
+
+static llvm::cl::list< std::string > WideningDelayFunctions(
+    "widening-delay-functions",
+    llvm::cl::desc("Widening delay for specific functions"),
+    llvm::cl::CommaSeparated,
+    llvm::cl::value_desc("function:int"),
     llvm::cl::cat(AnalysisCategory));
 
 static llvm::cl::opt< unsigned > WideningPeriod(
     "widening-period",
     llvm::cl::desc("Number of loop iterations between each widening"),
     llvm::cl::init(1),
+    llvm::cl::value_desc("int"),
     llvm::cl::cat(AnalysisCategory));
 
 static llvm::cl::opt< int > NarrowingIterations(
@@ -682,7 +692,8 @@ static std::vector< ar::Function* > parse_function_names(
     return functions;
   }
 
-  for (const auto& name : opt) {
+  for (std::string name : opt) {
+    boost::trim(name);
     ar::Function* fun = bundle->function_or_null(name);
 
     if (fun == nullptr) {
@@ -703,6 +714,67 @@ static std::vector< ar::Function* > parse_function_names(
   return functions;
 }
 
+/// \brief Interpret an unsigned integer value in the string `str`
+static unsigned stou(const std::string& str,
+                     size_t* pos = nullptr,
+                     int base = 10) {
+  long long n = std::stoll(str, pos, base);
+
+  if (n < 0 || n > std::numeric_limits< unsigned >::max()) {
+    throw std::out_of_range("stou: out of range");
+  }
+
+  return static_cast< unsigned >(n);
+}
+
+/// \brief Parse a list of "function:unsigned" and return a map
+static boost::container::flat_map< ar::Function*, unsigned >
+parse_function_names_to_unsigned(const llvm::cl::list< std::string >& opt,
+                                 ar::Bundle* bundle) {
+  boost::container::flat_map< ar::Function*, unsigned > map;
+
+  for (const auto& str : opt) {
+    size_t colon = str.find(':');
+
+    if (colon == std::string::npos) {
+      std::ostringstream buf;
+      buf << "could not find separator ':' in '" << str << "'";
+      throw analyzer::ArgumentError(buf.str());
+    }
+
+    std::string name = str.substr(0, colon);
+    boost::trim(name);
+
+    ar::Function* fun = bundle->function_or_null(name);
+
+    if (fun == nullptr) {
+      std::ostringstream buf;
+      buf << "could not find function '" << name << "'";
+      throw analyzer::ArgumentError(buf.str());
+    }
+
+    std::string number_str = str.substr(colon + 1);
+    boost::trim(number_str);
+    unsigned number;
+
+    try {
+      number = stou(number_str, nullptr, 0);
+    } catch (const std::invalid_argument&) {
+      std::ostringstream buf;
+      buf << "could not parse integer '" << number_str << "'";
+      throw analyzer::ArgumentError(buf.str());
+    } catch (const std::out_of_range&) {
+      std::ostringstream buf;
+      buf << "integer out of range '" << number_str << "'";
+      throw analyzer::ArgumentError(buf.str());
+    }
+
+    map[fun] = number;
+  }
+
+  return map;
+}
+
 /// \brief Build analysis options from command line arguments
 static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
   return analyzer::AnalysisOptions{
@@ -714,6 +786,8 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .widening_strategy = WideningStrategy,
       .narrowing_strategy = NarrowingStrategy,
       .widening_delay = WideningDelay,
+      .widening_delay_functions =
+          parse_function_names_to_unsigned(WideningDelayFunctions, bundle),
       .widening_period = WideningPeriod,
       .narrowing_iterations =
           ((NarrowingIterations >= 0)

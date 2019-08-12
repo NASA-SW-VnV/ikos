@@ -86,6 +86,12 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("widening-delay", std::to_string(this->widening_delay));
 
+  JsonDict widening_delay_dict;
+  for (const auto& p : this->widening_delay_functions) {
+    widening_delay_dict.put(p.first->name(), p.second);
+  }
+  table.insert("widening-delay-functions", widening_delay_dict);
+
   table.insert("widening-period", std::to_string(this->widening_period));
 
   if (this->narrowing_iterations) {

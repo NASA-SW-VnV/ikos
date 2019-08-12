@@ -251,4 +251,37 @@ if __name__ == '__main__':
     t.add(Test('test-67.c', 'test-67.c (interval)', 'boa', 'safe', expected='unsafe', domain='interval'))
     t.add(Test('test-67.c', 'test-67.c (var-pack-dbm)', 'boa', 'safe', domain='var-pack-dbm'))
     t.add(Test('test-67.c', 'test-67.c (dbm)', 'boa', 'safe', domain='dbm'))
+    t.add(Test('test-68.c', 'test-68.c (interval)', 'boa',
+               'safe',
+               expected='unsafe',
+               domain='interval'))
+    t.add(Test('test-68.c', 'test-68.c (interval-congruence)', 'boa',
+               'safe',
+               expected='unsafe',
+               domain='interval-congruence'))
+    t.add(Test('test-68.c', 'test-68.c (interval-congruence, widening delay 10)', 'boa',
+               'safe',
+               expected='unsafe',
+               domain='interval-congruence',
+               options=['--widening-delay=10'],
+               line_checks=[(6, 'ok'),
+                            (15, 'ok', 'warning')]))
+    t.add(Test('test-68.c', 'test-68.c (interval-congruence, widening delay 100)', 'boa',
+               'safe',
+               domain='interval-congruence',
+               options=['--widening-delay=100']))
+    t.add(Test('test-68.c', 'test-68.c (interval-congruence, widening delay f1=10)', 'boa',
+               'safe',
+               expected='unsafe',
+               domain='interval-congruence',
+               options=['--widening-delay-functions=f1:10'],
+               line_checks=[(6, 'ok'),
+                            (15, 'ok', 'warning')]))
+    t.add(Test('test-68.c', 'test-68.c (interval-congruence, widening delay f2=100)', 'boa',
+               'safe',
+               expected='unsafe',
+               domain='interval-congruence',
+               options=['--widening-delay-functions=f2:100'],
+               line_checks=[(6, 'ok', 'warning'),
+                            (15, 'ok')]))
     t.run()

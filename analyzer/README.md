@@ -389,6 +389,8 @@ The narrowing strategy can be set using `--narrowing-strategy=`:
 
 You can specify a fixed number of narrowing iterations to perform using `--narrowing-iterations`.
 
+You can specify the widening delay for a given function using `--widening-delay-functions=function:10`.
+
 ### Hardware addresses
 
 In C code for embedded systems, it is usual to read or write at specific addresses to communicate with the hardware. By default, IKOS treats memory accesses at specific addresses as errors.

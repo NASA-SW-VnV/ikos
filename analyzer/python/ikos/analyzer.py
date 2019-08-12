@@ -195,6 +195,11 @@ def parse_arguments(argv):
                                % args.default_widening_delay,
                           default=args.default_widening_delay,
                           type=args.Integer(min=0))
+    analysis.add_argument('--widening-delay-functions',
+                          dest='widening_delay_functions',
+                          metavar='<function:int>',
+                          help='Widening delay for specific functions',
+                          action='append')
     analysis.add_argument('--widening-period',
                           dest='widening_period',
                           metavar='',
@@ -765,6 +770,10 @@ def ikos_analyzer(db_path, pp_path, opt):
             opt.domain in domains_without_narrowing):
         cmd.append('-narrowing-iterations=%d'
                    % args.meet_iterations_if_no_narrowing)
+
+    if opt.widening_delay_functions:
+        cmd.append('-widening-delay-functions=%s'
+                   % ','.join(opt.widening_delay_functions))
 
     if opt.no_init_globals:
         cmd.append('-no-init-globals=%s' % ','.join(opt.no_init_globals))

@@ -85,7 +85,21 @@ FixpointParameters::FixpointParameters(const AnalysisOptions& opts)
                       opts.narrowing_strategy,
                       opts.widening_delay,
                       opts.widening_period,
-                      opts.narrowing_iterations) {}
+                      opts.narrowing_iterations) {
+  // Store the parameters for functions with a given widening delay
+  for (const auto& p : opts.widening_delay_functions) {
+    ar::Function* fun = p.first;
+
+    if (!fun->is_definition()) {
+      continue;
+    }
+
+    auto fun_fixpoint_params =
+        std::make_unique< CodeFixpointParameters >(this->_default_params);
+    fun_fixpoint_params->widening_delay = p.second;
+    this->_map.try_emplace(fun, std::move(fun_fixpoint_params));
+  }
+}
 
 FixpointParameters::~FixpointParameters() = default;
 
