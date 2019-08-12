@@ -416,35 +416,34 @@ public:
 
       if (kind == FixpointIterationKind::Increasing) {
         // Increasing iteration with widening
+        AbstractValue inv =
+            this->_iterator.extrapolate(head, iteration, pre, new_pre);
         if (this->_iterator.is_increasing_iterations_fixpoint(head,
                                                               iteration,
                                                               pre,
-                                                              new_pre)) {
+                                                              inv)) {
           // Post-fixpoint reached
           // Use this iteration as a decreasing iteration
           kind = FixpointIterationKind::Decreasing;
           iteration = 1;
         } else {
-          pre = this->_iterator.extrapolate(head,
-                                            iteration,
-                                            std::move(pre),
-                                            std::move(new_pre));
+          pre = std::move(inv);
         }
       }
 
       if (kind == FixpointIterationKind::Decreasing) {
         // Decreasing iteration with narrowing
-        new_pre =
-            this->_iterator.refine(head, iteration, pre, std::move(new_pre));
+        AbstractValue inv =
+            this->_iterator.refine(head, iteration, pre, new_pre);
         if (this->_iterator.is_decreasing_iterations_fixpoint(head,
                                                               iteration,
                                                               pre,
-                                                              new_pre)) {
+                                                              inv)) {
           // No more refinement possible
-          this->_iterator.set_pre(head, std::move(new_pre));
+          this->_iterator.set_pre(head, std::move(inv));
           break;
         } else {
-          pre = std::move(new_pre);
+          pre = std::move(inv);
         }
       }
     }
