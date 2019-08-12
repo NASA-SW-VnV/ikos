@@ -209,6 +209,15 @@ public:
         .widen_threshold_with(other._propagated_exceptions, threshold);
   }
 
+  /// \brief Perform the widening of two abstract values with a threshold
+  template < typename Threshold >
+  ExceptionDomain widening_threshold(const ExceptionDomain& other,
+                                     const Threshold& threshold) const {
+    ExceptionDomain tmp(*this);
+    tmp.widen_threshold_with(other, threshold);
+    return tmp;
+  }
+
   void meet_with(const ExceptionDomain& other) override {
     this->_normal.meet_with(other._normal);
     this->_caught_exceptions.meet_with(other._caught_exceptions);
@@ -230,6 +239,15 @@ public:
                                                    threshold);
     this->_propagated_exceptions
         .narrow_threshold_with(other._propagated_exceptions, threshold);
+  }
+
+  /// \brief Perform the narrowing of two abstract values with a threshold
+  template < typename Threshold >
+  ExceptionDomain narrowing_threshold(const ExceptionDomain& other,
+                                      const Threshold& threshold) const {
+    ExceptionDomain tmp(*this);
+    tmp.narrow_threshold_with(other, threshold);
+    return tmp;
   }
 
   /*

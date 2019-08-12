@@ -181,17 +181,15 @@ public:
   /// \param after Abstract value after the iteration
   virtual AbstractValue extrapolate(NodeRef head,
                                     unsigned iteration,
-                                    AbstractValue before,
-                                    AbstractValue after) {
+                                    const AbstractValue& before,
+                                    const AbstractValue& after) {
     ikos_ignore(head);
 
     if (iteration <= 1) {
-      before.join_iter_with(after);
+      return before.join_iter(after);
     } else {
-      before.widen_with(after);
+      return before.widening(after);
     }
-
-    return before;
   }
 
   /// \brief Check if the increasing iterations fixpoint is reached
@@ -225,13 +223,12 @@ public:
   /// \param after Abstract value after the iteration
   virtual AbstractValue refine(NodeRef head,
                                unsigned iteration,
-                               AbstractValue before,
-                               AbstractValue after) {
+                               const AbstractValue& before,
+                               const AbstractValue& after) {
     ikos_ignore(head);
     ikos_ignore(iteration);
 
-    before.narrow_with(after);
-    return before;
+    return before.narrowing(after);
   }
 
   /// \brief Check if the decreasing iterations fixpoint is reached
@@ -362,9 +359,11 @@ public:
          ++it) {
       NodeRef pred = *it;
       if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
-        pre.join_with(this->_iterator.analyze_edge(pred,
-                                                   head,
-                                                   this->_iterator.post(pred)));
+        AbstractValue inv =
+            this->_iterator.analyze_edge(pred,
+                                         head,
+                                         this->_iterator.post(pred));
+        pre.join_with(inv);
       }
     }
 
@@ -382,19 +381,6 @@ public:
       // Invariant from the head of the loop
       AbstractValue new_pre_in = AbstractValue::bottom();
 
-      for (auto it = GraphTrait::predecessor_begin(head),
-                et = GraphTrait::predecessor_end(head);
-           it != et;
-           ++it) {
-        NodeRef pred = *it;
-        if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
-          new_pre_in.join_with(
-              this->_iterator.analyze_edge(pred,
-                                           head,
-                                           this->_iterator.post(pred)));
-        }
-      }
-
       // Invariant from the tail of the loop
       AbstractValue new_pre_back = AbstractValue::bottom();
 
@@ -403,16 +389,19 @@ public:
            it != et;
            ++it) {
         NodeRef pred = *it;
-        if (this->_iterator.wto().nesting(pred) > cycle_nesting) {
-          new_pre_back.join_with(
-              this->_iterator.analyze_edge(pred,
-                                           head,
-                                           this->_iterator.post(pred)));
+        AbstractValue inv =
+            this->_iterator.analyze_edge(pred,
+                                         head,
+                                         this->_iterator.post(pred));
+        if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
+          new_pre_in.join_with(inv);
+        } else {
+          new_pre_back.join_with(inv);
         }
       }
 
+      new_pre_in.join_loop_with(new_pre_back);
       AbstractValue new_pre(std::move(new_pre_in));
-      new_pre.join_loop_with(new_pre_back);
 
       if (kind == FixpointIterationKind::Increasing) {
         // Increasing iteration with widening

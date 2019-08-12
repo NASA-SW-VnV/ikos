@@ -146,12 +146,11 @@ public:
   /// \brief Extrapolate the new state after an increasing iteration
   AbstractDomainT extrapolate(ar::BasicBlock* head,
                               unsigned iteration,
-                              AbstractDomainT before,
-                              AbstractDomainT after) override {
+                              const AbstractDomainT& before,
+                              const AbstractDomainT& after) override {
     if (iteration <= this->_fixpoint_parameters.widening_delay) {
       // Fixed number of iterations using join
-      before.join_iter_with(after);
-      return before;
+      return before.join_iter(after);
     }
 
     iteration -= this->_fixpoint_parameters.widening_delay;
@@ -159,8 +158,7 @@ public:
 
     if (iteration % this->_fixpoint_parameters.widening_period != 0) {
       // Not the period, iteration using join
-      before.join_iter_with(after);
-      return before;
+      return before.join_iter(after);
     }
 
     switch (this->_fixpoint_parameters.widening_strategy) {
@@ -169,19 +167,16 @@ public:
           if (auto threshold =
                   this->_fixpoint_parameters.widening_hints.get(head)) {
             // One iteration using widening with threshold
-            before.widen_threshold_with(after, *threshold);
-            return before;
+            return before.widening_threshold(after, *threshold);
           }
         }
 
         // Iterations using widening until convergence
-        before.widen_with(after);
-        return before;
+        return before.widening(after);
       }
       case WideningStrategy::Join: {
         // Iterations using join until convergence
-        before.join_iter_with(after);
-        return before;
+        return before.join_iter(after);
       }
       default: {
         ikos_unreachable("unexpected strategy");
@@ -192,27 +187,24 @@ public:
   /// \brief Refine the new state after a decreasing iteration
   AbstractDomainT refine(ar::BasicBlock* head,
                          unsigned iteration,
-                         AbstractDomainT before,
-                         AbstractDomainT after) override {
+                         const AbstractDomainT& before,
+                         const AbstractDomainT& after) override {
     switch (this->_fixpoint_parameters.narrowing_strategy) {
       case NarrowingStrategy::Narrow: {
         if (iteration == 1) {
           if (auto threshold =
                   this->_fixpoint_parameters.widening_hints.get(head)) {
             // First iteration using narrowing with threshold
-            before.narrow_threshold_with(after, *threshold);
-            return before;
+            return before.narrowing_threshold(after, *threshold);
           }
         }
 
         // Iterations using narrowing
-        before.narrow_with(after);
-        return before;
+        return before.narrowing(after);
       }
       case NarrowingStrategy::Meet: {
         // Iterations using meet
-        before.meet_with(after);
-        return before;
+        return before.meet(after);
       }
       default: {
         ikos_unreachable("unexpected strategy");
