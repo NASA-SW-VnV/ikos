@@ -6,16 +6,15 @@ addons:
   apt:
     update: true
     sources:
-    - ubuntu-toolchain-r-test
-    - llvm-toolchain-trusty-8
+    - llvm-toolchain-xenial-8
     packages:
-    - gcc-8
-    - g++-8
-    - cmake3
+    - gcc
+    - g++
+    - cmake
     - libgmp-dev
-    - libboost1.55-dev
-    - libboost-filesystem1.55-dev
-    - libboost-test1.55-dev
+    - libboost-dev
+    - libboost-filesystem-dev
+    - libboost-test-dev
     - python
     - python-pygments
     - libsqlite3-dev
@@ -37,7 +36,7 @@ addons:
 script:
   - mkdir build
   - cd build
-  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_C_COMPILER="gcc-8" -DCMAKE_CXX_COMPILER="g++-8" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" ..; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" ..; fi
   - if [ $TRAVIS_OS_NAME == osx ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/local/opt/llvm@8/bin/llvm-config" ..; fi
   - make
   - make install
