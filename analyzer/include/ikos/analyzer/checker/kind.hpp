@@ -141,6 +141,9 @@ enum class CheckKind {
   /// \brief Ignored side effect of a function call
   IgnoredCallSideEffect,
 
+  /// \brief Check for a recursive function call
+  RecursiveFunctionCall,
+
   _EndSoundness,
 
   _BeginFunctionCall,

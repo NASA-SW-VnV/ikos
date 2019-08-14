@@ -278,7 +278,6 @@ private:
 
     // For each callee
     for (MemoryLocation* mem : callees) {
-      // Check if the callee is a function
       if (!isa< FunctionMemoryLocation >(mem)) {
         // Not a call to a function memory location
         continue;
@@ -288,11 +287,14 @@ private:
 
       if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
         // Ill-formed function call
+        //
         // This could be because of an imprecision of the pointer analysis.
         continue;
       }
 
       if (callee->is_declaration()) {
+        // Call to an extern function
+        //
         // ASSUMPTION: if this is a call to an extern non-intrinsic function,
         // treat it as a function call that has no side effects.
         NumericalExecutionEngineT engine(this->_engine.fork());
@@ -306,6 +308,8 @@ private:
 
       if (this->_caller.function() == callee ||
           this->_caller.call_context()->contains(callee)) {
+        // Recursive function call
+        //
         // TODO(jnavas): we can be more precise by making top only lhs of
         // call_stmt, actual parameters of pointer type and any global variable
         // that might be touched by the recursive function.

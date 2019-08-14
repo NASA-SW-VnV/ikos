@@ -107,6 +107,7 @@ class CheckKind:
     IGNORED_FREE = auto()
     IGNORED_CALL_SIDE_EFFECT_ON_POINTER_PARAM = auto()
     IGNORED_CALL_SIDE_EFFECT = auto()
+    RECURSIVE_FUNCTION_CALL = auto()
     _END_SOUNDNESS = auto()
     _BEGIN_FUNCTION_CALL = auto()
     FUNCTION_CALL_INLINE_ASSEMBLY = auto()
@@ -148,6 +149,7 @@ class CheckKind:
         'ignored-free',
         'ignored-call-side-effect-pointer-param',
         'ignored-call-side-effect',
+        'recursive-function-call',
         'end-soundness',
         'begin-function-call',
         'function-call-inline-asm',
@@ -194,6 +196,7 @@ class CheckKind:
         'ignored free',
         'ignored call side effect on pointer parameter',
         'ignored call side effect',
+        'recursive function call',
         'end soundness',
         'begin function call',
         'function call inline assembly',

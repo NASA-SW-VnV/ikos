@@ -79,7 +79,8 @@ void SoundnessChecker::check(ar::Statement* stmt,
                            check->info);
     }
   } else if (auto call = dyn_cast< ar::CallBase >(stmt)) {
-    std::vector< CheckResult > checks = this->check_call(call, inv);
+    std::vector< CheckResult > checks =
+        this->check_call(call, inv, call_context);
     for (const auto& check : checks) {
       this->display_invariant(check.result, stmt, inv);
       this->_checks.insert(check.kind,
@@ -94,7 +95,9 @@ void SoundnessChecker::check(ar::Statement* stmt,
 }
 
 std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
-    ar::CallBase* call, const value::AbstractDomain& inv) {
+    ar::CallBase* call,
+    const value::AbstractDomain& inv,
+    CallContext* call_context) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
     if (auto msg = this->display_soundness_check(Result::Unreachable, call)) {
@@ -181,6 +184,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
              {}}};
   }
 
+  ar::Function* caller = call->code()->function_or_null();
+
   std::vector< CheckResult > checks;
 
   for (MemoryLocation* addr : callees) {
@@ -194,9 +199,10 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
     if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
       // Ill-formed function call
       continue;
-    }
-
-    if (callee->is_intrinsic()) {
+    } else if (caller == callee || call_context->contains(callee)) {
+      // Recursive function call
+      checks.push_back(this->check_recursive_call(call, callee, inv));
+    } else if (callee->is_intrinsic()) {
       for (const auto& check : this->check_intrinsic_call(call, callee, inv)) {
         checks.push_back(check);
       }
@@ -211,6 +217,25 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
   }
 
   return checks;
+}
+
+SoundnessChecker::CheckResult SoundnessChecker::check_recursive_call(
+    ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    if (auto msg = this->display_soundness_check(Result::Unreachable, call)) {
+      *msg << "\n";
+    }
+    return {CheckKind::Unreachable, Result::Unreachable, {}, {}};
+  }
+
+  if (auto msg = this->display_soundness_check(Result::Warning, call)) {
+    *msg << ": call to a recursive function\n";
+  }
+  return {CheckKind::RecursiveFunctionCall,
+          Result::Warning,
+          {},
+          JsonDict{{"fun_id", _ctx.output_db->functions.insert(fun)}}};
 }
 
 namespace {

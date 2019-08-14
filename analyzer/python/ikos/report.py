@@ -1653,6 +1653,17 @@ def generate_ignored_call_side_effect_message(report, verbosity):
     return s
 
 
+def generate_recursive_function_call_message(report, verbosity):
+    assert report.status == Result.WARNING
+    info = report.load_info()
+    function_id = info['fun_id']
+    function = report.db.functions[function_id]
+    s = "function call to '%s' is recursive."
+    s = s % function.pretty_name()
+    s += ' Analysis might be unsound.'
+    return s
+
+
 def generate_call_inline_asm_message(report, verbosity):
     assert report.status == Result.OK
     return 'safe call to inline assembly code'
@@ -1832,6 +1843,8 @@ GENERATE_MESSAGE_MAP = {
         generate_ignored_call_side_effect_on_pointer_param_message,
     CheckKind.IGNORED_CALL_SIDE_EFFECT:
         generate_ignored_call_side_effect_message,
+    CheckKind.RECURSIVE_FUNCTION_CALL:
+        generate_recursive_function_call_message,
     CheckKind.FUNCTION_CALL_INLINE_ASSEMBLY: generate_call_inline_asm_message,
     CheckKind.UNKNOWN_FUNCTION_CALL_POINTER:
         generate_unknown_function_call_message,

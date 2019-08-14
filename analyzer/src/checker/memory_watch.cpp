@@ -74,11 +74,11 @@ const char* MemoryWatchChecker::description() const {
 
 void MemoryWatchChecker::check(ar::Statement* stmt,
                                const value::AbstractDomain& inv,
-                               CallContext* /*call_context*/) {
+                               CallContext* call_context) {
   if (auto store = dyn_cast< ar::Store >(stmt)) {
     this->check_store(store, inv);
   } else if (auto call = dyn_cast< ar::CallBase >(stmt)) {
-    this->check_call(call, inv);
+    this->check_call(call, inv, call_context);
   }
 }
 
@@ -91,7 +91,8 @@ void MemoryWatchChecker::check_store(ar::Store* store,
 }
 
 void MemoryWatchChecker::check_call(ar::CallBase* call,
-                                    const value::AbstractDomain& inv) {
+                                    const value::AbstractDomain& inv,
+                                    CallContext* call_context) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
     return;
@@ -147,6 +148,8 @@ void MemoryWatchChecker::check_call(ar::CallBase* call,
     return;
   }
 
+  ar::Function* caller = call->code()->function_or_null();
+
   for (MemoryLocation* addr : callees) {
     if (!isa< FunctionMemoryLocation >(addr)) {
       // Not a call to a function memory location
@@ -158,15 +161,36 @@ void MemoryWatchChecker::check_call(ar::CallBase* call,
     if (!ar::TypeVerifier::is_valid_call(call, callee->type())) {
       // Ill-formed function call
       continue;
-    }
-
-    if (callee->is_intrinsic()) {
+    } else if (caller == callee || call_context->contains(callee)) {
+      // Recursive function call
+      this->check_recursive_call(call, callee, inv);
+    } else if (callee->is_intrinsic()) {
       this->check_intrinsic_call(call, callee, inv);
     } else if (callee->is_declaration()) {
       this->check_unknown_extern_call(call, inv);
     }
-    // TODO(marthaud): Check for recursive function calls
   }
+}
+
+void MemoryWatchChecker::check_recursive_call(
+    ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv) {
+  if (inv.is_normal_flow_bottom()) {
+    // Statement unreachable
+    return;
+  }
+
+  // Watched addresses
+  PointsToSet watch_addrs =
+      inv.normal().pointers().points_to(this->_watch_mem_ptr);
+
+  if (watch_addrs.is_empty() || watch_addrs.is_top()) {
+    // Not watching anything, __ikos_watch_mem was not called
+    return;
+  }
+
+  LogMessage msg = log::msg();
+  this->display_stmt_location(msg, call);
+  msg << "potential memory write at a watched memory location\n";
 }
 
 void MemoryWatchChecker::check_intrinsic_call(

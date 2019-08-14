@@ -57,4 +57,5 @@ if __name__ == '__main__':
     t.add(Test('test-memset.c', 'test-memset.c', 'sound', 'unsafe'))
     t.add(Test('test-free.c', 'test-free.c', 'sound', 'unsafe'))
     t.add(Test('test-call-side-effect.c', 'test-call-side-effect.c', 'sound', 'unsafe'))
+    t.add(Test('test-recursive.c', 'test-recursive.c', 'sound', 'unsafe'))
     t.run()

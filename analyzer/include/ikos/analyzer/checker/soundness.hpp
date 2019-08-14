@@ -87,7 +87,15 @@ private:
 
   /// \brief Check a function call
   std::vector< CheckResult > check_call(ar::CallBase* call,
-                                        const value::AbstractDomain& inv);
+                                        const value::AbstractDomain& inv,
+                                        CallContext* call_context);
+
+  /// \brief Check for a recursive function call
+  ///
+  /// Warn about RecursiveFunctionCall.
+  CheckResult check_recursive_call(ar::CallBase* call,
+                                   ar::Function* fun,
+                                   const value::AbstractDomain& inv);
 
   /// \brief Check an intrinsic function call
   std::vector< CheckResult > check_intrinsic_call(

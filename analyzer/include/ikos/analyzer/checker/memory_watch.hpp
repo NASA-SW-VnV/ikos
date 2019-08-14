@@ -92,7 +92,14 @@ private:
   void check_store(ar::Store* store, const value::AbstractDomain& inv);
 
   /// \brief Check a function call
-  void check_call(ar::CallBase* call, const value::AbstractDomain& inv);
+  void check_call(ar::CallBase* call,
+                  const value::AbstractDomain& inv,
+                  CallContext* call_context);
+
+  /// \brief Check a recursive function call
+  void check_recursive_call(ar::CallBase* call,
+                            ar::Function* fun,
+                            const value::AbstractDomain& inv);
 
   /// \brief Check an intrinsic function call
   void check_intrinsic_call(ar::CallBase* call,
