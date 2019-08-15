@@ -76,6 +76,8 @@ if (NOT PPL_FOUND)
     list(APPEND PPL_LIB_SEARCH_DIRS ${PPL_CONFIG_LIB_DIR})
   endif()
 
+  find_package(GMP)
+
   find_path(PPL_INCLUDE_DIR
     NAMES ppl_c.h
     HINTS ${PPL_INCLUDE_SEARCH_DIRS}
@@ -94,7 +96,7 @@ if (NOT PPL_FOUND)
     DOC "Path to ppl_c library"
   )
 
-  if (PPL_INCLUDE_DIR)
+  if (PPL_INCLUDE_DIR AND PPL_C_LIB AND GMP_FOUND)
     file(WRITE "${PROJECT_BINARY_DIR}/FindPPLVersion.c" "
       #include <stdio.h>
       #include <ppl_c.h>
@@ -114,8 +116,8 @@ if (NOT PPL_FOUND)
       "${PROJECT_BINARY_DIR}"
       "${PROJECT_BINARY_DIR}/FindPPLVersion.c"
       CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${PPL_INCLUDE_DIR}"
-        "-DLINK_LIBRARIES:STRING=${PPL_C_LIB}"
+        "-DINCLUDE_DIRECTORIES:STRING=${PPL_INCLUDE_DIR};${GMP_INCLUDE_DIR}"
+        "-DLINK_LIBRARIES:STRING=${PPL_C_LIB};${GMP_LIB}"
       COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE PPL_VERSION
     )
@@ -134,6 +136,7 @@ if (NOT PPL_FOUND)
       PPL_INCLUDE_DIR
       PPL_LIB
       PPL_C_LIB
+      GMP_FOUND
     VERSION_VAR
       PPL_VERSION
     FAIL_MESSAGE

@@ -43,6 +43,8 @@
 if (NOT MPFR_FOUND)
   set(MPFR_ROOT "" CACHE PATH "Path to mpfr install directory")
 
+  find_package(GMP)
+
   find_path(MPFR_INCLUDE_DIR
     NAMES mpfr.h
     HINTS "${MPFR_ROOT}/include"
@@ -55,7 +57,7 @@ if (NOT MPFR_FOUND)
     DOC "Path to mpfr library"
   )
 
-  if (MPFR_INCLUDE_DIR AND MPFR_LIB)
+  if (MPFR_INCLUDE_DIR AND MPFR_LIB AND GMP_FOUND)
     file(WRITE "${PROJECT_BINARY_DIR}/FindMPFRVersion.c" "
       #include <stdio.h>
       #include <mpfr.h>
@@ -74,8 +76,8 @@ if (NOT MPFR_FOUND)
       "${PROJECT_BINARY_DIR}"
       "${PROJECT_BINARY_DIR}/FindMPFRVersion.c"
       CMAKE_FLAGS
-        "-DINCLUDE_DIRECTORIES:STRING=${MPFR_INCLUDE_DIR}"
-        "-DLINK_LIBRARIES:STRING=${MPFR_LIB}"
+        "-DINCLUDE_DIRECTORIES:STRING=${MPFR_INCLUDE_DIR};${GMP_INCLUDE_DIR}"
+        "-DLINK_LIBRARIES:STRING=${MPFR_LIB};${GMP_LIB}"
       COMPILE_OUTPUT_VARIABLE COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE MPFR_VERSION
     )
@@ -94,6 +96,7 @@ if (NOT MPFR_FOUND)
       MPFR_INCLUDE_DIR
       MPFR_LIB
       MPFR_VERSION
+      GMP_FOUND
     VERSION_VAR
       MPFR_VERSION
     FAIL_MESSAGE
