@@ -4,17 +4,17 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.14.1
+# cmake 3.15.2
 # gmp 6.1.2
 # mpfr 4.0.2
 # ppl 1.2
 # apron 0.9.10
 # boost 1.69.0
-# python 3.7.3
-# sqlite 3.27.2
-# llvm 8.0.0
-# clang 8.0.0
-# gcc 8.2.1
+# python 3.7.4
+# sqlite 3.29.0
+# llvm 8.0.1
+# clang 8.0.1
+# gcc 9.1.0
 
 # Upgrade
 RUN pacman --noconfirm -Sy archlinux-keyring
