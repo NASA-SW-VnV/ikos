@@ -3,7 +3,7 @@ Install IKOS on Red Hat Enterprise Linux 6.10
 
 Here are the steps to install IKOS and its dependencies on **[Red Hat Enterprise Linux 6.10](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)**
 
-IKOS requires certain versions of gcc, cmake, boost and llvm that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
+IKOS requires certain versions of gcc, cmake, apron, boost and llvm that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
 
 **Warning**: You will need **at least 10 Gb** of disk space and a **few hours**.
 
@@ -17,7 +17,7 @@ Now, install the following packages using yum:
 
 ```
 $ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
-    gcc gcc-c++ make gmp-devel python34 python34-pygments sqlite-devel
+    gcc gcc-c++ make m4 python34 python34-pygments sqlite-devel
 ```
 
 In the next step, we will use the bootstrap script to build and install gcc, cmake, boost, llvm and IKOS.
@@ -42,19 +42,27 @@ After installation, the install directory will contain the following structure:
 .
 ├── activate-full
 ├── activate-minimal
-├── boost-1.69.0
+├── apron-0.9.10
+│   ├── bin
 │   ├── include
 │   └── lib
-├── cmake-3.13.4
+├── boost-1.70.0
+│   ├── include
+│   └── lib
+├── cmake-3.15.2
 │   ├── bin
 │   ├── doc
 │   └── share
-├── gcc-8.3.0
+├── gcc-9.2.0
 │   ├── bin
 │   ├── include
 │   ├── lib
 │   ├── lib64
 │   ├── libexec
+│   └── share
+├── gmp-6.1.2
+│   ├── include
+│   ├── lib
 │   └── share
 ├── ikos-2.1
 │   ├── bin
@@ -65,13 +73,22 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-├── llvm-8.0.0
+├── llvm-8.0.1
 │   ├── bin
 │   ├── include
 │   ├── lib
 │   ├── libexec
 │   └── share
-└── python-3.4.8
+├── mpfr-4.0.2
+│   ├── include
+│   ├── lib
+│   └── share
+├── ppl-1.2
+│   ├── bin
+│   ├── include
+│   ├── lib
+│   └── share
+└── python-3.4.10
     └── bin
 ```
 
