@@ -73,13 +73,13 @@ ikos_version="2.1"
 gcc_required_version="4.9.2"
 clang_required_version="3.4"
 apple_clang_required_version="3.4"
-gcc_install_version="8.3.0"
+gcc_install_version="9.2.0"
 gcc_gmp_install_version="6.1.0"
 gcc_mpfr_install_version="3.1.4"
 gcc_mpc_install_version="1.0.3"
 gcc_isl_install_version="0.18"
 cmake_required_version="3.4.3"
-cmake_install_version="3.13.4"
+cmake_install_version="3.15.2"
 zlib_install_version="1.2.11"
 ncurses_install_version="6.1"
 libedit_install_version="2.11"
@@ -90,14 +90,14 @@ mpfr_install_version="4.0.2"
 ppl_install_version="1.2"
 apron_install_version="0.9.10"
 sqlite_required_version="3.6.20"
-sqlite_install_version="3.27.2"
+sqlite_install_version="3.29.0"
 boost_required_version="1.55.0"
-boost_install_version="1.69.0"
+boost_install_version="1.70.0"
 python2_required_version="2.7.3"
 python3_required_version="3.3"
 python_install_version="2.7.16"
 llvm_required_version="8"
-llvm_install_version="8.0.0"
+llvm_install_version="8.0.1"
 
 # Default parameters
 install_dir=""
@@ -1472,7 +1472,7 @@ if (( ! found_libedit )); then
     else
         progress "Installing ${cgreen}libedit $libedit_install_version"
 
-        download_extract "https://thrysoee.dk/editline/libedit-20180525-3.1.tar.gz" \
+        download_extract "https://thrysoee.dk/editline/libedit-20190324-3.1.tar.gz" \
             "$build_dir/libedit-$libedit_install_version"
 
         cd "$build_dir/libedit-$libedit_install_version"
@@ -1883,7 +1883,7 @@ if (( ! found_sqlite )); then
     else
         progress "Installing ${cgreen}sqlite $sqlite_install_version"
 
-        download_extract "https://sqlite.org/2019/sqlite-autoconf-3270200.tar.gz" \
+        download_extract "https://sqlite.org/2019/sqlite-autoconf-3290000.tar.gz" \
             "$build_dir/sqlite-$sqlite_install_version"
 
         cd "$build_dir/sqlite-$sqlite_install_version"
@@ -2166,13 +2166,13 @@ if (( ! found_llvm )); then
     else
         progress "Installing ${cgreen}llvm $llvm_install_version"
 
-        download_extract "http://llvm.org/releases/$llvm_install_version/llvm-$llvm_install_version.src.tar.xz" \
+        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/llvm-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version"
-        download_extract "http://llvm.org/releases/$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
+        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/tools/clang"
-        download_extract "http://llvm.org/releases/$llvm_install_version/clang-tools-extra-$llvm_install_version.src.tar.xz" \
+        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/clang-tools-extra-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/tools/clang/tools/extra"
-        download_extract "http://llvm.org/releases/$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
+        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/projects/compiler-rt"
 
         cd "$build_dir/llvm-$llvm_install_version"
