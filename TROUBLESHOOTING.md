@@ -24,7 +24,7 @@ You can either add the LLVM binary directory in your PATH, or give cmake the ful
 For instance, if you installed LLVM using Homebrew on Mac OS X, you can add LLVM in your path using:
 
 ```
-$ PATH="$(brew --prefix)/opt/llvm@7/bin:$PATH"
+$ PATH="$(brew --prefix)/opt/llvm/bin:$PATH"
 ```
 
 ### "Could NOT find Clang" while running cmake
