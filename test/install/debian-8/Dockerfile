@@ -4,7 +4,7 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.14.1
+# cmake 3.15.2
 # gmp 6.0.0
 # boost 1.55.0
 # python 2.7.9
@@ -26,9 +26,9 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 
 # Install cmake
 WORKDIR /tmp
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.14.1/cmake-3.14.1-Linux-x86_64.tar.gz
-RUN tar xf cmake-3.14.1-Linux-x86_64.tar.gz
-ENV PATH "/tmp/cmake-3.14.1-Linux-x86_64/bin:$PATH"
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2-Linux-x86_64.tar.gz
+RUN tar xf cmake-3.15.2-Linux-x86_64.tar.gz
+ENV PATH "/tmp/cmake-3.15.2-Linux-x86_64/bin:$PATH"
 
 # Refresh cache
 RUN apt-get update

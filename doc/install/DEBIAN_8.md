@@ -28,9 +28,9 @@ Since it is only needed during configuration, you can install it in a temporary 
 
 ```
 $ cd /tmp
-$ wget https://github.com/Kitware/CMake/releases/download/v3.14.1/cmake-3.14.1-Linux-x86_64.tar.gz
-$ tar xf cmake-3.14.1-Linux-x86_64.tar.gz
-$ PATH="/tmp/cmake-3.14.1-Linux-x86_64/bin:$PATH"
+$ wget https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2-Linux-x86_64.tar.gz
+$ tar xf cmake-3.15.2-Linux-x86_64.tar.gz
+$ PATH="/tmp/cmake-3.15.2-Linux-x86_64/bin:$PATH"
 ```
 
 Finally, run the following commands to install the remaining dependencies:
