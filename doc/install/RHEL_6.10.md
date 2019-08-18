@@ -20,7 +20,7 @@ $ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
     gcc gcc-c++ make m4 python34 python34-pygments sqlite-devel
 ```
 
-In the next step, we will use the bootstrap script to build and install gcc, cmake, boost, llvm and IKOS.
+In the next step, we will use the bootstrap script to build and install gcc, cmake, apron, boost, llvm and IKOS.
 Here, we will use `/path/to/ikos-install` as the installation directory and `/path/to/ikos-build` as the build directory. Replace it with the location where you want to put IKOS and its dependencies (for instance, `~/ikos-install` and `~/ikos-build`).
 
 In IKOS root directory, run:

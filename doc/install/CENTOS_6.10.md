@@ -36,7 +36,7 @@ $ PATH="/opt/rh/python27/root/usr/bin:/opt/rh/devtoolset-8/root/usr/bin:$PATH"
 $ export LD_LIBRARY_PATH="/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
-In the next step, we will use the bootstrap script to build and install cmake, boost, llvm and IKOS.
+In the next step, we will use the bootstrap script to build and install cmake, apron, boost, llvm and IKOS.
 Here, we will use `/path/to/ikos-install` as the installation directory and `/path/to/ikos-build` as the build directory. Replace it with the location where you want to put IKOS and its dependencies (for instance, `~/ikos-install` and `~/ikos-build`).
 
 In IKOS root directory, run:
