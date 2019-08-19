@@ -1,24 +1,24 @@
-FROM ubuntu:16.04
+FROM ubuntu:19.04
 MAINTAINER Maxime Arthaud <maxime.arthaud@nasa.gov>
 ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.5.1
-# gmp 6.1.0
-# boost 1.58.0
-# python 2.7.12
-# sqlite 3.11.0
+# cmake 3.13.4
+# gmp 6.1.2
+# boost 1.67.0
+# python 2.7.16
+# sqlite 3.27.2
 # llvm 8.0.1
 # clang 8.0.1
-# gcc 5.4.0
+# gcc 8.3.0
 
 # Upgrade
 RUN apt-get update
 RUN apt-get upgrade -y
 
 # Add ppa for llvm 8.0
-RUN echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main" >> /etc/apt/sources.list
+RUN echo "deb http://apt.llvm.org/disco/ llvm-toolchain-disco-8 main" >> /etc/apt/sources.list
 
 # Add llvm repository key
 RUN apt-get install -y wget gnupg

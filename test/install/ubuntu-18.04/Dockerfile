@@ -9,9 +9,9 @@ ARG build_type=Release
 # boost 1.65.1
 # python 2.7.15
 # sqlite 3.22.0
-# llvm 8.0.0
-# clang 8.0.0
-# gcc 7.3.0
+# llvm 8.0.1
+# clang 8.0.1
+# gcc 7.4.0
 
 # Upgrade
 RUN apt-get update
