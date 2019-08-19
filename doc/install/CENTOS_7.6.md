@@ -3,7 +3,7 @@ Install IKOS on CentOS 7.6
 
 Here are the steps to install IKOS and its dependencies on **[CentOS 7.6](https://www.centos.org/)**
 
-IKOS requires certain versions of cmake, boost and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
+IKOS requires certain versions of cmake, apron, boost and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
 
 First, make sure your system is up-to-date:
 
@@ -14,7 +14,7 @@ $ sudo yum update
 Install the following packages using yum:
 
 ```
-$ sudo yum install which patch bzip2 xz zlib-devel libedit-devel make gmp-devel python python-pygments sqlite-devel
+$ sudo yum install which patch bzip2 xz zlib-devel libedit-devel make m4 gmp-devel mpfr-devel python python-pygments sqlite-devel
 ```
 
 We will use [CentOS Sofware Collections (CSL)](https://wiki.centos.org/AdditionalResources/Repositories/SCL) to get a more recent version of gcc. Enable the CSL by running:
@@ -36,7 +36,7 @@ $ PATH="/opt/rh/devtoolset-8/root/usr/bin:$PATH"
 $ export LD_LIBRARY_PATH="/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
-In the next step, we will use the bootstrap script to build and install cmake, boost, llvm and IKOS.
+In the next step, we will use the bootstrap script to build and install cmake, apron, boost, llvm and IKOS.
 Here, we will use `/path/to/ikos-install` as the installation directory and `/path/to/ikos-build` as the build directory. Replace it with the location where you want to put IKOS and its dependencies (for instance, `~/ikos-install` and `~/ikos-build`).
 
 In IKOS root directory, run:
@@ -58,10 +58,14 @@ After installation, the install directory will contain the following structure:
 .
 ├── activate-full
 ├── activate-minimal
-├── boost-1.69.0
+├── apron-0.9.10
+│   ├── bin
 │   ├── include
 │   └── lib
-├── cmake-3.13.4
+├── boost-1.70.0
+│   ├── include
+│   └── lib
+├── cmake-3.15.2
 │   ├── bin
 │   ├── doc
 │   └── share
@@ -70,11 +74,16 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-8.0.0
+├── llvm-8.0.1
+│   ├── bin
+│   ├── include
+│   ├── lib
+│   ├── libexec
+│   └── share
+└── ppl-1.2
     ├── bin
     ├── include
     ├── lib
-    ├── libexec
     └── share
 ```
 

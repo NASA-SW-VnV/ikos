@@ -4,20 +4,23 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.13.4
+# cmake 3.15.2
 # gmp 6.0.0
-# boost 1.69.0
+# mpfr 3.1.1
+# ppl 1.2
+# apron 0.9.10
+# boost 1.70.0
 # python 2.7.5
 # sqlite 3.7.17
-# llvm 8.0.0
-# clang 8.0.0
-# gcc 8.2.1
+# llvm 8.0.1
+# clang 8.0.1
+# gcc 8.3.1
 
 # Upgrade
 RUN yum -y update
 
 # Install dependencies using CentOS Sofware Collections Repository
-RUN yum -y install which patch bzip2 xz zlib-devel libedit-devel make gmp-devel python python-pygments sqlite-devel
+RUN yum -y install which patch bzip2 xz zlib-devel libedit-devel make m4 gmp-devel mpfr-devel python python-pygments sqlite-devel
 RUN yum -y install centos-release-scl
 RUN yum -y install devtoolset-8-gcc devtoolset-8-gcc-c++
 
