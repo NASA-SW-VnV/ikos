@@ -1779,7 +1779,7 @@ if (( ! found_apron )); then
  }
 EOF
 
-        cat > fix-linker-error.patch <<'EOF'
+        cat > fix-link-error.patch <<'EOF'
 --- products/Makefile
 +++ products/Makefile
 @@ -117,9 +117,9 @@
@@ -1819,14 +1819,40 @@ EOF
    ap_scalar.h \
 EOF
 
+        cat > fix-static-decl-strdup.patch <<'EOF'
+--- apron/ap_config.h
++++ apron/ap_config.h
+@@ -23,17 +23,6 @@
+ static const bool true  = 1;
+ #endif
+
+-#if !(defined __USE_SVID || defined __USE_BSD || defined __USE_XOPEN_EXTENDED || defined __APPLE__ || defined __CYGWIN__)
+-
+-static inline char* strdup(const char* s){
+-  char* s2;
+-
+-  s2 = malloc(strlen(s)+1);
+-  strcpy(s2,s);
+-  return s2;
+-}
+-#endif
+-
+ #ifdef __cplusplus
+ }
+ #endif
+EOF
+
         progress "Applying patch fix-invalid-operands-to-binary-expression.patch"
         run_log_quiet patch -p0 < fix-invalid-operands-to-binary-expression.patch || error_patch apron
 
-        progress "Applying patch fix-linker-error.patch"
-        run_log_quiet patch -p0 < fix-linker-error.patch || error_patch apron
+        progress "Applying patch fix-link-error.patch"
+        run_log_quiet patch -p0 < fix-link-error.patch || error_patch apron
 
         progress "Applying patch fix-missing-mpfr.patch"
         run_log_quiet patch -p0 < fix-missing-mpfr.patch || error_patch apron
+
+        progress "Applying patch fix-static-decl-strdup.patch"
+        run_log_quiet patch -p0 < fix-static-decl-strdup.patch || error_patch apron
 
         run_log_quiet cp Makefile.config.model Makefile.config || error_configure apron
 
