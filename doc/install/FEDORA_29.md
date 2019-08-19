@@ -15,7 +15,8 @@ Now, install the following packages:
 
 ```
 $ sudo dnf install which findutils patch bzip2 xz zlib-devel libedit-devel \
-    gcc gcc-c++ make cmake gmp-devel boost-devel python python-pygments sqlite-devel
+    gcc gcc-c++ make cmake m4 gmp-devel mpfr-devel ppl-devel boost-devel \
+    python python-pygments sqlite-devel
 ```
 
 In the next step, we will use the bootstrap script to build and install llvm, clang and IKOS.
@@ -40,12 +41,16 @@ After installation, the install directory will contain the following structure:
 .
 ├── activate-full
 ├── activate-minimal
+├── apron-0.9.10
+│   ├── bin
+│   ├── include
+│   └── lib
 ├── ikos-2.1
 │   ├── bin
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-8.0.0
+└── llvm-8.0.1
     ├── bin
     ├── include
     ├── lib

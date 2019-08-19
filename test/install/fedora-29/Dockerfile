@@ -4,13 +4,16 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.14.0
+# cmake 3.14.5
 # gmp 6.1.2
+# mpfr 3.1.6
+# ppl 1.2
+# apron 0.9.10
 # boost 1.66.0
-# python 2.7.15
+# python 2.7.16
 # sqlite 3.26.0
-# llvm 8.0.0
-# clang 8.0.0
+# llvm 8.0.1
+# clang 8.0.1
 # gcc 8.3.1
 
 # Upgrade
@@ -18,7 +21,8 @@ RUN dnf -y update
 
 # Install all dependencies
 RUN dnf install -y which findutils patch bzip2 xz zlib-devel libedit-devel \
-        gcc gcc-c++ make cmake gmp-devel boost-devel python python-pygments sqlite-devel
+        gcc gcc-c++ make cmake m4 gmp-devel mpfr-devel ppl-devel boost-devel \
+        python python-pygments sqlite-devel
 
 # Add ikos source code
 ADD . /root/ikos
