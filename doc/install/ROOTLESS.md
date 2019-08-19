@@ -16,7 +16,7 @@ It assumes you have the following commands: `bash`, `basename`, `dirname`, `mkdi
 
 The script automatically checks for all the other required utilities (such as `uname`, `which`, `patch`, etc.). Just install the missing dependencies manually whenever the script tells you a tool is missing.
 
-You will need a **C/C++ compiler**. The version of the compiler does not matter. If you have an old compiler that does not support C++ 14, the script will automatically download, build and install **gcc 8.2.0**.
+You will need a **C/C++ compiler**. The version of the compiler does not matter. If you have an old compiler that does not support C++ 14, the script will automatically download, build and install **gcc 9.2.0**.
 
 You will also need a tool to download tarballs, such as **curl** or **wget**.
 
@@ -67,7 +67,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── llvm-8.0.0
+└── llvm-8.0.1
     ├── bin
     ├── include
     ├── lib
