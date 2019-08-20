@@ -121,8 +121,10 @@ int main(int argc, char* argv[]) {
 }
 
 #define test_gauge_semilattice(inv, is_bottom_v, is_top_v) \
-  BOOST_CHECK((inv).is_bottom() == is_bottom_v);           \
-  BOOST_CHECK((inv).is_top() == is_top_v);
+  do {                                                     \
+    BOOST_CHECK((inv).is_bottom() == is_bottom_v);         \
+    BOOST_CHECK((inv).is_top() == is_top_v);               \
+  } while (0)
 
 BOOST_AUTO_TEST_CASE(gauge_semilattice_constructors) {
   test_gauge_semilattice(GaugeSemiLattice::bottom(), true, false);
@@ -545,8 +547,10 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_get) {
 }
 
 #define test_gauge_domain(d, is_bottom_v, is_top_v) \
-  BOOST_CHECK((d).is_bottom() == is_bottom_v);      \
-  BOOST_CHECK((d).is_top() == is_top_v);
+  do {                                              \
+    BOOST_CHECK((d).is_bottom() == is_bottom_v);    \
+    BOOST_CHECK((d).is_top() == is_top_v);          \
+  } while (0)
 
 BOOST_AUTO_TEST_CASE(gauge_domain_constructors) {
   Variable x(vfac.get("x"));

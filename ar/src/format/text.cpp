@@ -537,7 +537,7 @@ public:
         break;
       default:
         ikos_unreachable("unknown float semantic");
-    };
+    }
   }
 
   void operator()(PointerType* t) {

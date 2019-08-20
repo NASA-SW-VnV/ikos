@@ -166,7 +166,7 @@ std::string UnaryOperation::operator_text(Operator op) {
       return "bitcast";
     default:
       ikos_unreachable("unexpected operator");
-  };
+  }
 }
 
 void UnaryOperation::dump(std::ostream& o) const {

@@ -245,7 +245,7 @@ FloatType* FloatType::get(Context& ctx, FloatSemantic float_sem) {
       return ctx_impl(ctx).ppc_fp128_type();
     default:
       ikos_unreachable("unknown float semantic");
-  };
+  }
 }
 
 void FloatType::dump(std::ostream& o) const {
@@ -270,7 +270,7 @@ void FloatType::dump(std::ostream& o) const {
       break;
     default:
       ikos_unreachable("unknown float semantic");
-  };
+  }
 }
 
 // PointerType

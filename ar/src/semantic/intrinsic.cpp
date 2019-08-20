@@ -504,7 +504,7 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
     default: {
       ikos_unreachable("unreachable");
     }
-  };
+  }
 
   return FunctionType::get(ctx, ret_ty, params, var_arg);
 }
