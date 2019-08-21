@@ -1,5 +1,6 @@
-#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
+#include <sys/types.h>
 
 extern ssize_t read(int fd, void* buffer, size_t nbytes);
 

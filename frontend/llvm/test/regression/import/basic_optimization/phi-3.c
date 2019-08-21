@@ -1,5 +1,4 @@
-// safe
-#include <stdint.h>
+// SAFE
 
 extern void __ikos_assert(int);
 

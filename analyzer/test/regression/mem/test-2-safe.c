@@ -1,5 +1,4 @@
 // SAFE
-#include <stdint.h>
 
 int main(int argc, char** argv) {
   int a[2];

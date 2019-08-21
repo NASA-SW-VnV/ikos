@@ -1,5 +1,4 @@
 // DEFINITE UNSAFE
-#include <stdint.h>
 
 extern void __ikos_assert(int);
 

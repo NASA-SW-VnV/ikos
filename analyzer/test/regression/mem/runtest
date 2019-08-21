@@ -57,21 +57,21 @@ if __name__ == '__main__':
     t.add(Test('test-1-unsafe.c', 'test-1-unsafe.c', 'prover', 'error', expected='unsafe'))
     t.add(Test('test-2-safe.c', 'test-2-safe.c', 'boa', 'safe'))
     t.add(Test('test-2-unsafe.c', 'test-2-unsafe.c', 'boa', 'error',
-               line_checks=[(29, 'error')]))
+               line_checks=[(28, 'error')]))
     t.add(Test('test-3-safe.c', 'test-3-safe.c', 'boa', 'safe'))
     t.add(Test('test-3-unsafe.c', 'test-3-unsafe.c', 'boa', 'error',
-               line_checks=[(16, 'error')]))
+               line_checks=[(15, 'error')]))
     t.add(Test('test-4-safe.c', 'test-4-safe.c', 'prover', 'safe'))
     t.add(Test('test-5-safe.c', 'test-5-safe.c', 'prover', 'safe'))
     t.add(Test('test-5-unsafe.c', 'test-5-unsafe.c', 'prover', 'error'))
     t.add(Test('test-6-safe.c', 'test-6-safe.c', 'prover', 'safe'))
     t.add(Test('test-7-safe.c', 'test-7-safe.c', 'prover', 'safe'))
     t.add(Test('test-7-unsafe.c', 'test-7-unsafe.c', 'prover', 'error',
-               line_checks=[(17, 'ok'), (18, 'ok'), (41, 'ok'), (42, 'error')]))
+               line_checks=[(16, 'ok'), (17, 'ok'), (40, 'ok'), (41, 'error')]))
     t.add(Test('test-8-safe.c', 'test-8-safe.c', 'prover', 'safe'))
     t.add(Test('test-9-safe.c', 'test-9-safe.c', 'prover', 'safe'))
     t.add(Test('test-9-unsafe.c', 'test-9-unsafe.c', 'prover', 'error',
-               line_checks=[(23, 'error'), (25, 'error'), (31, 'ok')]))
+               line_checks=[(22, 'error'), (24, 'error'), (30, 'ok')]))
     t.add(Test('test-10-safe.c', 'test-10-safe.c', 'prover', 'safe'))
     t.add(Test('test-10-unsafe.c', 'test-10-unsafe.c', 'prover', 'error'))
     t.add(Test('test-11.c', 'test-11.c', 'prover', 'safe'))

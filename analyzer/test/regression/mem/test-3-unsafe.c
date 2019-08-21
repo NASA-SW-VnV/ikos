@@ -1,5 +1,4 @@
 // DEFINITE UNSAFE
-#include <stdint.h>
 
 int foo(int* a, int* b, int* c) {
   int* p;

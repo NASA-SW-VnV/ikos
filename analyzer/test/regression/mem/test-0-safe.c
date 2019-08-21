@@ -1,5 +1,5 @@
 // SAFE
-#include <stdint.h>
+#include <stddef.h>
 #include <stdlib.h>
 
 extern void __ikos_assert(int);
@@ -7,7 +7,7 @@ extern int __ikos_nondet_int(void);
 
 int main() {
   int* p = (int*)malloc(sizeof(int));
-  if (p == 0)
+  if (p == NULL)
     exit(0);
 
   *p = 0;

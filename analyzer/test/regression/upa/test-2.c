@@ -7,7 +7,7 @@
 // WARNING: The non guaranteed alignment is the one specified by the
 // aligned_alloc, not by the one guaranted by the realloc (not an UB)
 
-#include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
