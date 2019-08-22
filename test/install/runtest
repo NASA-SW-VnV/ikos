@@ -104,18 +104,20 @@ function explode_args() {
 }
 
 function usage() {
-    echo "usage: $progname [-h] [--all] [OS ...]"
+    echo "usage: $progname [options] [OS ...]"
     echo ""
     echo "Try to build ikos and launch the tests on different operating systems"
     echo ""
+    echo "Defaults for the options are specified in brackets."
+    echo ""
     echo "positinal arguments:"
-    echo "  OS  A list of operating systems"
+    echo "  OS                 A list of operating systems"
     echo ""
     echo "optional arguments:"
-    echo "  -h, --help         show this help message and exit"
-    echo "  -a, --all          run the tests over all available operating systems"
-    echo "  --jobs=N           allow N jobs at once [$njobs]"
-    echo "  --build-type=TYPE  specify the build type {Release,Debug} [$build_type]"
+    echo "  -h, --help         Show this help message and exit"
+    echo "  -a, --all          Run the tests over all available operating systems"
+    echo "  --jobs=N           Allow N jobs at once [$njobs]"
+    echo "  --build-type=TYPE  Specify the build type {Release,Debug} [$build_type]"
 }
 
 # Default arguments

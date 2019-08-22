@@ -143,26 +143,26 @@ function init_colors() {
 }
 
 function usage() {
-    echo "usage: $progname [OPTION]..."
+    echo "usage: $progname [options]"
     echo ""
     echo "Build and install IKOS on any UNIX environment without root access."
     echo ""
     echo "Defaults for the options are specified in brackets."
     echo ""
     echo "Configuration:"
-    echo "  --prefix=PREFIX      install files in PREFIX"
-    echo "  --srcdir=SRCDIR      find the sources in SRCDIR [$src_dir]"
-    echo "  --builddir=BUILDDIR  configure for building on BUILDDIR [$build_dir]"
+    echo "  --prefix=PREFIX      Install files in PREFIX"
+    echo "  --srcdir=SRCDIR      Find the sources in SRCDIR [$src_dir]"
+    echo "  --builddir=BUILDDIR  Configure for building on BUILDDIR [$build_dir]"
     echo ""
     echo "Optional arguments:"
-    echo "  -h, --help         display this help and exit"
-    echo "  -V, --version      display version information and exit"
-    echo "  -v, --verbose      make this script more verbose"
-    echo "  -f, --force        force"
-    echo "  --no-colors        disable colors"
-    echo "  --no-check         do not run ikos tests"
-    echo "  --jobs=N           allow N jobs at once [$njobs]"
-    echo "  --build-type=TYPE  specify the build type {Release,Debug} [$build_type]"
+    echo "  -h, --help         Display this help and exit"
+    echo "  -V, --version      Display version information and exit"
+    echo "  -v, --verbose      Make this script more verbose"
+    echo "  -f, --force        Force"
+    echo "  --no-colors        Disable colors"
+    echo "  --no-check         Do not run ikos tests"
+    echo "  --jobs=N           Allow N jobs at once [$njobs]"
+    echo "  --build-type=TYPE  Specify the build type {Release,Debug} [$build_type]"
 }
 
 function short_help() {

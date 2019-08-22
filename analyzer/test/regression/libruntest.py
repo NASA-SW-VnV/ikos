@@ -474,13 +474,13 @@ def parse_args(description=None):
                         help='Disable interactive mode',
                         action='store_true', default=False)
     parser.add_argument('--clang', dest='clang',
-                        help='Clang path',
+                        help='Path to the clang binary',
                         default='clang')
     parser.add_argument('--ikos-pp', dest='ikos_pp',
-                        help='ikos-pp path',
+                        help='Path to the ikos-pp binary',
                         default='ikos-pp')
     parser.add_argument('--ikos-analyzer', dest='ikos_analyzer',
-                        help='ikos-analyzer path',
+                        help='Path to the ikos-analyzer binary',
                         default='ikos-analyzer')
 
     args = parser.parse_args()
