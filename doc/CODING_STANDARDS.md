@@ -55,6 +55,11 @@ Always run the following command before committing any changes:
 $ git-clang-format -f
 ```
 
+To run clang-format on the whole repository, use:
+```
+$ script/run-clang-format
+```
+
 Static Analysis
 ---------------
 

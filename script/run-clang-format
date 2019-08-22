@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+###############################################################################
+#
+# Run clang-format on the whole repository
+#
+# Author: Maxime Arthaud
+#
+# Contact: ikos@lists.nasa.gov
+#
+# Notices:
+#
+# Copyright (c) 2011-2019 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+#
+# Disclaimers:
+#
+# No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+# ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+# TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+# ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+# OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+# ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+# THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+# ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+# RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+# RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+# DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+# IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+#
+# Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+# THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+# AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+# IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+# USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+# RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+# HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+# AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+# RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+# UNILATERAL TERMINATION OF THIS AGREEMENT.
+#
+###############################################################################
+import argparse
+import os
+import os.path
+import subprocess
+import re
+import sys
+
+
+# Expected clang-format version
+CLANG_FORMAT_VERSION = '8.0.0'
+
+# Extensions to format
+CLANG_FORMAT_EXTENSIONS = ('.c', '.cpp', '.h', '.hpp')
+
+
+def printf(fmt, *args, **kwargs):
+    file = kwargs.pop('file', sys.stdout)
+    file.write(fmt % args if args else fmt)
+    file.flush()
+
+
+def is_executable(fpath):
+    return fpath and os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+
+def which(program):
+    ''' Try to find program in the PATH, otherwise return None.
+
+    >>> which('cat')
+    '/bin/cat'
+    '''
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_executable(program):
+            return program
+    else:
+        for path in os.environ['PATH'].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_executable(exe_file):
+                return exe_file
+
+    return None
+
+
+if __name__ == '__main__':
+    progname = os.path.basename(sys.argv[0])
+
+    # Default source directory is the parent directory
+    src_dir = os.path.join(os.path.dirname(sys.argv[0]), '..')
+    src_dir = os.path.normpath(src_dir)
+
+    # Parse arguments
+    description = 'Run clang-format on the whole repository'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--srcdir',
+                        dest='srcdir',
+                        help='Find the sources in SRCDIR [%s]' % src_dir,
+                        default=src_dir)
+    parser.add_argument('--clang-format',
+                        dest='clang_format',
+                        help='Path to the clang-format binary',
+                        default='clang-format')
+    opt = parser.parse_args()
+
+    # Check clang-format
+    clang_format = which(opt.clang_format)
+    if not clang_format:
+        printf('%s: error: %s: command not found\n',
+               progname,
+               opt.clang_format,
+               file=sys.stderr)
+        sys.exit(1)
+
+    # Check clang-format version
+    output = subprocess.check_output([clang_format, '--version'])
+    output = output.decode('utf8')
+    r = re.match(r'^clang-format version ([0-9\.]+) \(.*\)\s*$', output)
+    if not r:
+        printf("%s: error: unexpected output of '%s --version'\n",
+               progname,
+               opt.clang_format,
+               file=sys.stderr)
+        sys.exit(1)
+
+    version = r.group(1)
+    if version != CLANG_FORMAT_VERSION:
+        printf("%s: error: trying to use clang-format %s, expecting %s\n",
+               progname,
+               version,
+               CLANG_FORMAT_VERSION,
+               file=sys.stderr)
+        sys.exit(1)
+
+    os.chdir(opt.srcdir)
+
+    for dirpath, _, filenames in os.walk('.'):
+        if dirpath.startswith('./'):
+            dirpath = dirpath[2:]
+
+        if dirpath.startswith('build') or dirpath.startswith('.git'):
+            continue
+
+        for filename in filenames:
+            _, ext = os.path.splitext(filename)
+
+            if ext in CLANG_FORMAT_EXTENSIONS:
+                fullpath = os.path.join(dirpath, filename)
+                printf("[*] Formatting %s\n", fullpath)
+                subprocess.check_call([clang_format,
+                                       '-i',
+                                       '-style=file',
+                                       fullpath])
