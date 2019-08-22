@@ -74,21 +74,6 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 
 #
-# CMake utils
-#
-
-include(CheckCXXCompilerFlag)
-
-macro(add_cxx_flag policy name flag)
-  check_cxx_compiler_flag(${flag} "CXX_SUPPORTS_${name}")
-  if (CXX_SUPPORTS_${name})
-    add_definitions(${flag})
-  elseif (NOT (${policy} STREQUAL "OPTIONAL"))
-    message(FATAL_ERROR "${flag} flag is not supported by ${CMAKE_CXX_COMPILER}")
-  endif()
-endmacro()
-
-#
 # Dependency checks
 #
 
@@ -165,21 +150,22 @@ endif()
 # Compiler flags
 #
 
-add_cxx_flag(REQUIRED "CXX14" "-std=c++1y")
-add_cxx_flag(REQUIRED "FVISIBILITY_INLINES_HIDDEN" "-fvisibility-inlines-hidden")
-add_cxx_flag(REQUIRED "WALL" "-Wall")
-add_cxx_flag(REQUIRED "WEXTRA" "-Wextra")
-add_cxx_flag(OPTIONAL "WEVERYTHING" "-Weverything")
-add_cxx_flag(OPTIONAL "WNO_SWITCH_ENUM" "-Wno-switch-enum")
-add_cxx_flag(OPTIONAL "WNO_PADDED" "-Wno-padded")
-add_cxx_flag(OPTIONAL "WNO_CXX98_COMPAT" "-Wno-c++98-compat")
-add_cxx_flag(OPTIONAL "WNO_CXX98_COMPAT_PEDANTIC" "-Wno-c++98-compat-pedantic")
-add_cxx_flag(OPTIONAL "WNO_C99_EXTENSIONS" "-Wno-c99-extensions")
-add_cxx_flag(OPTIONAL "WNO_COVERED_SWITCH_DEFAULT" "-Wno-covered-switch-default")
-add_cxx_flag(OPTIONAL "WNO_EXIT_TIME_DESTRUCTORS" "-Wno-exit-time-destructors")
-add_cxx_flag(OPTIONAL "WNO_GLOBAL_CONSTRUCTORS" "-Wno-global-constructors")
-add_cxx_flag(OPTIONAL "WNO_WEAK_VTABLES" "-Wno-weak-vtables")
-add_cxx_flag(OPTIONAL "WNO_UNUSED_LOCAL_TYPEDEFS" "-Wno-unused-local-typedefs")
+include(AddFlagUtils)
+add_compiler_flag(REQUIRED "CXX14" "-std=c++1y")
+add_compiler_flag(REQUIRED "FVISIBILITY_INLINES_HIDDEN" "-fvisibility-inlines-hidden")
+add_compiler_flag(REQUIRED "WALL" "-Wall")
+add_compiler_flag(REQUIRED "WEXTRA" "-Wextra")
+add_compiler_flag(OPTIONAL "WEVERYTHING" "-Weverything")
+add_compiler_flag(OPTIONAL "WNO_SWITCH_ENUM" "-Wno-switch-enum")
+add_compiler_flag(OPTIONAL "WNO_PADDED" "-Wno-padded")
+add_compiler_flag(OPTIONAL "WNO_CXX98_COMPAT" "-Wno-c++98-compat")
+add_compiler_flag(OPTIONAL "WNO_CXX98_COMPAT_PEDANTIC" "-Wno-c++98-compat-pedantic")
+add_compiler_flag(OPTIONAL "WNO_C99_EXTENSIONS" "-Wno-c99-extensions")
+add_compiler_flag(OPTIONAL "WNO_COVERED_SWITCH_DEFAULT" "-Wno-covered-switch-default")
+add_compiler_flag(OPTIONAL "WNO_EXIT_TIME_DESTRUCTORS" "-Wno-exit-time-destructors")
+add_compiler_flag(OPTIONAL "WNO_GLOBAL_CONSTRUCTORS" "-Wno-global-constructors")
+add_compiler_flag(OPTIONAL "WNO_WEAK_VTABLES" "-Wno-weak-vtables")
+add_compiler_flag(OPTIONAL "WNO_UNUSED_LOCAL_TYPEDEFS" "-Wno-unused-local-typedefs")
 
 #
 # Targets

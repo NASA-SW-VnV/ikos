@@ -1,6 +1,7 @@
-add_cxx_flag(OPTIONAL "WNO_DISABLED_MACRO_EXPANSION" "-Wno-disabled-macro-expansion")
-add_cxx_flag(OPTIONAL "WNO_USED_BUT_MARKED_UNUSED" "-Wno-used-but-marked-unused")
-add_cxx_flag(OPTIONAL "WNO_REDUNDANT_MOVE" "-Wno-redundant-move")
+include(AddFlagUtils)
+add_compiler_flag(OPTIONAL "WNO_DISABLED_MACRO_EXPANSION" "-Wno-disabled-macro-expansion")
+add_compiler_flag(OPTIONAL "WNO_USED_BUT_MARKED_UNUSED" "-Wno-used-but-marked-unused")
+add_compiler_flag(OPTIONAL "WNO_REDUNDANT_MOVE" "-Wno-redundant-move")
 
 function(add_unit_test)
   string(REPLACE ";" "-" test_name "${ARGV}")

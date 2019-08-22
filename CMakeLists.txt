@@ -71,45 +71,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Generate compile_commands.json, used by clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-# Options to enable sanitizers
-option(USE_ASAN "Enable Address Sanitizer" OFF)
-option(USE_UBSAN "Enable Undefined Behavior Sanitizer" OFF)
-option(USE_MSAN "Enable Memory Sanitizer" OFF)
-option(USE_TSAN "Enable Thread Sanitizer" OFF)
-
-if (USE_ASAN)
-  message(STATUS "Using Address Sanitizer, expect slow down in the analysis.")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize-address-use-after-scope")
-endif()
-
-if (USE_UBSAN)
-  message(STATUS "Using Undefined Behavior Sanitizer, expect slow down in the analysis.")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined,integer")
-endif()
-
-if (USE_MSAN)
-  message(STATUS "Using Memory Sanitizer, expect slow down in the analysis.")
-  message(WARNING "Memory Sanitizer is supported on a few platforms only, see clang documentation for more details")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory")
-endif()
-
-if (USE_TSAN)
-  message(STATUS "Using Thread Sanitizer, expect slow down in the analysis.")
-  message(WARNING "Thread Sanitizer is supported on a few platforms only, see clang documentation for more details")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
-endif()
-
-if ((USE_ASAN AND USE_MSAN) OR (USE_ASAN AND USE_TSAN) OR (USE_MSAN AND USE_TSAN))
-  message(FATAL_ERROR "Cannot use more than one of Address Sanitizer, Undefined Behavior Sanitizer and Thread Sanitizer")
-endif()
-
-if (USE_ASAN OR USE_UBSAN OR USE_MSAN OR USE_TSAN)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-
-  if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    message(FATAL_ERROR "Clang is required to use sanitizers.")
-  endif()
-endif()
+include(SanitizerOptions)
 
 # Enable tests
 enable_testing()

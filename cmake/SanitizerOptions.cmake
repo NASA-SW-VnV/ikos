@@ -1,0 +1,40 @@
+# Option to enable sanitizers
+set(USE_SANITIZER "" CACHE STRING "Define the sanitizer used to build binaries and tests")
+
+if (USE_SANITIZER)
+  include(AddFlagUtils)
+
+  if (USE_SANITIZER STREQUAL "Address")
+    message(STATUS "Using Address Sanitizer, expect slow down in the analysis.")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_ADDRESS" "-fsanitize=address")
+    add_compiler_linker_flag(OPTIONAL "FSANITIZE_ADDRESS_USE_AFTER_SCOPE" "-fsanitize-address-use-after-scope")
+  elseif (USE_SANITIZER STREQUAL "Undefined")
+    message(STATUS "Using Undefined Behavior Sanitizer, expect slow down in the analysis.")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_UNDEFINED" "-fsanitize=undefined")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_INTEGER" "-fsanitize=integer")
+  elseif (USE_SANITIZER STREQUAL "Address;Undefined" OR
+          USE_SANITIZER STREQUAL "Undefined;Address")
+    message(STATUS "Using Address Sanitizer and Undefined Behavior Sanitizer, expect slow down in the analysis.")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_ADDRESS" "-fsanitize=address")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_UNDEFINED" "-fsanitize=undefined")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_INTEGER" "-fsanitize=integer")
+  elseif (USE_SANITIZER MATCHES "Memory(WithOrigins)?")
+    message(STATUS "Using Memory Sanitizer, expect slow down in the analysis.")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_MEMORY" "-fsanitize=memory")
+
+    if(USE_SANITIZER STREQUAL "MemoryWithOrigins")
+      add_compiler_linker_flag(REQUIRED "FSANITIZE_MEMORY_TRACK_ORIGINS" "-fsanitize-memory-track-origins")
+    endif()
+  elseif (USE_SANITIZER STREQUAL "Thread")
+    message(STATUS "Using Thread Sanitizer, expect slow down in the analysis.")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_THREAD" "-fsanitize=thread")
+  elseif (USE_SANITIZER STREQUAL "Leak")
+    message(STATUS "Using Leak Sanitizer, expect slow down in the analysis.")
+    add_compiler_linker_flag(REQUIRED "FSANITIZE_LEAK" "-fsanitize=leak")
+  else()
+    message(FATAL_ERROR "Unsupported value of USE_SANITIZER: ${USE_SANITIZER}")
+  endif()
+
+  # Flags useful for all sanitizers
+  add_compiler_flag(OPTIONAL "FNO_OMIT_FRAME_POINTER" "-fno-omit-frame-pointer")
+endif()

@@ -80,7 +80,8 @@ Dynamic Analysis
 IKOS developers should use [clang sanitizers](https://clang.llvm.org/docs/UsersManual.html#controlling-code-generation) to check for undefined behaviors at run-time.
 
 To build IKOS with clang sanitizers, use the following cmake options:
-* `-DUSE_ASAN=ON` to use [Address Sanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
-* `-DUSE_UBSAN=ON` to use [Undefined Behavior Sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html)
-* `-DUSE_MSAN=ON` to use [Memory Sanitizer](https://clang.llvm.org/docs/MemorySanitizer.html) (does not work on Mac OS)
-* `-DUSE_TSAN=ON` to use [Thread Sanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html) (only on Mac OS)
+* `-DUSE_SANITIZER=Address` to use [Address Sanitizer](https://clang.llvm.org/docs/AddressSanitizer.html)
+* `-DUSE_SANITIZER=Undefined` to use [Undefined Behavior Sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html)
+* `-DUSE_SANITIZER=Memory` to use [Memory Sanitizer](https://clang.llvm.org/docs/MemorySanitizer.html)
+* `-DUSE_SANITIZER=Thread` to use [Thread Sanitizer](https://clang.llvm.org/docs/ThreadSanitizer.html)
+* `-DUSE_SANITIZER=Leak` to use [Leak Sanitizer](https://clang.llvm.org/docs/LeakSanitizer.html)
