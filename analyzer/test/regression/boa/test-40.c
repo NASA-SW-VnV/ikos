@@ -7,7 +7,9 @@ typedef unsigned short int __uint16_t;
 typedef unsigned int __uint32_t;
 typedef __uint32_t uint32_t;
 
-typedef struct { __uint32_t error_count; } state_data_t;
+typedef struct {
+  __uint32_t error_count;
+} state_data_t;
 
 typedef struct {
   __uint16_t foo_sample_size;

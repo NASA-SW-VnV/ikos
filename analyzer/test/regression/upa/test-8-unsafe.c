@@ -1,6 +1,6 @@
-#include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 void foo(const char* fmt, ...) {
@@ -34,6 +34,6 @@ void foo(const char* fmt, ...) {
 int main() {
   uint32_t a[10] = {0};
 
-  foo("813", ((char*)&a[0])+1, ((char*)&a[0])+1, ((char*)&a[0])+1);
+  foo("813", ((char*)&a[0]) + 1, ((char*)&a[0]) + 1, ((char*)&a[0]) + 1);
   return 0;
 }

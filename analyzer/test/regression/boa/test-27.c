@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 extern int __ikos_nondet_int(void);
 extern unsigned __ikos_nondet_uint(void);

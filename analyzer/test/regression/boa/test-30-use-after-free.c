@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-
 int main() {
   int* p = calloc(10, sizeof(int));
   if (p != NULL) {

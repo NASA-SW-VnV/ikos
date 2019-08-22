@@ -5,7 +5,7 @@
 extern int __ikos_nondet_int(void);
 
 uint16_t* foo(uint8_t* x, uint8_t* y) {
-  return (uint16_t*) (x + *y);
+  return (uint16_t*)(x + *y);
 }
 
 int main() {

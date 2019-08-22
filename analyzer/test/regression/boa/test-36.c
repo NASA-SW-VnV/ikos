@@ -20,7 +20,8 @@ const foo_bar_ts_t* get_shell_ts(void);
 const foo_bar_ts_t* get_controller_ts(void);
 
 static const ts_getter_t TS_GETTERS[] = {
-    get_shell_ts, get_controller_ts,
+    get_shell_ts,
+    get_controller_ts,
 };
 
 const foo_bar_ts_t* start_get_ts(void);

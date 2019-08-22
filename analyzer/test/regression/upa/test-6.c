@@ -8,7 +8,7 @@
 int main() {
   const char* s = "AAAA";
   int a = strlen(s);
-  char *p = malloc(sizeof(*s));
+  char* p = malloc(sizeof(*s));
   memcpy(p, s, sizeof(*s));
   printf(p);
   return a;

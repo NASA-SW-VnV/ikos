@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 extern int __ikos_nondet_int(void);
 
@@ -13,5 +13,4 @@ int main() {
     }
     printf("p=%d\n", p[5]);
   }
-
 }
