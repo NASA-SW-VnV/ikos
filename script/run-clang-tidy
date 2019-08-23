@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #
-# Run clang-format on the whole repository
+# Run clang-tidy on the whole repository
 #
 # Author: Maxime Arthaud
 #
@@ -41,21 +41,28 @@
 #
 ###############################################################################
 import argparse
-import os
 import os.path
 import subprocess
-import re
 import sys
+import threading
+
+try:
+    import Queue as queue  # python 2
+except ImportError:
+    import queue as queue  # python 3
 
 
-# Expected clang-format version
-CLANG_FORMAT_VERSION = '8.0.0'
-
-# Extensions to format
+# Extensions to analyze
 SOURCE_EXTENSIONS = ('.c', '.cpp', '.h', '.hpp')
 
 # Directories to ignore
 IGNORE_DIRECTORIES = ('.git', 'build')
+
+# Ignore checks for specific files
+FILE_IGNORE_CHECKS = {
+    'analyzer/include/ikos/analyzer/intrinsic.h':
+        ('readability-identifier-naming',),
+}
 
 
 def printf(fmt, *args, **kwargs):
@@ -87,24 +94,65 @@ def which(program):
     return None
 
 
+def run_tidy(clang_tidy, build_dir, task_queue, lock):
+    while True:
+        # Get the next task
+        fullpath = task_queue.get()
+
+        # Build the clang-tidy command
+        # TODO: Enable colors when clang-tidy supports it
+        cmd = [clang_tidy]
+        cmd.append('-quiet')
+        cmd.append('-p=%s' % build_dir)
+        if fullpath in FILE_IGNORE_CHECKS:
+            for check in FILE_IGNORE_CHECKS[fullpath]:
+                cmd.append('-checks=-%s' % check)
+        cmd.append(fullpath)
+
+        # Run the clang-tidy command
+        proc = subprocess.Popen(cmd,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        output, err = proc.communicate()
+        with lock:
+            printf('[*] %s\n', ' '.join(cmd))
+            sys.stdout.write(output.decode('utf-8'))
+            sys.stderr.write(err.decode('utf-8'))
+        task_queue.task_done()
+
+
 if __name__ == '__main__':
     progname = os.path.basename(sys.argv[0])
 
-    # Default source directory is the parent directory
+    # Default source directory is '..'
     src_dir = os.path.join(os.path.dirname(sys.argv[0]), '..')
     src_dir = os.path.normpath(src_dir)
 
+    # Default build directory is '../build'
+    build_dir = os.path.join(os.path.dirname(sys.argv[0]), '..', 'build')
+    build_dir = os.path.normpath(build_dir)
+
     # Parse arguments
-    description = 'Run clang-format on the whole repository'
+    description = 'Run clang-tidy on the whole repository'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--srcdir',
                         dest='src_dir',
                         help='Path to the source directory [%s]' % src_dir,
                         default=src_dir)
-    parser.add_argument('--clang-format',
-                        dest='clang_format',
-                        help='Path to the clang-format binary',
-                        default='clang-format')
+    parser.add_argument('--builddir',
+                        dest='build_dir',
+                        help='Path to the build directory [%s]' % build_dir,
+                        default=build_dir)
+    parser.add_argument('--clang-tidy',
+                        dest='clang_tidy',
+                        help='Path to the clang-tidy binary',
+                        default='clang-tidy')
+    parser.add_argument('--jobs', '-j',
+                        dest='jobs',
+                        metavar='N',
+                        type=int,
+                        help='Allow N jobs at once [1]',
+                        default=1)
     opt = parser.parse_args()
 
     # Check source directory
@@ -115,51 +163,67 @@ if __name__ == '__main__':
                file=sys.stderr)
         sys.exit(1)
 
-    # Check clang-format
-    clang_format = which(opt.clang_format)
-    if not clang_format:
+    # Check build directory
+    if not os.path.isdir(opt.build_dir):
+        printf("%s: error: '%s' is not a directory\n",
+               progname,
+               opt.build_dir,
+               file=sys.stderr)
+        sys.exit(1)
+
+    build_dir = os.path.abspath(opt.build_dir)
+
+    # Check clang-tidy
+    clang_tidy = which(opt.clang_tidy)
+    if not clang_tidy:
         printf('%s: error: %s: command not found\n',
                progname,
-               opt.clang_format,
+               opt.clang_tidy,
                file=sys.stderr)
         sys.exit(1)
 
-    # Check clang-format version
-    output = subprocess.check_output([clang_format, '--version'])
-    output = output.decode('utf-8')
-    r = re.match(r'^clang-format version ([0-9\.]+) \(.*\)\s*$', output)
-    if not r:
-        printf("%s: error: unexpected output of '%s --version'\n",
+    # Check jobs
+    if opt.jobs < 1:
+        printf('%s: error: invalid number of jobs\n',
                progname,
-               opt.clang_format,
-               file=sys.stderr)
-        sys.exit(1)
-
-    version = r.group(1)
-    if version != CLANG_FORMAT_VERSION:
-        printf("%s: error: trying to use clang-format %s, expecting %s\n",
-               progname,
-               version,
-               CLANG_FORMAT_VERSION,
                file=sys.stderr)
         sys.exit(1)
 
     os.chdir(opt.src_dir)
 
-    for dirpath, _, filenames in os.walk('.'):
-        if dirpath.startswith('./'):
-            dirpath = dirpath[2:]
+    # Print the list of checks
+    subprocess.check_call([clang_tidy, '-list-checks', '-p', build_dir, '-'])
 
-        if any(dirpath.startswith(n) for n in IGNORE_DIRECTORIES):
-            continue
+    try:
+        task_queue = queue.Queue(opt.jobs)
+        lock = threading.Lock()
 
-        for filename in filenames:
-            _, ext = os.path.splitext(filename)
+        # Start threads
+        for _ in range(opt.jobs):
+            t = threading.Thread(target=run_tidy,
+                                 args=(clang_tidy,
+                                       build_dir,
+                                       task_queue,
+                                       lock))
+            t.daemon = True
+            t.start()
 
-            if ext in SOURCE_EXTENSIONS:
-                fullpath = os.path.join(dirpath, filename)
-                printf("[*] Formatting %s\n", fullpath)
-                subprocess.check_call([clang_format,
-                                       '-i',
-                                       '-style=file',
-                                       fullpath])
+        # Fill the queue
+        for dirpath, _, filenames in os.walk('.'):
+            if dirpath.startswith('./'):
+                dirpath = dirpath[2:]
+
+            if any(dirpath.startswith(n) for n in IGNORE_DIRECTORIES):
+                continue
+
+            for filename in filenames:
+                _, ext = os.path.splitext(filename)
+
+                if ext in SOURCE_EXTENSIONS:
+                    fullpath = os.path.join(dirpath, filename)
+                    task_queue.put(fullpath)
+
+        # Wait for all threads to be done
+        task_queue.join()
+    except KeyboardInterrupt:
+        os.kill(0, 9)

@@ -72,11 +72,7 @@ To run clang-tidy on the whole repository, use:
 $ mkdir build
 $ cd build
 $ cmake ..
-$ run-clang-tidy.py
-$ run-clang-tidy.py -header-filter='.*/ar/.*'
-$ run-clang-tidy.py -header-filter='.*/core/.*'
-$ run-clang-tidy.py -header-filter='.*/frontend/.*'
-$ run-clang-tidy.py -header-filter='.*/analyzer/.*'
+$ ../script/run-clang-tidy
 ```
 
 Dynamic Analysis
