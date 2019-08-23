@@ -74,7 +74,7 @@ private:
 
 public:
   /// \brief Constructor
-  WideningHintAnalysis(Context& ctx) : _ctx(ctx) {}
+  explicit WideningHintAnalysis(Context& ctx) : _ctx(ctx) {}
 
   /// \brief No copy constructor
   WideningHintAnalysis(const WideningHintAnalysis&) = delete;

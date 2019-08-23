@@ -84,7 +84,7 @@ private:
 
 public:
   /// \brief Constructor
-  PointerInfo(const ar::DataLayout& data_layout);
+  explicit PointerInfo(const ar::DataLayout& data_layout);
 
   /// \brief No copy constructor
   PointerInfo(const PointerInfo&) = delete;

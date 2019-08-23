@@ -164,7 +164,7 @@ private:
 
 public:
   /// \brief Constructor
-  FixpointParameters(const AnalysisOptions& opts);
+  explicit FixpointParameters(const AnalysisOptions& opts);
 
   /// \brief No copy constructor
   FixpointParameters(const FixpointParameters&) = delete;

@@ -56,7 +56,7 @@ namespace analyzer {
 class ProgressLogger : public Logger {
 public:
   /// \brief Constructor
-  ProgressLogger(std::ostream& out);
+  explicit ProgressLogger(std::ostream& out);
 
   /// \brief Destructor
   ~ProgressLogger() override;
@@ -158,7 +158,7 @@ public:
 class NoProgressLogger final : public ProgressLogger {
 public:
   /// \brief Constructor
-  NoProgressLogger(std::ostream& out);
+  explicit NoProgressLogger(std::ostream& out);
 
   /// \brief Destructor
   ~NoProgressLogger() override;

@@ -69,7 +69,7 @@ private:
 
 public:
   /// \brief Constructor
-  OperandsTable(sqlite::DbConnection& db);
+  explicit OperandsTable(sqlite::DbConnection& db);
 
   /// \brief Insert the given operand in the database and return the id
   sqlite::DbInt64 insert(ar::Value* value);
