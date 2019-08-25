@@ -43,7 +43,7 @@
 
 #pragma once
 
-#include <iosfwd>
+#include <iostream>
 
 #include <ikos/core/support/compiler.hpp>
 
