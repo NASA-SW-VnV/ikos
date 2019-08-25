@@ -215,7 +215,8 @@ private:
 
 public:
   /// \brief Public move constructor
-  NumericalExecutionEngine(NumericalExecutionEngine&&) = default;
+  NumericalExecutionEngine(NumericalExecutionEngine&&) noexcept(
+      std::is_nothrow_move_constructible< AbstractDomain >::value) = default;
 
   /// \brief No copy assignment operator
   NumericalExecutionEngine& operator=(const NumericalExecutionEngine&) = delete;

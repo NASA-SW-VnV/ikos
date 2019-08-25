@@ -97,16 +97,16 @@ public:
   IntervalDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  IntervalDomain(const IntervalDomain&) = default;
+  IntervalDomain(const IntervalDomain&) noexcept = default;
 
   /// \brief Move constructor
-  IntervalDomain(IntervalDomain&&) = default;
+  IntervalDomain(IntervalDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  IntervalDomain& operator=(const IntervalDomain&) = default;
+  IntervalDomain& operator=(const IntervalDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  IntervalDomain& operator=(IntervalDomain&&) = default;
+  IntervalDomain& operator=(IntervalDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~IntervalDomain() override = default;

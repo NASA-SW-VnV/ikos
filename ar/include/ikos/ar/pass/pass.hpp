@@ -56,13 +56,13 @@ public:
   Pass() = default;
 
   /// \brief Copy constructor
-  Pass(const Pass&) = default;
+  Pass(const Pass&) noexcept = default;
 
   /// \brief Move constructor
   Pass(Pass&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  Pass& operator=(const Pass&) = default;
+  Pass& operator=(const Pass&) noexcept = default;
 
   /// \brief Move assignment operator
   Pass& operator=(Pass&&) noexcept = default;

@@ -122,18 +122,20 @@ public:
   GaugeIntervalCongruenceDomain() = default;
 
   /// \brief Copy constructor
-  GaugeIntervalCongruenceDomain(const GaugeIntervalCongruenceDomain&) = default;
+  GaugeIntervalCongruenceDomain(const GaugeIntervalCongruenceDomain&) noexcept =
+      default;
 
   /// \brief Move constructor
-  GaugeIntervalCongruenceDomain(GaugeIntervalCongruenceDomain&&) = default;
+  GaugeIntervalCongruenceDomain(GaugeIntervalCongruenceDomain&&) noexcept =
+      default;
 
   /// \brief Copy assignment operator
   GaugeIntervalCongruenceDomain& operator=(
-      const GaugeIntervalCongruenceDomain&) = default;
+      const GaugeIntervalCongruenceDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  GaugeIntervalCongruenceDomain& operator=(GaugeIntervalCongruenceDomain&&) =
-      default;
+  GaugeIntervalCongruenceDomain& operator=(
+      GaugeIntervalCongruenceDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~GaugeIntervalCongruenceDomain() override = default;

@@ -65,13 +65,13 @@ public:
       : Formatter(opts) {}
 
   /// \brief Copy constructor
-  TextFormatter(const TextFormatter&) = default;
+  TextFormatter(const TextFormatter&) noexcept = default;
 
   /// \brief Move constructor
   TextFormatter(TextFormatter&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  TextFormatter& operator=(const TextFormatter&) = default;
+  TextFormatter& operator=(const TextFormatter&) noexcept = default;
 
   /// \brief Move assignment operator
   TextFormatter& operator=(TextFormatter&&) noexcept = default;

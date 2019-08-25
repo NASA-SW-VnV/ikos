@@ -85,16 +85,16 @@ public:
   CellSet(std::initializer_list< VariableRef > cells) : _set(cells) {}
 
   /// \brief Copy constructor
-  CellSet(const CellSet&) = default;
+  CellSet(const CellSet&) noexcept = default;
 
   /// \brief Move constructor
-  CellSet(CellSet&&) = default;
+  CellSet(CellSet&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  CellSet& operator=(const CellSet&) = default;
+  CellSet& operator=(const CellSet&) noexcept = default;
 
   /// \brief Move assignment operator
-  CellSet& operator=(CellSet&&) = default;
+  CellSet& operator=(CellSet&&) noexcept = default;
 
   /// \brief Destructor
   ~CellSet() override = default;

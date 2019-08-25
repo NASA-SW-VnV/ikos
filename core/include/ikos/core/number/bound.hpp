@@ -47,6 +47,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <boost/optional.hpp>
 
 #include <ikos/core/exception.hpp>
@@ -98,10 +100,12 @@ public:
   explicit Bound(Number n) : _is_infinite(false), _n(std::move(n)) {}
 
   /// \brief Copy constructor
-  Bound(const Bound&) = default;
+  Bound(const Bound&) noexcept(
+      std::is_nothrow_copy_constructible< Number >::value) = default;
 
   /// \brief Move constructor
-  Bound(Bound&&) = default;
+  Bound(Bound&&) noexcept(std::is_nothrow_move_constructible< Number >::value) =
+      default;
 
   /// \brief Assign a number
   Bound& operator=(int n) {
@@ -118,10 +122,12 @@ public:
   }
 
   /// \brief Copy assignment operator
-  Bound& operator=(const Bound&) = default;
+  Bound& operator=(const Bound&) noexcept(
+      std::is_nothrow_copy_assignable< Number >::value) = default;
 
   /// \brief Move assignment operator
-  Bound& operator=(Bound&&) = default;
+  Bound& operator=(Bound&&) noexcept(
+      std::is_nothrow_move_assignable< Number >::value) = default;
 
   /// \brief Destructor
   ~Bound() = default;

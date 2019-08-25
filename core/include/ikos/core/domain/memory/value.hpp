@@ -51,6 +51,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <ikos/core/domain/memory/abstract_domain.hpp>
 #include <ikos/core/domain/memory/value/cell_set.hpp>
 #include <ikos/core/domain/memory/value/mem_loc_to_cell_set.hpp>
@@ -222,16 +224,28 @@ public:
   }
 
   /// \brief Copy constructor
-  ValueDomain(const ValueDomain&) = default;
+  ValueDomain(const ValueDomain&) noexcept(
+      (std::is_nothrow_copy_constructible< PointerDomain >::value) &&
+      (std::is_nothrow_copy_constructible< UninitializedDomain >::value) &&
+      (std::is_nothrow_copy_constructible< LifetimeDomain >::value)) = default;
 
   /// \brief Move constructor
-  ValueDomain(ValueDomain&&) = default;
+  ValueDomain(ValueDomain&&) noexcept(
+      (std::is_nothrow_move_constructible< PointerDomain >::value) &&
+      (std::is_nothrow_move_constructible< UninitializedDomain >::value) &&
+      (std::is_nothrow_move_constructible< LifetimeDomain >::value)) = default;
 
   /// \brief Copy assignment operator
-  ValueDomain& operator=(const ValueDomain&) = default;
+  ValueDomain& operator=(const ValueDomain&) noexcept(
+      (std::is_nothrow_copy_assignable< PointerDomain >::value) &&
+      (std::is_nothrow_copy_assignable< UninitializedDomain >::value) &&
+      (std::is_nothrow_copy_assignable< LifetimeDomain >::value)) = default;
 
   /// \brief Move assignment operator
-  ValueDomain& operator=(ValueDomain&&) = default;
+  ValueDomain& operator=(ValueDomain&&) noexcept(
+      (std::is_nothrow_move_assignable< PointerDomain >::value) &&
+      (std::is_nothrow_move_assignable< UninitializedDomain >::value) &&
+      (std::is_nothrow_move_assignable< LifetimeDomain >::value)) = default;
 
   /// \brief Destructor
   ~ValueDomain() override = default;

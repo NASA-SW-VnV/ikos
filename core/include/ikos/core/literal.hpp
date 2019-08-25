@@ -151,13 +151,13 @@ public:
   Literal(const Literal&) = default;
 
   /// \brief Move constructor
-  Literal(Literal&&) = default;
+  Literal(Literal&&) noexcept = default;
 
   /// \brief Copy assignment operator
   Literal& operator=(const Literal&) = default;
 
   /// \brief Move assignment operator
-  Literal& operator=(Literal&&) = default;
+  Literal& operator=(Literal&&) noexcept = default;
 
   /// \brief Destructor
   ~Literal() = default;

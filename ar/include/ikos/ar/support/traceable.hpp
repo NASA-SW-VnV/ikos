@@ -80,13 +80,13 @@ public:
         _frontend_type_info(&typeid(T)) {}
 
   /// \brief Copy constructor
-  Traceable(const Traceable&) = default;
+  Traceable(const Traceable&) noexcept = default;
 
   /// \brief Move constructor
   Traceable(Traceable&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  Traceable& operator=(const Traceable&) = default;
+  Traceable& operator=(const Traceable&) noexcept = default;
 
   /// \brief Move assignment operator
   Traceable& operator=(Traceable&&) noexcept = default;

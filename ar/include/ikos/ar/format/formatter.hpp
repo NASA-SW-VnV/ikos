@@ -81,13 +81,13 @@ public:
   explicit Formatter(FormatOptions opts = DefaultFormat) : _opts(opts) {}
 
   /// \brief Copy constructor
-  Formatter(const Formatter&) = default;
+  Formatter(const Formatter&) noexcept = default;
 
   /// \brief Move constructor
   Formatter(Formatter&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  Formatter& operator=(const Formatter&) = default;
+  Formatter& operator=(const Formatter&) noexcept = default;
 
   /// \brief Move assignment operator
   Formatter& operator=(Formatter&&) noexcept = default;

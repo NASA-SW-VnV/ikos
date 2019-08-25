@@ -88,16 +88,16 @@ public:
   MemLocToPointerSet() : MemLocToPointerSet(TopTag{}) {}
 
   /// \brief Copy constructor
-  MemLocToPointerSet(const MemLocToPointerSet&) = default;
+  MemLocToPointerSet(const MemLocToPointerSet&) noexcept = default;
 
   /// \brief Move constructor
-  MemLocToPointerSet(MemLocToPointerSet&&) = default;
+  MemLocToPointerSet(MemLocToPointerSet&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  MemLocToPointerSet& operator=(const MemLocToPointerSet&) = default;
+  MemLocToPointerSet& operator=(const MemLocToPointerSet&) noexcept = default;
 
   /// \brief Move assignment operator
-  MemLocToPointerSet& operator=(MemLocToPointerSet&&) = default;
+  MemLocToPointerSet& operator=(MemLocToPointerSet&&) noexcept = default;
 
   /// \brief Destructor
   ~MemLocToPointerSet() override = default;

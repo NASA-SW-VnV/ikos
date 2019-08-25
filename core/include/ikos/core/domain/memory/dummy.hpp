@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <ikos/core/domain/memory/abstract_domain.hpp>
 
 namespace ikos {
@@ -119,16 +121,28 @@ public:
   DummyDomain() : DummyDomain(TopTag{}) {}
 
   /// \brief Copy constructor
-  DummyDomain(const DummyDomain&) = default;
+  DummyDomain(const DummyDomain&) noexcept(
+      (std::is_nothrow_copy_constructible< PointerDomain >::value) &&
+      (std::is_nothrow_copy_constructible< UninitializedDomain >::value) &&
+      (std::is_nothrow_copy_constructible< LifetimeDomain >::value)) = default;
 
   /// \brief Move constructor
-  DummyDomain(DummyDomain&&) = default;
+  DummyDomain(DummyDomain&&) noexcept(
+      (std::is_nothrow_move_constructible< PointerDomain >::value) &&
+      (std::is_nothrow_move_constructible< UninitializedDomain >::value) &&
+      (std::is_nothrow_move_constructible< LifetimeDomain >::value)) = default;
 
   /// \brief Copy assignment operator
-  DummyDomain& operator=(const DummyDomain&) = default;
+  DummyDomain& operator=(const DummyDomain&) noexcept(
+      (std::is_nothrow_copy_assignable< PointerDomain >::value) &&
+      (std::is_nothrow_copy_assignable< UninitializedDomain >::value) &&
+      (std::is_nothrow_copy_assignable< LifetimeDomain >::value)) = default;
 
   /// \brief Move assignment operator
-  DummyDomain& operator=(DummyDomain&&) = default;
+  DummyDomain& operator=(DummyDomain&&) noexcept(
+      (std::is_nothrow_move_assignable< PointerDomain >::value) &&
+      (std::is_nothrow_move_assignable< UninitializedDomain >::value) &&
+      (std::is_nothrow_move_assignable< LifetimeDomain >::value)) = default;
 
   /// \brief Destructor
   ~DummyDomain() override = default;

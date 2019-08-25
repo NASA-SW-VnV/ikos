@@ -94,16 +94,16 @@ public:
   ConstantDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  ConstantDomain(const ConstantDomain&) = default;
+  ConstantDomain(const ConstantDomain&) noexcept = default;
 
   /// \brief Move constructor
-  ConstantDomain(ConstantDomain&&) = default;
+  ConstantDomain(ConstantDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  ConstantDomain& operator=(const ConstantDomain&) = default;
+  ConstantDomain& operator=(const ConstantDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  ConstantDomain& operator=(ConstantDomain&&) = default;
+  ConstantDomain& operator=(ConstantDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~ConstantDomain() override = default;

@@ -66,9 +66,9 @@ public:
   Flags() = default;
   // NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions)
   Flags(Enum v) : _v(v) {}
-  Flags(const Flags&) = default;
+  Flags(const Flags&) noexcept = default;
   Flags(Flags&&) noexcept = default;
-  Flags& operator=(const Flags&) = default;
+  Flags& operator=(const Flags&) noexcept = default;
   Flags& operator=(Flags&&) noexcept = default;
   ~Flags() = default;
 

@@ -90,13 +90,13 @@ public:
   Constant(const Constant&) = default;
 
   /// \brief Move constructor
-  Constant(Constant&&) = default;
+  Constant(Constant&&) noexcept = default;
 
   /// \brief Copy assignment operator
   Constant& operator=(const Constant&) = default;
 
   /// \brief Move assignment operator
-  Constant& operator=(Constant&&) = default;
+  Constant& operator=(Constant&&) noexcept = default;
 
   /// \brief Destructor
   ~Constant() override = default;

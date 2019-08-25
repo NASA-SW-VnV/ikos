@@ -73,16 +73,14 @@ namespace core {
 /// The MemoryLocationRef type should be cheap to copy.
 template < typename MemoryLocationRef >
 struct IsMemoryLocation
-    : conjunction<
-          std::is_nothrow_copy_constructible< MemoryLocationRef >,
-          std::is_nothrow_move_constructible< MemoryLocationRef >,
-          std::is_nothrow_assignable< MemoryLocationRef&,
-                                      const MemoryLocationRef& >,
-          std::is_nothrow_assignable< MemoryLocationRef&, MemoryLocationRef&& >,
-          supports_equality< MemoryLocationRef, MemoryLocationRef >,
-          supports_less_than< MemoryLocationRef, MemoryLocationRef >,
-          IsDumpable< MemoryLocationRef >,
-          IsIndexable< MemoryLocationRef > > {};
+    : conjunction< std::is_nothrow_copy_constructible< MemoryLocationRef >,
+                   std::is_nothrow_move_constructible< MemoryLocationRef >,
+                   std::is_nothrow_copy_assignable< MemoryLocationRef >,
+                   std::is_nothrow_move_assignable< MemoryLocationRef >,
+                   supports_equality< MemoryLocationRef, MemoryLocationRef >,
+                   supports_less_than< MemoryLocationRef, MemoryLocationRef >,
+                   IsDumpable< MemoryLocationRef >,
+                   IsIndexable< MemoryLocationRef > > {};
 
 } // end namespace core
 } // end namespace ikos

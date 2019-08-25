@@ -67,13 +67,13 @@ public:
   explicit TypeVerifier(bool all = true) : _all(all) {}
 
   /// \brief Copy constructor
-  TypeVerifier(const TypeVerifier&) = default;
+  TypeVerifier(const TypeVerifier&) noexcept = default;
 
   /// \brief Move constructor
   TypeVerifier(TypeVerifier&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  TypeVerifier& operator=(const TypeVerifier&) = default;
+  TypeVerifier& operator=(const TypeVerifier&) noexcept = default;
 
   /// \brief Move assignment operator
   TypeVerifier& operator=(TypeVerifier&&) noexcept = default;

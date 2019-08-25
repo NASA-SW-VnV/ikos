@@ -88,16 +88,16 @@ public:
       : _set(elements), _top(false) {}
 
   /// \brief Copy constructor
-  DiscreteDomain(const DiscreteDomain&) = default;
+  DiscreteDomain(const DiscreteDomain&) noexcept = default;
 
   /// \brief Move constructor
-  DiscreteDomain(DiscreteDomain&&) = default;
+  DiscreteDomain(DiscreteDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  DiscreteDomain& operator=(const DiscreteDomain&) = default;
+  DiscreteDomain& operator=(const DiscreteDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  DiscreteDomain& operator=(DiscreteDomain&&) = default;
+  DiscreteDomain& operator=(DiscreteDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~DiscreteDomain() override = default;

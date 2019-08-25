@@ -75,16 +75,16 @@ public:
   NullityDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  NullityDomain(const NullityDomain&) = default;
+  NullityDomain(const NullityDomain&) noexcept = default;
 
   /// \brief Move constructor
-  NullityDomain(NullityDomain&&) = default;
+  NullityDomain(NullityDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  NullityDomain& operator=(const NullityDomain&) = default;
+  NullityDomain& operator=(const NullityDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  NullityDomain& operator=(NullityDomain&&) = default;
+  NullityDomain& operator=(NullityDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~NullityDomain() override = default;

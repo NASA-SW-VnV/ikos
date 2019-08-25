@@ -85,16 +85,16 @@ public:
   SeparateDomain() : SeparateDomain(TopTag{}) {}
 
   /// \brief Copy constructor
-  SeparateDomain(const SeparateDomain&) = default;
+  SeparateDomain(const SeparateDomain&) noexcept = default;
 
   /// \brief Move constructor
-  SeparateDomain(SeparateDomain&&) = default;
+  SeparateDomain(SeparateDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  SeparateDomain& operator=(const SeparateDomain&) = default;
+  SeparateDomain& operator=(const SeparateDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  SeparateDomain& operator=(SeparateDomain&&) = default;
+  SeparateDomain& operator=(SeparateDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~SeparateDomain() override = default;

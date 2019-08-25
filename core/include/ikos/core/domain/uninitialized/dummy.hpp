@@ -69,16 +69,16 @@ public:
   DummyDomain() : _is_bottom(false) {}
 
   /// \brief Copy constructor
-  DummyDomain(const DummyDomain&) = default;
+  DummyDomain(const DummyDomain&) noexcept = default;
 
   /// \brief Move constructor
-  DummyDomain(DummyDomain&&) = default;
+  DummyDomain(DummyDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  DummyDomain& operator=(const DummyDomain&) = default;
+  DummyDomain& operator=(const DummyDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  DummyDomain& operator=(DummyDomain&&) = default;
+  DummyDomain& operator=(DummyDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~DummyDomain() override = default;

@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <ikos/core/domain/machine_int/abstract_domain.hpp>
 #include <ikos/core/domain/numeric/abstract_domain.hpp>
 #include <ikos/core/number/machine_int.hpp>
@@ -104,16 +106,20 @@ public:
   NumericDomainAdapter() : _inv(NumDomain::top()) {}
 
   /// \brief Copy constructor
-  NumericDomainAdapter(const NumericDomainAdapter&) = default;
+  NumericDomainAdapter(const NumericDomainAdapter&) noexcept(
+      std::is_nothrow_copy_constructible< NumDomain >::value) = default;
 
   /// \brief Move constructor
-  NumericDomainAdapter(NumericDomainAdapter&&) = default;
+  NumericDomainAdapter(NumericDomainAdapter&&) noexcept(
+      std::is_nothrow_move_constructible< NumDomain >::value) = default;
 
   /// \brief Copy assignment operator
-  NumericDomainAdapter& operator=(const NumericDomainAdapter&) = default;
+  NumericDomainAdapter& operator=(const NumericDomainAdapter&) noexcept(
+      std::is_nothrow_copy_assignable< NumDomain >::value) = default;
 
   /// \brief Move assignment operator
-  NumericDomainAdapter& operator=(NumericDomainAdapter&&) = default;
+  NumericDomainAdapter& operator=(NumericDomainAdapter&&) noexcept(
+      std::is_nothrow_move_assignable< NumDomain >::value) = default;
 
   /// \brief Destructor
   ~NumericDomainAdapter() override = default;

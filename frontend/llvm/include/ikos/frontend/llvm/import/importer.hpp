@@ -101,7 +101,7 @@ public:
   explicit Importer(ar::Context& ctx) : _context(ctx) {}
 
   /// \brief Copy constructor
-  Importer(const Importer&) = default;
+  Importer(const Importer&) noexcept = default;
 
   /// \brief Move constructor
   Importer(Importer&&) noexcept = default;

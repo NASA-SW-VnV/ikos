@@ -47,6 +47,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <boost/optional.hpp>
 
 #include <ikos/core/domain/abstract_domain.hpp>
@@ -115,16 +117,20 @@ public:
   }
 
   /// \brief Copy constructor
-  Interval(const Interval&) = default;
+  Interval(const Interval&) noexcept(
+      std::is_nothrow_copy_constructible< Number >::value) = default;
 
   /// \brief Move constructor
-  Interval(Interval&&) = default;
+  Interval(Interval&&) noexcept(
+      std::is_nothrow_move_constructible< Number >::value) = default;
 
   /// \brief Copy assignment operator
-  Interval& operator=(const Interval&) = default;
+  Interval& operator=(const Interval&) noexcept(
+      std::is_nothrow_copy_assignable< Number >::value) = default;
 
   /// \brief Move assignment operator
-  Interval& operator=(Interval&&) = default;
+  Interval& operator=(Interval&&) noexcept(
+      std::is_nothrow_move_assignable< Number >::value) = default;
 
   /// \brief Destructor
   ~Interval() override = default;

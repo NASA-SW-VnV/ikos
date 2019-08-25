@@ -44,6 +44,7 @@
 #pragma once
 
 #include <sstream>
+#include <type_traits>
 
 #include <ikos/core/domain/exception/abstract_domain.hpp>
 
@@ -115,16 +116,20 @@ public:
         _propagated_exceptions(std::move(propagated_exceptions)) {}
 
   /// \brief Copy constructor
-  ExceptionDomain(const ExceptionDomain&) = default;
+  ExceptionDomain(const ExceptionDomain&) noexcept(
+      std::is_nothrow_copy_constructible< UnderlyingDomain >::value) = default;
 
   /// \brief Move constructor
-  ExceptionDomain(ExceptionDomain&&) = default;
+  ExceptionDomain(ExceptionDomain&&) noexcept(
+      std::is_nothrow_move_constructible< UnderlyingDomain >::value) = default;
 
   /// \brief Copy assignment operator
-  ExceptionDomain& operator=(const ExceptionDomain&) = default;
+  ExceptionDomain& operator=(const ExceptionDomain&) noexcept(
+      std::is_nothrow_copy_assignable< UnderlyingDomain >::value) = default;
 
   /// \brief Move assignment operator
-  ExceptionDomain& operator=(ExceptionDomain&&) = default;
+  ExceptionDomain& operator=(ExceptionDomain&&) noexcept(
+      std::is_nothrow_move_assignable< UnderlyingDomain >::value) = default;
 
   /// \brief Destructor
   ~ExceptionDomain() override = default;

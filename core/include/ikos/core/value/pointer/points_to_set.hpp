@@ -97,16 +97,16 @@ public:
       : _kind(SetKind), _set(elements) {}
 
   /// \brief Copy constructor
-  PointsToSet(const PointsToSet&) = default;
+  PointsToSet(const PointsToSet&) noexcept = default;
 
   /// \brief Move constructor
-  PointsToSet(PointsToSet&&) = default;
+  PointsToSet(PointsToSet&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  PointsToSet& operator=(const PointsToSet&) = default;
+  PointsToSet& operator=(const PointsToSet&) noexcept = default;
 
   /// \brief Move assignment operator
-  PointsToSet& operator=(PointsToSet&&) = default;
+  PointsToSet& operator=(PointsToSet&&) noexcept = default;
 
   /// \brief Destructor
   ~PointsToSet() override = default;

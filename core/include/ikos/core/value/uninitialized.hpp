@@ -75,16 +75,16 @@ public:
   Uninitialized() = default;
 
   /// \brief Copy constructor
-  Uninitialized(const Uninitialized&) = default;
+  Uninitialized(const Uninitialized&) noexcept = default;
 
   /// \brief Move constructor
-  Uninitialized(Uninitialized&&) = default;
+  Uninitialized(Uninitialized&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  Uninitialized& operator=(const Uninitialized&) = default;
+  Uninitialized& operator=(const Uninitialized&) noexcept = default;
 
   /// \brief Move assignment operator
-  Uninitialized& operator=(Uninitialized&&) = default;
+  Uninitialized& operator=(Uninitialized&&) noexcept = default;
 
   /// \brief Destructor
   ~Uninitialized() override = default;

@@ -214,7 +214,7 @@ public:
   IntervalCongruence& operator=(const IntervalCongruence&) = default;
 
   /// \brief Move assignment operator
-  IntervalCongruence& operator=(IntervalCongruence&&) = default;
+  IntervalCongruence& operator=(IntervalCongruence&&) noexcept = default;
 
   /// \brief Destructor
   ~IntervalCongruence() override = default;

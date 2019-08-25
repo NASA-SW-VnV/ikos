@@ -99,13 +99,13 @@ public:
   PointerSet(const PointerSet&) = default;
 
   /// \brief Move constructor
-  PointerSet(PointerSet&&) = default;
+  PointerSet(PointerSet&&) noexcept = default;
 
   /// \brief Copy assignment operator
   PointerSet& operator=(const PointerSet&) = default;
 
   /// \brief Move assignment operator
-  PointerSet& operator=(PointerSet&&) = default;
+  PointerSet& operator=(PointerSet&&) noexcept = default;
 
   /// \brief Destructor
   ~PointerSet() override = default;

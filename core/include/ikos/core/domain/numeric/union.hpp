@@ -241,16 +241,16 @@ public:
   UnionDomain() : _tree(make_leaf(NumericDomain::top())) {}
 
   /// \brief Copy constructor
-  UnionDomain(const UnionDomain&) = default;
+  UnionDomain(const UnionDomain&) noexcept = default;
 
   /// \brief Move constructor
-  UnionDomain(UnionDomain&&) = default;
+  UnionDomain(UnionDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  UnionDomain& operator=(const UnionDomain&) = default;
+  UnionDomain& operator=(const UnionDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  UnionDomain& operator=(UnionDomain&&) = default;
+  UnionDomain& operator=(UnionDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~UnionDomain() override = default;

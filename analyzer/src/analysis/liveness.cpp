@@ -88,16 +88,16 @@ public:
       : _inv(elements) {}
 
   /// \brief Copy constructor
-  LivenessDomain(const LivenessDomain&) = default;
+  LivenessDomain(const LivenessDomain&) noexcept = default;
 
   /// \brief Move constructor
-  LivenessDomain(LivenessDomain&&) = default;
+  LivenessDomain(LivenessDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  LivenessDomain& operator=(const LivenessDomain&) = default;
+  LivenessDomain& operator=(const LivenessDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  LivenessDomain& operator=(LivenessDomain&&) = default;
+  LivenessDomain& operator=(LivenessDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~LivenessDomain() override = default;

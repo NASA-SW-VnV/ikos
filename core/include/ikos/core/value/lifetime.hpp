@@ -75,16 +75,16 @@ public:
   Lifetime() = default;
 
   /// \brief Copy constructor
-  Lifetime(const Lifetime&) = default;
+  Lifetime(const Lifetime&) noexcept = default;
 
   /// \brief Move constructor
-  Lifetime(Lifetime&&) = default;
+  Lifetime(Lifetime&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  Lifetime& operator=(const Lifetime&) = default;
+  Lifetime& operator=(const Lifetime&) noexcept = default;
 
   /// \brief Move assignment operator
-  Lifetime& operator=(Lifetime&&) = default;
+  Lifetime& operator=(Lifetime&&) noexcept = default;
 
   /// \brief Destructor
   ~Lifetime() override = default;

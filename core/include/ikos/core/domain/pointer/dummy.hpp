@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <ikos/core/domain/pointer/abstract_domain.hpp>
 
 namespace ikos {
@@ -95,16 +97,24 @@ public:
   DummyDomain() : DummyDomain(TopTag{}) {}
 
   /// \brief Copy constructor
-  DummyDomain(const DummyDomain&) = default;
+  DummyDomain(const DummyDomain&) noexcept(
+      (std::is_nothrow_copy_constructible< MachineIntDomain >::value) &&
+      (std::is_nothrow_copy_constructible< NullityDomain >::value)) = default;
 
   /// \brief Move constructor
-  DummyDomain(DummyDomain&&) = default;
+  DummyDomain(DummyDomain&&) noexcept(
+      (std::is_nothrow_move_constructible< MachineIntDomain >::value) &&
+      (std::is_nothrow_move_constructible< NullityDomain >::value)) = default;
 
   /// \brief Copy assignment operator
-  DummyDomain& operator=(const DummyDomain&) = default;
+  DummyDomain& operator=(const DummyDomain&) noexcept(
+      (std::is_nothrow_copy_assignable< MachineIntDomain >::value) &&
+      (std::is_nothrow_copy_assignable< NullityDomain >::value)) = default;
 
   /// \brief Move assignment operator
-  DummyDomain& operator=(DummyDomain&&) = default;
+  DummyDomain& operator=(DummyDomain&&) noexcept(
+      (std::is_nothrow_move_assignable< MachineIntDomain >::value) &&
+      (std::is_nothrow_move_assignable< NullityDomain >::value)) = default;
 
   /// \brief Destructor
   ~DummyDomain() override = default;

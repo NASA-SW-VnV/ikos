@@ -215,16 +215,16 @@ public:
   WtoComponent() = default;
 
   /// \brief Copy constructor
-  WtoComponent(const WtoComponent&) = default;
+  WtoComponent(const WtoComponent&) noexcept = default;
 
   /// \brief Move constructor
-  WtoComponent(WtoComponent&&) = default;
+  WtoComponent(WtoComponent&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  WtoComponent& operator=(const WtoComponent&) = default;
+  WtoComponent& operator=(const WtoComponent&) noexcept = default;
 
   /// \brief Move assignment operator
-  WtoComponent& operator=(WtoComponent&&) = default;
+  WtoComponent& operator=(WtoComponent&&) noexcept = default;
 
   /// \brief Accept the given visitor
   virtual void accept(WtoComponentVisitor< GraphRef, GraphTrait >&) const = 0;
@@ -336,16 +336,16 @@ public:
   WtoComponentVisitor() = default;
 
   /// \brief Copy constructor
-  WtoComponentVisitor(const WtoComponentVisitor&) = default;
+  WtoComponentVisitor(const WtoComponentVisitor&) noexcept = default;
 
   /// \brief Move constructor
-  WtoComponentVisitor(WtoComponentVisitor&&) = default;
+  WtoComponentVisitor(WtoComponentVisitor&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  WtoComponentVisitor& operator=(const WtoComponentVisitor&) = default;
+  WtoComponentVisitor& operator=(const WtoComponentVisitor&) noexcept = default;
 
   /// \brief Move assignment operator
-  WtoComponentVisitor& operator=(WtoComponentVisitor&&) = default;
+  WtoComponentVisitor& operator=(WtoComponentVisitor&&) noexcept = default;
 
   /// \brief Visit the given vertex
   virtual void visit(const WtoVertexT&) = 0;

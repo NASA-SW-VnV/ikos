@@ -97,13 +97,13 @@ public:
   Interval(const Interval&) = default;
 
   /// \brief Move constructor
-  Interval(Interval&&) = default;
+  Interval(Interval&&) noexcept = default;
 
   /// \brief Copy assignment operator
   Interval& operator=(const Interval&) = default;
 
   /// \brief Move assignment operator
-  Interval& operator=(Interval&&) = default;
+  Interval& operator=(Interval&&) noexcept = default;
 
   /// \brief Destructor
   ~Interval() override = default;

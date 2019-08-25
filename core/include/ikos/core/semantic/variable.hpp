@@ -72,15 +72,14 @@ namespace core {
 /// The VariableRef type should be cheap to copy.
 template < typename VariableRef >
 struct IsVariable
-    : conjunction<
-          std::is_nothrow_copy_constructible< VariableRef >,
-          std::is_nothrow_move_constructible< VariableRef >,
-          std::is_nothrow_assignable< VariableRef&, const VariableRef& >,
-          std::is_nothrow_assignable< VariableRef&, VariableRef&& >,
-          supports_equality< VariableRef, VariableRef >,
-          supports_less_than< VariableRef, VariableRef >,
-          IsDumpable< VariableRef >,
-          IsIndexable< VariableRef > > {};
+    : conjunction< std::is_nothrow_copy_constructible< VariableRef >,
+                   std::is_nothrow_move_constructible< VariableRef >,
+                   std::is_nothrow_copy_assignable< VariableRef >,
+                   std::is_nothrow_move_assignable< VariableRef >,
+                   supports_equality< VariableRef, VariableRef >,
+                   supports_less_than< VariableRef, VariableRef >,
+                   IsDumpable< VariableRef >,
+                   IsIndexable< VariableRef > > {};
 
 } // end namespace core
 } // end namespace ikos

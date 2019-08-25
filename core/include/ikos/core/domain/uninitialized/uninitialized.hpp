@@ -77,16 +77,16 @@ public:
   UninitializedDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  UninitializedDomain(const UninitializedDomain&) = default;
+  UninitializedDomain(const UninitializedDomain&) noexcept = default;
 
   /// \brief Move constructor
-  UninitializedDomain(UninitializedDomain&&) = default;
+  UninitializedDomain(UninitializedDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  UninitializedDomain& operator=(const UninitializedDomain&) = default;
+  UninitializedDomain& operator=(const UninitializedDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  UninitializedDomain& operator=(UninitializedDomain&&) = default;
+  UninitializedDomain& operator=(UninitializedDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~UninitializedDomain() override = default;

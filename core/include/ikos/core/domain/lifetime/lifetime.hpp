@@ -77,16 +77,16 @@ public:
   LifetimeDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  LifetimeDomain(const LifetimeDomain&) = default;
+  LifetimeDomain(const LifetimeDomain&) noexcept = default;
 
   /// \brief Move constructor
-  LifetimeDomain(LifetimeDomain&&) = default;
+  LifetimeDomain(LifetimeDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  LifetimeDomain& operator=(const LifetimeDomain&) = default;
+  LifetimeDomain& operator=(const LifetimeDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  LifetimeDomain& operator=(LifetimeDomain&&) = default;
+  LifetimeDomain& operator=(LifetimeDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~LifetimeDomain() override = default;

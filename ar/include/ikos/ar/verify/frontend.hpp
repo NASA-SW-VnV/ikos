@@ -67,13 +67,13 @@ public:
   explicit FrontendVerifier(bool all = true) : _all(all) {}
 
   /// \brief Copy constructor
-  FrontendVerifier(const FrontendVerifier&) = default;
+  FrontendVerifier(const FrontendVerifier&) noexcept = default;
 
   /// \brief Move constructor
   FrontendVerifier(FrontendVerifier&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  FrontendVerifier& operator=(const FrontendVerifier&) = default;
+  FrontendVerifier& operator=(const FrontendVerifier&) noexcept = default;
 
   /// \brief Move assignment operator
   FrontendVerifier& operator=(FrontendVerifier&&) noexcept = default;

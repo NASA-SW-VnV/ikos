@@ -75,16 +75,16 @@ public:
   Nullity() = default;
 
   /// \brief Copy constructor
-  Nullity(const Nullity&) = default;
+  Nullity(const Nullity&) noexcept = default;
 
   /// \brief Move constructor
-  Nullity(Nullity&&) = default;
+  Nullity(Nullity&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  Nullity& operator=(const Nullity&) = default;
+  Nullity& operator=(const Nullity&) noexcept = default;
 
   /// \brief Move assignment operator
-  Nullity& operator=(Nullity&&) = default;
+  Nullity& operator=(Nullity&&) noexcept = default;
 
   /// \brief Destructor
   ~Nullity() override = default;

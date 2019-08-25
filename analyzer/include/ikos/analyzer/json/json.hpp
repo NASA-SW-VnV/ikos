@@ -57,16 +57,16 @@ public:
   JsonNode() = default;
 
   /// \brief Copy constructor
-  JsonNode(const JsonNode&) = default;
+  JsonNode(const JsonNode&) noexcept = default;
 
   /// \brief Move constructor
-  JsonNode(JsonNode&&) = default;
+  JsonNode(JsonNode&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  JsonNode& operator=(const JsonNode&) = default;
+  JsonNode& operator=(const JsonNode&) noexcept = default;
 
   /// \brief Move assignment operator
-  JsonNode& operator=(JsonNode&&) = default;
+  JsonNode& operator=(JsonNode&&) noexcept = default;
 
   /// \brief Return the string representation
   virtual std::string str() const = 0;

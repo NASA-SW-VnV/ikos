@@ -88,17 +88,18 @@ public:
   IntervalCongruenceDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  IntervalCongruenceDomain(const IntervalCongruenceDomain&) = default;
+  IntervalCongruenceDomain(const IntervalCongruenceDomain&) noexcept = default;
 
   /// \brief Move constructor
-  IntervalCongruenceDomain(IntervalCongruenceDomain&&) = default;
+  IntervalCongruenceDomain(IntervalCongruenceDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  IntervalCongruenceDomain& operator=(const IntervalCongruenceDomain&) =
-      default;
+  IntervalCongruenceDomain& operator=(
+      const IntervalCongruenceDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  IntervalCongruenceDomain& operator=(IntervalCongruenceDomain&&) = default;
+  IntervalCongruenceDomain& operator=(IntervalCongruenceDomain&&) noexcept =
+      default;
 
   /// \brief Destructor
   ~IntervalCongruenceDomain() override = default;

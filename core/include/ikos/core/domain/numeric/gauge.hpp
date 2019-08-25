@@ -104,16 +104,16 @@ public:
   GaugeSemiLattice() : GaugeSemiLattice(TopTag{}) {}
 
   /// \brief Copy constructor
-  GaugeSemiLattice(const GaugeSemiLattice&) = default;
+  GaugeSemiLattice(const GaugeSemiLattice&) noexcept = default;
 
   /// \brief Move constructor
-  GaugeSemiLattice(GaugeSemiLattice&&) = default;
+  GaugeSemiLattice(GaugeSemiLattice&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  GaugeSemiLattice& operator=(const GaugeSemiLattice&) = default;
+  GaugeSemiLattice& operator=(const GaugeSemiLattice&) noexcept = default;
 
   /// \brief Move assignment operator
-  GaugeSemiLattice& operator=(GaugeSemiLattice&&) = default;
+  GaugeSemiLattice& operator=(GaugeSemiLattice&&) noexcept = default;
 
   /// \brief Destructor
   ~GaugeSemiLattice() override = default;
@@ -504,16 +504,16 @@ public:
   GaugeDomain() : GaugeDomain(TopTag{}) {}
 
   /// \brief Copy constructor
-  GaugeDomain(const GaugeDomain&) = default;
+  GaugeDomain(const GaugeDomain&) noexcept = default;
 
   /// \brief Move constructor
-  GaugeDomain(GaugeDomain&&) = default;
+  GaugeDomain(GaugeDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  GaugeDomain& operator=(const GaugeDomain&) = default;
+  GaugeDomain& operator=(const GaugeDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  GaugeDomain& operator=(GaugeDomain&&) = default;
+  GaugeDomain& operator=(GaugeDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~GaugeDomain() override = default;

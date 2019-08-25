@@ -541,16 +541,16 @@ public:
   ApronDomain() : ApronDomain(TopTag{}) {}
 
   /// \brief Copy constructor
-  ApronDomain(const ApronDomain&) = default;
+  ApronDomain(const ApronDomain&) noexcept = default;
 
   /// \brief Move constructor
-  ApronDomain(ApronDomain&&) = default;
+  ApronDomain(ApronDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  ApronDomain& operator=(const ApronDomain&) = default;
+  ApronDomain& operator=(const ApronDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  ApronDomain& operator=(ApronDomain&&) = default;
+  ApronDomain& operator=(ApronDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~ApronDomain() override = default;

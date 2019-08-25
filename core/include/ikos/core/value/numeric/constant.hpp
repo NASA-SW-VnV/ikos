@@ -45,6 +45,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <boost/optional.hpp>
 
 #include <ikos/core/domain/abstract_domain.hpp>
@@ -90,16 +92,20 @@ public:
   explicit Constant(Number n) : _kind(NumberKind), _n(std::move(n)) {}
 
   /// \brief Copy constructor
-  Constant(const Constant&) = default;
+  Constant(const Constant&) noexcept(
+      std::is_nothrow_copy_constructible< Number >::value) = default;
 
   /// \brief Move constructor
-  Constant(Constant&&) = default;
+  Constant(Constant&&) noexcept(
+      std::is_nothrow_move_constructible< Number >::value) = default;
 
   /// \brief Copy assignment operator
-  Constant& operator=(const Constant&) = default;
+  Constant& operator=(const Constant&) noexcept(
+      std::is_nothrow_copy_assignable< Number >::value) = default;
 
   /// \brief Move assignment operator
-  Constant& operator=(Constant&&) = default;
+  Constant& operator=(Constant&&) noexcept(
+      std::is_nothrow_move_assignable< Number >::value) = default;
 
   /// \brief Destructor
   ~Constant() override = default;

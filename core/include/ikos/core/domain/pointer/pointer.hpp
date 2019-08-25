@@ -45,6 +45,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <ikos/core/domain/machine_int/abstract_domain.hpp>
 #include <ikos/core/domain/pointer/abstract_domain.hpp>
 #include <ikos/core/domain/separate_domain.hpp>
@@ -141,16 +143,24 @@ public:
   }
 
   /// \brief Copy constructor
-  PointerDomain(const PointerDomain&) = default;
+  PointerDomain(const PointerDomain&) noexcept(
+      (std::is_nothrow_copy_constructible< MachineIntDomain >::value) &&
+      (std::is_nothrow_copy_constructible< NullityDomain >::value)) = default;
 
   /// \brief Move constructor
-  PointerDomain(PointerDomain&&) = default;
+  PointerDomain(PointerDomain&&) noexcept(
+      (std::is_nothrow_move_constructible< MachineIntDomain >::value) &&
+      (std::is_nothrow_move_constructible< NullityDomain >::value)) = default;
 
   /// \brief Copy assignment operator
-  PointerDomain& operator=(const PointerDomain&) = default;
+  PointerDomain& operator=(const PointerDomain&) noexcept(
+      (std::is_nothrow_copy_assignable< MachineIntDomain >::value) &&
+      (std::is_nothrow_copy_assignable< NullityDomain >::value)) = default;
 
   /// \brief Move assignment operator
-  PointerDomain& operator=(PointerDomain&&) = default;
+  PointerDomain& operator=(PointerDomain&&) noexcept(
+      (std::is_nothrow_move_assignable< MachineIntDomain >::value) &&
+      (std::is_nothrow_move_assignable< NullityDomain >::value)) = default;
 
   /// \brief Destructor
   ~PointerDomain() override = default;

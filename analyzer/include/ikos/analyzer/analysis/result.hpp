@@ -65,7 +65,7 @@ inline const char* result_str(Result result) {
     default: {
       ikos_unreachable("unreachable");
     }
-  };
+  }
 }
 
 } // end namespace analyzer

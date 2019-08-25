@@ -78,16 +78,16 @@ public:
   CongruenceDomain() : _inv(SeparateDomainT::top()) {}
 
   /// \brief Copy constructor
-  CongruenceDomain(const CongruenceDomain&) = default;
+  CongruenceDomain(const CongruenceDomain&) noexcept = default;
 
   /// \brief Move constructor
-  CongruenceDomain(CongruenceDomain&&) = default;
+  CongruenceDomain(CongruenceDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  CongruenceDomain& operator=(const CongruenceDomain&) = default;
+  CongruenceDomain& operator=(const CongruenceDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  CongruenceDomain& operator=(CongruenceDomain&&) = default;
+  CongruenceDomain& operator=(CongruenceDomain&&) noexcept = default;
 
   /// \brief Destructor
   ~CongruenceDomain() override = default;

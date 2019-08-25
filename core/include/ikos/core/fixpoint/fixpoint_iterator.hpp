@@ -69,16 +69,18 @@ public:
   ForwardFixpointIterator() = default;
 
   /// \brief Copy constructor
-  ForwardFixpointIterator(const ForwardFixpointIterator&) = default;
+  ForwardFixpointIterator(const ForwardFixpointIterator&) noexcept = default;
 
   /// \brief Move constructor
-  ForwardFixpointIterator(ForwardFixpointIterator&&) = default;
+  ForwardFixpointIterator(ForwardFixpointIterator&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  ForwardFixpointIterator& operator=(const ForwardFixpointIterator&) = default;
+  ForwardFixpointIterator& operator=(const ForwardFixpointIterator&) noexcept =
+      default;
 
   /// \brief Move assignment operator
-  ForwardFixpointIterator& operator=(ForwardFixpointIterator&&) = default;
+  ForwardFixpointIterator& operator=(ForwardFixpointIterator&&) noexcept =
+      default;
 
   /// \brief Semantic transformer for a node
   ///

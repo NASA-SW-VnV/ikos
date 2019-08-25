@@ -118,13 +118,13 @@ public:
   PointerAbsValue(const PointerAbsValue&) = default;
 
   /// \brief Move constructor
-  PointerAbsValue(PointerAbsValue&&) = default;
+  PointerAbsValue(PointerAbsValue&&) noexcept = default;
 
   /// \brief Copy assignment operator
   PointerAbsValue& operator=(const PointerAbsValue&) = default;
 
   /// \brief Move assignment operator
-  PointerAbsValue& operator=(PointerAbsValue&&) = default;
+  PointerAbsValue& operator=(PointerAbsValue&&) noexcept = default;
 
   /// \brief Destructor
   ~PointerAbsValue() override = default;

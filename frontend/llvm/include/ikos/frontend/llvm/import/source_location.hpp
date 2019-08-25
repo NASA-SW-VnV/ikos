@@ -75,13 +75,13 @@ public:
   }
 
   /// \brief Copy constructor
-  SourceLocation(const SourceLocation&) = default;
+  SourceLocation(const SourceLocation&) noexcept = default;
 
   /// \brief Move constructor
   SourceLocation(SourceLocation&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  SourceLocation& operator=(const SourceLocation&) = default;
+  SourceLocation& operator=(const SourceLocation&) noexcept = default;
 
   /// \brief Move assignment operator
   SourceLocation& operator=(SourceLocation&&) noexcept = default;

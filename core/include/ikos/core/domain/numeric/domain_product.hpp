@@ -98,16 +98,24 @@ public:
       : _product(std::move(first), std::move(second)) {}
 
   /// \brief Copy constructor
-  DomainProduct2(const DomainProduct2&) = default;
+  DomainProduct2(const DomainProduct2&) noexcept(
+      (std::is_nothrow_copy_constructible< Domain1 >::value) &&
+      (std::is_nothrow_copy_constructible< Domain2 >::value)) = default;
 
   /// \brief Move constructor
-  DomainProduct2(DomainProduct2&&) = default;
+  DomainProduct2(DomainProduct2&&) noexcept(
+      (std::is_nothrow_move_constructible< Domain1 >::value) &&
+      (std::is_nothrow_move_constructible< Domain2 >::value)) = default;
 
   /// \brief Copy assignment operator
-  DomainProduct2& operator=(const DomainProduct2&) = default;
+  DomainProduct2& operator=(const DomainProduct2&) noexcept(
+      (std::is_nothrow_copy_assignable< Domain1 >::value) &&
+      (std::is_nothrow_copy_assignable< Domain2 >::value)) = default;
 
   /// \brief Move assignment operator
-  DomainProduct2& operator=(DomainProduct2&&) = default;
+  DomainProduct2& operator=(DomainProduct2&&) noexcept(
+      (std::is_nothrow_move_assignable< Domain1 >::value) &&
+      (std::is_nothrow_move_assignable< Domain2 >::value)) = default;
 
   /// \brief Destructor
   ~DomainProduct2() override = default;
@@ -439,16 +447,28 @@ public:
                  std::move(third)) {}
 
   /// \brief Copy constructor
-  DomainProduct3(const DomainProduct3&) = default;
+  DomainProduct3(const DomainProduct3&) noexcept(
+      (std::is_nothrow_copy_constructible< Domain1 >::value) &&
+      (std::is_nothrow_copy_constructible< Domain2 >::value) &&
+      (std::is_nothrow_copy_constructible< Domain3 >::value)) = default;
 
   /// \brief Move constructor
-  DomainProduct3(DomainProduct3&&) = default;
+  DomainProduct3(DomainProduct3&&) noexcept(
+      (std::is_nothrow_move_constructible< Domain1 >::value) &&
+      (std::is_nothrow_move_constructible< Domain2 >::value) &&
+      (std::is_nothrow_move_constructible< Domain3 >::value)) = default;
 
   /// \brief Copy assignment operator
-  DomainProduct3& operator=(const DomainProduct3&) = default;
+  DomainProduct3& operator=(const DomainProduct3&) noexcept(
+      (std::is_nothrow_copy_assignable< Domain1 >::value) &&
+      (std::is_nothrow_copy_assignable< Domain2 >::value) &&
+      (std::is_nothrow_copy_assignable< Domain3 >::value)) = default;
 
   /// \brief Move assignment operator
-  DomainProduct3& operator=(DomainProduct3&&) = default;
+  DomainProduct3& operator=(DomainProduct3&&) noexcept(
+      (std::is_nothrow_move_assignable< Domain1 >::value) &&
+      (std::is_nothrow_move_assignable< Domain2 >::value) &&
+      (std::is_nothrow_move_assignable< Domain3 >::value)) = default;
 
   /// \brief Destructor
   ~DomainProduct3() override = default;

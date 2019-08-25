@@ -126,7 +126,7 @@ public:
   Congruence& operator=(const Congruence&) = default;
 
   /// \brief Move assignment operator
-  Congruence& operator=(Congruence&&) = default;
+  Congruence& operator=(Congruence&&) noexcept = default;
 
   /// \brief Destructor
   ~Congruence() override = default;
@@ -740,7 +740,7 @@ public:
 
   Congruence& operator=(const Congruence&) = default;
 
-  Congruence& operator=(Congruence&&) = default;
+  Congruence& operator=(Congruence&&) noexcept = default;
 
   ~Congruence() override = default;
 

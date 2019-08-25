@@ -46,6 +46,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <boost/optional.hpp>
 
 #include <ikos/core/adt/patricia_tree/map.hpp>
@@ -140,10 +142,12 @@ public:
   }
 
   /// \brief Copy constructor
-  GaugeBound(const GaugeBound&) = default;
+  GaugeBound(const GaugeBound&) noexcept(
+      std::is_nothrow_copy_constructible< Number >::value) = default;
 
   /// \brief Move constructor
-  GaugeBound(GaugeBound&&) = default;
+  GaugeBound(GaugeBound&&) noexcept(
+      std::is_nothrow_move_constructible< Number >::value) = default;
 
   /// \brief Assign a number
   GaugeBound& operator=(int n) {
@@ -162,10 +166,12 @@ public:
   }
 
   /// \brief Copy assignment operator
-  GaugeBound& operator=(const GaugeBound&) = default;
+  GaugeBound& operator=(const GaugeBound&) noexcept(
+      std::is_nothrow_copy_assignable< Number >::value) = default;
 
   /// \brief Move assignment operator
-  GaugeBound& operator=(GaugeBound&&) = default;
+  GaugeBound& operator=(GaugeBound&&) noexcept(
+      std::is_nothrow_move_assignable< Number >::value) = default;
 
   /// \brief Destructor
   ~GaugeBound() = default;
@@ -1014,16 +1020,20 @@ public:
   }
 
   /// \brief Copy constructor
-  Gauge(const Gauge&) = default;
+  Gauge(const Gauge&) noexcept(
+      std::is_nothrow_copy_constructible< Number >::value) = default;
 
   /// \brief Move constructor
-  Gauge(Gauge&&) = default;
+  Gauge(Gauge&&) noexcept(std::is_nothrow_move_constructible< Number >::value) =
+      default;
 
   /// \brief Copy assignment operator
-  Gauge& operator=(const Gauge&) = default;
+  Gauge& operator=(const Gauge&) noexcept(
+      std::is_nothrow_copy_assignable< Number >::value) = default;
 
   /// \brief Move assignment operator
-  Gauge& operator=(Gauge&&) = default;
+  Gauge& operator=(Gauge&&) noexcept(
+      std::is_nothrow_move_assignable< Number >::value) = default;
 
   /// \brief Destructor
   ~Gauge() override = default;
