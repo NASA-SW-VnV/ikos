@@ -75,7 +75,7 @@ CodeFixpointParameters::CodeFixpointParameters(
     : widening_strategy(widening_strategy_),
       narrowing_strategy(narrowing_strategy_),
       widening_delay(widening_delay_),
-      widening_period(std::max(widening_period_, 1u)),
+      widening_period(std::max(widening_period_, 1U)),
       narrowing_iterations(narrowing_iterations_) {}
 
 // FixpointParameters

@@ -76,7 +76,7 @@ std::string JsonBool::str() const {
 
 /// \brief Return the hexadecimal character for the given number
 static char hexdigit(unsigned n, bool lower_case = false) {
-  return (n < 10u) ? ('0' + static_cast< char >(n))
+  return (n < 10U) ? ('0' + static_cast< char >(n))
                    : ((lower_case ? 'a' : 'A') + static_cast< char >(n) - 10);
 }
 

@@ -510,7 +510,7 @@ private:
 
     // Use bisection
     unsigned zeros = 0;
-    for (unsigned shift = 64u >> 1; shift != 0u; shift >>= 1) {
+    for (unsigned shift = 64U >> 1; shift != 0U; shift >>= 1) {
       uint64_t tmp = n >> shift;
       if (tmp != 0) {
         n = tmp;
@@ -531,7 +531,7 @@ private:
 
     // Use bisection
     unsigned zeros = 0;
-    for (unsigned shift = bit_width >> 1; shift != 0u; shift >>= 1) {
+    for (unsigned shift = bit_width >> 1; shift != 0U; shift >>= 1) {
       ZNumber tmp = n >> shift;
       if (tmp != 0) {
         n = tmp;

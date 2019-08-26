@@ -109,7 +109,7 @@ AbstractDomain init_main_invariant(Context& ctx,
     const ar::DataLayout& dl = ctx.bundle->data_layout();
     uint64_t pointer_size = dl.pointers.bit_width / 8;
     uint64_t argv_size =
-        pointer_size * (static_cast< uint64_t >(*ctx.opts.argc) + 1u);
+        pointer_size * (static_cast< uint64_t >(*ctx.opts.argc) + 1U);
     Variable* alloc_size_var = ctx.var_factory->get_alloc_size(argv_mem_loc);
     inv.normal().integers().assign(alloc_size_var,
                                    MachineInt(argv_size,

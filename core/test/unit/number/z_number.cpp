@@ -70,12 +70,12 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   BOOST_CHECK((Z(-1) == Z(static_cast< long long >(-1))));
   BOOST_CHECK((-(Z(1) << 63) == Z(std::numeric_limits< long long >::min())));
   BOOST_CHECK((Z(1) << 63) - 1 == Z(std::numeric_limits< long long >::max()));
-  BOOST_CHECK((Z(0x12345678) << 32) + Z(0x01234567) == Z(0x1234567801234567ll));
+  BOOST_CHECK((Z(0x12345678) << 32) + Z(0x01234567) == Z(0x1234567801234567LL));
   BOOST_CHECK((Z(1) == Z(static_cast< unsigned long long >(1))));
   BOOST_CHECK((Z(1) << 64) - 1 ==
               Z(std::numeric_limits< unsigned long long >::max()));
   BOOST_CHECK((Z(0x12345678) << 32) + Z(0x01234567) ==
-              Z(0x1234567801234567ull));
+              Z(0x1234567801234567ULL));
 
   // operator=
   Z n;
@@ -578,7 +578,7 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   BOOST_CHECK(Z(std::numeric_limits< long long >::min()).to< long long >() ==
               std::numeric_limits< long long >::min());
   BOOST_CHECK(((Z(0x12345678) << 32) + Z(0x01234567)).to< long long >() ==
-              0x1234567801234567ll);
+              0x1234567801234567LL);
 
   BOOST_CHECK(Z(0).to< unsigned long long >() ==
               static_cast< unsigned long long >(0));
@@ -589,10 +589,10 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
               std::numeric_limits< unsigned long long >::max());
   BOOST_CHECK(
       ((Z(0x12345678) << 32) + Z(0x01234567)).to< unsigned long long >() ==
-      0x1234567801234567ull);
+      0x1234567801234567ULL);
   BOOST_CHECK(
       ((Z(0x82345678) << 32) + Z(0x01234567)).to< unsigned long long >() ==
-      0x8234567801234567ull);
+      0x8234567801234567ULL);
 
   // operator<<
   boost::test_tools::output_test_stream output;
