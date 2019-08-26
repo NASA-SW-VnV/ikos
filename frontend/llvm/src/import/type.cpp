@@ -1511,15 +1511,15 @@ bool TypeMatcher::match_type(llvm::Type* llvm_type,
   } else if (llvm_type->isFloatingPointTy()) {
     return this->match_floating_point_type(llvm_type, ar_type);
   } else if (llvm_type->isPointerTy()) {
-    return this->match_pointer_type(llvm_type, ar_type, seen);
+    return this->match_pointer_type(llvm_type, ar_type, std::move(seen));
   } else if (llvm_type->isArrayTy()) {
-    return this->match_array_type(llvm_type, ar_type, seen);
+    return this->match_array_type(llvm_type, ar_type, std::move(seen));
   } else if (llvm_type->isVectorTy()) {
-    return this->match_vector_type(llvm_type, ar_type, seen);
+    return this->match_vector_type(llvm_type, ar_type, std::move(seen));
   } else if (llvm_type->isStructTy()) {
-    return this->match_struct_type(llvm_type, ar_type, seen);
+    return this->match_struct_type(llvm_type, ar_type, std::move(seen));
   } else if (llvm_type->isFunctionTy()) {
-    return this->match_function_type(llvm_type, ar_type, seen);
+    return this->match_function_type(llvm_type, ar_type, std::move(seen));
   } else {
     throw ImportError("unsupported llvm type");
   }
@@ -1565,7 +1565,7 @@ bool TypeMatcher::match_pointer_type(llvm::Type* llvm_type,
       llvm::cast< llvm::PointerType >(llvm_type)->getElementType();
   auto ar_pointee_type = ar::cast< ar::PointerType >(ar_type)->pointee();
 
-  return this->match_type(llvm_pointee_type, ar_pointee_type, seen);
+  return this->match_type(llvm_pointee_type, ar_pointee_type, std::move(seen));
 }
 
 bool TypeMatcher::match_array_type(llvm::Type* llvm_type,
@@ -1580,7 +1580,7 @@ bool TypeMatcher::match_array_type(llvm::Type* llvm_type,
   return llvm_array_type->getNumElements() == ar_array_type->num_elements() &&
          this->match_type(llvm_array_type->getElementType(),
                           ar_array_type->element_type(),
-                          seen);
+                          std::move(seen));
 }
 
 bool TypeMatcher::match_vector_type(llvm::Type* llvm_type,
@@ -1595,7 +1595,7 @@ bool TypeMatcher::match_vector_type(llvm::Type* llvm_type,
   return llvm_vec_type->getNumElements() == ar_vec_type->num_elements() &&
          this->match_type(llvm_vec_type->getElementType(),
                           ar_vec_type->element_type(),
-                          seen);
+                          std::move(seen));
 }
 
 bool TypeMatcher::match_struct_type(llvm::Type* llvm_type,

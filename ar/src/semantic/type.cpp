@@ -372,8 +372,8 @@ ArrayType::ArrayType(Type* element_type, ZNumber num_element)
 
 ArrayType* ArrayType::get(Context& ctx,
                           Type* element_type,
-                          ZNumber num_element) {
-  return ctx_impl(ctx).array_type(element_type, std::move(num_element));
+                          const ZNumber& num_element) {
+  return ctx_impl(ctx).array_type(element_type, num_element);
 }
 
 void ArrayType::dump(std::ostream& o) const {
@@ -389,8 +389,8 @@ VectorType::VectorType(ScalarType* element_type, ZNumber num_element)
 
 VectorType* VectorType::get(Context& ctx,
                             ScalarType* element_type,
-                            ZNumber num_element) {
-  return ctx_impl(ctx).vector_type(element_type, std::move(num_element));
+                            const ZNumber& num_element) {
+  return ctx_impl(ctx).vector_type(element_type, num_element);
 }
 
 void VectorType::dump(std::ostream& o) const {

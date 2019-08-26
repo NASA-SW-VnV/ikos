@@ -98,7 +98,8 @@ PointerType* ContextImpl::pointer_type(Type* pointee) {
   }
 }
 
-ArrayType* ContextImpl::array_type(Type* element_type, ZNumber num_element) {
+ArrayType* ContextImpl::array_type(Type* element_type,
+                                   const ZNumber& num_element) {
   auto it = this->_array_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_array_types.end()) {
     auto type = new ArrayType(element_type, num_element);
@@ -111,7 +112,7 @@ ArrayType* ContextImpl::array_type(Type* element_type, ZNumber num_element) {
 }
 
 VectorType* ContextImpl::vector_type(ScalarType* element_type,
-                                     ZNumber num_element) {
+                                     const ZNumber& num_element) {
   auto it =
       this->_vector_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_vector_types.end()) {
@@ -159,7 +160,8 @@ UndefinedConstant* ContextImpl::undefined_cst(Type* type) {
   }
 }
 
-IntegerConstant* ContextImpl::integer_cst(IntegerType* type, MachineInt value) {
+IntegerConstant* ContextImpl::integer_cst(IntegerType* type,
+                                          const MachineInt& value) {
   auto it = this->_integer_constants.find(std::make_tuple(type, value));
   if (it == this->_integer_constants.end()) {
     auto cst = new IntegerConstant(type, value);

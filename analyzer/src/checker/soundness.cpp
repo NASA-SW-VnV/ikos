@@ -586,7 +586,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
 std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
     check_call_pointer_params(ar::CallBase* call,
                               ar::Function* fun,
-                              std::vector< ar::Value* > pointers,
+                              const std::vector< ar::Value* >& pointers,
                               const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable

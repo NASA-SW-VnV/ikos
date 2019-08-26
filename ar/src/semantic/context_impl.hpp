@@ -226,10 +226,10 @@ public:
   PointerType* pointer_type(Type* pointee);
 
   /// \brief Get or create an array type
-  ArrayType* array_type(Type* element_type, ZNumber num_element);
+  ArrayType* array_type(Type* element_type, const ZNumber& num_element);
 
   /// \brief Get or create a vector type
-  VectorType* vector_type(ScalarType* element_type, ZNumber num_element);
+  VectorType* vector_type(ScalarType* element_type, const ZNumber& num_element);
 
   /// \brief Get or create a function type
   FunctionType* function_type(Type* return_type,
@@ -245,7 +245,7 @@ public:
   UndefinedConstant* undefined_cst(Type* type);
 
   /// \brief Get or create an integer constant
-  IntegerConstant* integer_cst(IntegerType* type, MachineInt value);
+  IntegerConstant* integer_cst(IntegerType* type, const MachineInt& value);
 
   /// \brief Get or create a float constant
   FloatConstant* float_cst(FloatType* type, const std::string& value);

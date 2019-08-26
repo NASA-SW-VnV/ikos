@@ -172,7 +172,7 @@ public:
 
   /// \brief Create a constant machine integer literal
   static Literal machine_int(MachineInt v) {
-    return Literal(Lit(MachineIntLit{v}));
+    return Literal(Lit(MachineIntLit{std::move(v)}));
   }
 
   /// \brief Create a constant floating point literal

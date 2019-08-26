@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_meet) {
 }
 
 static void test_gauge_semilattice_forget(GaugeSemiLattice x,
-                                          Variable v,
+                                          const Variable& v,
                                           const GaugeSemiLattice& y) {
   x.forget(v);
   BOOST_CHECK((x == y));
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_forget) {
 }
 
 static void test_gauge_semilattice_incr_counter(GaugeSemiLattice x,
-                                                Variable v,
+                                                const Variable& v,
                                                 int k,
                                                 const GaugeSemiLattice& y) {
   x.incr_counter(v, ZNumber(k));
@@ -471,14 +471,14 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_incr_counter) {
 }
 
 static void test_gauge_semilattice_forget_counter(GaugeSemiLattice x,
-                                                  Variable v,
+                                                  const Variable& v,
                                                   const GaugeSemiLattice& y) {
   x.forget_counter(v);
   BOOST_CHECK((x == y));
 }
 
 static void test_gauge_semilattice_forget_counter(GaugeSemiLattice x,
-                                                  Variable v,
+                                                  const Variable& v,
                                                   const ZInterval& intv,
                                                   const GaugeSemiLattice& y) {
   x.forget_counter(v, intv);

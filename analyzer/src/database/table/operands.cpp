@@ -612,7 +612,8 @@ std::vector< llvm::DIDerivedType* > struct_fields(llvm::DICompositeType* type) {
 }
 
 /// \brief Add a structure field access `addr->field` or `addr.field`
-ReprResult add_struct_access(ReprResult addr, const llvm::APInt& offset) {
+ReprResult add_struct_access(const ReprResult& addr,
+                             const llvm::APInt& offset) {
   llvm::DIDerivedType* field = nullptr;
 
   auto type = remove_qualifiers(addr.pointee_type);
@@ -646,7 +647,7 @@ ReprResult add_struct_access(ReprResult addr, const llvm::APInt& offset) {
 }
 
 /// \brief Add an array access `addr[index]`
-ReprResult add_array_access(ReprResult addr, ReprResult index) {
+ReprResult add_array_access(const ReprResult& addr, const ReprResult& index) {
   llvm::DIType* element_type = nullptr;
 
   auto type = remove_qualifiers(addr.pointee_type);

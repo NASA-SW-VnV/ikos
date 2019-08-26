@@ -517,7 +517,9 @@ private:
 
 public:
   /// \brief Static constructor
-  static ArrayType* get(Context& ctx, Type* element_type, ZNumber num_element);
+  static ArrayType* get(Context& ctx,
+                        Type* element_type,
+                        const ZNumber& num_element);
 
   /// \brief Dump the type for debugging purpose
   void dump(std::ostream&) const override;
@@ -546,7 +548,7 @@ public:
   /// \brief Static constructor
   static VectorType* get(Context& ctx,
                          ScalarType* element_type,
-                         ZNumber num_element);
+                         const ZNumber& num_element);
 
   /// \brief Get the element type
   ScalarType* element_type() const {

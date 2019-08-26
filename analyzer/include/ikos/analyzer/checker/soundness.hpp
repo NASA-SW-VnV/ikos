@@ -128,7 +128,7 @@ private:
   std::vector< CheckResult > check_call_pointer_params(
       ar::CallBase* call,
       ar::Function* fun,
-      std::vector< ar::Value* > pointers,
+      const std::vector< ar::Value* >& pointers,
       const value::AbstractDomain& inv);
 
   /// \brief Check a call to free()

@@ -256,7 +256,7 @@ public:
   /// \brief Static constructor
   static IntegerConstant* get(Context& ctx,
                               IntegerType* type,
-                              MachineInt value);
+                              const MachineInt& value);
 
   /// \brief Static constructor
   static IntegerConstant* get(Context& ctx, IntegerType* type, int value);

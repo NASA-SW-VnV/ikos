@@ -86,19 +86,21 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
   inv.add(x);
   Variable tab[] = {{x}};
-  BOOST_CHECK(std::equal(inv.begin(),
-                         inv.end(),
-                         std::begin(tab),
-                         std::end(tab),
-                         [](Variable a, Variable b) { return a == b; }));
+  BOOST_CHECK(
+      std::equal(inv.begin(),
+                 inv.end(),
+                 std::begin(tab),
+                 std::end(tab),
+                 [](const Variable& a, const Variable& b) { return a == b; }));
 
   inv.add(y);
   Variable tab2[] = {{y}, {x}};
-  BOOST_CHECK(std::equal(inv.begin(),
-                         inv.end(),
-                         std::begin(tab2),
-                         std::end(tab2),
-                         [](Variable a, Variable b) { return a == b; }));
+  BOOST_CHECK(
+      std::equal(inv.begin(),
+                 inv.end(),
+                 std::begin(tab2),
+                 std::end(tab2),
+                 [](const Variable& a, const Variable& b) { return a == b; }));
 }
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {

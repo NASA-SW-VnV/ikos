@@ -736,7 +736,7 @@ public:
     OpIterator _value_it;
 
   public:
-    TermIterator(FactorIterator factor_it, OpIterator value_it)
+    TermIterator(const FactorIterator& factor_it, const OpIterator& value_it)
         : _factor_it(factor_it), _value_it(value_it) {}
 
     void increment() {

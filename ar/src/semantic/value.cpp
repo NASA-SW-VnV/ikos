@@ -91,8 +91,8 @@ IntegerConstant::IntegerConstant(IntegerType* type, MachineInt value)
 
 IntegerConstant* IntegerConstant::get(Context& ctx,
                                       IntegerType* type,
-                                      MachineInt value) {
-  return ctx_impl(ctx).integer_cst(type, std::move(value));
+                                      const MachineInt& value) {
+  return ctx_impl(ctx).integer_cst(type, value);
 }
 
 IntegerConstant* IntegerConstant::get(Context& ctx,
