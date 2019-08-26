@@ -160,6 +160,10 @@ public:
 
 } // end anonymous namespace
 
+WideningHintAnalysis::WideningHintAnalysis(Context& ctx) : _ctx(ctx) {}
+
+WideningHintAnalysis::~WideningHintAnalysis() = default;
+
 void WideningHintAnalysis::run() {
   ar::Bundle* bundle = this->_ctx.bundle;
 

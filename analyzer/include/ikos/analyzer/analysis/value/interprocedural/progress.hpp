@@ -76,9 +76,6 @@ public:
   /// \brief Constructor
   ProgressLogger(std::ostream& out, Context& ctx);
 
-  /// \brief Destructor
-  ~ProgressLogger() override;
-
   /// \brief Start analyzing a cycle
   ///
   /// \param head Head of the cycle
@@ -172,6 +169,19 @@ public:
                             Context& ctx,
                             std::size_t out_columns);
 
+  /// \brief No copy constructor
+  InteractiveProgressLogger(const InteractiveProgressLogger&) = delete;
+
+  /// \brief No move constructor
+  InteractiveProgressLogger(InteractiveProgressLogger&&) = delete;
+
+  /// \brief No copy assignment operator
+  InteractiveProgressLogger& operator=(const InteractiveProgressLogger&) =
+      delete;
+
+  /// \brief No move assignment operator
+  InteractiveProgressLogger& operator=(InteractiveProgressLogger&&) = delete;
+
   /// \brief Destructor
   ~InteractiveProgressLogger() override;
 
@@ -231,9 +241,6 @@ public:
   /// \brief Constructor
   LinearProgressLogger(std::ostream& out, Context& ctx);
 
-  /// \brief Destructor
-  ~LinearProgressLogger() override;
-
   /// \brief Start analyzing a cycle
   void start_cycle(ar::BasicBlock* head) override;
 
@@ -270,9 +277,6 @@ class NoProgressLogger final : public ProgressLogger {
 public:
   /// \brief Constructor
   NoProgressLogger(std::ostream& out, Context& ctx);
-
-  /// \brief Destructor
-  ~NoProgressLogger() override;
 
   /// \brief Start analyzing a cycle
   void start_cycle(ar::BasicBlock* head) override;

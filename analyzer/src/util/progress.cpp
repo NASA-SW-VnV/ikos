@@ -54,8 +54,6 @@ namespace analyzer {
 
 ProgressLogger::ProgressLogger(std::ostream& out) : Logger(out) {}
 
-ProgressLogger::~ProgressLogger() = default;
-
 // InteractiveProgressLogger
 
 InteractiveProgressLogger::InteractiveProgressLogger(std::ostream& out,
@@ -65,8 +63,6 @@ InteractiveProgressLogger::InteractiveProgressLogger(std::ostream& out,
       _current_task(0),
       _num_tasks(num_tasks),
       _out_columns(std::max(out_columns, std::size_t{3})) {}
-
-InteractiveProgressLogger::~InteractiveProgressLogger() = default;
 
 void InteractiveProgressLogger::start_task(StringRef status) {
   // Update the current task
@@ -123,8 +119,6 @@ LinearProgressLogger::LinearProgressLogger(std::ostream& out,
                                            std::size_t num_tasks)
     : ProgressLogger(out), _current_task(0), _num_tasks(num_tasks) {}
 
-LinearProgressLogger::~LinearProgressLogger() = default;
-
 void LinearProgressLogger::start_task(StringRef status) {
   this->_current_task++;
   this->_out << "[" << this->_current_task << "/" << this->_num_tasks << "] "
@@ -147,8 +141,6 @@ void LinearProgressLogger::end_message() {
 // NoProgressLogger
 
 NoProgressLogger::NoProgressLogger(std::ostream& out) : ProgressLogger(out) {}
-
-NoProgressLogger::~NoProgressLogger() = default;
 
 void NoProgressLogger::start_task(StringRef /*status*/) {}
 

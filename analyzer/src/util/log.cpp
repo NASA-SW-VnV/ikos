@@ -62,8 +62,6 @@ void LogMessage::end() {
 
 TerminalLogger::TerminalLogger(std::ostream& out) : Logger(out) {}
 
-TerminalLogger::~TerminalLogger() = default;
-
 void TerminalLogger::start_logger() {}
 
 void TerminalLogger::end_logger() {

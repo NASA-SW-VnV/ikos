@@ -265,9 +265,6 @@ private:
     /// \brief Create an abstract value
     explicit PolymorphicDerived(RuntimeDomain inv) : _inv(std::move(inv)) {}
 
-    /// \brief Destructor
-    ~PolymorphicDerived() override = default;
-
     /// \brief Clone the abstract value
     std::unique_ptr< PolymorphicBase > clone() const override {
       return std::make_unique< PolymorphicDerivedT >(this->_inv);

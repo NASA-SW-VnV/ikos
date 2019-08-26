@@ -74,7 +74,7 @@ private:
 
 public:
   /// \brief Constructor
-  explicit WideningHintAnalysis(Context& ctx) : _ctx(ctx) {}
+  explicit WideningHintAnalysis(Context& ctx);
 
   /// \brief No copy constructor
   WideningHintAnalysis(const WideningHintAnalysis&) = delete;
@@ -87,6 +87,9 @@ public:
 
   /// \brief No move assignment operator
   WideningHintAnalysis& operator=(WideningHintAnalysis&&) = delete;
+
+  /// \brief Destructor
+  ~WideningHintAnalysis();
 
   /// \brief Run the analysis
   void run();

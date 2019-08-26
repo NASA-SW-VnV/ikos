@@ -57,8 +57,6 @@ namespace interprocedural {
 ProgressLogger::ProgressLogger(std::ostream& out, Context& ctx)
     : Logger(out), _ctx(ctx) {}
 
-ProgressLogger::~ProgressLogger() = default;
-
 // InteractiveProgressLogger
 
 constexpr const std::chrono::seconds InteractiveProgressLogger::RefreshRate;
@@ -349,8 +347,6 @@ void InteractiveProgressLogger::clear_displayed_stack_frame() {
 LinearProgressLogger::LinearProgressLogger(std::ostream& out, Context& ctx)
     : ProgressLogger(out, ctx) {}
 
-LinearProgressLogger::~LinearProgressLogger() = default;
-
 void LinearProgressLogger::start_cycle(ar::BasicBlock* /*head*/) {}
 
 void LinearProgressLogger::start_cycle_iter(ar::BasicBlock* head,
@@ -389,8 +385,6 @@ void LinearProgressLogger::end_message() {
 
 NoProgressLogger::NoProgressLogger(std::ostream& out, Context& ctx)
     : ProgressLogger(out, ctx) {}
-
-NoProgressLogger::~NoProgressLogger() = default;
 
 void NoProgressLogger::start_cycle(ar::BasicBlock* /*head*/) {}
 

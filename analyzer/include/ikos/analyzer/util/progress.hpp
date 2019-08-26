@@ -58,9 +58,6 @@ public:
   /// \brief Constructor
   explicit ProgressLogger(std::ostream& out);
 
-  /// \brief Destructor
-  ~ProgressLogger() override;
-
   /// \brief Notify the beginning of a task with the given status message
   virtual void start_task(StringRef status) = 0;
 
@@ -90,9 +87,6 @@ public:
   InteractiveProgressLogger(std::ostream& out,
                             std::size_t num_tasks,
                             std::size_t out_columns);
-
-  /// \brief Destructor
-  ~InteractiveProgressLogger() override;
 
   /// \brief Notify the beginning of a task with the given status message
   void start_task(StringRef status) override;
@@ -134,9 +128,6 @@ public:
   /// \param num_tasks Number of tasks
   LinearProgressLogger(std::ostream& out, std::size_t num_tasks);
 
-  /// \brief Destructor
-  ~LinearProgressLogger() override;
-
   /// \brief Notify the beginning of a task with the given status message
   void start_task(StringRef status) override;
 
@@ -159,9 +150,6 @@ class NoProgressLogger final : public ProgressLogger {
 public:
   /// \brief Constructor
   explicit NoProgressLogger(std::ostream& out);
-
-  /// \brief Destructor
-  ~NoProgressLogger() override;
 
   /// \brief Notify the beginning of a task with the given status message
   void start_task(StringRef status) override;

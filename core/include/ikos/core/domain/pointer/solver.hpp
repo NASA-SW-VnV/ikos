@@ -473,14 +473,30 @@ public:
 private:
   class BinaryOp {
   public:
+    /// \brief Constructor
+    BinaryOp() = default;
+
+    /// \brief No copy constructor
+    BinaryOp(const BinaryOp&) = delete;
+
+    /// \brief No move constructor
+    BinaryOp(BinaryOp&&) = delete;
+
+    /// \brief No copy assignment operator
+    BinaryOp& operator=(const BinaryOp&) = delete;
+
+    /// \brief No move assignment operator
+    BinaryOp& operator=(BinaryOp&&) = delete;
+
+    /// \brief Destructor
+    virtual ~BinaryOp() = default;
+
     virtual bool convergence_achieved(const PointerAbsValueT& before,
                                       const PointerAbsValueT& after) const = 0;
 
     virtual void apply(PointerAbsValueT& before,
                        const PointerAbsValueT& after,
                        std::size_t iteration) const = 0;
-
-    virtual ~BinaryOp() = default;
   };
 
   class Extrapolate final : public BinaryOp {

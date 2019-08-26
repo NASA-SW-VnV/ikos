@@ -182,9 +182,6 @@ public:
   /// \brief Constructor
   explicit TerminalLogger(std::ostream& out);
 
-  /// \brief Destructor
-  ~TerminalLogger() override;
-
   /// \brief This is called once when the logger becomes active
   void start_logger() override;
 

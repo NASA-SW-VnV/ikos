@@ -202,6 +202,8 @@ const char* HardwareAddressesException::what() const noexcept {
   return this->_errstr->c_str();
 }
 
+HardwareAddressesException::~HardwareAddressesException() = default;
+
 void HardwareAddressesException::create_errstr(StringRef pattern) {
   std::stringstream ss;
   switch (this->_kind) {

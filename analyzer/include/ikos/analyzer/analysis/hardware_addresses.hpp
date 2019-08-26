@@ -162,6 +162,9 @@ public:
   /// \brief Get the explanatory string
   const char* what() const noexcept override;
 
+  /// \brief Destructor
+  ~HardwareAddressesException() override;
+
 private:
   /// \brief Create the explanatory string
   void create_errstr(StringRef pattern);

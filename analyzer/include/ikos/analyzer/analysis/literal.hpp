@@ -190,11 +190,6 @@ public:
   public:
     using ResultType = R;
 
-  protected:
-    // For use as base class only
-    Visitor() = default;
-    ~Visitor() = default;
-
   }; // end class Visitor
 
 private:
