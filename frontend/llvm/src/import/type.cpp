@@ -92,7 +92,7 @@ TypeWithSignImporter::TypeWithSignImporter(ImportContext& ctx)
       _ar_data_layout(ctx.ar_data_layout),
       _translation_depth(0) {}
 
-TypeWithSignImporter::~TypeWithSignImporter() {}
+TypeWithSignImporter::~TypeWithSignImporter() = default;
 
 ar::Type* TypeWithSignImporter::translate_type(llvm::Type* type,
                                                ar::Signedness preferred) {
@@ -334,7 +334,7 @@ TypeWithDebugInfoImporter::TypeWithDebugInfoImporter(
                   languages.count(dwarf::DW_LANG_C_plus_plus_14) != 0;
 }
 
-TypeWithDebugInfoImporter::~TypeWithDebugInfoImporter() {}
+TypeWithDebugInfoImporter::~TypeWithDebugInfoImporter() = default;
 
 ar::Type* TypeWithDebugInfoImporter::translate_type(llvm::Type* type,
                                                     llvm::DIType* di_type) {
@@ -1495,7 +1495,7 @@ ar::FunctionType* TypeWithDebugInfoImporter::translate_function_di_type(
 TypeMatcher::TypeMatcher(ImportContext& ctx)
     : _llvm_data_layout(ctx.llvm_data_layout) {}
 
-TypeMatcher::~TypeMatcher() {}
+TypeMatcher::~TypeMatcher() = default;
 
 bool TypeMatcher::match_type(llvm::Type* llvm_type, ar::Type* ar_type) {
   return this->match_type(llvm_type, ar_type, ARTypeSet{});

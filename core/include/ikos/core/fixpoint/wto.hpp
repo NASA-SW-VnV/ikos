@@ -103,7 +103,7 @@ private:
 
 public:
   /// \brief Constructor
-  WtoNesting() {}
+  WtoNesting() = default;
 
   /// \brief Copy constructor
   WtoNesting(const WtoNesting&) = default;
