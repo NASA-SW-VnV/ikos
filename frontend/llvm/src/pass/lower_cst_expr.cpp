@@ -50,6 +50,8 @@
 #include <llvm/IR/InstIterator.h>
 #include <llvm/Pass.h>
 
+#include <ikos/core/support/assert.hpp>
+
 #include <ikos/frontend/llvm/pass.hpp>
 
 #define DEBUG_TYPE "lower-cst-expr"
@@ -146,7 +148,7 @@ struct LowerCstExprPass final : public FunctionPass {
   static Instruction* lowerCstExpr(ConstantExpr* CstExpr,
                                    Instruction* InsertionLoc) {
     Instruction* NewInst = CstExpr->getAsInstruction();
-    assert(NewInst && "Unhandled constant expression");
+    ikos_assert_msg(NewInst, "Unhandled constant expression");
     NewInst->setDebugLoc(InsertionLoc->getDebugLoc());
     NewInst->insertBefore(InsertionLoc);
     TotalLowered++;

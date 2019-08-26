@@ -49,6 +49,8 @@
 #include <llvm/Pass.h>
 #include <llvm/Support/Debug.h>
 
+#include <ikos/core/support/assert.hpp>
+
 #include <ikos/frontend/llvm/pass.hpp>
 
 #define DEBUG_TYPE "lower-select"
@@ -78,7 +80,7 @@ struct LowerSelectPass final : public FunctionPass {
         if (!(SI->getCondition()->getType()->isIntegerTy(1))) {
           // note that the flag can be a vector of Boolean
           dbgs() << "We only lower a select if the flag is Boolean.\n";
-          assert(false && "unexpected select");
+          ikos_unreachable("unexpected select");
         }
         Worklist.push_back(SI);
       }

@@ -63,6 +63,8 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/IPO.h>
 
+#include <ikos/core/support/assert.hpp>
+
 #include <ikos/frontend/llvm/pass.hpp>
 
 namespace ikos_pp = ikos::frontend::pass;
@@ -437,7 +439,7 @@ int main(int argc, char** argv) {
     // Ensure one single exit point per function (opt -mergereturn)
     pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
   } else {
-    assert(OptLevel == Custom);
+    ikos_assert(OptLevel == Custom);
 
     for (unsigned i = 0; i < CustomPassList.size(); ++i) {
       const llvm::PassInfo* pass_info = CustomPassList[i];
