@@ -144,7 +144,8 @@ bool DeadCodeChecker::needs_check(ar::Statement* prev_stmt,
     ar::BasicBlock* pred = preds.back();
     preds.pop_back();
 
-    auto it = pred->rbegin(), et = pred->rend();
+    auto it = pred->rbegin();
+    auto et = pred->rend();
 
     // Skip statements without debug info, as well as assignments
     while (it != et && skip_check(*it)) {

@@ -354,7 +354,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ConstantDomain inv1, inv2;
+  ConstantDomain inv1;
+  ConstantDomain inv2;
   inv1.assign(x, 0);
   inv2.set(x, Constant(0));
   BOOST_CHECK((inv1 == inv2));
@@ -382,7 +383,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ConstantDomain inv1, inv2;
+  ConstantDomain inv1;
+  ConstantDomain inv2;
   inv1.set(x, Constant(2));
   inv1.set(y, Constant(3));
 

@@ -267,7 +267,8 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((VarPackingDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  VarPackingDomain inv2, inv3;
+  VarPackingDomain inv2;
+  VarPackingDomain inv3;
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
@@ -381,7 +382,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((VarPackingDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  VarPackingDomain inv2, inv3;
+  VarPackingDomain inv2;
+  VarPackingDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -425,13 +427,16 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
        inv1));
   BOOST_CHECK((inv1.widening_threshold(inv1, ZNumber(10)) == inv1));
 
-  VarPackingDomain inv2, inv3;
+  VarPackingDomain inv2;
+  VarPackingDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.widening_threshold(inv2, ZNumber(10)) == inv3));
   BOOST_CHECK((inv2.widening_threshold(inv1, ZNumber(10)) == inv2));
 
-  VarPackingDomain inv4, inv5, inv6;
+  VarPackingDomain inv4;
+  VarPackingDomain inv5;
+  VarPackingDomain inv6;
   inv4.set(x, Interval(Bound(-1), Bound(0)));
   inv5.set(x, Interval(Bound(-2), Bound(0)));
   inv6.set(x, Interval(Bound(-10), Bound(0)));
@@ -477,7 +482,8 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
        VarPackingDomain::bottom()));
   BOOST_CHECK((inv1.narrowing_threshold(inv1, ZNumber(10)) == inv1));
 
-  VarPackingDomain inv2, inv3;
+  VarPackingDomain inv2;
+  VarPackingDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(1)));
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.narrowing_threshold(inv2, ZNumber(10)) == inv2));
@@ -486,7 +492,8 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
   BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(20)) == inv3));
   BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(5)) == inv3));
 
-  VarPackingDomain inv4, inv5;
+  VarPackingDomain inv4;
+  VarPackingDomain inv5;
   inv4.set(x, Interval(Bound(-10), Bound(0)));
   inv5.set(x, Interval(Bound(-1), Bound(0)));
   BOOST_CHECK((inv4.narrowing_threshold(inv5, ZNumber(10)) == inv5));
@@ -522,13 +529,15 @@ BOOST_AUTO_TEST_CASE(meet) {
       (VarPackingDomain::bottom().meet(inv1) == VarPackingDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  VarPackingDomain inv2, inv3;
+  VarPackingDomain inv2;
+  VarPackingDomain inv3;
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  VarPackingDomain inv4, inv5;
+  VarPackingDomain inv4;
+  VarPackingDomain inv5;
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -623,7 +632,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                VarPackingDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  VarPackingDomain inv2, inv3;
+  VarPackingDomain inv2;
+  VarPackingDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -636,7 +646,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDomain inv1, inv2;
+  VarPackingDomain inv1;
+  VarPackingDomain inv2;
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -672,7 +683,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDomain inv1, inv2;
+  VarPackingDomain inv1;
+  VarPackingDomain inv2;
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.set(y, Interval(Bound(1), Bound(2)));
 

@@ -213,7 +213,8 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((IntervalDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
   inv3.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
@@ -250,7 +251,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((IntervalDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
   inv3.set(x, Interval(Int(0, 32, Signed), Int::max(32, Signed)));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -283,13 +285,15 @@ BOOST_AUTO_TEST_CASE(meet) {
       (IntervalDomain::bottom().meet(inv1) == IntervalDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
   inv3.set(x, Interval(Int(0, 32, Signed)));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  IntervalDomain inv4, inv5;
+  IntervalDomain inv4;
+  IntervalDomain inv5;
   inv4.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
   inv4.set(y, Interval(Int(0, 32, Signed)));
   inv5.set(x, Interval(Int(0, 32, Signed)));
@@ -324,7 +328,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
       (IntervalDomain::bottom().narrowing(inv1) == IntervalDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -337,7 +342,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv1, inv2;
+  IntervalDomain inv1;
+  IntervalDomain inv2;
   inv1.assign(x, Int(0, 32, Signed));
   inv2.set(x, Interval(Int(0, 32, Signed)));
   BOOST_CHECK((inv1 == inv2));

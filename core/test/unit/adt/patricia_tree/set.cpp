@@ -153,7 +153,8 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_set) {
   BOOST_CHECK(std::distance(s.begin(), s.end()) == 99);
 
   // test leq
-  Set s1, s2;
+  Set s1;
+  Set s2;
   s1.insert(1);
   s2.insert(1);
   s2.insert(2);

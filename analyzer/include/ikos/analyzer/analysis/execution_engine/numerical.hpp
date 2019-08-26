@@ -3798,11 +3798,14 @@ public:
     ikos_assert(called->is_definition());
     ikos_assert(ar::TypeVerifier::is_valid_call(call, called->type()));
 
-    auto fit = called->param_begin(), fet = called->param_end();
-    auto ait = call->arg_begin(), aet = call->arg_end();
-    for (; fit != fet && ait != aet; ++fit, ++ait) {
-      this->init_global_operand(*ait);
-      this->assign(this->_lit_factory.get(*fit), this->_lit_factory.get(*ait));
+    auto param_it = called->param_begin();
+    auto param_et = called->param_end();
+    auto arg_it = call->arg_begin();
+    auto arg_et = call->arg_end();
+    for (; param_it != param_et && arg_it != arg_et; ++param_it, ++arg_it) {
+      this->init_global_operand(*arg_it);
+      this->assign(this->_lit_factory.get(*param_it),
+                   this->_lit_factory.get(*arg_it));
     }
   }
 

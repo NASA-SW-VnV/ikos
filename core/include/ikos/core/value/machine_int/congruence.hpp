@@ -113,7 +113,8 @@ private:
     }
 
     // lb, ub = [Int::min, Int::max]
-    ZNumber lb, ub;
+    ZNumber lb;
+    ZNumber ub;
     if (this->is_signed()) {
       lb = -power_of_2(this->_bit_width - 1);
       ub = power_of_2(this->_bit_width - 1) - 1;

@@ -1230,7 +1230,8 @@ public:
 
     // offset, size and value intervals
     Interval dest_intv = this->integers().to_interval(this->offset_var(dest));
-    Interval size_intv, value_intv;
+    Interval size_intv;
+    Interval value_intv;
 
     if (size.is_machine_int()) {
       size_intv = Interval(size.machine_int());

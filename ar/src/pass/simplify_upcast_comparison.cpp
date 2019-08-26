@@ -179,7 +179,8 @@ void SimplifyUpcastComparisonPass::insert_assert(Comparison* cmp,
                                                  IntegerConstant* constant,
                                                  IntegerConstant* new_constant,
                                                  bool bitcast) {
-  Value *left, *right;
+  Value* left;
+  Value* right;
   if (cmp->left() == constant) {
     left = new_constant;
     right = tracked_variable;

@@ -119,7 +119,8 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!UnionDomain::top().leq(UnionDomain::bottom()));
   BOOST_CHECK(UnionDomain::top().leq(UnionDomain::top()));
 
-  UnionDomain inv_a, inv_b;
+  UnionDomain inv_a;
+  UnionDomain inv_b;
   inv_a.assign(x, 1);
   BOOST_CHECK(inv_a.leq(inv_b));
 
@@ -204,7 +205,9 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK(
       (UnionDomain::top().join(UnionDomain::bottom()) == UnionDomain::top()));
 
-  UnionDomain inv_a, inv_b, inv_c;
+  UnionDomain inv_a;
+  UnionDomain inv_b;
+  UnionDomain inv_c;
 
   inv_a.set_to_top();
   inv_a.assign(x, 0);
@@ -314,7 +317,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((UnionDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  UnionDomain inv2, inv3;
+  UnionDomain inv2;
+  UnionDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -339,7 +343,8 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((UnionDomain::top().meet(UnionDomain::bottom()) ==
                UnionDomain::bottom()));
 
-  UnionDomain inv_a, inv_b;
+  UnionDomain inv_a;
+  UnionDomain inv_b;
   inv_a.assign(x, 0);
   inv_b.assign(x, 10);
   inv_a.join_with(inv_b);
@@ -356,13 +361,15 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((UnionDomain::bottom().meet(inv1) == UnionDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  UnionDomain inv2, inv3;
+  UnionDomain inv2;
+  UnionDomain inv3;
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  UnionDomain inv4, inv5;
+  UnionDomain inv4;
+  UnionDomain inv5;
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -395,7 +402,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((UnionDomain::bottom().narrowing(inv1) == UnionDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  UnionDomain inv2, inv3;
+  UnionDomain inv2;
+  UnionDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -408,7 +416,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv1, inv2;
+  UnionDomain inv1;
+  UnionDomain inv2;
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -436,7 +445,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv1, inv2;
+  UnionDomain inv1;
+  UnionDomain inv2;
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.set(y, Interval(Bound(1), Bound(2)));
 
@@ -593,7 +603,8 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv_a, inv_b;
+  UnionDomain inv_a;
+  UnionDomain inv_b;
   inv_a.assign(x, 0);
   inv_b.assign(x, 2);
   UnionDomain inv = inv_a.join(inv_b);

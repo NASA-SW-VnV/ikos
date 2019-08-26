@@ -62,7 +62,8 @@ const std::regex RangeRegex(
 static Interval parse_range(StringRef buffer,
                             unsigned n_line,
                             unsigned ptr_bit_width) {
-  uint64_t lbound, ubound;
+  uint64_t lbound;
+  uint64_t ubound;
   std::cmatch rmatch;
   if (!std::regex_match(buffer.data(), rmatch, RangeRegex)) {
     throw HardwareAddressesException(buffer,

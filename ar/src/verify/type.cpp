@@ -105,8 +105,10 @@ bool TypeVerifier::verify(Function* f, std::ostream& err) const {
   }
 
   // check each parameter
-  auto fun_param_it = f->param_begin(), fun_param_et = f->param_end();
-  auto type_param_it = type->param_begin(), type_param_et = type->param_end();
+  auto fun_param_it = f->param_begin();
+  auto fun_param_et = f->param_end();
+  auto type_param_it = type->param_begin();
+  auto type_param_et = type->param_end();
   while (fun_param_it != fun_param_et && type_param_it != type_param_et &&
          (this->_all || valid)) {
     if ((*fun_param_it)->type() != *type_param_it) {
@@ -732,8 +734,10 @@ public:
         isa< InlineAssemblyConstant >(s->called());
 
     // Check each parameter
-    auto call_arg_it = s->arg_begin(), call_arg_et = s->arg_end();
-    auto ty_param_it = fun_ty->param_begin(), ty_param_et = fun_ty->param_end();
+    auto call_arg_it = s->arg_begin();
+    auto call_arg_et = s->arg_end();
+    auto ty_param_it = fun_ty->param_begin();
+    auto ty_param_et = fun_ty->param_end();
     while (call_arg_it != call_arg_et && ty_param_it != ty_param_et) {
       Type* call_arg_type = (*call_arg_it)->type();
       Type* fun_param_type = *ty_param_it;
@@ -817,8 +821,10 @@ bool TypeVerifier::is_valid_call(ar::CallBase* call, ar::FunctionType* fun_ty) {
   }
 
   // Check each parameter
-  auto call_arg_it = call->arg_begin(), call_arg_et = call->arg_end();
-  auto ty_param_it = fun_ty->param_begin(), ty_param_et = fun_ty->param_end();
+  auto call_arg_it = call->arg_begin();
+  auto call_arg_et = call->arg_end();
+  auto ty_param_it = fun_ty->param_begin();
+  auto ty_param_et = fun_ty->param_end();
   while (call_arg_it != call_arg_et && ty_param_it != ty_param_et) {
     Type* call_arg_type = (*call_arg_it)->type();
     Type* fun_param_type = *ty_param_it;

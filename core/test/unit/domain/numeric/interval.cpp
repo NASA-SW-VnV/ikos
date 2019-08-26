@@ -234,7 +234,8 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((IntervalDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
@@ -271,7 +272,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((IntervalDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -304,13 +306,15 @@ BOOST_AUTO_TEST_CASE(meet) {
       (IntervalDomain::bottom().meet(inv1) == IntervalDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  IntervalDomain inv4, inv5;
+  IntervalDomain inv4;
+  IntervalDomain inv5;
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -345,7 +349,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
       (IntervalDomain::bottom().narrowing(inv1) == IntervalDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  IntervalDomain inv2, inv3;
+  IntervalDomain inv2;
+  IntervalDomain inv3;
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -358,7 +363,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv1, inv2;
+  IntervalDomain inv1;
+  IntervalDomain inv2;
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -386,7 +392,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv1, inv2;
+  IntervalDomain inv1;
+  IntervalDomain inv2;
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.set(y, Interval(Bound(1), Bound(2)));
 

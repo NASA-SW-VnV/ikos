@@ -1107,7 +1107,8 @@ public:
 
     auto it = cst.begin();
     auto it2 = ++cst.begin();
-    MatrixIndex i, j;
+    MatrixIndex i;
+    MatrixIndex j;
     const Number& c = cst.constant();
 
     if (cst.num_terms() == 1 && it->second == 1) {
@@ -1172,7 +1173,8 @@ public:
       } else if (cst.is_inequality() || cst.is_equality()) {
         auto it = cst.begin();
         auto it2 = ++cst.begin();
-        MatrixIndex i, j;
+        MatrixIndex i;
+        MatrixIndex j;
         const Number& c = cst.constant();
 
         if (cst.num_terms() == 1 && it->second == 1) {

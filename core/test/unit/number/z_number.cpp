@@ -461,7 +461,11 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   BOOST_CHECK((lcm(Z(21), Z(35)) == Z(105)));
 
   // gcd_extended
-  Z g, a, b, u, v;
+  Z g;
+  Z a;
+  Z b;
+  Z u;
+  Z v;
   gcd_extended(a = Z(0), b = Z(0), g, u, v);
   BOOST_CHECK((g == Z(0) && g == a * u + b * v));
   gcd_extended(a = Z(0), b = Z(2), g, u, v);

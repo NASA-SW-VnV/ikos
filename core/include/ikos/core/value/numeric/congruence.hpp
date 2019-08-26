@@ -261,7 +261,8 @@ public:
     } else {
       // pre: a and o.a != 0
       ZNumber x; // gcd(a, o.a)
-      ZNumber u, v;
+      ZNumber u;
+      ZNumber v;
       gcd_extended(this->_a, other._a, x, u, v);
       if (mod(this->_b, x) == mod(other._b, x)) {
         // See http://www.dsi.unive.it/~avp/domains.pdf

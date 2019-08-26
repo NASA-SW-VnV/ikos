@@ -477,7 +477,8 @@ inline Constant div(const Constant& lhs, const Constant& rhs) {
   } else if (lhs.is_top() || rhs.is_top()) {
     return Constant::top(lhs.bit_width(), lhs.sign());
   } else {
-    bool overflow, exact;
+    bool overflow;
+    bool exact;
     MachineInt n = div(lhs._n, rhs._n, overflow, exact);
     if (!overflow) {
       return Constant(n);
@@ -500,7 +501,8 @@ inline Constant div_exact(const Constant& lhs, const Constant& rhs) {
   } else if (lhs.is_top() || rhs.is_top()) {
     return Constant::top(lhs.bit_width(), lhs.sign());
   } else {
-    bool overflow, exact;
+    bool overflow;
+    bool exact;
     MachineInt n = div(lhs._n, rhs._n, overflow, exact);
     if (!overflow && exact) {
       return Constant(n);

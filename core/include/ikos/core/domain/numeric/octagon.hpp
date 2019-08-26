@@ -407,7 +407,10 @@ public:
     // Used to construct a list of variables that appear in both octagons.
     VarIndexMap temp;
 
-    MatrixIndex i1, j1, i2, j2;
+    MatrixIndex i1;
+    MatrixIndex j1;
+    MatrixIndex i2;
+    MatrixIndex j2;
     for (auto ito = other._var_index_map.begin();
          ito != other._var_index_map.end();
          ++ito) {
@@ -493,8 +496,12 @@ private:
 
     n.resize();
 
-    MatrixIndex i1, i2, i3, j1, j2, j3;
-    i1 = i2 = i3 = j1 = j2 = j3 = 0;
+    MatrixIndex i1 = 0;
+    MatrixIndex i2 = 0;
+    MatrixIndex i3 = 0;
+    MatrixIndex j1 = 0;
+    MatrixIndex j2 = 0;
+    MatrixIndex j3 = 0;
     for (auto it = n._var_index_map.begin(); it != n._var_index_map.end();
          ++it) {
       // Finds the union of each 2x2 identity matrix.
@@ -670,9 +677,16 @@ public:
       n.resize();
       n.set_normalized(false);
 
-      typename VarIndexMap::const_iterator testi1, testi2, testj1, testj2;
-      MatrixIndex i1, i2, i3, j1, j2, j3;
-      i1 = i2 = i3 = j1 = j2 = j3 = 0;
+      typename VarIndexMap::const_iterator testi1;
+      typename VarIndexMap::const_iterator testi2;
+      typename VarIndexMap::const_iterator testj1;
+      typename VarIndexMap::const_iterator testj2;
+      MatrixIndex i1 = 0;
+      MatrixIndex i2 = 0;
+      MatrixIndex i3 = 0;
+      MatrixIndex j1 = 0;
+      MatrixIndex j2 = 0;
+      MatrixIndex j3 = 0;
       for (auto it = n._var_index_map.begin(); it != n._var_index_map.end();
            ++it) {
         // Finds the intersection on each 2x2 identity matrix.
@@ -824,9 +838,16 @@ public:
       n.resize();
       n.set_normalized(false);
 
-      typename VarIndexMap::const_iterator testi1, testi2, testj1, testj2;
-      MatrixIndex i1, i2, i3, j1, j2, j3;
-      i1 = i2 = i3 = j1 = j2 = j3 = 0;
+      typename VarIndexMap::const_iterator testi1;
+      typename VarIndexMap::const_iterator testi2;
+      typename VarIndexMap::const_iterator testj1;
+      typename VarIndexMap::const_iterator testj2;
+      MatrixIndex i1 = 0;
+      MatrixIndex i2 = 0;
+      MatrixIndex i3 = 0;
+      MatrixIndex j1 = 0;
+      MatrixIndex j2 = 0;
+      MatrixIndex j3 = 0;
       for (auto it = n._var_index_map.begin(); it != n._var_index_map.end();
            ++it) {
         // Finds the narrowing on each 2x2 identity matrix.
@@ -1367,10 +1388,12 @@ public:
       return;
     }
 
-    bool v1, v2, is1_positive, is2_positive;
-    v1 = v2 = is1_positive = is2_positive = false;
-    MatrixIndex i, j;
-    i = j = 0;
+    bool v1 = false;
+    bool v2 = false;
+    bool is1_positive = false;
+    bool is2_positive = false;
+    MatrixIndex i = 0;
+    MatrixIndex j = 0;
     for (const auto& term : cst) {
       if (!v1) {
         // Calculates and loads information for the first variable.
@@ -1414,7 +1437,8 @@ public:
       return;
     }
     this->resize();
-    BoundT constant(cst.constant()), neg_constant(-cst.constant());
+    BoundT constant(cst.constant());
+    BoundT neg_constant(-cst.constant());
 
     if (cst.is_inequality()) { // Applies inequality constraints in the form of
                                // octagonal constraints.
@@ -1569,8 +1593,10 @@ public:
 
     LinearConstraintSystemT csts;
 
-    BoundT lb(0), rb(0);
-    MatrixIndex idx1(0), idx2(0);
+    BoundT lb(0);
+    BoundT rb(0);
+    MatrixIndex idx1 = 0;
+    MatrixIndex idx2 = 0;
     for (auto it = this->_var_index_map.begin();
          it != this->_var_index_map.end();
          ++it) {

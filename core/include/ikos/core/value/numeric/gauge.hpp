@@ -1374,7 +1374,8 @@ public:
       bool lb_is_finite = this->_lb.is_finite() && other._lb.is_finite();
       bool ub_is_finite = this->_ub.is_finite() && other._ub.is_finite();
 
-      Number lb_slope, ub_slope;
+      Number lb_slope;
+      Number ub_slope;
       if (v.is_number()) {
         Number v_num = *v.number();
 
@@ -1400,7 +1401,8 @@ public:
         }
       }
 
-      Number lb_new_cst, ub_new_cst;
+      Number lb_new_cst;
+      Number ub_new_cst;
       if (lb_is_finite) {
         lb_new_cst =
             this->_lb.constant() + this->_lb.coeff(k) * u - lb_slope * u;

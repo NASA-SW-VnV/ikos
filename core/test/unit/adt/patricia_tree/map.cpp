@@ -225,7 +225,8 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab2), std::end(tab2)));
 
   // test leq
-  Map m1, m2;
+  Map m1;
+  Map m2;
   m1.insert_or_assign(1, "hello");
   m1.insert_or_assign(2, "world");
   m2.insert_or_assign(1, "zzzzz");

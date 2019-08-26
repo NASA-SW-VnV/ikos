@@ -332,7 +332,9 @@ private:
 
   /// \brief Compute kill/gen sets for the given basic block
   void init(ar::BasicBlock* bb) {
-    LivenessDomainT kill, gen, all;
+    LivenessDomainT kill;
+    LivenessDomainT gen;
+    LivenessDomainT all;
 
     for (auto it = bb->rbegin(), et = bb->rend(); it != et; ++it) {
       ar::Statement* stmt = *it;

@@ -879,11 +879,13 @@ private:
 
     void process_intern_call(ar::CallBase* s, ar::Function* fun) {
       // Handle parameters
-      auto fit = fun->param_begin(), fet = fun->param_end();
-      auto ait = s->arg_begin(), aet = s->arg_end();
-      for (; fit != fet && ait != aet; ++fit, ++ait) {
-        this->assign(this->_lit_factory.get(*fit),
-                     this->_lit_factory.get(*ait));
+      auto param_it = fun->param_begin();
+      auto param_et = fun->param_end();
+      auto arg_it = s->arg_begin();
+      auto arg_et = s->arg_end();
+      for (; param_it != param_et && arg_it != arg_et; ++param_it, ++arg_it) {
+        this->assign(this->_lit_factory.get(*param_it),
+                     this->_lit_factory.get(*arg_it));
       }
 
       // Handle result

@@ -235,7 +235,8 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((CongruenceDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  CongruenceDomain inv2, inv3;
+  CongruenceDomain inv2;
+  CongruenceDomain inv3;
   inv2.set(x, Congruence(3));
   inv3.set(x, Congruence(ZNumber(2), ZNumber(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
@@ -274,7 +275,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((CongruenceDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  CongruenceDomain inv2, inv3;
+  CongruenceDomain inv2;
+  CongruenceDomain inv3;
   inv2.set(x, Congruence(3));
   inv3.set(x, Congruence(ZNumber(2), ZNumber(1)));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -313,13 +315,15 @@ BOOST_AUTO_TEST_CASE(meet) {
       (CongruenceDomain::bottom().meet(inv1) == CongruenceDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  CongruenceDomain inv2, inv3;
+  CongruenceDomain inv2;
+  CongruenceDomain inv3;
   inv2.set(x, Congruence(ZNumber(3), ZNumber(1)));
   inv3.set(x, Congruence(ZNumber(6), ZNumber(4)));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  CongruenceDomain inv4, inv5;
+  CongruenceDomain inv4;
+  CongruenceDomain inv5;
   inv4.set(x, Congruence(ZNumber(2), ZNumber(0)));
   inv4.set(y, Interval(0));
   inv5.set(x, Congruence(ZNumber(6), ZNumber(4)));
@@ -354,13 +358,15 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                CongruenceDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  CongruenceDomain inv2, inv3;
+  CongruenceDomain inv2;
+  CongruenceDomain inv3;
   inv2.set(x, Congruence(ZNumber(3), ZNumber(1)));
   inv3.set(x, Congruence(ZNumber(6), ZNumber(4)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv3));
   BOOST_CHECK((inv2.narrowing(inv1) == inv3));
 
-  CongruenceDomain inv4, inv5;
+  CongruenceDomain inv4;
+  CongruenceDomain inv5;
   inv4.set(x, Congruence(ZNumber(2), ZNumber(0)));
   inv4.set(y, Interval(0));
   inv5.set(x, Congruence(ZNumber(6), ZNumber(4)));
@@ -376,7 +382,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  CongruenceDomain inv1, inv2;
+  CongruenceDomain inv1;
+  CongruenceDomain inv2;
   inv1.assign(x, 0);
   inv2.set(x, Congruence(0));
   BOOST_CHECK((inv1 == inv2));
@@ -404,7 +411,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  CongruenceDomain inv1, inv2;
+  CongruenceDomain inv1;
+  CongruenceDomain inv2;
   inv1.set(x, Congruence(ZNumber(2), ZNumber(0)));
   inv1.set(y, Congruence(ZNumber(3), ZNumber(1)));
 

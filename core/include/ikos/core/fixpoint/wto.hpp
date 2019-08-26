@@ -151,7 +151,8 @@ private:
       return 0; // equals
     }
 
-    auto this_it = this->begin(), other_it = other.begin();
+    auto this_it = this->begin();
+    auto other_it = other.begin();
     while (this_it != this->end()) {
       if (other_it == other.end()) {
         return 1; // `this` is nested within `other`

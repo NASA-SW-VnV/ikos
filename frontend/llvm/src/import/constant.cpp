@@ -264,8 +264,10 @@ ar::StructConstant* ConstantImporter::translate_constant_struct(
   ikos_assert(cst->getNumOperands() == type->num_fields());
   fields.reserve(cst->getNumOperands());
 
-  auto op_it = cst->op_begin(), op_et = cst->op_end();
-  auto type_it = type->field_begin(), type_et = type->field_end();
+  auto op_it = cst->op_begin();
+  auto op_et = cst->op_end();
+  auto type_it = type->field_begin();
+  auto type_et = type->field_end();
   for (; op_it != op_et && type_it != type_et; ++op_it, ++type_it) {
     auto element = llvm::cast< llvm::Constant >(*op_it);
     ar::Value* ar_element =

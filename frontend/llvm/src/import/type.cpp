@@ -1341,8 +1341,10 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
   ar::Type* ar_ret_type = nullptr;
 
   // Parameters
-  auto param_it = fun_type->param_begin(), param_et = fun_type->param_end();
-  auto di_param_it = di_params.begin(), di_param_et = di_params.end();
+  auto param_it = fun_type->param_begin();
+  auto param_et = fun_type->param_end();
+  auto di_param_it = di_params.begin();
+  auto di_param_et = di_params.end();
 
   // Return type
   if (ret_type->isVoidTy() && remove_di_qualifiers(di_ret_type) != nullptr) {

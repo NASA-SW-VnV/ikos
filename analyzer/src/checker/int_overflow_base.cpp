@@ -196,7 +196,8 @@ IntOverflowCheckerBase::check_integer_overflow(
   const ZBound& lb = result_interval.lb();
   const ZBound& ub = result_interval.ub();
 
-  Result result_underflow, result_overflow;
+  Result result_underflow;
+  Result result_overflow;
 
   JsonDict info;
   info.put("left", to_json(left_interval));
