@@ -90,10 +90,10 @@ inline QInterval trim_bound(const QInterval& i, const QBound&) {
 template < typename Number, typename VariableRef, typename NumAbstractDomain >
 class LinearIntervalSolver {
 private:
-  static const std::size_t _large_system_cst_threshold = 3;
+  static const std::size_t LargeSystemCstThreshold = 3;
 
   /// \brief Cost of one propagation cycle for a dense 3x3 system of constraints
-  static const std::size_t _large_system_op_threshold = 27;
+  static const std::size_t LargeSystemOpThreshold = 27;
 
 private:
   using BoundT = Bound< Number >;
@@ -286,8 +286,8 @@ public:
 
     this->_max_op = this->_op_per_cycle * this->_max_cycles;
 
-    this->_is_large_system = this->_csts.size() > _large_system_cst_threshold ||
-                             this->_op_per_cycle > _large_system_op_threshold;
+    this->_is_large_system = this->_csts.size() > LargeSystemCstThreshold ||
+                             this->_op_per_cycle > LargeSystemOpThreshold;
 
     if (this->_is_large_system) {
       this->build_trigger_table();

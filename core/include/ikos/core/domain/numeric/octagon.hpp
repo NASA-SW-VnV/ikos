@@ -282,7 +282,7 @@ public:
 
 private:
   /// \brief Helper for normalization
-  static BoundT C(const BoundT& a,
+  static BoundT c(const BoundT& a,
                   const BoundT& b,
                   const BoundT& c,
                   const BoundT& d,
@@ -330,7 +330,7 @@ public:
         for (MatrixIndex j = 1; j <= 2 * num_var; ++j) {
           // to ensure the "closed" property
           self->_matrix(i, j) =
-              C(this->_matrix(i, j),
+              c(this->_matrix(i, j),
                 this->_matrix(i, 2 * k - 1) + this->_matrix(2 * k - 1, j),
                 this->_matrix(i, 2 * k) + this->_matrix(2 * k, j),
                 this->_matrix(i, 2 * k - 1) + this->_matrix(2 * k - 1, 2 * k) +

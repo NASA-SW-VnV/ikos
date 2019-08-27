@@ -128,8 +128,8 @@ private:
     // refine lower and upper bounds of the interval using congruences
     ikos_assert(this->_c.modulus() > 0);
 
-    ZNumber x = Congruence::R(this->_c, lb);
-    ZNumber y = Congruence::L(this->_c, ub);
+    ZNumber x = Congruence::r(this->_c, lb);
+    ZNumber y = Congruence::l(this->_c, ub);
 
     if (x > y) {
       this->set_to_bottom();

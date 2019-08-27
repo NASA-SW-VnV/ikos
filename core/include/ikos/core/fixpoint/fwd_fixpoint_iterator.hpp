@@ -149,8 +149,8 @@ private:
     if (it != table.end()) {
       return it->second;
     } else {
-      static AbstractValue bottom = AbstractValue::bottom();
-      return bottom;
+      static AbstractValue Bottom = AbstractValue::bottom();
+      return Bottom;
     }
   }
 

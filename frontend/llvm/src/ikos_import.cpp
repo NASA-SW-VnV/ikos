@@ -143,7 +143,7 @@ static ar::Formatter::FormatOptions make_format_options() {
 
 /// \brief Main for ikos-import
 int main(int argc, char** argv) {
-  llvm::InitLLVM X(argc, argv);
+  llvm::InitLLVM x(argc, argv);
 
   // Program name
   std::string progname = boost::filesystem::path(argv[0]).filename().string();

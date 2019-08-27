@@ -643,7 +643,7 @@ static llvm::cl::opt< bool > OrderGlobals(
 static bool colors_enabled() {
   // Use a function from llvm/lib/Support/WithColor.cpp so that the global
   // constructors are called, and the 'color' option is registered.
-  llvm::WithColor X(llvm::outs(), llvm::HighlightColor::String);
+  llvm::WithColor x(llvm::outs(), llvm::HighlightColor::String);
 
   const llvm::StringMap< llvm::cl::Option* >& opts =
       llvm::cl::getRegisteredOptions();
@@ -850,7 +850,7 @@ static void generate_dot(ar::Bundle* bundle,
 
 /// \brief Main for ikos-analyzer
 int main(int argc, char** argv) {
-  llvm::InitLLVM X(argc, argv);
+  llvm::InitLLVM x(argc, argv);
 
   // Program name
   std::string progname = boost::filesystem::path(argv[0]).filename().string();

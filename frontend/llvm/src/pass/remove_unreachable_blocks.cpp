@@ -72,6 +72,6 @@ INITIALIZE_PASS(RemoveUnreachableBlocksPass,
                 false,
                 false);
 
-FunctionPass* ikos::frontend::pass::createRemoveUnreachableBlocksPass() {
+FunctionPass* ikos::frontend::pass::create_remove_unreachable_blocks_pass() {
   return new RemoveUnreachableBlocksPass();
 }

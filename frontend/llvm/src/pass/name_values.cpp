@@ -58,51 +58,51 @@ namespace {
 struct NameValuesPass final : public ModulePass {
   static char ID; // Pass identification
 
-  unsigned GlobalIdx = 0;
+  unsigned global_idx = 0;
 
-  NameValuesPass() : ModulePass(ID), GlobalIdx(0) {}
+  NameValuesPass() : ModulePass(ID), global_idx(0) {}
 
   void getAnalysisUsage(AnalysisUsage& AU) const override {
     AU.setPreservesAll();
   }
 
-  bool runOnModule(Module& M) override {
-    for (auto I = M.global_begin(), E = M.global_end(); I != E; ++I) {
-      runOnGlobal(*I);
+  bool runOnModule(Module& m) override {
+    for (auto it = m.global_begin(), et = m.global_end(); it != et; ++it) {
+      run_on_global(*it);
     }
-    for (Function& F : M) {
-      runOnFunction(F);
-    }
-    return false;
-  }
-
-  bool runOnGlobal(GlobalVariable& G) {
-    if (!G.hasName()) {
-      G.setName("gv_" + std::to_string(++GlobalIdx));
+    for (Function& f : m) {
+      run_on_function(f);
     }
     return false;
   }
 
-  bool runOnFunction(Function& F) {
-    unsigned ArgIdx = 1;
-    for (auto I = F.arg_begin(), E = F.arg_end(); I != E; ++I, ++ArgIdx) {
-      Argument& A = *I;
+  bool run_on_global(GlobalVariable& g) {
+    if (!g.hasName()) {
+      g.setName("gv_" + std::to_string(++global_idx));
+    }
+    return false;
+  }
 
-      if (!A.hasName() && !A.getType()->isVoidTy()) {
-        A.setName("arg_" + std::to_string(ArgIdx));
+  bool run_on_function(Function& f) {
+    unsigned arg_idx = 1;
+    for (auto it = f.arg_begin(), et = f.arg_end(); it != et; ++it, ++arg_idx) {
+      Argument& a = *it;
+
+      if (!a.hasName() && !a.getType()->isVoidTy()) {
+        a.setName("arg_" + std::to_string(arg_idx));
       }
     }
 
-    unsigned BlockIdx = 0;
-    unsigned InstIdx = 0;
-    for (BasicBlock& BB : F) {
-      if (!BB.hasName()) {
-        BB.setName("bb_" + std::to_string(++BlockIdx));
+    unsigned block_idx = 0;
+    unsigned inst_idx = 0;
+    for (BasicBlock& bb : f) {
+      if (!bb.hasName()) {
+        bb.setName("bb_" + std::to_string(++block_idx));
       }
 
-      for (Instruction& I : BB) {
-        if (!I.hasName() && !I.getType()->isVoidTy()) {
-          I.setName("_" + std::to_string(++InstIdx));
+      for (Instruction& i : bb) {
+        if (!i.hasName() && !i.getType()->isVoidTy()) {
+          i.setName("_" + std::to_string(++inst_idx));
         }
       }
     }
@@ -119,6 +119,6 @@ char NameValuesPass::ID = 0;
 INITIALIZE_PASS(
     NameValuesPass, "name-values", "Names all unnamed values", false, false);
 
-ModulePass* ikos::frontend::pass::createNameValuesPass() {
+ModulePass* ikos::frontend::pass::create_name_values_pass() {
   return new NameValuesPass();
 }

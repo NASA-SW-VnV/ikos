@@ -51,30 +51,30 @@ namespace frontend {
 namespace pass {
 
 /// \brief Lower constant expressions into instructions
-llvm::FunctionPass* createLowerCstExprPass();
+llvm::FunctionPass* create_lower_cst_expr_pass();
 
 /// \brief Lower select instructions
 ///
 /// Lower select instructions to three new basic blocks and a phi instruction.
-llvm::FunctionPass* createLowerSelectPass();
+llvm::FunctionPass* create_lower_select_pass();
 
 /// \brief Mark all internal functions with the AlwaysInline attribute
-llvm::ModulePass* createMarkInternalInlinePass();
+llvm::ModulePass* create_mark_internal_inline_pass();
 
 /// \brief Mark as unreachable any non side-effect function that does not return
-llvm::ModulePass* createMarkNoReturnFunctionPass();
+llvm::ModulePass* create_mark_no_return_function_pass();
 
 /// \brief Name all unnamed values
-llvm::ModulePass* createNameValuesPass();
+llvm::ModulePass* create_name_values_pass();
 
 /// \brief Remove printf-like function calls
-llvm::FunctionPass* createRemovePrintfCallsPass();
+llvm::FunctionPass* create_remove_printf_calls_pass();
 
 /// \brief Remove blocks that are not reachable, including dead cycles
-llvm::FunctionPass* createRemoveUnreachableBlocksPass();
+llvm::FunctionPass* create_remove_unreachable_blocks_pass();
 
 /// \brief Initialize all passes linked into the ikos-pp library
-void initializeIkosPasses(llvm::PassRegistry&);
+void initialize_ikos_passes(llvm::PassRegistry&);
 
 } // end namespace pass
 } // end namespace frontend

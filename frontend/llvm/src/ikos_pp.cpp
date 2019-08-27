@@ -137,7 +137,7 @@ static llvm::cl::list< const llvm::PassInfo*, bool, llvm::PassNameParser >
 
 /// \brief Main for ikos-pp
 int main(int argc, char** argv) {
-  llvm::InitLLVM X(argc, argv);
+  llvm::InitLLVM x(argc, argv);
 
   // Program name
   std::string progname = boost::filesystem::path(argv[0]).filename().string();
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
   llvm::initializeExpandReductionsPass(registry);
   llvm::initializeWasmEHPreparePass(registry);
   llvm::initializeWriteBitcodePassPass(registry);
-  ikos_pp::initializeIkosPasses(registry);
+  ikos_pp::initialize_ikos_passes(registry);
 
   /*
    * Parse parameters
@@ -246,10 +246,10 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createLowerAtomicPass());
 
     // Lower constant expressions to instructions (ikos-pp -lower-cst-expr)
-    pass_manager.add(ikos_pp::createLowerCstExprPass());
+    pass_manager.add(ikos_pp::create_lower_cst_expr_pass());
 
     // Lower down select instructions (ikos-pp -lower-select)
-    pass_manager.add(ikos_pp::createLowerSelectPass());
+    pass_manager.add(ikos_pp::create_lower_select_pass());
 
     // Ensure one single exit point per function (opt -mergereturn)
     pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
@@ -259,7 +259,7 @@ int main(int argc, char** argv) {
 
     // MarkNoReturnFunctions only insert unreachable instructions if
     // the function does not have an exit block
-    pass_manager.add(ikos_pp::createMarkNoReturnFunctionPass());
+    pass_manager.add(ikos_pp::create_mark_no_return_function_pass());
 
     // Global dead code elimination (opt -globaldce)
     // note: unfortunately, it removes some debug info about global variables
@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createDeadCodeEliminationPass());
 
     // Remove unreachable blocks also dead cycles
-    pass_manager.add(ikos_pp::createRemoveUnreachableBlocksPass());
+    pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
 
     // Remove switch constructions (opt -lowerswitch)
     pass_manager.add(llvm::createLowerSwitchPass());
@@ -278,13 +278,13 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createLowerAtomicPass());
 
     // Lower constant expressions to instructions (ikos-pp -lower-cst-expr)
-    pass_manager.add(ikos_pp::createLowerCstExprPass());
+    pass_manager.add(ikos_pp::create_lower_cst_expr_pass());
 
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
 
     // Lower down select instructions (ikos-pp -lower-select)
-    pass_manager.add(ikos_pp::createLowerSelectPass());
+    pass_manager.add(ikos_pp::create_lower_select_pass());
 
     // Ensure one single exit point per function (opt -mergereturn)
     pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createGlobalDCEPass());
 
     // Remove unreachable blocks
-    pass_manager.add(ikos_pp::createRemoveUnreachableBlocksPass());
+    pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
 
     // Global optimizations (opt -globalopt)
     pass_manager.add(llvm::createGlobalOptimizerPass());
@@ -361,7 +361,7 @@ int main(int argc, char** argv) {
 
     if (InlineAll) {
       // Mark all functions always_inline (ikos-pp -mark-internal-inline)
-      pass_manager.add(ikos_pp::createMarkInternalInlinePass());
+      pass_manager.add(ikos_pp::create_mark_internal_inline_pass());
 
       // Inline always_inline functions (opt -always-inline)
       pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
@@ -371,7 +371,7 @@ int main(int argc, char** argv) {
     }
 
     // Remove unreachable blocks
-    pass_manager.add(ikos_pp::createRemoveUnreachableBlocksPass());
+    pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
 
     // Dead instruction elimination (opt -die)
     pass_manager.add(llvm::createDeadInstEliminationPass());
@@ -399,7 +399,7 @@ int main(int argc, char** argv) {
 
     // MarkNoReturnFunctions only insert unreachable instructions if
     // the function does not have an exit block.
-    pass_manager.add(ikos_pp::createMarkNoReturnFunctionPass());
+    pass_manager.add(ikos_pp::create_mark_no_return_function_pass());
 
     // Global dead code elimination (opt -globaldce)
     pass_manager.add(llvm::createGlobalDCEPass());
@@ -408,7 +408,7 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createDeadCodeEliminationPass());
 
     // Remove unreachable blocks also dead cycles
-    pass_manager.add(ikos_pp::createRemoveUnreachableBlocksPass());
+    pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
 
     // Remove switch constructions (opt -lowerswitch)
     pass_manager.add(llvm::createLowerSwitchPass());
@@ -417,7 +417,7 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createLowerAtomicPass());
 
     // Lower constant expressions to instructions (ikos-pp -lower-cst-expr)
-    pass_manager.add(ikos_pp::createLowerCstExprPass());
+    pass_manager.add(ikos_pp::create_lower_cst_expr_pass());
 
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
@@ -425,7 +425,7 @@ int main(int argc, char** argv) {
     // After lowering constant expressions we remove all
     // side-effect-free printf-like functions. This can trigger the
     // removal of global strings that only feed them.
-    pass_manager.add(ikos_pp::createRemovePrintfCallsPass());
+    pass_manager.add(ikos_pp::create_remove_printf_calls_pass());
 
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
@@ -434,7 +434,7 @@ int main(int argc, char** argv) {
     pass_manager.add(llvm::createGlobalDCEPass());
 
     // Lower down select instructions (ikos-pp -lower-select)
-    pass_manager.add(ikos_pp::createLowerSelectPass());
+    pass_manager.add(ikos_pp::create_lower_select_pass());
 
     // Ensure one single exit point per function (opt -mergereturn)
     pass_manager.add(llvm::createUnifyFunctionExitNodesPass());

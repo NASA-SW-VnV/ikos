@@ -332,8 +332,8 @@ private:
   /// \brief Get the manager for the given apron domain
   static ap_manager_t* manager() {
     // Initialized at first call
-    static ap_manager_t* man = apron::alloc_domain_manager(Domain);
-    return man;
+    static ap_manager_t* Man = apron::alloc_domain_manager(Domain);
+    return Man;
   }
 
   /// \brief Get the dimension associated to a variable

@@ -92,10 +92,10 @@ namespace log {
 LogLevel Level = LogLevel::All;
 
 // Default logger
-static TerminalLogger terminal_logger(std::cout);
+static TerminalLogger DefaultLogger(std::cout);
 
 /// \brief Global logger
-static Logger* Log = &terminal_logger;
+static Logger* Log = &DefaultLogger;
 
 void set_logger(Logger& logger) {
   Log->end_logger();

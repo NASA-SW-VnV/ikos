@@ -75,14 +75,14 @@ private:
   CongruenceT _c;
 
 private:
-  /// \brief R(c, a) is the smallest element of c greater or equal than a
-  static ZNumber R(const CongruenceT& c, const ZNumber& a) {
+  /// \brief r(c, a) is the smallest element of c greater or equal than a
+  static ZNumber r(const CongruenceT& c, const ZNumber& a) {
     ikos_assert(!c.is_bottom() && c.modulus() != 0);
     return a + mod(c.residue() - a, c.modulus());
   }
 
-  /// \brief L(c, a) is the greatest element of c smaller or equal than a
-  static ZNumber L(const CongruenceT& c, const ZNumber& a) {
+  /// \brief l(c, a) is the greatest element of c smaller or equal than a
+  static ZNumber l(const CongruenceT& c, const ZNumber& a) {
     ikos_assert(!c.is_bottom() && c.modulus() != 0);
     return a - mod(a - c.residue(), c.modulus());
   }
@@ -93,10 +93,10 @@ private:
   /// if (c.is_bottom() || i.is_bottom()) (bottom(), bottom());
   /// if (c = 0Z+a and a notin i)         (bottom(), bottom());
   /// if (c = 0Z+a)                       ([a,a]   , c);
-  /// if (i=[a,b] and R(c,a) > L(c,b))    (bottom(), bottom());
-  /// if (i=[a,b])                        ([R(c,a), L(c,b)], c);
-  /// if (i=[a,+oo])                      ([R(c,a), +oo], c);
-  /// if (i=[-oo,b])                      ([-oo, L(c,b)], c);
+  /// if (i=[a,b] and r(c,a) > l(c,b))    (bottom(), bottom());
+  /// if (i=[a,b])                        ([r(c,a), l(c,b)], c);
+  /// if (i=[a,+oo])                      ([r(c,a), +oo], c);
+  /// if (i=[-oo,b])                      ([-oo, l(c,b)], c);
   /// otherwise                           (i,c)
   void reduce() {
     if (this->_c.is_bottom()) {
@@ -134,8 +134,8 @@ private:
     const BoundT& ub = this->_i.ub();
 
     if (lb.is_finite() && ub.is_finite()) {
-      ZNumber x = R(this->_c, *lb.number());
-      ZNumber y = L(this->_c, *ub.number());
+      ZNumber x = r(this->_c, *lb.number());
+      ZNumber y = l(this->_c, *ub.number());
       if (x > y) {
         this->_i.set_to_bottom();
         this->_c.set_to_bottom();
@@ -146,10 +146,10 @@ private:
         this->_i = IntervalT(BoundT(x), BoundT(y));
       }
     } else if (lb.is_finite()) {
-      ZNumber x = R(this->_c, *lb.number());
+      ZNumber x = r(this->_c, *lb.number());
       this->_i = IntervalT(BoundT(x), ub);
     } else if (ub.is_finite()) {
-      ZNumber y = L(this->_c, *ub.number());
+      ZNumber y = l(this->_c, *ub.number());
       this->_i = IntervalT(lb, BoundT(y));
     }
   }

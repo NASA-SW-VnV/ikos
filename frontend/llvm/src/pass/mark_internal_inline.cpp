@@ -59,11 +59,11 @@ struct MarkInternalInlinePass final : public ModulePass {
     AU.setPreservesAll();
   }
 
-  bool runOnModule(Module& M) override {
+  bool runOnModule(Module& m) override {
     bool change = false;
-    for (Function& F : M) {
-      if (!F.isDeclaration() && F.hasLocalLinkage()) {
-        F.addFnAttr(Attribute::AlwaysInline);
+    for (Function& f : m) {
+      if (!f.isDeclaration() && f.hasLocalLinkage()) {
+        f.addFnAttr(Attribute::AlwaysInline);
         change = true;
       }
     }
@@ -82,6 +82,6 @@ INITIALIZE_PASS(MarkInternalInlinePass,
                 false,
                 false);
 
-ModulePass* ikos::frontend::pass::createMarkInternalInlinePass() {
+ModulePass* ikos::frontend::pass::create_mark_internal_inline_pass() {
   return new MarkInternalInlinePass();
 }

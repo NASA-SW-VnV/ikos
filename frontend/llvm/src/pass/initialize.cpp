@@ -43,7 +43,7 @@
 
 #include <ikos/frontend/llvm/pass.hpp>
 
-void ikos::frontend::pass::initializeIkosPasses(llvm::PassRegistry& PR) {
+void ikos::frontend::pass::initialize_ikos_passes(llvm::PassRegistry& PR) {
   llvm::initializeLowerCstExprPassPass(PR);
   llvm::initializeLowerSelectPassPass(PR);
   llvm::initializeMarkInternalInlinePassPass(PR);

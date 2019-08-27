@@ -68,38 +68,38 @@ struct LowerSelectPass final : public FunctionPass {
 
   void getAnalysisUsage(AnalysisUsage& /*AU*/) const override {}
 
-  bool runOnFunction(Function& F) override {
-    SmallVector< SelectInst*, 8 > Worklist;
+  bool runOnFunction(Function& f) override {
+    SmallVector< SelectInst*, 8 > worklist;
 
     // Initialization of the worklist with all select instructions within
     // the function
-    for (auto I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-      Instruction* Inst = &*I;
+    for (auto it = inst_begin(f), et = inst_end(f); it != et; ++it) {
+      Instruction* inst = &*it;
 
-      if (auto SI = dyn_cast< SelectInst >(Inst)) {
-        if (!(SI->getCondition()->getType()->isIntegerTy(1))) {
+      if (auto si = dyn_cast< SelectInst >(inst)) {
+        if (!(si->getCondition()->getType()->isIntegerTy(1))) {
           // note that the flag can be a vector of Boolean
           dbgs() << "We only lower a select if the flag is Boolean.\n";
           ikos_unreachable("unexpected select");
         }
-        Worklist.push_back(SI);
+        worklist.push_back(si);
       }
     }
 
-    bool change = !Worklist.empty();
+    bool change = !worklist.empty();
 
-    for (SelectInst* SI : Worklist) {
-      processSelectInst(SI);
+    for (SelectInst* si : worklist) {
+      process_select_inst(si);
     }
 
     return change;
   }
 
   /// \brief Lower the select instruction into three new blocks.
-  void processSelectInst(SelectInst* SI) {
-    BasicBlock* CurrentBlock = SI->getParent();
-    Function* F = CurrentBlock->getParent();
-    Value* Flag = SI->getCondition();
+  void process_select_inst(SelectInst* si) {
+    BasicBlock* current_block = si->getParent();
+    Function* f = current_block->getParent();
+    Value* flag = si->getCondition();
 
     // This splits a basic block into two at the specified instruction.
     // All instructions BEFORE the specified iterator stay as part of
@@ -107,53 +107,53 @@ struct LowerSelectPass final : public FunctionPass {
     // the original BB, and the rest of the instructions in the BB are
     // moved to the new BB, including the old terminator.
     // IMPORTANT: this function invalidates the specified iterator.
-    // IMPORTANT: note that the select instructions goes to AfterSelect
+    // IMPORTANT: note that the select instructions goes to after_select
     // Also note that this doesn't preserve any passes. To split blocks
     // while keeping loop information consistent, use the SplitBlock
     // utility function.
-    BasicBlock* AfterSelect = CurrentBlock->splitBasicBlock(SI);
-    BasicBlock* TrueBlock =
-        BasicBlock::Create(F->getContext(), "", F, AfterSelect);
-    BasicBlock* FalseBlock =
-        BasicBlock::Create(F->getContext(), "", F, AfterSelect);
+    BasicBlock* after_select = current_block->splitBasicBlock(si);
+    BasicBlock* true_block =
+        BasicBlock::Create(f->getContext(), "", f, after_select);
+    BasicBlock* false_block =
+        BasicBlock::Create(f->getContext(), "", f, after_select);
 
-    if (CurrentBlock->hasName()) {
-      AfterSelect->setName(CurrentBlock->getName() + ".AfterSelect");
-      TrueBlock->setName(CurrentBlock->getName() + ".TrueSelect");
-      FalseBlock->setName(CurrentBlock->getName() + ".FalseSelect");
+    if (current_block->hasName()) {
+      after_select->setName(current_block->getName() + ".AfterSelect");
+      true_block->setName(current_block->getName() + ".TrueSelect");
+      false_block->setName(current_block->getName() + ".FalseSelect");
     }
 
-    // Wire TrueBlock and FalseBlock to AfterSelect via unconditional branch
-    BranchInst* TrueBr = BranchInst::Create(AfterSelect, TrueBlock);
-    BranchInst* FalseBr = BranchInst::Create(AfterSelect, FalseBlock);
-    TrueBr->setDebugLoc(SI->getDebugLoc());
-    FalseBr->setDebugLoc(SI->getDebugLoc());
+    // Wire true_block and false_block to after_select via unconditional branch
+    BranchInst* true_br = BranchInst::Create(after_select, true_block);
+    BranchInst* false_br = BranchInst::Create(after_select, false_block);
+    true_br->setDebugLoc(si->getDebugLoc());
+    false_br->setDebugLoc(si->getDebugLoc());
 
     // Replace the unconditional branch added by splitBasicBlock
-    // with a conditional branch splitting on Flag **at the end** of
-    // CurrentBlock
-    CurrentBlock->getTerminator()->eraseFromParent();
-    BranchInst* Br =
-        BranchInst::Create(TrueBlock, FalseBlock, Flag, CurrentBlock);
-    Br->setDebugLoc(SI->getDebugLoc());
+    // with a conditional branch splitting on flag **at the end** of
+    // current_block
+    current_block->getTerminator()->eraseFromParent();
+    BranchInst* br =
+        BranchInst::Create(true_block, false_block, flag, current_block);
+    br->setDebugLoc(si->getDebugLoc());
 
     // Insert a phi node just before the select instruction.
-    PHINode* PHI = PHINode::Create(SI->getOperand(1)->getType(),
-                                   SI->getNumOperands(),
+    PHINode* phi = PHINode::Create(si->getOperand(1)->getType(),
+                                   si->getNumOperands(),
                                    "",
-                                   SI);
-    PHI->addIncoming(SI->getOperand(1), TrueBlock);
-    PHI->addIncoming(SI->getOperand(2), FalseBlock);
-    if (SI->hasName()) {
-      PHI->setName(SI->getName() + ".phi");
+                                   si);
+    phi->addIncoming(si->getOperand(1), true_block);
+    phi->addIncoming(si->getOperand(2), false_block);
+    if (si->hasName()) {
+      phi->setName(si->getName() + ".phi");
     }
-    PHI->setDebugLoc(SI->getDebugLoc());
+    phi->setDebugLoc(si->getDebugLoc());
 
     // Make sure any users of the select is now an user of the phi node.
-    SI->replaceAllUsesWith(PHI);
+    si->replaceAllUsesWith(phi);
 
     // Finally we remove the select instruction
-    SI->eraseFromParent();
+    si->eraseFromParent();
 
     TotalLowered++;
   }
@@ -170,6 +170,6 @@ INITIALIZE_PASS(LowerSelectPass,
                 false,
                 false);
 
-FunctionPass* ikos::frontend::pass::createLowerSelectPass() {
+FunctionPass* ikos::frontend::pass::create_lower_select_pass() {
   return new LowerSelectPass();
 }

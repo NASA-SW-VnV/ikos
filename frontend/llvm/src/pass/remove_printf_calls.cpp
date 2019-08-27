@@ -65,42 +65,42 @@ struct RemovePrintfCallsPass final : public FunctionPass {
 
   void getAnalysisUsage(AnalysisUsage& /*AU*/) const override {}
 
-  bool runOnFunction(Function& F) override {
-    SmallVector< CallInst*, 8 > ToErase;
+  bool runOnFunction(Function& f) override {
+    SmallVector< CallInst*, 8 > to_erase;
 
-    for (auto I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-      Instruction* Inst = &*I;
+    for (auto it = inst_begin(f), et = inst_end(f); it != et; ++it) {
+      Instruction* inst = &*it;
 
       // looking for empty users
-      if (!Inst->use_empty()) {
+      if (!inst->use_empty()) {
         continue;
       }
 
-      if (auto CI = dyn_cast< CallInst >(Inst)) {
-        Function* Called = CI->getCalledFunction();
+      if (auto ci = dyn_cast< CallInst >(inst)) {
+        Function* called = ci->getCalledFunction();
 
-        if (Called == nullptr) {
+        if (called == nullptr) {
           continue;
         }
 
-        if (Called->isDeclaration()) {
-          if (Called->getName() == "fprintf" || Called->getName() == "printf" ||
-              Called->getName() == "fputc" || Called->getName() == "putc" ||
-              Called->getName() == "fputs" || Called->getName() == "puts" ||
-              Called->getName() == "putchar" || Called->getName() == "fwrite" ||
-              Called->getName() == "write") {
-            ToErase.push_back(CI);
+        if (called->isDeclaration()) {
+          if (called->getName() == "fprintf" || called->getName() == "printf" ||
+              called->getName() == "fputc" || called->getName() == "putc" ||
+              called->getName() == "fputs" || called->getName() == "puts" ||
+              called->getName() == "putchar" || called->getName() == "fwrite" ||
+              called->getName() == "write") {
+            to_erase.push_back(ci);
             ++NumKilled;
           }
         }
       }
     }
 
-    for (CallInst* CI : ToErase) {
-      CI->eraseFromParent();
+    for (CallInst* ci : to_erase) {
+      ci->eraseFromParent();
     }
 
-    return !ToErase.empty();
+    return !to_erase.empty();
   }
 
 }; // end struct RemovePrintfCallsPass
@@ -115,6 +115,6 @@ INITIALIZE_PASS(RemovePrintfCallsPass,
                 false,
                 false);
 
-FunctionPass* ikos::frontend::pass::createRemovePrintfCallsPass() {
+FunctionPass* ikos::frontend::pass::create_remove_printf_calls_pass() {
   return new RemovePrintfCallsPass();
 }

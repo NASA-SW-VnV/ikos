@@ -90,14 +90,14 @@ private:
   /// \brief Return 2**n
   static ZNumber power_of_2(const ZNumber& n) { return ZNumber(1) << n; }
 
-  /// \brief R(c, a) is the smallest element of c greater or equal than a
-  static ZNumber R(const ZCongruence& c, const ZNumber& a) {
+  /// \brief r(c, a) is the smallest element of c greater or equal than a
+  static ZNumber r(const ZCongruence& c, const ZNumber& a) {
     ikos_assert(!c.is_bottom() && c.modulus() != 0);
     return a + mod(c.residue() - a, c.modulus());
   }
 
-  /// \brief L(c, a) is the greatest element of c smaller or equal than a
-  static ZNumber L(const ZCongruence& c, const ZNumber& a) {
+  /// \brief l(c, a) is the greatest element of c smaller or equal than a
+  static ZNumber l(const ZCongruence& c, const ZNumber& a) {
     ikos_assert(!c.is_bottom() && c.modulus() != 0);
     return a - mod(a - c.residue(), c.modulus());
   }
@@ -134,8 +134,8 @@ private:
     // aZ + b with a != 0
     ikos_assert(this->_c.modulus() > 0);
 
-    ZNumber x = R(this->_c, lb);
-    ZNumber y = L(this->_c, ub);
+    ZNumber x = r(this->_c, lb);
+    ZNumber y = l(this->_c, ub);
 
     if (x > y) {
       this->_c.set_to_bottom();

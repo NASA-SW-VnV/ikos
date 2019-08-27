@@ -67,37 +67,37 @@ struct MarkNoReturnFunctionPass final : public ModulePass {
     AU.addRequired< UnifyFunctionExitNodes >();
   }
 
-  bool runOnModule(Module& M) override {
+  bool runOnModule(Module& m) override {
     bool change = false;
-    for (Function& F : M) {
-      change = runOnFunction(F) || change;
+    for (Function& f : m) {
+      change = run_on_function(f) || change;
     }
     return change;
   }
 
-  bool runOnFunction(Function& F) {
-    if (F.isDeclaration()) {
+  bool run_on_function(Function& f) {
+    if (f.isDeclaration()) {
       return false;
     }
 
-    UnifyFunctionExitNodes* UFEN = &getAnalysis< UnifyFunctionExitNodes >(F);
-    if (UFEN->getReturnBlock() != nullptr) {
+    UnifyFunctionExitNodes* ufen = &getAnalysis< UnifyFunctionExitNodes >(f);
+    if (ufen->getReturnBlock() != nullptr) {
       return false;
     }
 
-    bool mayHaveSideEffects = false;
-    for (auto I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-      mayHaveSideEffects = mayHaveSideEffects || I->mayHaveSideEffects();
+    bool may_have_side_effects = false;
+    for (auto it = inst_begin(f), et = inst_end(f); it != et; ++it) {
+      may_have_side_effects = may_have_side_effects || it->mayHaveSideEffects();
     }
 
-    if (mayHaveSideEffects) {
+    if (may_have_side_effects) {
       return false;
     }
 
-    BasicBlock& Entry = F.getEntryBlock();
-    if (Entry.begin() != Entry.end()) {
-      Instruction& I = *(Entry.begin());
-      changeToUnreachable(&I, false);
+    BasicBlock& entry = f.getEntryBlock();
+    if (entry.begin() != entry.end()) {
+      Instruction& i = *(entry.begin());
+      changeToUnreachable(&i, false);
       NumNoReturn++;
       return true;
     }
@@ -118,6 +118,6 @@ INITIALIZE_PASS(
     false,
     false);
 
-ModulePass* ikos::frontend::pass::createMarkNoReturnFunctionPass() {
+ModulePass* ikos::frontend::pass::create_mark_no_return_function_pass() {
   return new MarkNoReturnFunctionPass();
 }

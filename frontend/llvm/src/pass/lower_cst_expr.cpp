@@ -77,48 +77,48 @@ struct LowerCstExprPass final : public FunctionPass {
   }
 
   bool runOnFunction(Function& F) override {
-    SmallPtrSet< Instruction*, 8 > Worklist;
+    SmallPtrSet< Instruction*, 8 > worklist;
 
-    for (auto I = inst_begin(F), E = inst_end(F); I != E; ++I) {
-      Instruction* Inst = &*I;
+    for (auto it = inst_begin(F), et = inst_end(F); it != et; ++it) {
+      Instruction* inst = &*it;
 
-      if (hasCstExpr(Inst)) {
-        Worklist.insert(Inst);
+      if (has_cst_expr(inst)) {
+        worklist.insert(inst);
       }
     }
 
-    bool change = !Worklist.empty();
+    bool change = !worklist.empty();
 
-    while (!Worklist.empty()) {
-      Instruction* Inst = *Worklist.begin();
-      Worklist.erase(Inst);
+    while (!worklist.empty()) {
+      Instruction* inst = *worklist.begin();
+      worklist.erase(inst);
 
-      if (auto PHI = dyn_cast< PHINode >(Inst)) {
-        for (unsigned i = 0; i < PHI->getNumIncomingValues(); ++i) {
-          Value* IncomingValue = PHI->getIncomingValue(i);
+      if (auto phi = dyn_cast< PHINode >(inst)) {
+        for (unsigned i = 0; i < phi->getNumIncomingValues(); ++i) {
+          Value* incoming_value = phi->getIncomingValue(i);
 
-          if (auto CstExpr = dyn_cast< ConstantExpr >(IncomingValue)) {
-            BasicBlock* IncomingBlock = PHI->getIncomingBlock(i);
-            Instruction* InsertLoc = IncomingBlock->getTerminator();
-            Instruction* NewInst = lowerCstExpr(CstExpr, InsertLoc);
+          if (auto cst_expr = dyn_cast< ConstantExpr >(incoming_value)) {
+            BasicBlock* incoming_block = phi->getIncomingBlock(i);
+            Instruction* insert_loc = incoming_block->getTerminator();
+            Instruction* new_inst = lower_cst_expr(cst_expr, insert_loc);
 
-            for (unsigned j = i; j < PHI->getNumIncomingValues(); j++) {
-              if (PHI->getIncomingValue(j) == IncomingValue &&
-                  PHI->getIncomingBlock(j) == IncomingBlock) {
-                PHI->setIncomingValue(j, NewInst);
+            for (unsigned j = i; j < phi->getNumIncomingValues(); j++) {
+              if (phi->getIncomingValue(j) == incoming_value &&
+                  phi->getIncomingBlock(j) == incoming_block) {
+                phi->setIncomingValue(j, new_inst);
               }
             }
 
-            Worklist.insert(NewInst);
+            worklist.insert(new_inst);
           }
         }
       } else {
-        for (unsigned i = 0; i < Inst->getNumOperands(); ++i) {
-          Value* Operand = Inst->getOperand(i);
-          if (auto CstExpr = dyn_cast< ConstantExpr >(Operand)) {
-            Instruction* NewInst = lowerCstExpr(CstExpr, Inst);
-            Inst->replaceUsesOfWith(CstExpr, NewInst);
-            Worklist.insert(NewInst);
+        for (unsigned i = 0; i < inst->getNumOperands(); ++i) {
+          Value* operand = inst->getOperand(i);
+          if (auto cst_expr = dyn_cast< ConstantExpr >(operand)) {
+            Instruction* new_inst = lower_cst_expr(cst_expr, inst);
+            inst->replaceUsesOfWith(cst_expr, new_inst);
+            worklist.insert(new_inst);
           }
         }
       }
@@ -129,15 +129,15 @@ struct LowerCstExprPass final : public FunctionPass {
 
   /// \brief Return true if the given instruction has constant expression
   /// operands
-  static bool hasCstExpr(Instruction* Inst) {
-    if (isa< LandingPadInst >(Inst)) {
+  static bool has_cst_expr(Instruction* inst) {
+    if (isa< LandingPadInst >(inst)) {
       // Skip landingpad (especially the catch clause)
       // It has to be the first instruction in the basic block, so we won't be
       // able to insert instructions before it to lower a constant expression.
       return false;
     }
-    for (auto I = Inst->op_begin(), E = Inst->op_end(); I != E; ++I) {
-      if (isa< ConstantExpr >(*I)) {
+    for (auto it = inst->op_begin(), et = inst->op_end(); it != et; ++it) {
+      if (isa< ConstantExpr >(*it)) {
         return true;
       }
     }
@@ -145,14 +145,14 @@ struct LowerCstExprPass final : public FunctionPass {
   }
 
   /// \brief Lower the given constant expression
-  static Instruction* lowerCstExpr(ConstantExpr* CstExpr,
-                                   Instruction* InsertionLoc) {
-    Instruction* NewInst = CstExpr->getAsInstruction();
-    ikos_assert_msg(NewInst, "Unhandled constant expression");
-    NewInst->setDebugLoc(InsertionLoc->getDebugLoc());
-    NewInst->insertBefore(InsertionLoc);
+  static Instruction* lower_cst_expr(ConstantExpr* cst_expr,
+                                     Instruction* insertion_loc) {
+    Instruction* new_inst = cst_expr->getAsInstruction();
+    ikos_assert_msg(new_inst, "Unhandled constant expression");
+    new_inst->setDebugLoc(insertion_loc->getDebugLoc());
+    new_inst->insertBefore(insertion_loc);
     TotalLowered++;
-    return NewInst;
+    return new_inst;
   }
 
 }; // end struct LowerCstExprPass
@@ -167,6 +167,6 @@ INITIALIZE_PASS(LowerCstExprPass,
                 false,
                 false);
 
-FunctionPass* ikos::frontend::pass::createLowerCstExprPass() {
+FunctionPass* ikos::frontend::pass::create_lower_cst_expr_pass() {
   return new LowerCstExprPass();
 }
