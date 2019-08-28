@@ -202,7 +202,7 @@ VariableFactory::~VariableFactory() = default;
 LocalVariable* VariableFactory::get_local(ar::LocalVariable* var) {
   auto it = this->_local_variable_map.find(var);
   if (it == this->_local_variable_map.end()) {
-    auto vn = std::unique_ptr< LocalVariable >(new LocalVariable(var));
+    auto vn = std::make_unique< LocalVariable >(var);
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
     auto res = this->_local_variable_map.try_emplace(var, std::move(vn));
@@ -216,7 +216,7 @@ LocalVariable* VariableFactory::get_local(ar::LocalVariable* var) {
 GlobalVariable* VariableFactory::get_global(ar::GlobalVariable* var) {
   auto it = this->_global_variable_map.find(var);
   if (it == this->_global_variable_map.end()) {
-    auto vn = std::unique_ptr< GlobalVariable >(new GlobalVariable(var));
+    auto vn = std::make_unique< GlobalVariable >(var);
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
     auto res = this->_global_variable_map.try_emplace(var, std::move(vn));
@@ -230,7 +230,7 @@ GlobalVariable* VariableFactory::get_global(ar::GlobalVariable* var) {
 InternalVariable* VariableFactory::get_internal(ar::InternalVariable* var) {
   auto it = this->_internal_variable_map.find(var);
   if (it == this->_internal_variable_map.end()) {
-    auto vn = std::unique_ptr< InternalVariable >(new InternalVariable(var));
+    auto vn = std::make_unique< InternalVariable >(var);
     if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
       vn->set_offset_var(
           std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
@@ -247,8 +247,7 @@ InlineAssemblyPointerVariable* VariableFactory::get_asm_ptr(
     ar::InlineAssemblyConstant* cst) {
   auto it = this->_inline_asm_pointer_map.find(cst);
   if (it == this->_inline_asm_pointer_map.end()) {
-    auto vn = std::unique_ptr< InlineAssemblyPointerVariable >(
-        new InlineAssemblyPointerVariable(cst));
+    auto vn = std::make_unique< InlineAssemblyPointerVariable >(cst);
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
     auto res = this->_inline_asm_pointer_map.try_emplace(cst, std::move(vn));
@@ -262,8 +261,7 @@ InlineAssemblyPointerVariable* VariableFactory::get_asm_ptr(
 FunctionPointerVariable* VariableFactory::get_function_ptr(ar::Function* fun) {
   auto it = this->_function_pointer_map.find(fun);
   if (it == this->_function_pointer_map.end()) {
-    auto vn = std::unique_ptr< FunctionPointerVariable >(
-        new FunctionPointerVariable(fun));
+    auto vn = std::make_unique< FunctionPointerVariable >(fun);
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
     auto res = this->_function_pointer_map.try_emplace(fun, std::move(vn));
@@ -299,8 +297,7 @@ CellVariable* VariableFactory::get_cell(MemoryLocation* address,
     ar::Type* type = ar::IntegerType::get(this->_ar_context,
                                           bit_width.to< unsigned >(),
                                           sign);
-    auto vn = std::unique_ptr< CellVariable >(
-        new CellVariable(type, address, offset, size));
+    auto vn = std::make_unique< CellVariable >(type, address, offset, size);
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
     auto res = this->_cell_map.emplace(key, std::move(vn));
@@ -314,8 +311,7 @@ CellVariable* VariableFactory::get_cell(MemoryLocation* address,
 AllocSizeVariable* VariableFactory::get_alloc_size(MemoryLocation* address) {
   auto it = this->_alloc_size_map.find(address);
   if (it == this->_alloc_size_map.end()) {
-    auto vn = std::unique_ptr< AllocSizeVariable >(
-        new AllocSizeVariable(this->_size_type, address));
+    auto vn = std::make_unique< AllocSizeVariable >(this->_size_type, address);
     auto res = this->_alloc_size_map.try_emplace(address, std::move(vn));
     ikos_assert(res.second);
     return res.first->second.get();
@@ -327,7 +323,7 @@ AllocSizeVariable* VariableFactory::get_alloc_size(MemoryLocation* address) {
 ReturnVariable* VariableFactory::get_return(ar::Function* fun) {
   auto it = this->_return_variable_map.find(fun);
   if (it == this->_return_variable_map.end()) {
-    auto vn = std::unique_ptr< ReturnVariable >(new ReturnVariable(fun));
+    auto vn = std::make_unique< ReturnVariable >(fun);
     if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
       vn->set_offset_var(
           std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
@@ -344,8 +340,7 @@ NamedShadowVariable* VariableFactory::get_named_shadow(ar::Type* type,
                                                        llvm::StringRef name) {
   auto it = this->_named_shadow_variable_map.find(name);
   if (it == this->_named_shadow_variable_map.end()) {
-    auto vn = std::unique_ptr< NamedShadowVariable >(
-        new NamedShadowVariable(type, name));
+    auto vn = std::make_unique< NamedShadowVariable >(type, name);
     if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
       vn->set_offset_var(
           std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
@@ -361,8 +356,7 @@ NamedShadowVariable* VariableFactory::get_named_shadow(ar::Type* type,
 
 UnnamedShadowVariable* VariableFactory::create_unnamed_shadow(ar::Type* type) {
   std::size_t id = this->_unnamed_shadow_variable_vec.size();
-  auto vn = std::unique_ptr< UnnamedShadowVariable >(
-      new UnnamedShadowVariable(type, id));
+  auto vn = std::make_unique< UnnamedShadowVariable >(type, id);
   if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
