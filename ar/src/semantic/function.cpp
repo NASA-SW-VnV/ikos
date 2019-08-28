@@ -115,8 +115,10 @@ void Function::set_name(std::string new_name) {
   this->_parent->rename_function(this, prev_name, this->_name);
 }
 
-void Function::add_local_variable(std::unique_ptr< LocalVariable > lv) {
+LocalVariable* Function::add_local_variable(
+    std::unique_ptr< LocalVariable > lv) {
   this->_local_vars.emplace_back(std::move(lv));
+  return this->_local_vars.back().get();
 }
 
 } // end namespace ar

@@ -59,9 +59,8 @@ BasicBlock::BasicBlock(Code* code) : _parent(code) {
 BasicBlock::~BasicBlock() = default;
 
 BasicBlock* BasicBlock::create(Code* code) {
-  auto bb = new BasicBlock(code);
-  code->add_basic_block(std::unique_ptr< BasicBlock >(bb));
-  return bb;
+  auto bb = std::unique_ptr< BasicBlock >(new BasicBlock(code));
+  return code->add_basic_block(std::move(bb));
 }
 
 Context& BasicBlock::context() const {
@@ -292,8 +291,9 @@ void Code::set_exit_block(BasicBlock* bb) {
   this->_exit_block = bb;
 }
 
-void Code::add_basic_block(std::unique_ptr< BasicBlock > bb) {
+BasicBlock* Code::add_basic_block(std::unique_ptr< BasicBlock > bb) {
   this->_blocks.emplace_back(std::move(bb));
+  return this->_blocks.back().get();
 }
 
 void Code::erase_basic_block(BasicBlock* bb) {
@@ -312,8 +312,10 @@ void Code::erase_basic_block(BasicBlock* bb) {
                       this->_blocks.end());
 }
 
-void Code::add_internal_variable(std::unique_ptr< InternalVariable > iv) {
+InternalVariable* Code::add_internal_variable(
+    std::unique_ptr< InternalVariable > iv) {
   this->_internal_vars.emplace_back(std::move(iv));
+  return this->_internal_vars.back().get();
 }
 
 } // end namespace ar

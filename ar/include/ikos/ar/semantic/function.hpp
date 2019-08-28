@@ -229,7 +229,9 @@ public:
 
 private:
   /// \brief Add a local variable in the function
-  void add_local_variable(std::unique_ptr< LocalVariable >);
+  ///
+  /// \returns a pointer on the local variable
+  LocalVariable* add_local_variable(std::unique_ptr< LocalVariable >);
 
   // friends
   friend class LocalVariable;

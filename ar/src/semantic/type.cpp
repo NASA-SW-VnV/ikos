@@ -315,9 +315,10 @@ StructType* StructType::create(Context& ctx, Layout layout, bool packed) {
 }
 
 StructType* StructType::create(Context& ctx, bool packed) {
-  auto t = new StructType(packed);
-  ctx_impl(ctx).add_type(std::unique_ptr< Type >(t));
-  return t;
+  auto type = std::unique_ptr< StructType >(new StructType(packed));
+  auto ptr = type.get();
+  ctx_impl(ctx).add_type(std::move(type));
+  return ptr;
 }
 
 void StructType::set_layout(Layout layout) {
@@ -404,9 +405,10 @@ void VectorType::dump(std::ostream& o) const {
 OpaqueType::OpaqueType() : AggregateType(OpaqueKind) {}
 
 OpaqueType* OpaqueType::create(Context& ctx) {
-  auto t = new OpaqueType();
-  ctx_impl(ctx).add_type(std::unique_ptr< Type >(t));
-  return t;
+  auto type = std::unique_ptr< OpaqueType >(new OpaqueType());
+  auto ptr = type.get();
+  ctx_impl(ctx).add_type(std::move(type));
+  return ptr;
 }
 
 OpaqueType* OpaqueType::libc_file_type(Context& ctx) {

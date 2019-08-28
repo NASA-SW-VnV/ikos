@@ -593,9 +593,10 @@ public:
     if (it != this->_blocks.end()) {
       return it->second.get();
     } else {
-      auto bb = new BasicBlockT(name);
-      this->_blocks.emplace(name, std::unique_ptr< BasicBlockT >(bb));
-      return bb;
+      auto bb = std::unique_ptr< BasicBlockT >(new BasicBlockT(name));
+      auto res = this->_blocks.emplace(name, std::move(bb));
+      ikos_assert(res.second);
+      return res.first->second.get();
     }
   }
 

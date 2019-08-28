@@ -237,7 +237,9 @@ public:
                               bool is_var_arg);
 
   /// \brief Add a type in the ContextImpl
-  void add_type(std::unique_ptr< Type >);
+  ///
+  /// \returns a pointer on the type
+  Type* add_type(std::unique_ptr< Type >);
 
   // value management
 

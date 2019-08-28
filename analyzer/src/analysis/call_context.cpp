@@ -56,10 +56,11 @@ CallContext* CallContextFactory::get_context(CallContext* parent,
   ikos_assert(parent != nullptr && call != nullptr);
   auto it = this->_map.find({parent, call});
   if (it == this->_map.end()) {
-    auto call_context = new CallContext(parent, call);
-    this->_map.try_emplace({parent, call},
-                           std::unique_ptr< CallContext >(call_context));
-    return call_context;
+    auto call_context =
+        std::unique_ptr< CallContext >(new CallContext(parent, call));
+    auto res = this->_map.try_emplace({parent, call}, std::move(call_context));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }

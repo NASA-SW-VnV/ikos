@@ -438,7 +438,9 @@ public:
 
 private:
   /// \brief Add a basic block in the code
-  void add_basic_block(std::unique_ptr< BasicBlock >);
+  ///
+  /// \returns a pointer on the basic block
+  BasicBlock* add_basic_block(std::unique_ptr< BasicBlock >);
 
 public:
   /// \brief Remove the given basic block
@@ -449,7 +451,9 @@ public:
 
 private:
   /// \brief Add an internal variable in the code
-  void add_internal_variable(std::unique_ptr< InternalVariable >);
+  ///
+  /// \returns a pointer on the interval variable
+  InternalVariable* add_internal_variable(std::unique_ptr< InternalVariable >);
 
   // friends
   friend class Function;

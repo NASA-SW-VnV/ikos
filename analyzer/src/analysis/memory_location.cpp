@@ -163,11 +163,11 @@ MemoryFactory::~MemoryFactory() = default;
 LocalMemoryLocation* MemoryFactory::get_local(ar::LocalVariable* var) {
   auto it = this->_local_memory_map.find(var);
   if (it == this->_local_memory_map.end()) {
-    auto ml = new LocalMemoryLocation(var);
-    this->_local_memory_map.try_emplace(var,
-                                        std::unique_ptr< LocalMemoryLocation >(
-                                            ml));
-    return ml;
+    auto ml =
+        std::unique_ptr< LocalMemoryLocation >(new LocalMemoryLocation(var));
+    auto res = this->_local_memory_map.try_emplace(var, std::move(ml));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -176,10 +176,11 @@ LocalMemoryLocation* MemoryFactory::get_local(ar::LocalVariable* var) {
 GlobalMemoryLocation* MemoryFactory::get_global(ar::GlobalVariable* var) {
   auto it = this->_global_memory_map.find(var);
   if (it == this->_global_memory_map.end()) {
-    auto ml = new GlobalMemoryLocation(var);
-    this->_global_memory_map
-        .try_emplace(var, std::unique_ptr< GlobalMemoryLocation >(ml));
-    return ml;
+    auto ml =
+        std::unique_ptr< GlobalMemoryLocation >(new GlobalMemoryLocation(var));
+    auto res = this->_global_memory_map.try_emplace(var, std::move(ml));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -188,10 +189,11 @@ GlobalMemoryLocation* MemoryFactory::get_global(ar::GlobalVariable* var) {
 FunctionMemoryLocation* MemoryFactory::get_function(ar::Function* fun) {
   auto it = this->_function_memory_map.find(fun);
   if (it == this->_function_memory_map.end()) {
-    auto ml = new FunctionMemoryLocation(fun);
-    this->_function_memory_map
-        .try_emplace(fun, std::unique_ptr< FunctionMemoryLocation >(ml));
-    return ml;
+    auto ml = std::unique_ptr< FunctionMemoryLocation >(
+        new FunctionMemoryLocation(fun));
+    auto res = this->_function_memory_map.try_emplace(fun, std::move(ml));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -206,10 +208,11 @@ AggregateMemoryLocation* MemoryFactory::get_aggregate(
     ar::InternalVariable* var) {
   auto it = this->_aggregate_memory_map.find(var);
   if (it == this->_aggregate_memory_map.end()) {
-    auto ml = new AggregateMemoryLocation(var);
-    this->_aggregate_memory_map
-        .try_emplace(var, std::unique_ptr< AggregateMemoryLocation >(ml));
-    return ml;
+    auto ml = std::unique_ptr< AggregateMemoryLocation >(
+        new AggregateMemoryLocation(var));
+    auto res = this->_aggregate_memory_map.try_emplace(var, std::move(ml));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -231,11 +234,11 @@ DynAllocMemoryLocation* MemoryFactory::get_dyn_alloc(ar::CallBase* call,
                                                      CallContext* context) {
   auto it = this->_dyn_alloc_map.find({call, context});
   if (it == this->_dyn_alloc_map.end()) {
-    auto ml = new DynAllocMemoryLocation(call, context);
-    this->_dyn_alloc_map.try_emplace({call, context},
-                                     std::unique_ptr< DynAllocMemoryLocation >(
-                                         ml));
-    return ml;
+    auto ml = std::unique_ptr< DynAllocMemoryLocation >(
+        new DynAllocMemoryLocation(call, context));
+    auto res = this->_dyn_alloc_map.try_emplace({call, context}, std::move(ml));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }

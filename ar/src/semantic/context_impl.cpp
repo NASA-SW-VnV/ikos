@@ -78,10 +78,12 @@ void ContextImpl::add_bundle(std::unique_ptr< Bundle > bundle) {
 IntegerType* ContextImpl::integer_type(unsigned bit_width, Signedness sign) {
   auto it = this->_integer_types.find(std::make_tuple(bit_width, sign));
   if (it == this->_integer_types.end()) {
-    auto type = new IntegerType(bit_width, sign);
-    this->_integer_types.emplace(std::make_tuple(bit_width, sign),
-                                 std::unique_ptr< IntegerType >(type));
-    return type;
+    auto type =
+        std::unique_ptr< IntegerType >(new IntegerType(bit_width, sign));
+    auto res = this->_integer_types.emplace(std::make_tuple(bit_width, sign),
+                                            std::move(type));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -90,9 +92,10 @@ IntegerType* ContextImpl::integer_type(unsigned bit_width, Signedness sign) {
 PointerType* ContextImpl::pointer_type(Type* pointee) {
   auto it = this->_pointer_types.find(pointee);
   if (it == this->_pointer_types.end()) {
-    auto type = new PointerType(pointee);
-    this->_pointer_types.emplace(pointee, std::unique_ptr< PointerType >(type));
-    return type;
+    auto type = std::unique_ptr< PointerType >(new PointerType(pointee));
+    auto res = this->_pointer_types.emplace(pointee, std::move(type));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -102,10 +105,13 @@ ArrayType* ContextImpl::array_type(Type* element_type,
                                    const ZNumber& num_element) {
   auto it = this->_array_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_array_types.end()) {
-    auto type = new ArrayType(element_type, num_element);
-    this->_array_types.emplace(std::make_tuple(element_type, num_element),
-                               std::unique_ptr< ArrayType >(type));
-    return type;
+    auto type =
+        std::unique_ptr< ArrayType >(new ArrayType(element_type, num_element));
+    auto res =
+        this->_array_types.emplace(std::make_tuple(element_type, num_element),
+                                   std::move(type));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -116,10 +122,13 @@ VectorType* ContextImpl::vector_type(ScalarType* element_type,
   auto it =
       this->_vector_types.find(std::make_tuple(element_type, num_element));
   if (it == this->_vector_types.end()) {
-    auto type = new VectorType(element_type, num_element);
-    this->_vector_types.emplace(std::make_tuple(element_type, num_element),
-                                std::unique_ptr< VectorType >(type));
-    return type;
+    auto type = std::unique_ptr< VectorType >(
+        new VectorType(element_type, num_element));
+    auto res =
+        this->_vector_types.emplace(std::make_tuple(element_type, num_element),
+                                    std::move(type));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -132,29 +141,32 @@ FunctionType* ContextImpl::function_type(
   auto it = this->_function_types.find(
       std::make_tuple(return_type, param_types, is_var_arg));
   if (it == this->_function_types.end()) {
-    auto type = new FunctionType(return_type, param_types, is_var_arg);
-    this->_function_types.emplace(std::make_tuple(return_type,
-                                                  param_types,
-                                                  is_var_arg),
-                                  std::unique_ptr< FunctionType >(type));
-    return type;
+    auto type = std::unique_ptr< FunctionType >(
+        new FunctionType(return_type, param_types, is_var_arg));
+    auto res = this->_function_types.emplace(std::make_tuple(return_type,
+                                                             param_types,
+                                                             is_var_arg),
+                                             std::move(type));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
 }
 
-void ContextImpl::add_type(std::unique_ptr< Type > type) {
+Type* ContextImpl::add_type(std::unique_ptr< Type > type) {
   this->_types.emplace_back(std::move(type));
+  return this->_types.back().get();
 }
 
 UndefinedConstant* ContextImpl::undefined_cst(Type* type) {
   auto it = this->_undefined_constants.find(type);
   if (it == this->_undefined_constants.end()) {
-    auto cst = new UndefinedConstant(type);
-    this->_undefined_constants.emplace(type,
-                                       std::unique_ptr< UndefinedConstant >(
-                                           cst));
-    return cst;
+    auto cst =
+        std::unique_ptr< UndefinedConstant >(new UndefinedConstant(type));
+    auto res = this->_undefined_constants.emplace(type, std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -164,10 +176,12 @@ IntegerConstant* ContextImpl::integer_cst(IntegerType* type,
                                           const MachineInt& value) {
   auto it = this->_integer_constants.find(std::make_tuple(type, value));
   if (it == this->_integer_constants.end()) {
-    auto cst = new IntegerConstant(type, value);
-    this->_integer_constants.emplace(std::make_tuple(type, value),
-                                     std::unique_ptr< IntegerConstant >(cst));
-    return cst;
+    auto cst =
+        std::unique_ptr< IntegerConstant >(new IntegerConstant(type, value));
+    auto res = this->_integer_constants.emplace(std::make_tuple(type, value),
+                                                std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -177,10 +191,11 @@ FloatConstant* ContextImpl::float_cst(FloatType* type,
                                       const std::string& value) {
   auto it = this->_float_constants.find(std::make_tuple(type, value));
   if (it == this->_float_constants.end()) {
-    auto cst = new FloatConstant(type, value);
-    this->_float_constants.emplace(std::make_tuple(type, value),
-                                   std::unique_ptr< FloatConstant >(cst));
-    return cst;
+    auto cst = std::unique_ptr< FloatConstant >(new FloatConstant(type, value));
+    auto res = this->_float_constants.emplace(std::make_tuple(type, value),
+                                              std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -189,9 +204,10 @@ FloatConstant* ContextImpl::float_cst(FloatType* type,
 NullConstant* ContextImpl::null_cst(PointerType* type) {
   auto it = this->_null_constants.find(type);
   if (it == this->_null_constants.end()) {
-    auto cst = new NullConstant(type);
-    this->_null_constants.emplace(type, std::unique_ptr< NullConstant >(cst));
-    return cst;
+    auto cst = std::unique_ptr< NullConstant >(new NullConstant(type));
+    auto res = this->_null_constants.emplace(type, std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -201,10 +217,12 @@ StructConstant* ContextImpl::struct_cst(StructType* type,
                                         const StructConstant::Values& values) {
   auto it = this->_struct_constants.find(std::make_tuple(type, values));
   if (it == this->_struct_constants.end()) {
-    auto cst = new StructConstant(type, values);
-    this->_struct_constants.emplace(std::make_tuple(type, values),
-                                    std::unique_ptr< StructConstant >(cst));
-    return cst;
+    auto cst =
+        std::unique_ptr< StructConstant >(new StructConstant(type, values));
+    auto res = this->_struct_constants.emplace(std::make_tuple(type, values),
+                                               std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -214,10 +232,12 @@ ArrayConstant* ContextImpl::array_cst(ArrayType* type,
                                       const ArrayConstant::Values& values) {
   auto it = this->_array_constants.find(std::make_tuple(type, values));
   if (it == this->_array_constants.end()) {
-    auto cst = new ArrayConstant(type, values);
-    this->_array_constants.emplace(std::make_tuple(type, values),
-                                   std::unique_ptr< ArrayConstant >(cst));
-    return cst;
+    auto cst =
+        std::unique_ptr< ArrayConstant >(new ArrayConstant(type, values));
+    auto res = this->_array_constants.emplace(std::make_tuple(type, values),
+                                              std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -227,10 +247,12 @@ VectorConstant* ContextImpl::vector_cst(VectorType* type,
                                         const VectorConstant::Values& values) {
   auto it = this->_vector_constants.find(std::make_tuple(type, values));
   if (it == this->_vector_constants.end()) {
-    auto cst = new VectorConstant(type, values);
-    this->_vector_constants.emplace(std::make_tuple(type, values),
-                                    std::unique_ptr< VectorConstant >(cst));
-    return cst;
+    auto cst =
+        std::unique_ptr< VectorConstant >(new VectorConstant(type, values));
+    auto res = this->_vector_constants.emplace(std::make_tuple(type, values),
+                                               std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -239,10 +261,11 @@ VectorConstant* ContextImpl::vector_cst(VectorType* type,
 AggregateZeroConstant* ContextImpl::aggregate_zero_cst(AggregateType* type) {
   auto it = this->_aggregate_zero_constants.find(type);
   if (it == this->_aggregate_zero_constants.end()) {
-    auto cst = new AggregateZeroConstant(type);
-    this->_aggregate_zero_constants
-        .emplace(type, std::unique_ptr< AggregateZeroConstant >(cst));
-    return cst;
+    auto cst = std::unique_ptr< AggregateZeroConstant >(
+        new AggregateZeroConstant(type));
+    auto res = this->_aggregate_zero_constants.emplace(type, std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -253,10 +276,12 @@ FunctionPointerConstant* ContextImpl::function_pointer_cst(Function* function) {
   if (it == this->_function_pointer_constants.end()) {
     ikos_assert_msg(function, "function is null");
     PointerType* fun_ptr_type = this->pointer_type(function->type());
-    auto cst = new FunctionPointerConstant(fun_ptr_type, function);
-    this->_function_pointer_constants
-        .emplace(function, std::unique_ptr< FunctionPointerConstant >(cst));
-    return cst;
+    auto cst = std::unique_ptr< FunctionPointerConstant >(
+        new FunctionPointerConstant(fun_ptr_type, function));
+    auto res =
+        this->_function_pointer_constants.emplace(function, std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }
@@ -266,11 +291,13 @@ InlineAssemblyConstant* ContextImpl::inline_assembly_cst(
     PointerType* type, const std::string& code) {
   auto it = this->_inline_assembly_constants.find(std::make_tuple(type, code));
   if (it == this->_inline_assembly_constants.end()) {
-    auto cst = new InlineAssemblyConstant(type, code);
-    this->_inline_assembly_constants
-        .emplace(std::make_tuple(type, code),
-                 std::unique_ptr< InlineAssemblyConstant >(cst));
-    return cst;
+    auto cst = std::unique_ptr< InlineAssemblyConstant >(
+        new InlineAssemblyConstant(type, code));
+    auto res =
+        this->_inline_assembly_constants.emplace(std::make_tuple(type, code),
+                                                 std::move(cst));
+    ikos_assert(res.second);
+    return res.first->second.get();
   } else {
     return it->second.get();
   }

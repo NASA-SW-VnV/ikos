@@ -363,9 +363,9 @@ LocalVariable::LocalVariable(Function* function,
 LocalVariable* LocalVariable::create(Function* function,
                                      PointerType* type,
                                      unsigned alignment) {
-  auto lv = new LocalVariable(function, type, alignment);
-  function->add_local_variable(std::unique_ptr< LocalVariable >(lv));
-  return lv;
+  auto lv = std::unique_ptr< LocalVariable >(
+      new LocalVariable(function, type, alignment));
+  return function->add_local_variable(std::move(lv));
 }
 
 Context& LocalVariable::context() const {
@@ -393,9 +393,9 @@ InternalVariable::InternalVariable(Code* code, Type* type)
 }
 
 InternalVariable* InternalVariable::create(Code* code, Type* type) {
-  auto iv = new InternalVariable(code, type);
-  code->add_internal_variable(std::unique_ptr< InternalVariable >(iv));
-  return iv;
+  auto iv =
+      std::unique_ptr< InternalVariable >(new InternalVariable(code, type));
+  return code->add_internal_variable(std::move(iv));
 }
 
 Context& InternalVariable::context() const {
