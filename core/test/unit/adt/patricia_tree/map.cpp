@@ -200,7 +200,8 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   }
 
   m.insert_or_assign(2, "world");
-  std::pair< Index, std::string > tab[] = {{2, "world"}, {1, "hello"}};
+  const std::array< std::pair< Index, std::string >, 2 > tab = {
+      {{2, "world"}, {1, "hello"}}};
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab), std::end(tab)));
 
   // insert 50, 51, ..., 99
@@ -221,7 +222,8 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   m.insert_or_assign(2, "world");
   m.transform([](Index, const std::string& s) { return s.substr(0, 1); });
 
-  const std::pair< Index, std::string > tab2[] = {{2, "w"}, {1, "h"}};
+  const std::array< std::pair< Index, std::string >, 2 > tab2 = {
+      {{2, "w"}, {1, "h"}}};
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab2), std::end(tab2)));
 
   // test leq
@@ -255,8 +257,8 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   m2.clear();
   m2.insert_or_assign(1, "zzzzz");
   m = m1.join(m2, std::plus< std::string >());
-  const std::pair< Index, std::string > tab3[] = {{2, "world"},
-                                                  {1, "hellozzzzz"}};
+  const std::array< std::pair< Index, std::string >, 2 > tab3 = {
+      {{2, "world"}, {1, "hellozzzzz"}}};
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab3), std::end(tab3)));
 
   // test intersect
@@ -266,6 +268,7 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   m2.clear();
   m2.insert_or_assign(1, "zzzzz");
   m = m1.intersect(m2, std::plus< std::string >());
-  const std::pair< Index, std::string > tab4[] = {{1, "hellozzzzz"}};
+  const std::array< std::pair< Index, std::string >, 1 > tab4 = {
+      {{1, "hellozzzzz"}}};
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab4), std::end(tab4)));
 }

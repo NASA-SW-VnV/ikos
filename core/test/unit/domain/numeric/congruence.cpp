@@ -94,15 +94,16 @@ BOOST_AUTO_TEST_CASE(iterators) {
   BOOST_CHECK((inv.begin() == inv.end()));
 
   inv.set(x, Congruence(1));
-  std::pair< Variable, Congruence > tab[] = {{x, Congruence(1)}};
+  std::array< std::pair< Variable, Congruence >, 1 > tab = {
+      {{x, Congruence(1)}}};
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab), std::end(tab)));
 
   inv.set(y, Congruence(ZNumber(2), ZNumber(0)));
-  std::pair< Variable, Congruence > tab2[] = {
+  std::array< std::pair< Variable, Congruence >, 2 > tab2 = {{
       {y, Congruence(ZNumber(2), ZNumber(0))},
       {x, Congruence(1)},
-  };
+  }};
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab2), std::end(tab2)));
 }

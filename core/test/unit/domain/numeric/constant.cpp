@@ -93,15 +93,15 @@ BOOST_AUTO_TEST_CASE(iterators) {
   BOOST_CHECK((inv.begin() == inv.end()));
 
   inv.set(x, Constant(1));
-  std::pair< Variable, Constant > tab[] = {{x, Constant(1)}};
+  std::array< std::pair< Variable, Constant >, 1 > tab = {{{x, Constant(1)}}};
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab), std::end(tab)));
 
   inv.set(y, Constant(2));
-  std::pair< Variable, Constant > tab2[] = {
+  std::array< std::pair< Variable, Constant >, 2 > tab2 = {{
       {y, Constant(2)},
       {x, Constant(1)},
-  };
+  }};
   BOOST_CHECK(
       std::equal(inv.begin(), inv.end(), std::begin(tab2), std::end(tab2)));
 }
