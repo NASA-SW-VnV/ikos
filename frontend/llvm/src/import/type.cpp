@@ -679,7 +679,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_array_di_type(
     auto subrange = llvm::cast< llvm::DISubrange >(di_element);
     auto count = subrange->getCount();
 
-    if (count.is< llvm::ConstantInt* >() &&
+    if (count.is< llvm::ConstantInt* >() != 0 &&
         !count.get< llvm::ConstantInt* >()->isMinusOne()) {
       auto count_int = count.get< llvm::ConstantInt* >();
       check_import(!count_int->isNegative(),

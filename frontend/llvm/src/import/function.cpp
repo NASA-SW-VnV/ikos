@@ -1566,7 +1566,7 @@ void FunctionImporter::translate_extractelement(
 
   // Translate offset
   auto index = llvm::dyn_cast< llvm::ConstantInt >(inst->getIndexOperand());
-  if (!index) {
+  if (index == nullptr) {
     throw ImportError("unsupported operand to llvm extractelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
@@ -1598,7 +1598,7 @@ void FunctionImporter::translate_insertelement(
 
   // Translate offset
   auto index = llvm::dyn_cast< llvm::ConstantInt >(inst->getOperand(2));
-  if (!index) {
+  if (index == nullptr) {
     throw ImportError("unsupported operand to llvm insertelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
