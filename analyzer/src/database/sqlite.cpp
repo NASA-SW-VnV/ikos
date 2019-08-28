@@ -469,6 +469,7 @@ DbIstream& operator>>(DbIstream& i, std::string& s) {
     throw DbError(SQLITE_MISUSE,
                   "DbIstream::>>: no more data for query '" + i.query() + "'");
   } else {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     s.assign(reinterpret_cast< const char* >(
         sqlite3_column_text(i._stmt, i._current_column)));
     i.skip_column();

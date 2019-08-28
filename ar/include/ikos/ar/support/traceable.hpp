@@ -76,6 +76,7 @@ public:
       typename T,
       class = std::enable_if_t< !std::is_base_of< Traceable, T >::value > >
   explicit Traceable(T* frontend)
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       : _frontend(reinterpret_cast< void* >(frontend)),
         _frontend_type_info(&typeid(T)) {}
 
@@ -99,6 +100,7 @@ public:
       typename T,
       class = std::enable_if_t< !std::is_base_of< Traceable, T >::value > >
   void set_frontend(T* frontend) {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     this->_frontend = reinterpret_cast< void* >(frontend);
     this->_frontend_type_info = &typeid(T);
   }
@@ -120,7 +122,8 @@ public:
     ikos_assert_msg(this->_frontend, "no front-end pointer");
     ikos_assert_msg(*this->_frontend_type_info == typeid(T),
                     "invalid front-end type");
-    return reinterpret_cast< T* >(this->_frontend); // NOLINT
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast< T* >(this->_frontend);
   }
 
   /// \brief Return the pointer to the front-end object, or null
@@ -129,7 +132,8 @@ public:
     ikos_assert_msg(this->_frontend == nullptr ||
                         *this->_frontend_type_info == typeid(T),
                     "invalid front-end type");
-    return reinterpret_cast< T* >(this->_frontend); // NOLINT
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    return reinterpret_cast< T* >(this->_frontend);
   }
 
 }; // end class Traceable

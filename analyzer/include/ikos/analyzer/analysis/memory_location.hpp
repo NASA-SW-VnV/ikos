@@ -377,6 +377,7 @@ namespace core {
 template <>
 struct IndexableTraits< analyzer::MemoryLocation* > {
   static Index index(const analyzer::MemoryLocation* m) {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return reinterpret_cast< Index >(m);
   }
 };

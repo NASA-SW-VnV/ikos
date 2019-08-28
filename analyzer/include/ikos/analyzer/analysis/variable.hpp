@@ -567,6 +567,7 @@ namespace core {
 template <>
 struct IndexableTraits< analyzer::Variable* > {
   static Index index(const analyzer::Variable* v) {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return reinterpret_cast< Index >(v);
   }
 };
