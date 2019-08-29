@@ -74,7 +74,7 @@
 ///
 /// If the macro IKOS_DISABLE_ASSERTS is defined, expands to ((void)0),
 /// regardless of whether the macro NDEBUG is defined.
-# define ikos_assert(expr) assert(expr) // NOLINT
+# define ikos_assert(expr) assert(expr)
 
 /// \macro ikos_assert_msg
 ///
@@ -82,7 +82,7 @@
 ///
 /// If the macro IKOS_DISABLE_ASSERTS is defined, expands to ((void)0),
 /// regardless of whether the macro NDEBUG is defined.
-# define ikos_assert_msg(expr, msg) assert((expr) && (msg)) // NOLINT
+# define ikos_assert_msg(expr, msg) assert((expr) && (msg))
 
 /// \macro ikos_unreachable
 ///
@@ -96,7 +96,7 @@
 ///
 /// Use this instead of assert(0). It conveys intent more clearly and allows
 /// compilers to omit some unnecessary code.
-# define ikos_unreachable(msg) assert(false && (msg)) // NOLINT
+# define ikos_unreachable(msg) assert(false && (msg))
 
 #endif
 
