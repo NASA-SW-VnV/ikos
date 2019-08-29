@@ -53,19 +53,24 @@ namespace ikos {
 namespace analyzer {
 
 namespace {
+
 using Interval = core::machine_int::Interval;
 
-const std::regex RangeRegex(
-    "^[\\s]*((?:0x)?[0-9a-f]+)[\\s]*-[\\s]*((?:0x)?[0-9a-f]+)[\\s]*$",
-    std::regex_constants::icase);
+/// \brief Get the range regex
+const std::regex& range_regex() {
+  static std::regex RangeRegex(
+      R"(^[\s]*((?:0x)?[0-9a-f]+)[\s]*-[\s]*((?:0x)?[0-9a-f]+)[\s]*$)",
+      std::regex_constants::icase);
+  return RangeRegex;
+}
 
-static Interval parse_range(StringRef buffer,
-                            unsigned n_line,
-                            unsigned ptr_bit_width) {
+Interval parse_range(StringRef buffer,
+                     unsigned n_line,
+                     unsigned ptr_bit_width) {
   uint64_t lbound;
   uint64_t ubound;
   std::cmatch rmatch;
-  if (!std::regex_match(buffer.data(), rmatch, RangeRegex)) {
+  if (!std::regex_match(buffer.data(), rmatch, range_regex())) {
     throw HardwareAddressesException(buffer,
                                      HardwareAddressesException::
                                          HardwareAddressesExceptionKind::
@@ -141,7 +146,7 @@ void HardwareAddresses::add_range_from_file(const std::string& filepath) {
       continue;
     }
     std::cmatch rmatch;
-    if (std::regex_match(line.c_str(), rmatch, RangeRegex)) {
+    if (std::regex_match(line.c_str(), rmatch, range_regex())) {
       this->add_range(
           parse_range(line, n_line, this->_data_layout.pointers.bit_width));
     } else {
