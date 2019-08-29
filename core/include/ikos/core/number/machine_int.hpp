@@ -107,6 +107,9 @@ public:
   /// \name Constructors
   /// @{
 
+  /// \brief Default constructor
+  MachineInt() = delete;
+
   /// \brief Create a machine integer from an integral type
   template < typename T,
              class = std::enable_if_t< IsSupportedIntegral< T >::value > >
