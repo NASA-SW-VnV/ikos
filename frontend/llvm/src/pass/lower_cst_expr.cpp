@@ -56,6 +56,7 @@
 
 #define DEBUG_TYPE "lower-cst-expr"
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace llvm;
 
 STATISTIC(TotalLowered, "Number of lowered constant expressions");

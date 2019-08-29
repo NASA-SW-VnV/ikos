@@ -52,6 +52,7 @@
 
 #define DEBUG_TYPE "remove-printf-call"
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace llvm;
 
 STATISTIC(NumKilled, "Number of printf-like calls removed");

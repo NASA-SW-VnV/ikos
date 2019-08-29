@@ -45,6 +45,7 @@
 
 #include <ikos/frontend/llvm/pass.hpp>
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace llvm;
 
 namespace {

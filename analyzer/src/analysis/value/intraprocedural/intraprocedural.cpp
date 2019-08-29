@@ -62,7 +62,10 @@ IntraproceduralValueAnalysis::IntraproceduralValueAnalysis(Context& ctx)
 IntraproceduralValueAnalysis::~IntraproceduralValueAnalysis() = default;
 
 void IntraproceduralValueAnalysis::run() {
+  // NOLINTNEXTLINE(google-build-using-namespace)
   using namespace value;
+
+  // NOLINTNEXTLINE(google-build-using-namespace)
   using namespace value::intraprocedural;
 
   // Bundle

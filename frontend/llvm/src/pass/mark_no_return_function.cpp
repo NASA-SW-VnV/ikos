@@ -51,6 +51,7 @@
 
 #define DEBUG_TYPE "mark-no-return-function"
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace llvm;
 
 STATISTIC(NumNoReturn, "Number of functions without exit point");

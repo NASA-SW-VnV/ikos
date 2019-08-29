@@ -55,6 +55,7 @@
 
 #define DEBUG_TYPE "lower-select"
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace llvm;
 
 STATISTIC(TotalLowered, "Number of lowered select instructions");

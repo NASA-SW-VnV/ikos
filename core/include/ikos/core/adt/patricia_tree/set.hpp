@@ -65,6 +65,7 @@ namespace core {
 // forward declarations
 namespace patricia_tree_set_impl {
 
+// NOLINTNEXTLINE(google-build-using-namespace)
 using namespace patricia_tree_utils;
 
 template < typename Key >
