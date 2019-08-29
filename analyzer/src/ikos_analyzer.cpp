@@ -1101,6 +1101,7 @@ int main(int argc, char** argv) {
     } else {
       ikos_unreachable("unreachable");
     }
+    return 0;
   } catch (analyzer::sqlite::DbError& err) {
     llvm::errs() << progname << ": " << OutputFilename
                  << ": error: " << err.what() << "\n";

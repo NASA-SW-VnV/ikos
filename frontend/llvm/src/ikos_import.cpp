@@ -162,128 +162,134 @@ int main(int argc, char** argv) {
   const char* overview = "ikos-import -- Translate LLVM bitcode into AR";
   llvm::cl::ParseCommandLineOptions(argc, argv, overview);
 
-  // Error diagnostic
-  llvm::SMDiagnostic err;
-
-  // Load the input module
-  std::unique_ptr< llvm::Module > module =
-      llvm::parseIRFile(InputFilename, err, llvm_context);
-  if (!module) {
-    err.print(progname.c_str(), llvm::errs());
-    return 1;
-  }
-
-  // Immediately run the verifier to catch any problems
-  if (!NoVerify && verifyModule(*module, &llvm::errs())) {
-    llvm::errs() << progname << ": " << InputFilename
-                 << ": error: input module is broken!\n";
-    return 2;
-  }
-
-  // Check for debug information
-  if (!llvm_to_ar::has_debug_info(*module)) {
-    llvm::errs() << progname << ": " << InputFilename
-                 << ": error: input module has no debug information\n";
-    return 3;
-  }
-
-  // AR context
-  ar::Context ar_context;
-
-  // Translate LLVM bitcode into AR
-  ar::Bundle* bundle = nullptr;
   try {
-    llvm_to_ar::Importer importer(ar_context);
-    bundle = importer.import(*module, make_import_options());
-  } catch (llvm_to_ar::ImportError& err) {
+    // Error diagnostic
+    llvm::SMDiagnostic err;
+
+    // Load the input module
+    std::unique_ptr< llvm::Module > module =
+        llvm::parseIRFile(InputFilename, err, llvm_context);
+    if (!module) {
+      err.print(progname.c_str(), llvm::errs());
+      return 1;
+    }
+
+    // Immediately run the verifier to catch any problems
+    if (!NoVerify && verifyModule(*module, &llvm::errs())) {
+      llvm::errs() << progname << ": " << InputFilename
+                   << ": error: input module is broken!\n";
+      return 2;
+    }
+
+    // Check for debug information
+    if (!llvm_to_ar::has_debug_info(*module)) {
+      llvm::errs() << progname << ": " << InputFilename
+                   << ": error: input module has no debug information\n";
+      return 3;
+    }
+
+    // AR context
+    ar::Context ar_context;
+
+    // Translate LLVM bitcode into AR
+    ar::Bundle* bundle = nullptr;
+    try {
+      llvm_to_ar::Importer importer(ar_context);
+      bundle = importer.import(*module, make_import_options());
+    } catch (llvm_to_ar::ImportError& err) {
+      llvm::errs() << progname << ": " << InputFilename
+                   << ": error: " << err.what() << "\n";
+      return 3;
+    }
+
+    // Run type checker
+    ar::TypeVerifier verifier(/*all = */ true);
+    if (!NoTypeCheck && !verifier.verify(bundle, std::cerr)) {
+      llvm::errs() << progname << ": " << InputFilename
+                   << ": error: type checker\n";
+      return 4;
+    }
+
+    // Simplify the control flow graph
+    if (!NoSimplifyCFG) {
+      ar::SimplifyCFGPass().run(bundle);
+    }
+
+    // Generate output
+    if (OutputFormat == Text) {
+      ar::TextFormatter formatter(make_format_options());
+
+      if (OutputFilename.empty() || OutputFilename == "-") {
+        // Default to standard output
+        formatter.format(std::cout, bundle);
+      } else {
+        boost::filesystem::ofstream output(OutputFilename.getValue());
+
+        if (!output.is_open()) {
+          llvm::errs() << progname << ": " << OutputFilename << ": "
+                       << strerror(errno) << "\n";
+          return 5;
+        }
+
+        formatter.format(output, bundle);
+      }
+    } else if (OutputFormat == Dot) {
+      ar::DotFormatter formatter(make_format_options());
+
+      if (OutputFilename.empty()) {
+        // Default to current directory
+        OutputFilename = ".";
+      }
+
+      boost::system::error_code ec;
+      boost::filesystem::path output_dir(OutputFilename.getValue());
+
+      if (!boost::filesystem::exists(output_dir)) {
+        if (!boost::filesystem::create_directories(output_dir, ec)) {
+          llvm::errs() << progname << ": " << OutputFilename << ": "
+                       << ec.message() << "\n";
+          return 5;
+        }
+      }
+      if (!boost::filesystem::is_directory(output_dir, ec)) {
+        llvm::errs() << progname << ": " << OutputFilename
+                     << ": Not a directory\n";
+        return 5;
+      }
+
+      for (auto it = bundle->function_begin(), et = bundle->function_end();
+           it != et;
+           ++it) {
+        ar::Function* fun = *it;
+
+        if (!fun->is_definition()) {
+          continue;
+        }
+
+        std::string filename = fun->name() + ".dot";
+
+        std::cout << "creating " << filename;
+        if (OutputFilename != ".") {
+          std::cout << " in directory " << OutputFilename;
+        }
+        std::cout << "\n";
+
+        boost::filesystem::ofstream output(output_dir / filename);
+
+        if (!output.is_open()) {
+          llvm::errs() << progname << ": " << OutputFilename << "/" << filename
+                       << ": " << strerror(errno) << "\n";
+          return 5;
+        }
+
+        formatter.format(output, fun);
+      }
+    }
+
+    return 0;
+  } catch (std::exception& err) {
     llvm::errs() << progname << ": " << InputFilename
                  << ": error: " << err.what() << "\n";
-    return 3;
+    return 6;
   }
-
-  // Run type checker
-  ar::TypeVerifier verifier(/*all = */ true);
-  if (!NoTypeCheck && !verifier.verify(bundle, std::cerr)) {
-    llvm::errs() << progname << ": " << InputFilename
-                 << ": error: type checker\n";
-    return 4;
-  }
-
-  // Simplify the control flow graph
-  if (!NoSimplifyCFG) {
-    ar::SimplifyCFGPass().run(bundle);
-  }
-
-  // Generate output
-  if (OutputFormat == Text) {
-    ar::TextFormatter formatter(make_format_options());
-
-    if (OutputFilename.empty() || OutputFilename == "-") {
-      // Default to standard output
-      formatter.format(std::cout, bundle);
-    } else {
-      boost::filesystem::ofstream output(OutputFilename.getValue());
-
-      if (!output.is_open()) {
-        llvm::errs() << progname << ": " << OutputFilename << ": "
-                     << strerror(errno) << "\n";
-        return 5;
-      }
-
-      formatter.format(output, bundle);
-    }
-  } else if (OutputFormat == Dot) {
-    ar::DotFormatter formatter(make_format_options());
-
-    if (OutputFilename.empty()) {
-      // Default to current directory
-      OutputFilename = ".";
-    }
-
-    boost::system::error_code ec;
-    boost::filesystem::path output_dir(OutputFilename.getValue());
-
-    if (!boost::filesystem::exists(output_dir)) {
-      if (!boost::filesystem::create_directories(output_dir, ec)) {
-        llvm::errs() << progname << ": " << OutputFilename << ": "
-                     << ec.message() << "\n";
-        return 5;
-      }
-    }
-    if (!boost::filesystem::is_directory(output_dir, ec)) {
-      llvm::errs() << progname << ": " << OutputFilename
-                   << ": Not a directory\n";
-      return 5;
-    }
-
-    for (auto it = bundle->function_begin(), et = bundle->function_end();
-         it != et;
-         ++it) {
-      ar::Function* fun = *it;
-
-      if (!fun->is_definition()) {
-        continue;
-      }
-
-      std::string filename = fun->name() + ".dot";
-
-      std::cout << "creating " << filename;
-      if (OutputFilename != ".") {
-        std::cout << " in directory " << OutputFilename;
-      }
-      std::cout << "\n";
-
-      boost::filesystem::ofstream output(output_dir / filename);
-
-      if (!output.is_open()) {
-        llvm::errs() << progname << ": " << OutputFilename << "/" << filename
-                     << ": " << strerror(errno) << "\n";
-        return 5;
-      }
-
-      formatter.format(output, fun);
-    }
-  }
-
-  return 0;
 }

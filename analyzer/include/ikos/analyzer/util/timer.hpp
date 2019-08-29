@@ -44,6 +44,7 @@
 #pragma once
 
 #include <chrono>
+#include <exception>
 #include <functional>
 #include <string>
 
@@ -126,7 +127,12 @@ public:
   /// \brief Destructor
   ~ScopeTimer() {
     this->_timer.stop();
-    this->_callback(this->_timer.elapsed());
+
+    try {
+      this->_callback(this->_timer.elapsed());
+    } catch (...) {
+      std::terminate();
+    }
   }
 
 }; // end class ScopeTimer
