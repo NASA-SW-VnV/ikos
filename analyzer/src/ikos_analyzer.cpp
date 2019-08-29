@@ -650,7 +650,8 @@ static bool colors_enabled() {
   auto it = opts.find("color");
   ikos_assert_msg(it != opts.end(), "Option 'color' is not registered");
   auto opt =
-      static_cast< llvm::cl::opt< llvm::cl::boolOrDefault >* >(it->second);
+      dynamic_cast< llvm::cl::opt< llvm::cl::boolOrDefault >* >(it->second);
+  ikos_assert(opt != nullptr);
   if (opt->getValue() == llvm::cl::BOU_UNSET) {
     return llvm::sys::Process::StandardOutIsDisplayed();
   } else {
