@@ -173,7 +173,9 @@ void MemoryWatchChecker::check_call(ar::CallBase* call,
 }
 
 void MemoryWatchChecker::check_recursive_call(
-    ar::CallBase* call, ar::Function* fun, const value::AbstractDomain& inv) {
+    ar::CallBase* call,
+    ar::Function* /*fun*/,
+    const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
     return;
