@@ -54,8 +54,10 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   using Z = ikos::core::ZNumber;
   using NumberError = ikos::core::NumberError;
 
-  // the tests assume (unsigned) long long is 8 bytes
+  // Assume (unsigned) long long is 8 bytes
+  // NOLINTNEXTLINE(google-runtime-int)
   static_assert(sizeof(long long) == 8, "unexpected size");
+  // NOLINTNEXTLINE(google-runtime-int)
   static_assert(sizeof(unsigned long long) == 8, "unexpected size");
 
   // constructors

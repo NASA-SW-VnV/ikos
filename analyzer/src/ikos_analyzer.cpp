@@ -718,6 +718,7 @@ static std::vector< ar::Function* > parse_function_names(
 static unsigned stou(const std::string& str,
                      size_t* pos = nullptr,
                      int base = 10) {
+  // NOLINTNEXTLINE(google-runtime-int)
   long long n = std::stoll(str, pos, base);
 
   if (n < 0 || n > std::numeric_limits< unsigned >::max()) {

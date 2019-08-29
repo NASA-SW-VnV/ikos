@@ -503,6 +503,7 @@ private:
     }
 
 #if __has_builtin(__builtin_clzll) || IKOS_GNUC_PREREQ(4, 0, 0)
+    // NOLINTNEXTLINE(google-runtime-int)
     if (std::is_same< uint64_t, unsigned long long >::value) {
       return static_cast< unsigned >(__builtin_clzll(n));
     }
