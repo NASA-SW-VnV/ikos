@@ -146,6 +146,7 @@ int main(int argc, char** argv) {
   llvm::InitLLVM x(argc, argv);
 
   // Program name
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   std::string progname = boost::filesystem::path(argv[0]).filename().string();
 
   // Enable debug stream buffering

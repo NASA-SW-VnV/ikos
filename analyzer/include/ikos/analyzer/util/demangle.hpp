@@ -61,6 +61,7 @@ namespace analyzer {
 /// \brief Return true if the given symbol name is mangled
 inline bool is_mangled(const char* name) {
   // No need to check the size because name is null-terminated
+  // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
   return name[0] == '_' && name[1] >= 'A' && name[1] <= 'Z';
 }
 

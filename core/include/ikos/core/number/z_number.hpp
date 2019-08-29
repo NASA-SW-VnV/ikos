@@ -1151,6 +1151,7 @@ inline std::size_t hash_value(const ZNumber& n) {
   std::size_t result = 0;
   boost::hash_combine(result, m.get_mpz_t()[0]._mp_size);
   for (int i = 0, e = std::abs(m.get_mpz_t()[0]._mp_size); i < e; ++i) {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     boost::hash_combine(result, m.get_mpz_t()[0]._mp_d[i]);
   }
   return result;
