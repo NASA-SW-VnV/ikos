@@ -142,7 +142,7 @@ protected:
 
 public:
   /// \brief constructor
-  explicit Logger(std::ostream& out) : _out(out) {}
+  explicit Logger(std::ostream& out) noexcept : _out(out) {}
 
   /// \brief No copy constructor
   Logger(const Logger&) = delete;
@@ -180,7 +180,7 @@ public:
 class TerminalLogger final : public Logger {
 public:
   /// \brief Constructor
-  explicit TerminalLogger(std::ostream& out);
+  explicit TerminalLogger(std::ostream& out) noexcept;
 
   /// \brief This is called once when the logger becomes active
   void start_logger() override;

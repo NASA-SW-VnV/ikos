@@ -60,7 +60,7 @@ void LogMessage::end() {
 
 // TerminalLogger
 
-TerminalLogger::TerminalLogger(std::ostream& out) : Logger(out) {}
+TerminalLogger::TerminalLogger(std::ostream& out) noexcept : Logger(out) {}
 
 void TerminalLogger::start_logger() {}
 
