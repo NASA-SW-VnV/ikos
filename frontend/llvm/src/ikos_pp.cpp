@@ -442,7 +442,7 @@ int main(int argc, char** argv) {
   } else {
     ikos_assert(OptLevel == Custom);
 
-    for (unsigned i = 0; i < CustomPassList.size(); ++i) {
+    for (std::size_t i = 0; i < CustomPassList.size(); ++i) {
       const llvm::PassInfo* pass_info = CustomPassList[i];
 
       if (pass_info->getNormalCtor() != nullptr) {

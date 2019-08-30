@@ -429,7 +429,7 @@ private:
     }
 
     ap_dim_t counter = 0;
-    for (ap_dim_t i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < n; i++) {
       if (index_assigned[i]) {
         continue;
       }
@@ -1077,7 +1077,7 @@ public:
     LinearConstraintSystemT csts;
     ap_lincons0_array_t ap_csts =
         ap_abstract0_to_lincons_array(manager(), this->_inv.get());
-    for (unsigned i = 0; i < ap_csts.size; i++) {
+    for (std::size_t i = 0; i < ap_csts.size; i++) {
       ap_lincons0_t& ap_cst = ap_csts.p[i];
 
       if (ap_cst.constyp == AP_CONS_EQMOD) {
