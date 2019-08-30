@@ -514,7 +514,7 @@ private:
 
     // Use bisection
     unsigned zeros = 0;
-    for (unsigned shift = 64U >> 1; shift != 0U; shift >>= 1) {
+    for (unsigned shift = 64U >> 1U; shift != 0U; shift >>= 1U) {
       uint64_t tmp = n >> shift;
       if (tmp != 0) {
         n = tmp;
@@ -535,7 +535,7 @@ private:
 
     // Use bisection
     unsigned zeros = 0;
-    for (unsigned shift = bit_width >> 1; shift != 0U; shift >>= 1) {
+    for (unsigned shift = bit_width >> 1U; shift != 0U; shift >>= 1U) {
       ZNumber tmp = n >> shift;
       if (tmp != 0) {
         n = tmp;
@@ -585,7 +585,8 @@ private:
     // TODO(marthaud): this is implementation-defined.
     // See https://stackoverflow.com/a/7602006
     // See https://stackoverflow.com/a/13208789 for proper solution
-    return int64_t(n << (64 - bit_width)) >> (64 - bit_width);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
+    return int64_t(n << (64U - bit_width)) >> (64U - bit_width);
   }
 
 public:
@@ -1426,6 +1427,7 @@ inline MachineInt ashr(const MachineInt& lhs,
     exact = (rhs._n.i == 0) ||
             (lhs._n.i & (MachineInt::ONES >> (64 - rhs._n.i))) == 0;
     int64_t n = MachineInt::sign_extend_64(lhs._n.i, lhs._bit_width);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return MachineInt(n >> static_cast< int64_t >(rhs._n.i),
                       lhs._bit_width,
                       lhs._sign);
@@ -1452,6 +1454,7 @@ inline MachineInt ashr(const MachineInt& lhs, const MachineInt& rhs) {
   assert_shift(rhs, lhs._bit_width);
   if (lhs.is_small()) {
     int64_t n = MachineInt::sign_extend_64(lhs._n.i, lhs._bit_width);
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return MachineInt(n >> static_cast< int64_t >(rhs._n.i),
                       lhs._bit_width,
                       lhs._sign);

@@ -198,8 +198,8 @@ std::string escape_string(llvm::StringRef s) {
       continue; // Skip ending null-byte
     } else {
       r.push_back('\\');
-      r.push_back(hexdigit(static_cast< unsigned char >(c) >> 4));
-      r.push_back(hexdigit(static_cast< unsigned char >(c) & 0x0F));
+      r.push_back(hexdigit(static_cast< unsigned char >(c) >> 4U));
+      r.push_back(hexdigit(static_cast< unsigned char >(c) & 0x0FU));
     }
   }
   r.push_back('"');

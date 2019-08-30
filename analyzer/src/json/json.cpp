@@ -102,8 +102,8 @@ std::string JsonString::str() const {
       r.append("\\r");
     } else {
       r.append("\\u00");
-      r.push_back(hexdigit(static_cast< unsigned char >(c) >> 4));
-      r.push_back(hexdigit(static_cast< unsigned char >(c) & 0x0F));
+      r.push_back(hexdigit(static_cast< unsigned char >(c) >> 4U));
+      r.push_back(hexdigit(static_cast< unsigned char >(c) & 0x0FU));
     }
   }
   r.push_back('"');

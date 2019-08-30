@@ -88,9 +88,9 @@ struct MpzAdapterUnsignedLongLong< false > {
   mpz_class operator()(unsigned long long n) {
     static_assert(sizeof(unsigned long long) == 8, "unexpected size");
     static_assert(sizeof(unsigned int) == 4, "unexpected size");
-    mpz_class r(static_cast< unsigned int >(n >> 32));
+    mpz_class r(static_cast< unsigned int >(n >> 32U));
     r <<= 32;
-    r += static_cast< unsigned int >(n & 0xFFFFFFFF);
+    r += static_cast< unsigned int >(n & 0xFFFFFFFFU);
     return r;
   }
 };
@@ -114,8 +114,10 @@ struct MpzAdapterLongLong< false > {
   mpz_class operator()(long long n) {
     static_assert(sizeof(long long) == 8, "unexpected size");
     static_assert(sizeof(int) == 4, "unexpected size");
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     mpz_class r(static_cast< int >(n >> 32));
     r <<= 32;
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     r += static_cast< unsigned int >(n & 0xFFFFFFFF);
     return r;
   }
@@ -245,7 +247,7 @@ struct MpzToUnsignedLongLong< false > {
     auto hi = static_cast< unsigned long long >(mpz_class(n >> 32).get_ui());
     auto lo =
         static_cast< unsigned long long >(mpz_class(n & 0xFFFFFFFF).get_ui());
-    return (hi << 32) + lo;
+    return (hi << 32U) + lo;
   }
 };
 
@@ -272,6 +274,7 @@ struct MpzToLongLong< false > {
     static_assert(sizeof(int) == 4, "unexpected size");
     auto hi = static_cast< long long >(mpz_class(n >> 32).get_si());
     auto lo = static_cast< long long >(mpz_class(n & 0xFFFFFFFF).get_ui());
+    // NOLINTNEXTLINE(hicpp-signed-bitwise)
     return (hi << 32) + lo;
   }
 };
