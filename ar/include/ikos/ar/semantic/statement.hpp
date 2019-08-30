@@ -762,6 +762,7 @@ public:
       return std::distance(this->_factor_it, o._factor_it);
     }
 
+    // NOLINTNEXTLINE(readability-const-return-type)
     const Term dereference() const {
       return {*this->_factor_it, *this->_value_it};
     }

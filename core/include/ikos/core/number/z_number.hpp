@@ -560,14 +560,14 @@ public:
   }
 
   /// \brief Postfix increment
-  const ZNumber operator++(int) {
+  ZNumber operator++(int) {
     ZNumber r(*this);
     ++this->_n;
     return r;
   }
 
   /// \brief Unary minus
-  const ZNumber operator-() const { return ZNumber(-this->_n); }
+  ZNumber operator-() const { return ZNumber(-this->_n); }
 
   /// \brief Prefix decrement
   ZNumber& operator--() {
@@ -576,7 +576,7 @@ public:
   }
 
   /// \brief Postfix decrement
-  const ZNumber operator--(int) {
+  ZNumber operator--(int) {
     ZNumber r(*this);
     --this->_n;
     return r;
