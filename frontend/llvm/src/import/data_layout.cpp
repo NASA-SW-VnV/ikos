@@ -52,7 +52,7 @@ static ar::DataLayoutInfo translate_data_layout_info(
   unsigned bit_width = type->getPrimitiveSizeInBits();
   unsigned abi_alignment = data_layout.getABITypeAlignment(type);
   unsigned pref_alignment = data_layout.getPrefTypeAlignment(type);
-  return ar::DataLayoutInfo(bit_width, abi_alignment, pref_alignment);
+  return {bit_width, abi_alignment, pref_alignment};
 }
 
 std::unique_ptr< ar::DataLayout > translate_data_layout(

@@ -1998,17 +1998,17 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use(
   } else if (auto phi = llvm::dyn_cast< llvm::PHINode >(user)) {
     return this->infer_type_hint_use_phi(use, phi);
   } else if (llvm::isa< llvm::ExtractValueInst >(user)) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else if (llvm::isa< llvm::InsertValueInst >(user)) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else if (llvm::isa< llvm::ExtractElementInst >(user)) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else if (llvm::isa< llvm::InsertElementInst >(user)) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else if (llvm::isa< llvm::ShuffleVectorInst >(user)) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else if (llvm::isa< llvm::ResumeInst >(user)) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else if (llvm::isa< llvm::SelectInst >(user)) {
     // The preprocessor should use the -lower-select pass
     throw ImportError("llvm select instructions are not supported");
@@ -2031,7 +2031,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_alloca(
   ikos_ignore(use);
   llvm::Type* llvm_type = alloca->getArraySize()->getType();
   ar::Type* ar_type = _ctx.type_imp->translate_type(llvm_type, ar::Unsigned);
-  return TypeHint(ar_type, 5);
+  return {ar_type, 5};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_store(
@@ -2080,7 +2080,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_call_helper(
     llvm::Use& use, CallInstType* call) {
   if (use.getOperandNo() >= call->getNumArgOperands()) {
     // Called function pointer
-    return TypeHint();
+    return {};
   }
 
   llvm::Function* called = call->getCalledFunction();
@@ -2091,13 +2091,13 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_call_helper(
 
     if (ar_fun == nullptr) {
       // Ignored intrinsic call (such as dbg.declare)
-      return TypeHint();
+      return {};
     }
 
     if (ar_fun->is_var_arg() &&
         use.getOperandNo() >= ar_fun->num_parameters()) {
       // Variable argument, ignore
-      return TypeHint();
+      return {};
     }
 
     ar::Type* ar_type = ar_fun->type()->param_type(use.getOperandNo());
@@ -2106,11 +2106,11 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_call_helper(
     llvm::DISubprogram* dbg = called->getSubprogram();
     unsigned score = (dbg == nullptr) ? 10 : 1000;
 
-    return TypeHint(ar_type, score);
+    return {ar_type, score};
   }
 
   // Indirect call
-  return TypeHint();
+  return {};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cast(
@@ -2119,7 +2119,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cast(
 
   switch (cast->getOpcode()) {
     case llvm::Instruction::Trunc: {
-      return TypeHint(); // no hint
+      return {}; // no hint
     }
     case llvm::Instruction::ZExt: {
       sign = ar::Unsigned;
@@ -2129,7 +2129,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cast(
     } break;
     case llvm::Instruction::FPToUI:
     case llvm::Instruction::FPToSI: {
-      return TypeHint(); // no hint
+      return {}; // no hint
     }
     case llvm::Instruction::UIToFP: {
       sign = ar::Unsigned;
@@ -2140,13 +2140,13 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cast(
     case llvm::Instruction::FPTrunc:
     case llvm::Instruction::FPExt:
     case llvm::Instruction::PtrToInt: {
-      return TypeHint(); // no hint
+      return {}; // no hint
     }
     case llvm::Instruction::IntToPtr: {
       sign = ar::Unsigned;
     } break;
     case llvm::Instruction::BitCast: {
-      return TypeHint(); // no hint
+      return {}; // no hint
     }
     default: {
       std::ostringstream buf;
@@ -2156,7 +2156,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cast(
   }
 
   ar::Type* type = _ctx.type_imp->translate_type(cast->getSrcTy(), sign);
-  return TypeHint(type, 5);
+  return {type, 5};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_getelementptr(
@@ -2164,7 +2164,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_getelementptr(
   // GetElementPtr does not add any restriction on its operand
   // The first operand can be a pointer on any type
   // The other operands can be integers of any signedness and bit-width
-  return TypeHint();
+  return {};
 }
 
 FunctionImporter::TypeHint FunctionImporter::
@@ -2188,20 +2188,20 @@ FunctionImporter::TypeHint FunctionImporter::
       sign = ar::Signed;
     } break;
     case llvm::Instruction::Shl: {
-      return TypeHint(); // no hint
+      return {}; // no hint
     }
     case llvm::Instruction::LShr: {
       if (use.getOperandNo() == 0) {
         sign = ar::Unsigned;
       } else {
-        return TypeHint(); // no hint
+        return {}; // no hint
       }
     } break;
     case llvm::Instruction::AShr: {
       if (use.getOperandNo() == 0) {
         sign = ar::Signed;
       } else {
-        return TypeHint(); // no hint
+        return {}; // no hint
       }
     } break;
     case llvm::Instruction::And:
@@ -2216,7 +2216,7 @@ FunctionImporter::TypeHint FunctionImporter::
     case llvm::Instruction::FSub:
     case llvm::Instruction::FMul:
     case llvm::Instruction::FDiv: {
-      return TypeHint(); // no hint, sign is irrelevant
+      return {}; // no hint, sign is irrelevant
     }
     default: {
       std::ostringstream buf;
@@ -2228,7 +2228,7 @@ FunctionImporter::TypeHint FunctionImporter::
 
   llvm::Type* llvm_type = inst->getOperand(use.getOperandNo())->getType();
   ar::Type* ar_type = _ctx.type_imp->translate_type(llvm_type, sign);
-  return TypeHint(ar_type, score);
+  return {ar_type, score};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cmp(
@@ -2239,11 +2239,11 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cmp(
     // Integer comparison
     if (cmp->isSigned()) {
       ar::Type* ar_type = _ctx.type_imp->translate_type(llvm_type, ar::Signed);
-      return TypeHint(ar_type, 5);
+      return {ar_type, 5};
     } else if (cmp->isUnsigned()) {
       ar::Type* ar_type =
           _ctx.type_imp->translate_type(llvm_type, ar::Unsigned);
-      return TypeHint(ar_type, 5);
+      return {ar_type, 5};
     } else {
       // Use the other operand type as a hint
       TypeHint hint = this->infer_type_hint_operand(
@@ -2259,7 +2259,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_cmp(
     hint.set_score(2);
     return hint;
   } else if (cmp->isFPPredicate()) {
-    return TypeHint(); // no hint
+    return {}; // no hint
   } else {
     std::ostringstream buf;
     buf << "unsupported llvm cmp instruction with predicate: "
@@ -2278,12 +2278,12 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_branch(
 
   // Prefer unsigned
   ar::Type* type = _ctx.type_imp->translate_type(cond->getType(), ar::Unsigned);
-  return TypeHint(type, 2);
+  return {type, 2};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_return(
     llvm::Use& /*use*/, llvm::ReturnInst* /*ret*/) {
-  return TypeHint(this->_ar_fun->type()->return_type(), 5);
+  return {this->_ar_fun->type()->return_type(), 5};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_phi(
@@ -2295,7 +2295,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand(
     llvm::Value* value) {
   // Use debug information if available
   if (auto ar_type = this->infer_type_from_dbg(value)) {
-    return TypeHint(ar_type, 1000);
+    return {ar_type, 1000};
   }
 
   if (auto gv = llvm::dyn_cast< llvm::GlobalVariable >(value)) {
@@ -2310,7 +2310,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand(
     return this->infer_type_hint_operand_argument(arg);
   } else if (llvm::isa< llvm::Constant >(value)) {
     // Cannot deduce sign information from constants
-    return TypeHint();
+    return {};
   } else {
     throw ImportError("unsupported llvm value [3]");
   }
@@ -2326,7 +2326,7 @@ FunctionImporter::TypeHint FunctionImporter::
   gv->getDebugInfo(dbgs);
   unsigned score = dbgs.empty() ? 10 : 1000;
 
-  return TypeHint(ar_gv->type(), score);
+  return {ar_gv->type(), score};
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand_function(
@@ -2341,7 +2341,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand_function(
   llvm::DISubprogram* dbg = fun->getSubprogram();
   unsigned score = (dbg == nullptr) ? 10 : 1000;
 
-  return TypeHint(ar_type, score);
+  return {ar_type, score};
 }
 
 FunctionImporter::TypeHint FunctionImporter::
@@ -2349,22 +2349,20 @@ FunctionImporter::TypeHint FunctionImporter::
   // If already translated, use it as a hint
   auto it = this->_variables.find(inst);
   if (it != this->_variables.end()) {
-    return TypeHint(it->second->type(), 2);
+    return {it->second->type(), 2};
   }
 
   // Use the type of the returned value, if it's a direct call
   if (auto call = llvm::dyn_cast< llvm::CallInst >(inst)) {
     llvm::Value* called = unalias(call->getCalledValue());
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
-      return TypeHint(_ctx.bundle_imp->translate_function(fun)
-                          ->type()
-                          ->return_type(),
-                      5);
+      return {_ctx.bundle_imp->translate_function(fun)->type()->return_type(),
+              5};
     }
   }
 
   // Using this->infer_type() here would cause an infinite recursion.
-  return TypeHint(); // no hint
+  return {}; // no hint
 }
 
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand_argument(
@@ -2377,7 +2375,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_operand_argument(
   llvm::DISubprogram* dbg = this->_llvm_fun->getSubprogram();
   unsigned score = (dbg == nullptr) ? 10 : 1000;
 
-  return TypeHint(ar_arg->type(), score);
+  return {ar_arg->type(), score};
 }
 
 BasicBlockTranslation::BasicBlockTranslation(llvm::BasicBlock* source_,
