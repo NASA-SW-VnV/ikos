@@ -168,8 +168,13 @@ std::string to_string(const llvm::APFloat& f) {
 
 /// \brief Return the hexadecimal character for the given number
 char hexdigit(unsigned n, bool lower_case = false) {
-  return (n < 10U) ? ('0' + static_cast< char >(n))
-                   : ((lower_case ? 'a' : 'A') + static_cast< char >(n) - 10);
+  if (n < 10U) {
+    return static_cast< char >('0' + n);
+  } else if (n < 16U) {
+    return static_cast< char >((lower_case ? 'a' : 'A') + (n - 10));
+  } else {
+    ikos_unreachable("invalid argument");
+  }
 }
 
 /// \brief Return the escaped string
