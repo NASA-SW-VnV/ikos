@@ -59,7 +59,7 @@ namespace {
 struct NameValuesPass final : public ModulePass {
   static char ID; // Pass identification
 
-  unsigned global_idx = 0;
+  unsigned global_idx;
 
   NameValuesPass() : ModulePass(ID), global_idx(0) {}
 
