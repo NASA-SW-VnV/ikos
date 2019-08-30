@@ -604,13 +604,10 @@ public:
       return false;
     }
     auto ptr_operand_ty = cast< PointerType >(operand_ty);
-    if (!this->check_equals(s,
-                            result_ty,
-                            ptr_operand_ty->pointee(),
-                            "result")) {
-      return false;
-    }
-    return true;
+    return this->check_equals(s,
+                              result_ty,
+                              ptr_operand_ty->pointee(),
+                              "result");
   }
 
   bool operator()(Store* s) {
@@ -620,13 +617,10 @@ public:
       return false;
     }
     auto ptr_pointer_ty = cast< PointerType >(pointer_ty);
-    if (!this->check_equals(s,
-                            value_ty,
-                            ptr_pointer_ty->pointee(),
-                            "second operand")) {
-      return false;
-    }
-    return true;
+    return this->check_equals(s,
+                              value_ty,
+                              ptr_pointer_ty->pointee(),
+                              "second operand");
   }
 
   bool operator()(ExtractElement* s) {
