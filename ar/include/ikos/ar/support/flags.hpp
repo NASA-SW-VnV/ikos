@@ -147,6 +147,7 @@ public:
 /// \macros IKOS_DECLARE_OPERATORS_FOR_FLAGS
 ///
 /// Define operator|(EnumType, EnumType)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define IKOS_DECLARE_OPERATORS_FOR_FLAGS(T) \
   inline T operator|(T::EnumType f1, T::EnumType f2) { return T(f1) | f2; }
 
