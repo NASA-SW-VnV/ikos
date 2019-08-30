@@ -232,23 +232,23 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   m1.insert_or_assign(1, "hello");
   m1.insert_or_assign(2, "world");
   m2.insert_or_assign(1, "zzzzz");
-  BOOST_CHECK(m1.leq(m2, std::less< std::string >()));
-  BOOST_CHECK(!m2.leq(m1, std::less< std::string >()));
+  BOOST_CHECK(m1.leq(m2, std::less<>()));
+  BOOST_CHECK(!m2.leq(m1, std::less<>()));
 
   m2.insert_or_assign(3, "test");
-  BOOST_CHECK(!m1.leq(m2, std::less< std::string >()));
+  BOOST_CHECK(!m1.leq(m2, std::less<>()));
 
   // test equals
   m1.clear();
   m2.clear();
-  BOOST_CHECK(m1.equals(m2, std::equal_to< std::string >()));
+  BOOST_CHECK(m1.equals(m2, std::equal_to<>()));
   m1.insert_or_assign(1, "hello");
-  BOOST_CHECK(!m1.equals(m2, std::equal_to< std::string >()));
+  BOOST_CHECK(!m1.equals(m2, std::equal_to<>()));
   m2.insert_or_assign(1, "hello");
-  BOOST_CHECK(m1.equals(m2, std::equal_to< std::string >()));
+  BOOST_CHECK(m1.equals(m2, std::equal_to<>()));
   m1.insert_or_assign(2, "a");
   m2.insert_or_assign(2, "b");
-  BOOST_CHECK(!m1.equals(m2, std::equal_to< std::string >()));
+  BOOST_CHECK(!m1.equals(m2, std::equal_to<>()));
 
   // test join
   m1.clear();
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   m1.insert_or_assign(2, "world");
   m2.clear();
   m2.insert_or_assign(1, "zzzzz");
-  m = m1.join(m2, std::plus< std::string >());
+  m = m1.join(m2, std::plus<>());
   const std::array< std::pair< Index, std::string >, 2 > tab3 = {
       {{2, "world"}, {1, "hellozzzzz"}}};
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab3), std::end(tab3)));
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(test_patricia_tree_map) {
   m1.insert_or_assign(2, "world");
   m2.clear();
   m2.insert_or_assign(1, "zzzzz");
-  m = m1.intersect(m2, std::plus< std::string >());
+  m = m1.intersect(m2, std::plus<>());
   const std::array< std::pair< Index, std::string >, 1 > tab4 = {
       {{1, "hellozzzzz"}}};
   BOOST_CHECK(std::equal(m.begin(), m.end(), std::begin(tab4), std::end(tab4)));
