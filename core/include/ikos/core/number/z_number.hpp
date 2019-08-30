@@ -337,7 +337,7 @@ public:
   ZNumber(const ZNumber&) = default;
 
   /// \brief Move constructor
-  // TODO: Mark it noexcept when mpz_class(mpz_class&&) will be noexcept
+  // TODO(marthaud): Add noexcept when mpz_class(mpz_class&&) becomes noexcept
   ZNumber(ZNumber&&) = default;
 
   /// \brief Create a ZNumber from a mpz_class
