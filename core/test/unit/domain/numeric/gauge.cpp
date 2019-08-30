@@ -62,7 +62,10 @@ using GaugeSemiLattice =
     ikos::core::numeric::GaugeSemiLattice< ZNumber, Variable >;
 using GaugeDomain = ikos::core::numeric::GaugeDomain< ZNumber, Variable >;
 
+// NOLINTNEXTLINE(readability-identifier-naming)
 static VariableFactory vfac;
+
+// NOLINTNEXTLINE(readability-identifier-naming)
 static GaugeSemiLattice l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, l13;
 
 // initialization
