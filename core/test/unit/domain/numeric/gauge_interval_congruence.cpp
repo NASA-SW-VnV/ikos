@@ -64,10 +64,10 @@ using GaugeSemiLattice =
 using GaugeIntervalCongruenceDomain =
     ikos::core::numeric::GaugeIntervalCongruenceDomain< ZNumber, Variable >;
 
-#define test_domain(d, is_bottom_v, is_top_v)    \
-  do {                                           \
-    BOOST_CHECK((d).is_bottom() == is_bottom_v); \
-    BOOST_CHECK((d).is_top() == is_top_v);       \
+#define test_domain(d, is_bottom_v, is_top_v)      \
+  do {                                             \
+    BOOST_CHECK((d).is_bottom() == (is_bottom_v)); \
+    BOOST_CHECK((d).is_top() == (is_top_v));       \
   } while (0)
 
 BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_constructors) {

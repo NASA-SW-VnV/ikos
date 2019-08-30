@@ -60,24 +60,24 @@ using ZInterval = ikos::core::numeric::ZInterval;
 using GaugeBound = ikos::core::numeric::GaugeBound< ZNumber, Variable >;
 using Gauge = ikos::core::numeric::Gauge< ZNumber, Variable >;
 
-#define test_gauge_bound(g,                                      \
-                         is_infinite_v,                          \
-                         is_plus_infinity_v,                     \
-                         is_minus_infinity_v,                    \
-                         num_coeffs_v,                           \
-                         is_constant_v,                          \
-                         constant_v)                             \
-  do {                                                           \
-    BOOST_CHECK((g).is_infinite() == is_infinite_v);             \
-    BOOST_CHECK((g).is_plus_infinity() == is_plus_infinity_v);   \
-    BOOST_CHECK((g).is_minus_infinity() == is_minus_infinity_v); \
-    BOOST_CHECK((g).is_constant() == is_constant_v);             \
-    if ((g).is_finite()) {                                       \
-      BOOST_CHECK((g).num_coeffs() == num_coeffs_v);             \
-    }                                                            \
-    if ((g).is_constant()) {                                     \
-      BOOST_CHECK((g).constant() == constant_v);                 \
-    }                                                            \
+#define test_gauge_bound(g,                                        \
+                         is_infinite_v,                            \
+                         is_plus_infinity_v,                       \
+                         is_minus_infinity_v,                      \
+                         num_coeffs_v,                             \
+                         is_constant_v,                            \
+                         constant_v)                               \
+  do {                                                             \
+    BOOST_CHECK((g).is_infinite() == (is_infinite_v));             \
+    BOOST_CHECK((g).is_plus_infinity() == (is_plus_infinity_v));   \
+    BOOST_CHECK((g).is_minus_infinity() == (is_minus_infinity_v)); \
+    BOOST_CHECK((g).is_constant() == (is_constant_v));             \
+    if ((g).is_finite()) {                                         \
+      BOOST_CHECK((g).num_coeffs() == (num_coeffs_v));             \
+    }                                                              \
+    if ((g).is_constant()) {                                       \
+      BOOST_CHECK((g).constant() == (constant_v));                 \
+    }                                                              \
   } while (0)
 
 BOOST_AUTO_TEST_CASE(gauge_bound_constructors) {
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(gauge_bound_constructors) {
   test_gauge_bound(g, false, false, false, 2, false, 0);
 }
 
-#define test_gauge_bound_coeff(g, v, c) BOOST_CHECK((g).coeff(v) == c)
+#define test_gauge_bound_coeff(g, v, c) BOOST_CHECK((g).coeff(v) == (c))
 
 BOOST_AUTO_TEST_CASE(gauge_bound_coeff) {
   VariableFactory vfac;
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(gauge_bound_coeff) {
                          -1);
 }
 
-#define test_gauge_bound_to_zbound(g, b) BOOST_CHECK((g).to_bound() == b)
+#define test_gauge_bound_to_zbound(g, b) BOOST_CHECK((g).to_bound() == (b))
 
 BOOST_AUTO_TEST_CASE(gauge_bound_to_bound) {
   VariableFactory vfac;
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(gauge_bound_mul) {
                        GaugeBound(0));
 }
 
-#define test_gauge_bound_le(x, y, r) BOOST_CHECK(((x) <= (y)) == r)
+#define test_gauge_bound_le(x, y, r) BOOST_CHECK(((x) <= (y)) == (r))
 
 BOOST_AUTO_TEST_CASE(gauge_bound_le) {
   VariableFactory vfac;
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(gauge_bound_le) {
                       false);
 }
 
-#define test_gauge_bound_ge(x, y, r) BOOST_CHECK(((x) >= (y)) == r)
+#define test_gauge_bound_ge(x, y, r) BOOST_CHECK(((x) >= (y)) == (r))
 
 BOOST_AUTO_TEST_CASE(gauge_bound_ge) {
   VariableFactory vfac;
@@ -445,9 +445,9 @@ BOOST_AUTO_TEST_CASE(gauge_bound_max) {
 
 #define test_gauge(g, is_bottom_v, is_top_v, is_singleton_v, singleton_v) \
   do {                                                                    \
-    BOOST_CHECK((g).is_bottom() == is_bottom_v);                          \
-    BOOST_CHECK((g).is_top() == is_top_v);                                \
-    BOOST_CHECK(!!((g).singleton()) == is_singleton_v);                   \
+    BOOST_CHECK((g).is_bottom() == (is_bottom_v));                        \
+    BOOST_CHECK((g).is_top() == (is_top_v));                              \
+    BOOST_CHECK(!!((g).singleton()) == (is_singleton_v));                 \
     if ((g).singleton()) {                                                \
       BOOST_CHECK(*(g).singleton() == GaugeBound(singleton_v));           \
     }                                                                     \
@@ -481,7 +481,7 @@ BOOST_AUTO_TEST_CASE(gauge_constructors) {
   test_gauge(Gauge(GaugeBound(0), GaugeBound(x)), false, false, false, 0);
 }
 
-#define test_gauge_interval(g, i) BOOST_CHECK((g).interval() == i)
+#define test_gauge_interval(g, i) BOOST_CHECK((g).interval() == (i))
 
 BOOST_AUTO_TEST_CASE(gauge_interval) {
   VariableFactory vfac;
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval) {
   test_gauge_interval(Gauge(GaugeBound(-2, x), GaugeBound(2, x)), boost::none);
 }
 
-#define test_gauge_le(x, y, r) BOOST_CHECK((x).leq(y) == r)
+#define test_gauge_le(x, y, r) BOOST_CHECK((x).leq(y) == (r))
 
 BOOST_AUTO_TEST_CASE(gauge_leq) {
   VariableFactory vfac;
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(gauge_leq) {
                 true);
 }
 
-#define test_gauge_eq(x, y, r) BOOST_CHECK((x).equals(y) == r)
+#define test_gauge_eq(x, y, r) BOOST_CHECK((x).equals(y) == (r))
 
 BOOST_AUTO_TEST_CASE(gauge_equals) {
   VariableFactory vfac;
