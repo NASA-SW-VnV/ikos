@@ -545,10 +545,10 @@ public:
 
   /// \brief Create a polymorphic domain with the given abstract value
   template < typename RuntimeDomain >
-  explicit PolymorphicDomain(RuntimeDomain&& inv)
+  explicit PolymorphicDomain(RuntimeDomain inv)
       : _ptr(std::make_unique<
              PolymorphicDerived< remove_cvref_t< RuntimeDomain > > >(
-            std::forward< RuntimeDomain >(inv))) {}
+            std::move(inv))) {}
 
   /// \brief Copy constructor
   PolymorphicDomain(const PolymorphicDomain& other)
