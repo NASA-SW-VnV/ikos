@@ -944,7 +944,7 @@ public:
   }
 
   /// \brief Post-increment the iterator
-  PatriciaTreeIterator operator++(int) {
+  const PatriciaTreeIterator operator++(int) {
     PatriciaTreeIterator r = *this;
     ++(*this);
     return r;

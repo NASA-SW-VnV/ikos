@@ -304,14 +304,14 @@ public:
   }
 
   /// \brief Postfix increment
-  QNumber operator++(int) {
+  const QNumber operator++(int) {
     QNumber r(*this);
     ++this->_n;
     return r;
   }
 
   /// \brief Unary minus
-  QNumber operator-() const { return QNumber(-this->_n); }
+  const QNumber operator-() const { return QNumber(-this->_n); }
 
   /// \brief Prefix decrement
   QNumber& operator--() {
@@ -320,7 +320,7 @@ public:
   }
 
   /// \brief Postfix decrement
-  QNumber operator--(int) {
+  const QNumber operator--(int) {
     QNumber r(*this);
     --this->_n;
     return r;

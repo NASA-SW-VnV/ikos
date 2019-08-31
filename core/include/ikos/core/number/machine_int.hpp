@@ -732,7 +732,7 @@ public:
   }
 
   /// \brief Postfix increment
-  MachineInt operator++(int) {
+  const MachineInt operator++(int) {
     MachineInt r(*this);
     if (this->is_small()) {
       ++this->_n.i;
@@ -744,7 +744,7 @@ public:
   }
 
   /// \brief Unary minus
-  MachineInt operator-() const {
+  const MachineInt operator-() const {
     if (this->is_small()) {
       return MachineInt((~this->_n.i) + 1, this->_bit_width, this->_sign);
     } else {
@@ -763,7 +763,7 @@ public:
   }
 
   /// \brief Bitwise not
-  MachineInt operator~() const {
+  const MachineInt operator~() const {
     if (this->is_small()) {
       return MachineInt(~this->_n.i, this->_bit_width, this->_sign);
     } else {
@@ -795,7 +795,7 @@ public:
   }
 
   /// \brief Postfix decrement
-  MachineInt operator--(int) {
+  const MachineInt operator--(int) {
     MachineInt r(*this);
     if (this->is_small()) {
       --this->_n.i;
