@@ -42,6 +42,7 @@
 ###############################################################################
 import argparse
 import os.path
+import re
 import subprocess
 import sys
 import threading
@@ -56,12 +57,68 @@ except ImportError:
 SOURCE_EXTENSIONS = ('.c', '.cpp', '.h', '.hpp')
 
 # Directories to ignore
-IGNORE_DIRECTORIES = ('.git', 'build')
+IGNORE_DIRECTORIES = (
+    '.git',
+    'build',
+    'analyzer/test/regression',
+    'core/include/ikos/core/legacy',
+    'frontend/llvm/test/regression/import',
+)
 
 # Ignore checks for specific files
 FILE_IGNORE_CHECKS = {
+    'analyzer/include/ikos/analyzer/analysis/execution_engine/inliner.hpp':
+        ('cppcoreguidelines-pro-bounds-pointer-arithmetic',),
     'analyzer/include/ikos/analyzer/intrinsic.h':
+        ('cppcoreguidelines-macro-usage',
+         'hicpp-deprecated-headers',
+         'modernize-deprecated-headers',
+         'readability-identifier-naming',),
+    'analyzer/include/ikos/analyzer/support/cast.hpp':
+        ('misc-unused-using-decls',),
+    'analyzer/include/ikos/analyzer/support/number.hpp':
+        ('misc-unused-using-decls',),
+    'analyzer/include/ikos/analyzer/support/string_ref.hpp':
+        ('misc-unused-using-decls',),
+    'analyzer/include/ikos/analyzer/util/source_location.hpp':
+        ('misc-unused-using-decls',),
+    'analyzer/src/ikos_analyzer.cpp':
+        ('cert-err58-cpp',
+         'cppcoreguidelines-slicing',),
+    'ar/include/ikos/ar/support/cast.hpp':
+        ('misc-unused-using-decls',),
+    'ar/include/ikos/ar/support/flags.hpp':
+        ('clang-diagnostic-unused-macros',),
+    'ar/include/ikos/ar/support/number.hpp':
+        ('misc-unused-using-decls',),
+    'core/include/ikos/core/domain/numeric/apron.hpp':
+        ('cppcoreguidelines-pro-bounds-pointer-arithmetic',
+         'cppcoreguidelines-pro-type-union-access',),
+    'core/include/ikos/core/domain/numeric/octagon.hpp':
+        ('readability-implicit-bool-conversion',),
+    'core/include/ikos/core/number/machine_int.hpp':
+        ('cppcoreguidelines-owning-memory',
+         'cppcoreguidelines-pro-type-member-init',
+         'cppcoreguidelines-pro-type-union-access',
+         'hicpp-member-init',),
+    'core/include/ikos/core/number/supported_integral.hpp':
+        ('google-runtime-int',),
+    'core/include/ikos/core/number/z_number.hpp':
+        ('google-runtime-int',),
+    'core/include/ikos/core/support/assert.hpp':
+        ('clang-diagnostic-unused-macros',
+         'cppcoreguidelines-macro-usage',),
+    'core/include/ikos/core/support/compiler.hpp':
+        ('clang-diagnostic-unused-macros',
+         'cppcoreguidelines-macro-usage',),
+    'core/include/ikos/core/support/mpl.hpp':
         ('readability-identifier-naming',),
+    'frontend/llvm/include/ikos/frontend/llvm/pass.hpp':
+        ('readability-identifier-naming',),
+    'frontend/llvm/src/ikos_import.cpp':
+        ('cert-err58-cpp',),
+    'frontend/llvm/src/ikos_pp.cpp':
+        ('cert-err58-cpp',),
 }
 
 
@@ -94,19 +151,26 @@ def which(program):
     return None
 
 
-def run_tidy(clang_tidy, build_dir, task_queue, lock):
+def run_tidy(clang_tidy, build_dir, extra_checks, fix, task_queue, lock):
     while True:
         # Get the next task
         fullpath = task_queue.get()
 
         # Build the clang-tidy command
-        # TODO: Enable colors when clang-tidy supports it
+        # TODO: enable colors when clang-tidy supports it
         cmd = [clang_tidy]
         cmd.append('-quiet')
         cmd.append('-p=%s' % build_dir)
+        checks = []
         if fullpath in FILE_IGNORE_CHECKS:
             for check in FILE_IGNORE_CHECKS[fullpath]:
-                cmd.append('-checks=-%s' % check)
+                checks.append('-%s' % check)
+        if extra_checks:
+            checks.append(extra_checks)
+        if checks:
+            cmd.append('-checks=%s' % ','.join(checks))
+        if fix:
+            cmd.append('-fix')
         cmd.append(fullpath)
 
         # Run the clang-tidy command
@@ -114,10 +178,20 @@ def run_tidy(clang_tidy, build_dir, task_queue, lock):
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
         output, err = proc.communicate()
+
+        output = output.decode('utf-8')
+        err = err.decode('utf-8')
+
+        # Remove the line 'xxx warnings generated.'
+        n = err.rfind('\n', 0, len(err) - 1)
+        line = err[n + 1:]
+        if re.match(r'^\d+ warnings? generated.\n$', line):
+            err = err[:n + 1]
+
         with lock:
             printf('[*] %s\n', ' '.join(cmd))
-            sys.stdout.write(output.decode('utf-8'))
-            sys.stderr.write(err.decode('utf-8'))
+            sys.stdout.write(output)
+            sys.stderr.write(err)
         task_queue.task_done()
 
 
@@ -147,12 +221,21 @@ if __name__ == '__main__':
                         dest='clang_tidy',
                         help='Path to the clang-tidy binary',
                         default='clang-tidy')
+    parser.add_argument('--checks',
+                        dest='checks',
+                        help='Additional checks filters',
+                        default=None)
     parser.add_argument('--jobs', '-j',
                         dest='jobs',
                         metavar='N',
                         type=int,
                         help='Allow N jobs at once [1]',
                         default=1)
+    parser.add_argument('--fix',
+                        dest='fix',
+                        help='Apply suggested fixes',
+                        action='store_true',
+                        default=False)
     opt = parser.parse_args()
 
     # Check source directory
@@ -192,7 +275,13 @@ if __name__ == '__main__':
     os.chdir(opt.src_dir)
 
     # Print the list of checks
-    subprocess.check_call([clang_tidy, '-list-checks', '-p', build_dir, '-'])
+    cmd = [clang_tidy]
+    cmd.append('-p=%s' % build_dir)
+    if opt.checks:
+        cmd.append('-checks=%s' % opt.checks)
+    cmd.append('-list-checks')
+    cmd.append('-')
+    subprocess.check_call(cmd)
 
     try:
         task_queue = queue.Queue(opt.jobs)
@@ -203,6 +292,8 @@ if __name__ == '__main__':
             t = threading.Thread(target=run_tidy,
                                  args=(clang_tidy,
                                        build_dir,
+                                       opt.checks,
+                                       opt.fix,
                                        task_queue,
                                        lock))
             t.daemon = True
