@@ -4,7 +4,7 @@ IKOS version 2.2 release notes
 Release date
 ------------
 
-August 2018
+August 2019
 
 List of changes
 ---------------
