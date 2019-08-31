@@ -1,3 +1,54 @@
+IKOS version 2.2 release notes
+==============================
+
+Release date
+------------
+
+August 2018
+
+List of changes
+---------------
+
+### IKOS Core changes
+
+* Fixed non-convergence issues in the fixpoint iterator
+* Improved the precision of the modulo operator for the DBM domain
+* Improved the weak topological order implementation
+* Implemented the narrowing operator with a threshold
+
+### Analyzer changes
+
+* Improved the analysis and checks of the standard library functions
+* Implemented a logger showing the progress of the analysis
+* Added intrinsics to model library functions
+* Added a checker to watch memory writes at a given location
+* Added a checker to warn about unsound statements
+* Added checks for recursive calls
+* Forward `-I`, `-D`, `-W`, `-w` and `-m` flags to clang
+* Support the analysis of LLVM text assembly file `.ll`
+* Added an option to disable the cache of fixpoints
+* Added options to control the fixpoint engine
+
+### LLVM frontend changes
+
+* Upgraded LLVM from 7.0.x to 8.0.x
+* Improved the support of LLVM debug information
+* Improved the error message for mismatch of intrinsics
+* Added support for empty array fields in structures
+
+### CMake changes
+
+* Added support for linking with LLVM shared libraries
+* Added version detection for GMP, MPFR, PPL, SQLite
+
+### Overall changes
+
+* Added several sections to the documentation:
+   - Analysis assumptions
+   - Modeling library functions
+   - Analysis of embedded software
+
+
 IKOS version 2.1 release notes
 ==============================
 
