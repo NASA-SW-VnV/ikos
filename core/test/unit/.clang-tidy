@@ -1,4 +1,4 @@
-Checks: '*,-cert-dcl03-c,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-fuchsia-default-arguments,-fuchsia-multiple-inheritance,-fuchsia-overloaded-operator,-fuchsia-statically-constructed-objects,-google-runtime-references,-hicpp-no-array-decay,-hicpp-static-assert,-llvm-header-guard,-misc-non-private-member-variables-in-classes,-misc-static-assert,-modernize-use-default-member-init,-readability-const-return-type,-readability-else-after-return,-readability-magic-numbers,-readability-named-parameter'
+Checks: '*,-cert-dcl03-c,-cert-err58-cpp,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-fuchsia-default-arguments,-fuchsia-overloaded-operator,-fuchsia-statically-constructed-objects,-google-build-using-namespace,-google-readability-function-size,-google-runtime-references,-hicpp-function-size,-hicpp-no-array-decay,-hicpp-static-assert,-hicpp-vararg,-llvm-header-guard,-misc-non-private-member-variables-in-classes,-misc-static-assert,-readability-container-size-empty,-readability-else-after-return,-readability-function-size,-readability-magic-numbers,-readability-named-parameter'
 CheckOptions:
   - { key: readability-identifier-naming.NamespaceCase,         value: lower_case }
   - { key: readability-identifier-naming.TypeAliasCase,         value: CamelCase  }
@@ -20,21 +20,27 @@ CheckOptions:
   - { key: modernize-use-default-member-init.UseAssignment,     value: 1          }
 # Reasons for disabling checks:
 # * cert-dcl03-c: It generates false positives with ikos_unreachable()
-# * cppcoreguidelines-avoid-magic-numbers: It generates too many warnings
+# * cert-err58-cpp: It generates warnings in Boost.Test
+# * cppcoreguidelines-avoid-magic-numbers: We use 'magic' numbers in tests
+# * cppcoreguidelines-macro-usage: We use macros in tests
 # * cppcoreguidelines-non-private-member-variables-in-classes: It generates warnings for protected members of classes
 # * cppcoreguidelines-pro-bounds-array-to-pointer-decay: It generates warnings for ikos_assert_msg()
+# * cppcoreguidelines-pro-type-vararg: It generates warnings in Boost.Test
 # * fuchsia-default-arguments: We allow default arguments
-# * fuchsia-multiple-inheritance: We allow multiple inheritance
 # * fuchsia-overloaded-operator: We allow overloads of operators
 # * fuchsia-statically-constructed-objects: We allow static objects
+# * google-build-using-namespace: We allow 'using namespace' in tests
+# * google-readability-function-size: We allow long functions in tests
 # * google-runtime-references: We allow output parameters as reference
+# * hicpp-function-size: We allow long functions in tests
 # * hicpp-no-array-decay: It generates warnings for ikos_assert_msg()
 # * hicpp-static-assert: It generates false positives with ikos_unreachable()
+# * hicpp-vararg: It generates warnings in Boost.Test
 # * llvm-header-guard: We use #pragma once
 # * misc-non-private-member-variables-in-classes: It generates warnings for public members of structures
 # * misc-static-assert: It generates false positives with ikos_unreachable()
-# * modernize-use-default-member-init: We prefer to explicitly initialize member variables
-# * readability-const-return-type: It generates contradicting warnings with check cert-dcl21-cpp
+# * readability-container-size-empty: Accept `x.size() == 0` checks in tests
 # * readability-else-after-return: We allow else after return
-# * readability-magic-numbers: It generates too many warnings
+# * readability-function-size: We allow long functions in tests
+# * readability-magic-numbers: We use 'magic' numbers in tests
 # * readability-named-parameter: We allow unnamed parameters
