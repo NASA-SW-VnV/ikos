@@ -49,7 +49,7 @@
 
 // clang-format off
 
-#if defined(IKOS_DISABLE_ASSERTS) || defined(NDEBUG)
+#ifdef NDEBUG
 
 # define ikos_assert(expr) static_cast< void >(0)
 
@@ -72,23 +72,21 @@
 ///
 /// By default, expands to assert(expr)
 ///
-/// If the macro IKOS_DISABLE_ASSERTS is defined, expands to ((void)0),
-/// regardless of whether the macro NDEBUG is defined.
+/// If the macro NDEBUG is defined, expands to ((void)0).
 # define ikos_assert(expr) assert(expr)
 
 /// \macro ikos_assert_msg
 ///
 /// By default, expands to assert((expr) && (msg))
 ///
-/// If the macro IKOS_DISABLE_ASSERTS is defined, expands to ((void)0),
-/// regardless of whether the macro NDEBUG is defined.
+/// If the macro NDEBUG is defined, expands to ((void)0).
 # define ikos_assert_msg(expr, msg) assert((expr) && (msg))
 
 /// \macro ikos_unreachable
 ///
 /// Marks that the current location is not supposed to be reachable.
 ///
-/// If IKOS_DISABLE_ASSERTS or NDEBUG are defined, expands to an optimizer hint
+/// If the macro NDEBUG is defined, expands to an optimizer hint
 /// that the current location is not supposed to be reachable. On compilers that
 /// don't support such hints, expands to abort()
 ///

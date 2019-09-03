@@ -1,3 +1,27 @@
+# Check the build type
+set(CMAKE_BUILD_TYPES "Debug;Release;RelWithDebInfo;MinSizeRel")
+if (NOT (CMAKE_BUILD_TYPE IN_LIST CMAKE_BUILD_TYPES))
+  message(FATAL_ERROR "Unsupported build type: ${CMAKE_BUILD_TYPE}")
+endif()
+
+# Option to enable assertions
+if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+  option(ENABLE_ASSERTIONS "Enable assertions" OFF)
+else()
+  option(ENABLE_ASSERTIONS "Enable assertions" ON)
+endif()
+
+if (ENABLE_ASSERTIONS)
+  # On non-Debug builds, cmake automatically defines NDEBUG, so we undefine it.
+  if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+    add_definitions("-UNDEBUG")
+  endif()
+else()
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_definitions("-DNDEBUG")
+  endif()
+endif()
+
 # Option to enable sanitizers
 set(USE_SANITIZER "" CACHE STRING "Define the sanitizer used to build binaries and tests")
 

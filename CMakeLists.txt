@@ -71,7 +71,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Generate compile_commands.json, used by clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-include(SanitizerOptions)
+include(HandleOptions)
 
 # Enable tests
 enable_testing()
