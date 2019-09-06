@@ -168,7 +168,10 @@ private:
 
 public:
   /// \brief Create the top interval-congruence
-  IntervalCongruence() : IntervalCongruence(TopTag{}) {}
+  static IntervalCongruence top() { return IntervalCongruence(TopTag{}); }
+
+  /// \brief Create the bottom interval-congruence
+  static IntervalCongruence bottom() { return IntervalCongruence(BottomTag{}); }
 
   /// \brief Create the interval-congruence ([n, n], 0Z+n)
   explicit IntervalCongruence(int n) : _i(n), _c(n) {}
@@ -208,12 +211,6 @@ public:
 
   /// \brief Destructor
   ~IntervalCongruence() override = default;
-
-  /// \brief Create the top interval-congruence
-  static IntervalCongruence top() { return IntervalCongruence(TopTag{}); }
-
-  /// \brief Create the bottom interval-congruence
-  static IntervalCongruence bottom() { return IntervalCongruence(BottomTag{}); }
 
   /// \brief Return the interval
   const IntervalT& interval() const { return this->_i; }
@@ -454,7 +451,13 @@ private:
   QInterval _i;
 
 public:
-  IntervalCongruence() : _i(QInterval::top()) {}
+  static IntervalCongruence top() {
+    return IntervalCongruence(QInterval::top());
+  }
+
+  static IntervalCongruence bottom() {
+    return IntervalCongruence(QInterval::bottom());
+  }
 
   explicit IntervalCongruence(int n) : _i(n) {}
 
@@ -475,14 +478,6 @@ public:
   IntervalCongruence& operator=(IntervalCongruence&&) = default;
 
   ~IntervalCongruence() override = default;
-
-  static IntervalCongruence top() {
-    return IntervalCongruence(QInterval::top());
-  }
-
-  static IntervalCongruence bottom() {
-    return IntervalCongruence(QInterval::bottom());
-  }
 
   const QInterval& interval() const { return this->_i; }
 

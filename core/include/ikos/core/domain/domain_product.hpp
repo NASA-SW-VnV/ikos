@@ -68,25 +68,8 @@ private:
   Domain2 _second;
   bool _is_bottom;
 
-private:
-  struct TopTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top abstract value
-  explicit DomainProduct2(TopTag)
-      : _first(Domain1::top()), _second(Domain2::top()), _is_bottom(false) {}
-
-  /// \brief Create the bottom abstract value
-  explicit DomainProduct2(BottomTag)
-      : _first(Domain1::bottom()),
-        _second(Domain2::bottom()),
-        _is_bottom(true) {}
-
 public:
-  /// \brief Create the top abstract value
-  DomainProduct2() : DomainProduct2(TopTag{}) {}
-
-  /// \brief Create the abstract value with the given values
+  /// \brief Create the abstract value with the given abstract values
   DomainProduct2(Domain1 first, Domain2 second)
       : _first(std::move(first)),
         _second(std::move(second)),
@@ -116,12 +99,6 @@ public:
 
   /// \brief Destructor
   ~DomainProduct2() override = default;
-
-  /// \brief Create the top abstract value
-  static DomainProduct2 top() { return DomainProduct2(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static DomainProduct2 bottom() { return DomainProduct2(BottomTag{}); }
 
   /// \brief Normalize the abstract value
   void normalize() const {
@@ -307,10 +284,7 @@ private:
   explicit DomainProduct3(Product123 product) : _product(std::move(product)) {}
 
 public:
-  /// \brief Create the top abstract value
-  DomainProduct3() = default;
-
-  /// \brief Create the abstract value with the given values
+  /// \brief Create the abstract value with the given abstract values
   DomainProduct3(Domain1 first, Domain2 second, Domain3 third)
       : _product(Product12(std::move(first), std::move(second)),
                  std::move(third)) {}
@@ -341,14 +315,6 @@ public:
 
   /// \brief Destructor
   ~DomainProduct3() override = default;
-
-  /// \brief Create the top abstract value
-  static DomainProduct3 top() { return DomainProduct3(Product123::top()); }
-
-  /// \brief Create the bottom abstract value
-  static DomainProduct3 bottom() {
-    return DomainProduct3(Product123::bottom());
-  }
 
   /// \brief Normalize the abstract value
   void normalize() const { this->_product.normalize(); }

@@ -98,7 +98,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
     return {CheckKind::UninitializedVariable, Result::Error, {stmt->pointer()}};
   }
 
-  ZInterval base_interval;
+  auto base_interval = ZInterval::bottom();
   if (isa< ar::NullConstant >(stmt->pointer()) ||
       isa< ar::GlobalVariable >(stmt->pointer()) ||
       isa< ar::LocalVariable >(stmt->pointer()) ||
@@ -114,9 +114,8 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
   }
 
   Result result = Result::Ok;
-  ZInterval top =
-      IntInterval::top(this->_data_layout.pointers.bit_width, Unsigned)
-          .to_z_interval();
+  auto top = IntInterval::top(this->_data_layout.pointers.bit_width, Unsigned)
+                 .to_z_interval();
   ZBound max(MachineInt::max(this->_data_layout.pointers.bit_width, Unsigned)
                  .to_z_number());
 
@@ -126,7 +125,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
     auto term = *it;
     auto factor_interval = ZInterval(term.first.to_z_number());
     const ScalarLit& offset = this->_lit_factory.get_scalar(term.second);
-    ZInterval offset_interval;
+    auto offset_interval = ZInterval::bottom();
 
     if (offset.is_undefined() ||
         (offset.is_machine_int_var() &&

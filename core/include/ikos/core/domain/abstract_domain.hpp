@@ -59,18 +59,16 @@ public:
     static_assert(std::is_base_of< AbstractDomain< Derived >, Derived >::value,
                   "Derived must inherit from AbstractDomain");
     static_assert(std::is_final< Derived >::value, "Derived must be final");
-    static_assert(std::is_default_constructible< Derived >::value,
-                  "Derived must be default constructible");
+    static_assert(!std::is_default_constructible< Derived >::value,
+                  "Derived must NOT be default constructible");
     static_assert(std::is_copy_constructible< Derived >::value,
-                  "Derived must be default constructible");
+                  "Derived must be copy constructible");
+    static_assert(std::is_move_constructible< Derived >::value,
+                  "Derived must be move constructible");
     static_assert(std::is_copy_assignable< Derived >::value,
                   "Derived must be copy assignable");
-    // Derived must provide Derived::top()
-    static_assert(std::is_same< decltype(Derived::top()), Derived >::value,
-                  "Derived::top() does not exist");
-    // Derived must provide Derived::bottom()
-    static_assert(std::is_same< decltype(Derived::bottom()), Derived >::value,
-                  "Derived::bottom() does not exist");
+    static_assert(std::is_move_assignable< Derived >::value,
+                  "Derived must be move assignable");
     // Derived must provide Derived::name()
     static_assert(std::is_same< decltype(Derived::name()), std::string >::value,
                   "Derived::name() does not exist");

@@ -91,7 +91,10 @@ private:
 
 public:
   /// \brief Create the interval [-oo, +oo]
-  Interval() : Interval(TopTag{}) {}
+  static Interval top() { return Interval(TopTag{}); }
+
+  /// \brief Create the bottom interval
+  static Interval bottom() { return Interval(BottomTag{}); }
 
   /// \brief Create the interval [n, n]
   explicit Interval(int n) : _lb(n), _ub(n) {}
@@ -134,12 +137,6 @@ public:
 
   /// \brief Destructor
   ~Interval() override = default;
-
-  /// \brief Create the interval [-oo, +oo]
-  static Interval top() { return Interval(TopTag{}); }
-
-  /// \brief Create the bottom interval
-  static Interval bottom() { return Interval(BottomTag{}); }
 
   /// \brief Return the lower bound
   const BoundT& lb() const {

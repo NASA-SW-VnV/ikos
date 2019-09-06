@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!IntervalCongruenceDomain::bottom().is_top());
   BOOST_CHECK(IntervalCongruenceDomain::bottom().is_bottom());
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -122,12 +122,12 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(
       IntervalCongruenceDomain::top().leq(IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, IntervalCongruence(Int(0, 32, Signed)));
   BOOST_CHECK(inv1.leq(IntervalCongruenceDomain::top()));
   BOOST_CHECK(!inv1.leq(IntervalCongruenceDomain::bottom()));
 
-  IntervalCongruenceDomain inv2;
+  auto inv2 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Int(0, 32, Signed), Int(10, 32, Signed)),
                               Congruence(Int(2, 32, Signed),
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  IntervalCongruenceDomain inv3;
+  auto inv3 = IntervalCongruenceDomain::top();
   inv3.set(x, IntervalCongruence(Int(0, 32, Signed)));
   inv3.set(y,
            IntervalCongruence(Interval::top(32, Signed),
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  IntervalCongruenceDomain inv4;
+  auto inv4 = IntervalCongruenceDomain::top();
   inv4.set(x, IntervalCongruence(Int(0, 32, Signed)));
   inv4.set(y,
            IntervalCongruence(Interval::top(32, Signed),
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  IntervalCongruenceDomain inv5;
+  auto inv5 = IntervalCongruenceDomain::top();
   inv5.set(x, IntervalCongruence(Int(0, 32, Signed)));
   inv5.set(y,
            IntervalCongruence(Interval(Int(0, 32, Signed), Int(4, 32, Signed)),
@@ -192,13 +192,13 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(
       IntervalCongruenceDomain::top().equals(IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, IntervalCongruence(Int(0, 32, Signed)));
   BOOST_CHECK(!inv1.equals(IntervalCongruenceDomain::top()));
   BOOST_CHECK(!inv1.equals(IntervalCongruenceDomain::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  IntervalCongruenceDomain inv2;
+  auto inv2 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(
                Congruence(Int(2, 32, Signed), Int(0, 32, Signed))));
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  IntervalCongruenceDomain inv3;
+  auto inv3 = IntervalCongruenceDomain::top();
   inv3.set(x, IntervalCongruence(Int(0, 32, Signed)));
   inv3.set(y,
            IntervalCongruence(
@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(join) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, IntervalCongruence(Int(1, 32, Signed)));
   BOOST_CHECK((inv1.join(IntervalCongruenceDomain::top()) ==
                IntervalCongruenceDomain::top()));
@@ -248,8 +248,8 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((IntervalCongruenceDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x, IntervalCongruence(Int(3, 32, Signed)));
   inv3.set(x,
            IntervalCongruence(Interval(Int(0, 32, Signed), Int(3, 32, Signed)),
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  IntervalCongruenceDomain inv4;
+  auto inv4 = IntervalCongruenceDomain::top();
   inv4.set(x, IntervalCongruence(Int(3, 32, Signed)));
   inv4.set(y,
            IntervalCongruence(
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(widening) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, IntervalCongruence(Int(1, 32, Signed)));
   BOOST_CHECK((inv1.widening(IntervalCongruenceDomain::top()) ==
                IntervalCongruenceDomain::top()));
@@ -297,8 +297,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((IntervalCongruenceDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x, IntervalCongruence(Int(3, 32, Signed)));
   inv3.set(x,
            IntervalCongruence(Interval(Int(0, 32, Signed),
@@ -307,7 +307,7 @@ BOOST_AUTO_TEST_CASE(widening) {
                                          Int(1, 32, Signed))));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
 
-  IntervalCongruenceDomain inv4;
+  auto inv4 = IntervalCongruenceDomain::top();
   inv4.set(x, IntervalCongruence(Int(3, 32, Signed)));
   inv4.set(y,
            IntervalCongruence(
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(meet) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::bottom()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x,
            IntervalCongruence(Interval(Int(1, 32, Signed), Int(13, 32, Signed)),
                               Congruence(Int(6, 32, Signed),
@@ -349,8 +349,8 @@ BOOST_AUTO_TEST_CASE(meet) {
                IntervalCongruenceDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Int(7, 32, Signed),
                                        Int::max(32, Signed)),
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::bottom()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x,
            IntervalCongruence(Interval(Int(1, 32, Signed), Int(13, 32, Signed)),
                               Congruence(Int(6, 32, Signed),
@@ -394,8 +394,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                IntervalCongruenceDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Int(7, 32, Signed),
                                        Int::max(32, Signed)),
@@ -413,8 +413,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv1;
-  IntervalCongruenceDomain inv2;
+  auto inv1 = IntervalCongruenceDomain::top();
+  auto inv2 = IntervalCongruenceDomain::top();
   inv1.assign(x, Int(0, 32, Signed));
   inv2.set(x, IntervalCongruence(Int(0, 32, Signed)));
   BOOST_CHECK((inv1 == inv2));
@@ -462,7 +462,7 @@ BOOST_AUTO_TEST_CASE(unary_apply) {
   Variable z(vfac.get("z", 8, Signed));
   Variable w(vfac.get("w", 8, Unsigned));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.assign(x, Int(85, 8, Signed));
   BOOST_CHECK(inv.to_interval_congruence(x) ==
               IntervalCongruence(Int(85, 8, Signed)));
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(binary_apply) {
   Variable z(vfac.get("z", 8, Signed));
   Variable w(vfac.get("w", 8, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.assign(x, Int(85, 8, Signed));
   BOOST_CHECK(inv.to_interval_congruence(x) ==
               IntervalCongruence(Int(85, 8, Signed)));
@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_CASE(add_var) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x,
           IntervalCongruence(Interval(Int(7, 32, Signed), Int(13, 32, Signed)),
                              Congruence(Int(6, 32, Signed),
@@ -525,7 +525,7 @@ BOOST_AUTO_TEST_CASE(add_int) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x,
           IntervalCongruence(Interval::top(32, Signed),
                              Congruence(Int(6, 32, Signed),
@@ -542,7 +542,7 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x,
           IntervalCongruence(Interval(Int(3, 32, Signed), Int(11, 32, Signed)),
                              Congruence(Int(2, 32, Signed),
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(set) {
       IntervalCongruence(Interval(Int(3, 32, Signed), Int(11, 32, Signed)),
                          Congruence(Int(2, 32, Signed), Int(1, 32, Signed))));
 
-  inv.set(x, IntervalCongruence::bottom());
+  inv.set(x, IntervalCongruence::bottom(32, Signed));
   BOOST_CHECK(inv.is_bottom());
 }
 
@@ -563,7 +563,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x,
           IntervalCongruence(Interval(Int(6, 32, Signed), Int(11, 32, Signed)),
                              Congruence(Int(5, 32, Signed),
@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x,
           IntervalCongruence(Interval(Int(0, 32, Signed), Int(10, 32, Signed)),
                              Congruence(Int(2, 32, Signed),
@@ -623,7 +623,7 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x,
           IntervalCongruence(Interval(Int(7, 32, Signed), Int(13, 32, Signed)),
                              Congruence(Int(6, 32, Signed),

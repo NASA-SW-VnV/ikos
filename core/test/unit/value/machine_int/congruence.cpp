@@ -56,9 +56,6 @@ using ikos::core::Signed;
 using ikos::core::Unsigned;
 
 BOOST_AUTO_TEST_CASE(test_constructors) {
-  // Congruence()
-  BOOST_CHECK(Congruence() == Congruence::top(1, Signed));
-
   // Congruence(Int)
   BOOST_CHECK(Congruence(Int(0, 8, Signed)) ==
               Congruence(Int(0, 8, Signed), Int(0, 8, Signed)));
@@ -140,9 +137,6 @@ BOOST_AUTO_TEST_CASE(test_constructors) {
               Congruence(Z(0), Z(6), 8, Unsigned));
 
   // Congruence::top()/bottom()
-  BOOST_CHECK(Congruence::top() == Congruence::top(1, Signed));
-  BOOST_CHECK(Congruence::bottom() == Congruence::bottom(1, Signed));
-
   BOOST_CHECK(Congruence::top(1, Signed) == Congruence(Z(1), Z(0), 1, Signed));
   BOOST_CHECK(Congruence::top(8, Signed) == Congruence(Z(1), Z(0), 8, Signed));
 
@@ -221,11 +215,11 @@ BOOST_AUTO_TEST_CASE(test_set_to_top) {
 }
 
 BOOST_AUTO_TEST_CASE(test_leq) {
-  BOOST_CHECK(Congruence::bottom().leq(Congruence::bottom()));
-  BOOST_CHECK(Congruence::bottom().leq(Congruence::top()));
+  BOOST_CHECK(Congruence::bottom(8, Signed).leq(Congruence::bottom(8, Signed)));
+  BOOST_CHECK(Congruence::bottom(8, Signed).leq(Congruence::top(8, Signed)));
 
-  BOOST_CHECK(!Congruence::top().leq(Congruence::bottom()));
-  BOOST_CHECK(Congruence::top().leq(Congruence::top()));
+  BOOST_CHECK(!Congruence::top(8, Signed).leq(Congruence::bottom(8, Signed)));
+  BOOST_CHECK(Congruence::top(8, Signed).leq(Congruence::top(8, Signed)));
 
   // Signed
 
@@ -330,11 +324,14 @@ BOOST_AUTO_TEST_CASE(test_leq) {
 }
 
 BOOST_AUTO_TEST_CASE(test_equals) {
-  BOOST_CHECK(Congruence::bottom().equals(Congruence::bottom()));
-  BOOST_CHECK(!Congruence::bottom().equals(Congruence::top()));
+  BOOST_CHECK(
+      Congruence::bottom(8, Signed).equals(Congruence::bottom(8, Signed)));
+  BOOST_CHECK(
+      !Congruence::bottom(8, Signed).equals(Congruence::top(8, Signed)));
 
-  BOOST_CHECK(!Congruence::top().equals(Congruence::bottom()));
-  BOOST_CHECK(Congruence::top().equals(Congruence::top()));
+  BOOST_CHECK(
+      !Congruence::top(8, Signed).equals(Congruence::bottom(8, Signed)));
+  BOOST_CHECK(Congruence::top(8, Signed).equals(Congruence::top(8, Signed)));
 
   // Signed
 
@@ -514,14 +511,16 @@ BOOST_AUTO_TEST_CASE(test_equals) {
 }
 
 BOOST_AUTO_TEST_CASE(test_join) {
-  BOOST_CHECK(Congruence::top().join(Congruence::bottom()) ==
-              Congruence::top());
-  BOOST_CHECK(Congruence::top().join(Congruence::top()) == Congruence::top());
+  BOOST_CHECK(Congruence::top(8, Signed).join(Congruence::bottom(8, Signed)) ==
+              Congruence::top(8, Signed));
+  BOOST_CHECK(Congruence::top(8, Signed).join(Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(Congruence::bottom().join(Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(Congruence::bottom().join(Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      Congruence::bottom(8, Signed).join(Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(Congruence::bottom(8, Signed).join(Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
   // Signed
 
@@ -662,15 +661,16 @@ BOOST_AUTO_TEST_CASE(test_join) {
 }
 
 BOOST_AUTO_TEST_CASE(test_widening) {
-  BOOST_CHECK(Congruence::top().widening(Congruence::bottom()) ==
-              Congruence::top());
-  BOOST_CHECK(Congruence::top().widening(Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(Congruence::top(8, Signed).widening(
+                  Congruence::bottom(8, Signed)) == Congruence::top(8, Signed));
+  BOOST_CHECK(Congruence::top(8, Signed).widening(Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(Congruence::bottom().widening(Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(Congruence::bottom().widening(Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      Congruence::bottom(8, Signed).widening(Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(Congruence::bottom(8, Signed).widening(
+                  Congruence::top(8, Signed)) == Congruence::top(8, Signed));
 
   // Signed
 
@@ -818,14 +818,16 @@ BOOST_AUTO_TEST_CASE(test_widening) {
 }
 
 BOOST_AUTO_TEST_CASE(test_meet) {
-  BOOST_CHECK(Congruence::top().meet(Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(Congruence::top().meet(Congruence::top()) == Congruence::top());
+  BOOST_CHECK(Congruence::top(8, Signed).meet(Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(Congruence::top(8, Signed).meet(Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(Congruence::bottom().meet(Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(Congruence::bottom().meet(Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      Congruence::bottom(8, Signed).meet(Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(Congruence::bottom(8, Signed).meet(Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -966,15 +968,17 @@ BOOST_AUTO_TEST_CASE(test_meet) {
 }
 
 BOOST_AUTO_TEST_CASE(test_narrowing) {
-  BOOST_CHECK(Congruence::top().narrowing(Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(Congruence::top().narrowing(Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      Congruence::top(8, Signed).narrowing(Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(Congruence::top(8, Signed).narrowing(
+                  Congruence::top(8, Signed)) == Congruence::top(8, Signed));
 
-  BOOST_CHECK(Congruence::bottom().narrowing(Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(Congruence::bottom().narrowing(Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      Congruence::bottom(8, Signed).narrowing(Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(Congruence::bottom(8, Signed).narrowing(
+                  Congruence::top(8, Signed)) == Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -1299,14 +1303,16 @@ BOOST_AUTO_TEST_CASE(test_sign_cast) {
 }
 
 BOOST_AUTO_TEST_CASE(test_add) {
-  BOOST_CHECK(add(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(add(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(add(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(add(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(add(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(add(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      add(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(add(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -1465,15 +1471,19 @@ BOOST_AUTO_TEST_CASE(test_add) {
 }
 
 BOOST_AUTO_TEST_CASE(test_add_no_wrap) {
-  BOOST_CHECK(add_no_wrap(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(add_no_wrap(Congruence::top(), Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      add_no_wrap(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      add_no_wrap(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::top(8, Signed));
 
-  BOOST_CHECK(add_no_wrap(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(add_no_wrap(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(add_no_wrap(Congruence::bottom(8, Signed),
+                          Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      add_no_wrap(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -1644,14 +1654,16 @@ BOOST_AUTO_TEST_CASE(test_add_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_sub) {
-  BOOST_CHECK(sub(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(sub(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(sub(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(sub(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(sub(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(sub(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      sub(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(sub(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -1810,15 +1822,19 @@ BOOST_AUTO_TEST_CASE(test_sub) {
 }
 
 BOOST_AUTO_TEST_CASE(test_sub_no_wrap) {
-  BOOST_CHECK(sub_no_wrap(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(sub_no_wrap(Congruence::top(), Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      sub_no_wrap(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      sub_no_wrap(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::top(8, Signed));
 
-  BOOST_CHECK(sub_no_wrap(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(sub_no_wrap(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(sub_no_wrap(Congruence::bottom(8, Signed),
+                          Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      sub_no_wrap(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -1989,14 +2005,16 @@ BOOST_AUTO_TEST_CASE(test_sub_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_mul) {
-  BOOST_CHECK(mul(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(mul(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(mul(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(mul(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(mul(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(mul(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      mul(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(mul(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -2169,15 +2187,19 @@ BOOST_AUTO_TEST_CASE(test_mul) {
 }
 
 BOOST_AUTO_TEST_CASE(test_mul_no_wrap) {
-  BOOST_CHECK(mul_no_wrap(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(mul_no_wrap(Congruence::top(), Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      mul_no_wrap(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      mul_no_wrap(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::top(8, Signed));
 
-  BOOST_CHECK(mul_no_wrap(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(mul_no_wrap(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(mul_no_wrap(Congruence::bottom(8, Signed),
+                          Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      mul_no_wrap(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -2360,14 +2382,16 @@ BOOST_AUTO_TEST_CASE(test_mul_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_div) {
-  BOOST_CHECK(div(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(div(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(div(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(div(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(div(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(div(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      div(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(div(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -2540,14 +2564,16 @@ BOOST_AUTO_TEST_CASE(test_div) {
 }
 
 BOOST_AUTO_TEST_CASE(test_rem) {
-  BOOST_CHECK(rem(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(rem(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(rem(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(rem(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(rem(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(rem(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      rem(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(rem(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -2724,14 +2750,16 @@ BOOST_AUTO_TEST_CASE(test_rem) {
 }
 
 BOOST_AUTO_TEST_CASE(test_shl) {
-  BOOST_CHECK(shl(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(shl(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(shl(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(shl(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(shl(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(shl(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      shl(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(shl(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -2913,15 +2941,19 @@ BOOST_AUTO_TEST_CASE(test_shl) {
 }
 
 BOOST_AUTO_TEST_CASE(test_shl_no_wrap) {
-  BOOST_CHECK(shl_no_wrap(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(shl_no_wrap(Congruence::top(), Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      shl_no_wrap(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      shl_no_wrap(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::top(8, Signed));
 
-  BOOST_CHECK(shl_no_wrap(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(shl_no_wrap(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(shl_no_wrap(Congruence::bottom(8, Signed),
+                          Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      shl_no_wrap(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -3113,14 +3145,16 @@ BOOST_AUTO_TEST_CASE(test_shl_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_lshr) {
-  BOOST_CHECK(lshr(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(lshr(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(lshr(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(lshr(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(lshr(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(lshr(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      lshr(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(lshr(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -3300,15 +3334,19 @@ BOOST_AUTO_TEST_CASE(test_lshr) {
 }
 
 BOOST_AUTO_TEST_CASE(test_lshr_exact) {
-  BOOST_CHECK(lshr_exact(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(lshr_exact(Congruence::top(), Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      lshr_exact(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      lshr_exact(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::top(8, Signed));
 
-  BOOST_CHECK(lshr_exact(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(lshr_exact(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(lshr_exact(Congruence::bottom(8, Signed),
+                         Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      lshr_exact(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -3500,14 +3538,16 @@ BOOST_AUTO_TEST_CASE(test_lshr_exact) {
 }
 
 BOOST_AUTO_TEST_CASE(test_ashr) {
-  BOOST_CHECK(ashr(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(ashr(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(ashr(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(ashr(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(ashr(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(ashr(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      ashr(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(ashr(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -3687,15 +3727,19 @@ BOOST_AUTO_TEST_CASE(test_ashr) {
 }
 
 BOOST_AUTO_TEST_CASE(test_ashr_exact) {
-  BOOST_CHECK(ashr_exact(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(ashr_exact(Congruence::top(), Congruence::top()) ==
-              Congruence::top());
+  BOOST_CHECK(
+      ashr_exact(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      ashr_exact(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::top(8, Signed));
 
-  BOOST_CHECK(ashr_exact(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(ashr_exact(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(ashr_exact(Congruence::bottom(8, Signed),
+                         Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(
+      ashr_exact(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+      Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -3887,14 +3931,16 @@ BOOST_AUTO_TEST_CASE(test_ashr_exact) {
 }
 
 BOOST_AUTO_TEST_CASE(test_and) {
-  BOOST_CHECK(and_(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(and_(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(and_(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(and_(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(and_(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(and_(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      and_(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(and_(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -4053,14 +4099,16 @@ BOOST_AUTO_TEST_CASE(test_and) {
 }
 
 BOOST_AUTO_TEST_CASE(test_or) {
-  BOOST_CHECK(or_(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(or_(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(or_(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(or_(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(or_(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(or_(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      or_(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(or_(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 
@@ -4219,14 +4267,16 @@ BOOST_AUTO_TEST_CASE(test_or) {
 }
 
 BOOST_AUTO_TEST_CASE(test_xor) {
-  BOOST_CHECK(xor_(Congruence::top(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(xor_(Congruence::top(), Congruence::top()) == Congruence::top());
+  BOOST_CHECK(xor_(Congruence::top(8, Signed), Congruence::bottom(8, Signed)) ==
+              Congruence::bottom(8, Signed));
+  BOOST_CHECK(xor_(Congruence::top(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::top(8, Signed));
 
-  BOOST_CHECK(xor_(Congruence::bottom(), Congruence::bottom()) ==
-              Congruence::bottom());
-  BOOST_CHECK(xor_(Congruence::bottom(), Congruence::top()) ==
-              Congruence::bottom());
+  BOOST_CHECK(
+      xor_(Congruence::bottom(8, Signed), Congruence::bottom(8, Signed)) ==
+      Congruence::bottom(8, Signed));
+  BOOST_CHECK(xor_(Congruence::bottom(8, Signed), Congruence::top(8, Signed)) ==
+              Congruence::bottom(8, Signed));
 
   // Signed
 

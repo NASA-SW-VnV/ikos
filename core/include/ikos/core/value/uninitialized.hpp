@@ -71,8 +71,19 @@ private:
   explicit Uninitialized(Kind kind) : _kind(kind) {}
 
 public:
-  /// \brief Create the top uninitialized value
-  Uninitialized() = default;
+  /// \brief Return the top uninitialized value
+  static Uninitialized top() { return Uninitialized(TopKind); }
+
+  /// \brief Return the bottom uninitialized value
+  static Uninitialized bottom() { return Uninitialized(BottomKind); }
+
+  /// \brief Return the initialized abstract value
+  static Uninitialized initialized() { return Uninitialized(InitializedKind); }
+
+  /// \brief Return the uninitialized abstract value
+  static Uninitialized uninitialized() {
+    return Uninitialized(UninitializedKind);
+  }
 
   /// \brief Copy constructor
   Uninitialized(const Uninitialized&) noexcept = default;
@@ -88,20 +99,6 @@ public:
 
   /// \brief Destructor
   ~Uninitialized() override = default;
-
-  /// \brief Return the top uninitialized value
-  static Uninitialized top() { return Uninitialized(TopKind); }
-
-  /// \brief Return the bottom uninitialized value
-  static Uninitialized bottom() { return Uninitialized(BottomKind); }
-
-  /// \brief Return the initialized abstract value
-  static Uninitialized initialized() { return Uninitialized(InitializedKind); }
-
-  /// \brief Return the uninitialized abstract value
-  static Uninitialized uninitialized() {
-    return Uninitialized(UninitializedKind);
-  }
 
   bool is_bottom() const override { return this->_kind == BottomKind; }
 

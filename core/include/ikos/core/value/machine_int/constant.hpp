@@ -65,23 +65,24 @@ private:
   struct TopTag {};
   struct BottomTag {};
 
-  /// \brief Create the top constant
-  explicit Constant(TopTag) : _kind(TopKind), _n(0, 1, Signed) {}
-
   /// \brief Create the top constant for the given bit-width and signedness
   Constant(TopTag, unsigned bit_width, Signedness sign)
       : _kind(TopKind), _n(0, bit_width, sign) {}
-
-  /// \brief Create the bottom constant
-  explicit Constant(BottomTag) : _kind(BottomKind), _n(0, 1, Signed) {}
 
   /// \brief Create the bottom constant for the given bit-width and signedness
   Constant(BottomTag, unsigned bit_width, Signedness sign)
       : _kind(BottomKind), _n(0, bit_width, sign) {}
 
 public:
-  /// \brief Create the top constant
-  Constant() : Constant(TopTag{}) {}
+  /// \brief Create the top constant for the given bit-width and signedness
+  static Constant top(unsigned bit_width, Signedness sign) {
+    return Constant(TopTag{}, bit_width, sign);
+  }
+
+  /// \brief Create the bottom constant for the given bit-width and signedness
+  static Constant bottom(unsigned bit_width, Signedness sign) {
+    return Constant(BottomTag{}, bit_width, sign);
+  }
 
   /// \brief Create the constant n
   explicit Constant(MachineInt n) : _kind(IntegerKind), _n(std::move(n)) {}
@@ -100,22 +101,6 @@ public:
 
   /// \brief Destructor
   ~Constant() override = default;
-
-  /// \brief Create the top constant
-  static Constant top() { return Constant(TopTag{}); }
-
-  /// \brief Create the bottom constant
-  static Constant bottom() { return Constant(BottomTag{}); }
-
-  /// \brief Create the top constant for the given bit-width and signedness
-  static Constant top(unsigned bit_width, Signedness sign) {
-    return Constant(TopTag{}, bit_width, sign);
-  }
-
-  /// \brief Create the bottom constant for the given bit-width and signedness
-  static Constant bottom(unsigned bit_width, Signedness sign) {
-    return Constant(BottomTag{}, bit_width, sign);
-  }
 
   /// \brief Return the bit width of the constant
   unsigned bit_width() const { return this->_n.bit_width(); }

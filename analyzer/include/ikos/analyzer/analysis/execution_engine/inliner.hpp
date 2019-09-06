@@ -120,12 +120,13 @@ public:
   InlineCallExecutionEngine(Context& ctx,
                             NumericalExecutionEngineT& engine,
                             const FunctionAnalyzer& caller,
+                            AbstractDomain bottom,
                             bool context_stable,
                             bool convergence_achieved)
       : _ctx(ctx),
         _engine(engine),
         _caller(caller),
-        _exit_inv(AbstractDomain::bottom()),
+        _exit_inv(std::move(bottom)),
         _return_stmt(nullptr),
         _context_stable(context_stable),
         _convergence_achieved(convergence_achieved),
@@ -198,7 +199,7 @@ private:
     //
     // Collect potential callees
     //
-    PointsToSet callees;
+    auto callees = PointsToSet::bottom();
     ar::Value* called = call->called();
 
     if (isa< ar::UndefinedConstant >(called)) {

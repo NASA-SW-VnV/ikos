@@ -191,6 +191,7 @@ add_executable(ikos-analyzer
   src/analysis/pointer/function.cpp
   src/analysis/pointer/pointer.cpp
   src/analysis/pointer/value.cpp
+  src/analysis/value/abstract_domain.cpp
   src/analysis/value/global_variable.cpp
   src/analysis/value/interprocedural/function_fixpoint.cpp
   src/analysis/value/interprocedural/global_init_fixpoint.cpp

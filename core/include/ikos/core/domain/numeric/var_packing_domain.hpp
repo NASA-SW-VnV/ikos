@@ -164,7 +164,7 @@ private:
   public:
     /// \brief Create an empty equivalence class
     explicit EquivalenceClass()
-        : rank(0), domain(std::make_shared< Domain >()) {}
+        : rank(0), domain(std::make_shared< Domain >(Domain::top())) {}
 
     /// \brief Copy constructor
     EquivalenceClass(const EquivalenceClass&) noexcept = default;
@@ -319,7 +319,7 @@ private:
       EquivalenceClass& y_class = this->_classes[y_root];
 
       // Merge the domains
-      DomainPtr merge_domain = std::make_shared< Domain >();
+      auto merge_domain = std::make_shared< Domain >(Domain::top());
       x_class.domain->normalize();
       y_class.domain->normalize();
       *merge_domain = (*x_class.domain).meet(*y_class.domain);
@@ -511,7 +511,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  VarPackingDomain() : VarPackingDomain(TopTag{}) {}
+  static VarPackingDomain top() { return VarPackingDomain(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static VarPackingDomain bottom() { return VarPackingDomain(BottomTag{}); }
 
   /// \brief Copy constructor
   VarPackingDomain(const VarPackingDomain&) = default;
@@ -527,12 +530,6 @@ public:
 
   /// \brief Destructor
   ~VarPackingDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static VarPackingDomain top() { return VarPackingDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static VarPackingDomain bottom() { return VarPackingDomain(BottomTag{}); }
 
   /// \brief Normalize the abstract value
   void normalize() const override {
@@ -639,7 +636,7 @@ public:
           } else if (this_domain == domain) {
             // nothing to do
           } else {
-            DomainPtr merge_domain = std::make_shared< Domain >();
+            auto merge_domain = std::make_shared< Domain >(Domain::top());
             this_domain->normalize();
             domain->normalize();
             *merge_domain = (*this_domain).meet(*domain);
@@ -758,7 +755,7 @@ private:
           if (equiv_class.domain == other_domain) {
             // nothing to do, left and right packs are the same
           } else {
-            DomainPtr merge_domain = std::make_shared< Domain >();
+            auto merge_domain = std::make_shared< Domain >(Domain::top());
             op(*merge_domain, *equiv_class.domain, *other_domain);
             equiv_class.domain = merge_domain;
           }
@@ -798,7 +795,7 @@ private:
         if (equiv_class.domain == other_domain) {
           // nothing to do, left and right packs are the same
         } else {
-          DomainPtr merge_domain = std::make_shared< Domain >();
+          auto merge_domain = std::make_shared< Domain >(Domain::top());
           op(*merge_domain, *equiv_class.domain, *other_domain);
           equiv_class.domain = merge_domain;
         }

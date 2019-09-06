@@ -94,57 +94,6 @@ private:
   }
 
 public:
-  /// \brief Create the top abstract value
-  PointerAbsValue()
-      : _points_to(PointsToSetT::top()),
-        _offset(MachineIntInterval::top()),
-        _nullity(Nullity::top()),
-        _uninitialized(Uninitialized::top()) {}
-
-  /// \brief Create the abstract value with the given points-to set, interval,
-  /// nullity and uninitialized
-  PointerAbsValue(PointsToSetT points_to,
-                  MachineIntInterval offset,
-                  Nullity nullity,
-                  Uninitialized uninitialized)
-      : _points_to(std::move(points_to)),
-        _offset(std::move(offset)),
-        _nullity(std::move(nullity)),
-        _uninitialized(std::move(uninitialized)) {
-    this->normalize();
-  }
-
-  /// \brief Copy constructor
-  PointerAbsValue(const PointerAbsValue&) = default;
-
-  /// \brief Move constructor
-  PointerAbsValue(PointerAbsValue&&) noexcept = default;
-
-  /// \brief Copy assignment operator
-  PointerAbsValue& operator=(const PointerAbsValue&) = default;
-
-  /// \brief Move assignment operator
-  PointerAbsValue& operator=(PointerAbsValue&&) noexcept = default;
-
-  /// \brief Destructor
-  ~PointerAbsValue() override = default;
-
-  /// \brief Create the top abstract value
-  static PointerAbsValue top() {
-    return PointerAbsValue(PointsToSetT::top(),
-                           MachineIntInterval::top(),
-                           Nullity::top(),
-                           Uninitialized::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static PointerAbsValue bottom() {
-    return PointerAbsValue(PointsToSetT::bottom(),
-                           MachineIntInterval::bottom(),
-                           Nullity::bottom(),
-                           Uninitialized::bottom());
-  }
-
   /// \brief Create the top abstract value with the given bit-width and
   /// signedness for the offset
   static PointerAbsValue top(unsigned bit_width, Signedness sign) {
@@ -180,6 +129,34 @@ public:
                            Nullity::top(),
                            Uninitialized::uninitialized());
   }
+
+  /// \brief Create the abstract value with the given points-to set, interval,
+  /// nullity and uninitialized
+  PointerAbsValue(PointsToSetT points_to,
+                  MachineIntInterval offset,
+                  Nullity nullity,
+                  Uninitialized uninitialized)
+      : _points_to(std::move(points_to)),
+        _offset(std::move(offset)),
+        _nullity(std::move(nullity)),
+        _uninitialized(std::move(uninitialized)) {
+    this->normalize();
+  }
+
+  /// \brief Copy constructor
+  PointerAbsValue(const PointerAbsValue&) = default;
+
+  /// \brief Move constructor
+  PointerAbsValue(PointerAbsValue&&) noexcept = default;
+
+  /// \brief Copy assignment operator
+  PointerAbsValue& operator=(const PointerAbsValue&) = default;
+
+  /// \brief Move assignment operator
+  PointerAbsValue& operator=(PointerAbsValue&&) noexcept = default;
+
+  /// \brief Destructor
+  ~PointerAbsValue() override = default;
 
   /// \brief Return the points-to set
   const PointsToSetT& points_to() const { return this->_points_to; }

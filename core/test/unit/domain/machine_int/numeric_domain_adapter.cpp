@@ -74,13 +74,13 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
 
-  BOOST_CHECK(IntervalDomain::top().is_top());
-  BOOST_CHECK(!IntervalDomain::top().is_bottom());
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::top()).is_top());
+  BOOST_CHECK(!IntervalDomain(NumericIntervalDomain::top()).is_bottom());
 
-  BOOST_CHECK(!IntervalDomain::bottom().is_top());
-  BOOST_CHECK(IntervalDomain::bottom().is_bottom());
+  BOOST_CHECK(!IntervalDomain(NumericIntervalDomain::bottom()).is_top());
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::bottom()).is_bottom());
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -118,45 +118,49 @@ BOOST_AUTO_TEST_CASE(leq) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  BOOST_CHECK(IntervalDomain::bottom().leq(IntervalDomain::top()));
-  BOOST_CHECK(IntervalDomain::bottom().leq(IntervalDomain::bottom()));
-  BOOST_CHECK(!IntervalDomain::top().leq(IntervalDomain::bottom()));
-  BOOST_CHECK(IntervalDomain::top().leq(IntervalDomain::top()));
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::bottom())
+                  .leq(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::bottom())
+                  .leq(IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK(!IntervalDomain(NumericIntervalDomain::top())
+                   .leq(IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::top())
+                  .leq(IntervalDomain(NumericIntervalDomain::top())));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
   inv1.set(x, Interval(Int(0, 32, Signed)));
-  BOOST_CHECK(inv1.leq(IntervalDomain::top()));
-  BOOST_CHECK(!inv1.leq(IntervalDomain::bottom()));
+  BOOST_CHECK(inv1.leq(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv1.leq(IntervalDomain(NumericIntervalDomain::bottom())));
 
-  IntervalDomain inv2;
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
   inv2.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK(inv2.leq(IntervalDomain::top()));
-  BOOST_CHECK(!inv2.leq(IntervalDomain::bottom()));
+  BOOST_CHECK(inv2.leq(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv2.leq(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  IntervalDomain inv3;
+  auto inv3 = IntervalDomain(NumericIntervalDomain::top());
   inv3.set(x, Interval(Int(0, 32, Signed)));
   inv3.set(y, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK(inv3.leq(IntervalDomain::top()));
-  BOOST_CHECK(!inv3.leq(IntervalDomain::bottom()));
+  BOOST_CHECK(inv3.leq(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv3.leq(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  IntervalDomain inv4;
+  auto inv4 = IntervalDomain(NumericIntervalDomain::top());
   inv4.set(x, Interval(Int(0, 32, Signed)));
   inv4.set(y, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
-  BOOST_CHECK(inv4.leq(IntervalDomain::top()));
-  BOOST_CHECK(!inv4.leq(IntervalDomain::bottom()));
+  BOOST_CHECK(inv4.leq(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv4.leq(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  IntervalDomain inv5;
+  auto inv5 = IntervalDomain(NumericIntervalDomain::top());
   inv5.set(x, Interval(Int(0, 32, Signed)));
   inv5.set(y, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
   inv5.set(z, Interval(Int::min(32, Signed), Int(0, 32, Signed)));
-  BOOST_CHECK(inv5.leq(IntervalDomain::top()));
-  BOOST_CHECK(!inv5.leq(IntervalDomain::bottom()));
+  BOOST_CHECK(inv5.leq(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv5.leq(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(!inv5.leq(inv3));
   BOOST_CHECK(!inv3.leq(inv5));
   BOOST_CHECK(inv5.leq(inv4));
@@ -170,29 +174,33 @@ BOOST_AUTO_TEST_CASE(equals) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  BOOST_CHECK(!IntervalDomain::bottom().equals(IntervalDomain::top()));
-  BOOST_CHECK(IntervalDomain::bottom().equals(IntervalDomain::bottom()));
-  BOOST_CHECK(!IntervalDomain::top().equals(IntervalDomain::bottom()));
-  BOOST_CHECK(IntervalDomain::top().equals(IntervalDomain::top()));
+  BOOST_CHECK(!IntervalDomain(NumericIntervalDomain::bottom())
+                   .equals(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::bottom())
+                  .equals(IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK(!IntervalDomain(NumericIntervalDomain::top())
+                   .equals(IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK(IntervalDomain(NumericIntervalDomain::top())
+                  .equals(IntervalDomain(NumericIntervalDomain::top())));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
   inv1.set(x, Interval(Int(0, 32, Signed)));
-  BOOST_CHECK(!inv1.equals(IntervalDomain::top()));
-  BOOST_CHECK(!inv1.equals(IntervalDomain::bottom()));
+  BOOST_CHECK(!inv1.equals(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv1.equals(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(inv1.equals(inv1));
 
-  IntervalDomain inv2;
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
   inv2.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK(!inv2.equals(IntervalDomain::top()));
-  BOOST_CHECK(!inv2.equals(IntervalDomain::bottom()));
+  BOOST_CHECK(!inv2.equals(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv2.equals(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  IntervalDomain inv3;
+  auto inv3 = IntervalDomain(NumericIntervalDomain::top());
   inv3.set(x, Interval(Int(0, 32, Signed)));
   inv3.set(y, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK(!inv3.equals(IntervalDomain::top()));
-  BOOST_CHECK(!inv3.equals(IntervalDomain::bottom()));
+  BOOST_CHECK(!inv3.equals(IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(!inv3.equals(IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(!inv3.equals(inv1));
   BOOST_CHECK(!inv1.equals(inv3));
 }
@@ -204,31 +212,39 @@ BOOST_AUTO_TEST_CASE(join) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  BOOST_CHECK((IntervalDomain::bottom().join(IntervalDomain::top()) ==
-               IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::bottom().join(IntervalDomain::bottom()) ==
-               IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::top().join(IntervalDomain::top()) ==
-               IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::top().join(IntervalDomain::bottom()) ==
-               IntervalDomain::top()));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .join(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .join(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .join(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .join(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
   inv1.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK((inv1.join(IntervalDomain::top()) == IntervalDomain::top()));
-  BOOST_CHECK((inv1.join(IntervalDomain::bottom()) == inv1));
-  BOOST_CHECK((IntervalDomain::top().join(inv1) == IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::bottom().join(inv1) == inv1));
+  BOOST_CHECK((inv1.join(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(
+      (inv1.join(IntervalDomain(NumericIntervalDomain::bottom())) == inv1));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top()).join(inv1) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(
+      (IntervalDomain(NumericIntervalDomain::bottom()).join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
+  auto inv3 = IntervalDomain(NumericIntervalDomain::top());
   inv2.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
   inv3.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  IntervalDomain inv4;
+  auto inv4 = IntervalDomain(NumericIntervalDomain::top());
   inv4.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
   inv4.set(y, Interval(Int(0, 32, Signed)));
   BOOST_CHECK((inv4.join(inv2) == inv2));
@@ -242,25 +258,33 @@ BOOST_AUTO_TEST_CASE(widening) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  BOOST_CHECK((IntervalDomain::bottom().widening(IntervalDomain::top()) ==
-               IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::bottom().widening(IntervalDomain::bottom()) ==
-               IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::top().widening(IntervalDomain::top()) ==
-               IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::top().widening(IntervalDomain::bottom()) ==
-               IntervalDomain::top()));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .widening(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .widening(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .widening(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .widening(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
   inv1.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK((inv1.widening(IntervalDomain::top()) == IntervalDomain::top()));
-  BOOST_CHECK((inv1.widening(IntervalDomain::bottom()) == inv1));
-  BOOST_CHECK((IntervalDomain::top().widening(inv1) == IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::bottom().widening(inv1) == inv1));
+  BOOST_CHECK((inv1.widening(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(
+      (inv1.widening(IntervalDomain(NumericIntervalDomain::bottom())) == inv1));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top()).widening(inv1) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(
+      (IntervalDomain(NumericIntervalDomain::bottom()).widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
+  auto inv3 = IntervalDomain(NumericIntervalDomain::top());
   inv2.set(x, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
   inv3.set(x, Interval(Int(0, 32, Signed), Int::max(32, Signed)));
   BOOST_CHECK((inv3.leq(inv1.widening(inv2))));
@@ -274,34 +298,40 @@ BOOST_AUTO_TEST_CASE(meet) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  BOOST_CHECK((IntervalDomain::bottom().meet(IntervalDomain::top()) ==
-               IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::bottom().meet(IntervalDomain::bottom()) ==
-               IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::top().meet(IntervalDomain::top()) ==
-               IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::top().meet(IntervalDomain::bottom()) ==
-               IntervalDomain::bottom()));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .meet(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .meet(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .meet(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .meet(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
   inv1.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
-  BOOST_CHECK((inv1.meet(IntervalDomain::top()) == inv1));
   BOOST_CHECK(
-      (inv1.meet(IntervalDomain::bottom()) == IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::top().meet(inv1) == inv1));
+      (inv1.meet(IntervalDomain(NumericIntervalDomain::top())) == inv1));
+  BOOST_CHECK((inv1.meet(IntervalDomain(NumericIntervalDomain::bottom())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK(
-      (IntervalDomain::bottom().meet(inv1) == IntervalDomain::bottom()));
+      (IntervalDomain(NumericIntervalDomain::top()).meet(inv1) == inv1));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom()).meet(inv1) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
+  auto inv3 = IntervalDomain(NumericIntervalDomain::top());
   inv2.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
   inv3.set(x, Interval(Int(0, 32, Signed)));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  IntervalDomain inv4;
-  IntervalDomain inv5;
+  auto inv4 = IntervalDomain(NumericIntervalDomain::top());
+  auto inv5 = IntervalDomain(NumericIntervalDomain::top());
   inv4.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
   inv4.set(y, Interval(Int(0, 32, Signed)));
   inv5.set(x, Interval(Int(0, 32, Signed)));
@@ -317,27 +347,37 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  BOOST_CHECK((IntervalDomain::bottom().narrowing(IntervalDomain::top()) ==
-               IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::bottom().narrowing(IntervalDomain::bottom()) ==
-               IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::top().narrowing(IntervalDomain::top()) ==
-               IntervalDomain::top()));
-  BOOST_CHECK((IntervalDomain::top().narrowing(IntervalDomain::bottom()) ==
-               IntervalDomain::bottom()));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::bottom())
+                   .narrowing(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK(
+      (IntervalDomain(NumericIntervalDomain::bottom())
+           .narrowing(IntervalDomain(NumericIntervalDomain::bottom())) ==
+       IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK((IntervalDomain(NumericIntervalDomain::top())
+                   .narrowing(IntervalDomain(NumericIntervalDomain::top())) ==
+               IntervalDomain(NumericIntervalDomain::top())));
+  BOOST_CHECK(
+      (IntervalDomain(NumericIntervalDomain::top())
+           .narrowing(IntervalDomain(NumericIntervalDomain::bottom())) ==
+       IntervalDomain(NumericIntervalDomain::bottom())));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
   inv1.set(x, Interval(Int(0, 32, Signed), Int::max(32, Signed)));
-  BOOST_CHECK((inv1.narrowing(IntervalDomain::top()) == inv1));
   BOOST_CHECK(
-      (inv1.narrowing(IntervalDomain::bottom()) == IntervalDomain::bottom()));
-  BOOST_CHECK((IntervalDomain::top().narrowing(inv1) == inv1));
+      (inv1.narrowing(IntervalDomain(NumericIntervalDomain::top())) == inv1));
   BOOST_CHECK(
-      (IntervalDomain::bottom().narrowing(inv1) == IntervalDomain::bottom()));
+      (inv1.narrowing(IntervalDomain(NumericIntervalDomain::bottom())) ==
+       IntervalDomain(NumericIntervalDomain::bottom())));
+  BOOST_CHECK(
+      (IntervalDomain(NumericIntervalDomain::top()).narrowing(inv1) == inv1));
+  BOOST_CHECK(
+      (IntervalDomain(NumericIntervalDomain::bottom()).narrowing(inv1) ==
+       IntervalDomain(NumericIntervalDomain::bottom())));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
+  auto inv3 = IntervalDomain(NumericIntervalDomain::top());
   inv2.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv1)); // imprecise but sound
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -350,8 +390,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv1;
-  IntervalDomain inv2;
+  auto inv1 = IntervalDomain(NumericIntervalDomain::top());
+  auto inv2 = IntervalDomain(NumericIntervalDomain::top());
   inv1.assign(x, Int(0, 32, Signed));
   inv2.set(x, Interval(Int(0, 32, Signed)));
   BOOST_CHECK((inv1 == inv2));
@@ -386,7 +426,7 @@ BOOST_AUTO_TEST_CASE(unary_apply) {
   Variable z(vfac.get("z", 8, Signed));
   Variable w(vfac.get("w", 8, Unsigned));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.assign(x, Int(85, 8, Signed));
   BOOST_CHECK(inv.to_interval(x) == Interval(Int(85, 8, Signed)));
   inv.apply(UnaryOperator::Trunc, y, x);
@@ -404,7 +444,7 @@ BOOST_AUTO_TEST_CASE(binary_apply) {
   Variable z(vfac.get("z", 8, Signed));
   Variable w(vfac.get("w", 8, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.assign(x, Int(85, 8, Signed));
   BOOST_CHECK(inv.to_interval(x) == Interval(Int(85, 8, Signed)));
   inv.apply(BinaryOperator::Add, y, x, Int(43, 8, Signed));
@@ -420,7 +460,7 @@ BOOST_AUTO_TEST_CASE(add_var) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.set(x, Interval(Int(0, 32, Signed), Int(4, 32, Signed)));
   inv.set(y, Interval(Int(-4, 32, Signed), Int(0, 32, Signed)));
   inv.add(Predicate::EQ, x, y);
@@ -475,7 +515,7 @@ BOOST_AUTO_TEST_CASE(add_int) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.set(x, Interval(Int(0, 32, Signed), Int(4, 32, Signed)));
   inv.add(Predicate::EQ, x, Int(1, 32, Signed));
   BOOST_CHECK(inv.to_interval(x) == Interval(Int(1, 32, Signed)));
@@ -513,12 +553,12 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
   BOOST_CHECK(inv.to_interval(x) ==
               Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
 
-  inv.set(x, Interval::bottom());
+  inv.set(x, Interval::bottom(32, Signed));
   BOOST_CHECK(inv.is_bottom());
 }
 
@@ -529,7 +569,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.refine(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
   BOOST_CHECK(inv.to_interval(x) ==
               Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
@@ -545,7 +585,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
   inv.set(y, Interval(Int(3, 32, Signed), Int(4, 32, Signed)));
   BOOST_CHECK(inv.to_interval(x) ==
@@ -569,7 +609,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain(NumericIntervalDomain::top());
   inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
   inv.set(y, Interval(Int(3, 32, Signed), Int(4, 32, Signed)));
 

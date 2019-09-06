@@ -101,7 +101,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  GaugeSemiLattice() : GaugeSemiLattice(TopTag{}) {}
+  static GaugeSemiLattice top() { return GaugeSemiLattice(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static GaugeSemiLattice bottom() { return GaugeSemiLattice(BottomTag{}); }
 
   /// \brief Copy constructor
   GaugeSemiLattice(const GaugeSemiLattice&) noexcept = default;
@@ -117,12 +120,6 @@ public:
 
   /// \brief Destructor
   ~GaugeSemiLattice() override = default;
-
-  /// \brief Create the top abstract value
-  static GaugeSemiLattice top() { return GaugeSemiLattice(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static GaugeSemiLattice bottom() { return GaugeSemiLattice(BottomTag{}); }
 
   bool is_bottom() const override { return this->_is_bottom; }
 
@@ -501,7 +498,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  GaugeDomain() : GaugeDomain(TopTag{}) {}
+  static GaugeDomain top() { return GaugeDomain(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static GaugeDomain bottom() { return GaugeDomain(BottomTag{}); }
 
   /// \brief Copy constructor
   GaugeDomain(const GaugeDomain&) noexcept = default;
@@ -517,12 +517,6 @@ public:
 
   /// \brief Destructor
   ~GaugeDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static GaugeDomain top() { return GaugeDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static GaugeDomain bottom() { return GaugeDomain(BottomTag{}); }
 
   /// \brief Normalize the abstract value
   void normalize() const override {

@@ -86,8 +86,13 @@ make_top_machine_int_var_pack_apron_pkgrid_polyhedra_lin_cong();
 
 /// @}
 
-/// \brief Create the top machine integer domain of the given choice
-inline MachineIntAbstractDomain make_top_machine_int_domain(
+/// \brief Create the bottom machine integer abstract value
+inline MachineIntAbstractDomain make_bottom_machine_int_abstract_value() {
+  return MachineIntAbstractDomain::bottom();
+}
+
+/// \brief Create the top machine integer abstract value of the given choice
+inline MachineIntAbstractDomain make_top_machine_int_abstract_value(
     MachineIntDomainOption d) {
   switch (d) {
     case MachineIntDomainOption::Interval:

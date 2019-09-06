@@ -100,25 +100,16 @@ private:
   UninitializedDomain _uninitialized;
   LifetimeDomain _lifetime;
 
-private:
-  struct TopTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top abstract value
-  explicit DummyDomain(TopTag)
-      : _pointer(PointerDomain::top()),
-        _uninitialized(UninitializedDomain::top()),
-        _lifetime(LifetimeDomain::top()) {}
-
-  /// \brief Create the bottom abstract value
-  explicit DummyDomain(BottomTag)
-      : _pointer(PointerDomain::bottom()),
-        _uninitialized(UninitializedDomain::bottom()),
-        _lifetime(LifetimeDomain::bottom()) {}
-
 public:
-  /// \brief Create the top abstract value
-  DummyDomain() : DummyDomain(TopTag{}) {}
+  /// \brief Create an abstract value with the given underlying abstract values
+  DummyDomain(PointerDomain pointer,
+              UninitializedDomain uninitialized,
+              LifetimeDomain lifetime)
+      : _pointer(std::move(pointer)),
+        _uninitialized(std::move(uninitialized)),
+        _lifetime(std::move(lifetime)) {
+    this->normalize();
+  }
 
   /// \brief Copy constructor
   DummyDomain(const DummyDomain&) noexcept(
@@ -146,12 +137,6 @@ public:
 
   /// \brief Destructor
   ~DummyDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static DummyDomain top() { return DummyDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static DummyDomain bottom() { return DummyDomain(BottomTag{}); }
 
   /*
    * Implement core::AbstractDomain

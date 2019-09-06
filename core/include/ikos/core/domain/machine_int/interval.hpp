@@ -94,7 +94,12 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  IntervalDomain() : _inv(SeparateDomainT::top()) {}
+  static IntervalDomain top() { return IntervalDomain(SeparateDomainT::top()); }
+
+  /// \brief Create the bottom abstract value
+  static IntervalDomain bottom() {
+    return IntervalDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   IntervalDomain(const IntervalDomain&) noexcept = default;
@@ -110,14 +115,6 @@ public:
 
   /// \brief Destructor
   ~IntervalDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static IntervalDomain top() { return IntervalDomain(SeparateDomainT::top()); }
-
-  /// \brief Create the bottom abstract value
-  static IntervalDomain bottom() {
-    return IntervalDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (variable, interval)
   Iterator begin() const { return this->_inv.begin(); }

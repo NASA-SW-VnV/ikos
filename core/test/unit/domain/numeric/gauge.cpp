@@ -66,7 +66,31 @@ using GaugeDomain = ikos::core::numeric::GaugeDomain< ZNumber, Variable >;
 static VariableFactory vfac;
 
 // NOLINTNEXTLINE(readability-identifier-naming)
-static GaugeSemiLattice l1, l2, l3, l4, l5, l6, l7, l8, l9, l10, l11, l12, l13;
+static GaugeSemiLattice l1 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l2 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l3 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l4 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l5 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l6 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l7 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l8 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l9 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l10 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l11 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l12 = GaugeSemiLattice::top();
+// NOLINTNEXTLINE(readability-identifier-naming)
+static GaugeSemiLattice l13 = GaugeSemiLattice::top();
 
 // initialization
 static bool init_unit_test() {
@@ -440,7 +464,7 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_incr_counter) {
   test_gauge_semilattice_incr_counter(l3, i, 1, l3);
 
   // l4.incr_counter(i, 1)
-  GaugeSemiLattice l4_prime;
+  auto l4_prime = GaugeSemiLattice::top();
   l4_prime.set(x, Gauge(GaugeBound(0), GaugeBound::plus_infinity()));
   l4_prime.set(y,
                Gauge(GaugeBound(-3) + GaugeBound(i),
@@ -451,7 +475,7 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_incr_counter) {
   test_gauge_semilattice_incr_counter(l5, i, 1, l5);
 
   // l5.incr_counter(k, 2)
-  GaugeSemiLattice l5_prime;
+  auto l5_prime = GaugeSemiLattice::top();
   l5_prime.set(x, Gauge(GaugeBound(0), GaugeBound(1)));
   l5_prime.set(y,
                Gauge(GaugeBound(-4) + GaugeBound(2, k),
@@ -459,13 +483,13 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_incr_counter) {
   test_gauge_semilattice_incr_counter(l5, k, 2, l5_prime);
 
   // l6.incr_counter(i, 1)
-  GaugeSemiLattice l6_prime;
+  auto l6_prime = GaugeSemiLattice::top();
   l6_prime.set(x, Gauge(GaugeBound(0), GaugeBound(1)));
   l6_prime.set(y, Gauge(GaugeBound(-2), GaugeBound(2, i) + GaugeBound(2, k)));
   test_gauge_semilattice_incr_counter(l6, i, 1, l6_prime);
 
   // l7.incr_counter(i, 1)
-  GaugeSemiLattice l7_prime;
+  auto l7_prime = GaugeSemiLattice::top();
   l7_prime.set(x, Gauge(GaugeBound(0), GaugeBound::plus_infinity()));
   l7_prime.set(y,
                Gauge(GaugeBound(-3),
@@ -565,7 +589,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_constructors) {
   test_gauge_domain(GaugeDomain::bottom(), true, false);
   test_gauge_domain(GaugeDomain::top(), false, true);
 
-  GaugeDomain d;
+  auto d = GaugeDomain::top();
   d.set_to_top();
   d.init_counter(i, ZNumber(0));
   test_gauge_domain(d, false, false);
@@ -593,7 +617,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_assign) {
   test_gauge_domain_get(GaugeDomain::top(), x, Gauge::top());
   test_gauge_domain_to_interval(GaugeDomain::top(), x, ZInterval::top());
 
-  GaugeDomain d;
+  auto d = GaugeDomain::top();
   d.init_counter(i, ZNumber(0));
   test_gauge_domain_get(d, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d, i, ZInterval(ZBound(0), ZBound(0)));
@@ -670,7 +694,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -734,7 +758,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening_narrowing_threshold) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -770,7 +794,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_add) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -829,7 +853,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_forget) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -872,7 +896,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_set) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.assign(x, 0);
   d1.assign(y, 1);
 
@@ -908,7 +932,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_var) {
   Variable one(vfac.get("one"));
   Variable two(vfac.get("two"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.assign(zero, 0);
   d1.assign(one, 1);
   d1.assign(two, 2);
@@ -1075,7 +1099,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_num) {
   Variable one(vfac.get("one"));
   Variable two(vfac.get("two"));
 
-  GaugeDomain d1;
+  auto d1 = GaugeDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 3);
   d1.assign(y, 2);

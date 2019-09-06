@@ -128,13 +128,13 @@ BOOST_AUTO_TEST_CASE(test_1) {
       PointerAbsValue(PointsToSet{y},
                       Interval(Int(12, 64, Unsigned), Int(20, 64, Unsigned)),
                       Nullity::top(),
-                      Uninitialized()));
+                      Uninitialized::top()));
   BOOST_CHECK(
       s.get_memory(x) ==
       PointerAbsValue(PointsToSet{y},
                       Interval(Int(12, 64, Unsigned), Int(20, 64, Unsigned)),
                       Nullity::top(),
-                      Uninitialized()));
+                      Uninitialized::top()));
   BOOST_CHECK(s.get_memory(y) == PointerAbsValue::bottom(64, Unsigned));
 }
 
@@ -191,13 +191,14 @@ BOOST_AUTO_TEST_CASE(test_2) {
 
   s.solve();
 
-  BOOST_CHECK(
-      s.get_memory(mp) ==
-      PointerAbsValue(PointsToSet{mq}, zero, Nullity::top(), Uninitialized()));
+  BOOST_CHECK(s.get_memory(mp) == PointerAbsValue(PointsToSet{mq},
+                                                  zero,
+                                                  Nullity::top(),
+                                                  Uninitialized::top()));
   BOOST_CHECK(s.get_memory(mq) == PointerAbsValue(PointsToSet{mx, my},
                                                   zero,
                                                   Nullity::top(),
-                                                  Uninitialized()));
+                                                  Uninitialized::top()));
 }
 
 BOOST_AUTO_TEST_CASE(test_3) {
@@ -294,16 +295,16 @@ BOOST_AUTO_TEST_CASE(test_3) {
   BOOST_CHECK(s.get_pointer(p5) == PointerAbsValue(PointsToSet{malloc},
                                                    zero,
                                                    Nullity::top(),
-                                                   Uninitialized()));
+                                                   Uninitialized::top()));
   BOOST_CHECK(s.get_pointer(p8) == PointerAbsValue(PointsToSet{malloc},
                                                    zero,
                                                    Nullity::top(),
-                                                   Uninitialized()));
+                                                   Uninitialized::top()));
   BOOST_CHECK(s.get_pointer(p11) ==
               PointerAbsValue(PointsToSet{malloc},
                               Interval(Int(4, 64, Unsigned)),
                               Nullity::top(),
-                              Uninitialized()));
+                              Uninitialized::top()));
 }
 
 BOOST_AUTO_TEST_CASE(test_4) {

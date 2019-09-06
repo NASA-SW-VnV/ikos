@@ -85,7 +85,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  MemLocToPointerSet() : MemLocToPointerSet(TopTag{}) {}
+  static MemLocToPointerSet top() { return MemLocToPointerSet(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static MemLocToPointerSet bottom() { return MemLocToPointerSet(BottomTag{}); }
 
   /// \brief Copy constructor
   MemLocToPointerSet(const MemLocToPointerSet&) noexcept = default;
@@ -101,12 +104,6 @@ public:
 
   /// \brief Destructor
   ~MemLocToPointerSet() override = default;
-
-  /// \brief Create the top abstract value
-  static MemLocToPointerSet top() { return MemLocToPointerSet(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static MemLocToPointerSet bottom() { return MemLocToPointerSet(BottomTag{}); }
 
   /// \brief Begin iterator over the pairs (variable, value)
   Iterator begin() const {

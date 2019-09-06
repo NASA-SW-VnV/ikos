@@ -111,27 +111,8 @@ private:
   /// \brief Underlying machine integer abstract domains for scalars and offsets
   MachineIntDomain _inv;
 
-private:
-  struct TopTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top abstract value
-  explicit PointerDomain(TopTag)
-      : _points_to_map(PointsToMap::top()),
-        _nullity(NullityDomain::top()),
-        _inv(MachineIntDomain::top()) {}
-
-  /// \brief Create the bottom abstract value
-  explicit PointerDomain(BottomTag)
-      : _points_to_map(PointsToMap::bottom()),
-        _nullity(NullityDomain::bottom()),
-        _inv(MachineIntDomain::bottom()) {}
-
 public:
-  /// \brief Create the top abstract value
-  PointerDomain() : PointerDomain(TopTag{}) {}
-
-  /// \brief Create an abstract value with the given underlying domains
+  /// \brief Create an abstract value with the given underlying abstract values
   ///
   /// \param inv The machine integer abstract value
   /// \param nullity The nullity abstract value
@@ -164,12 +145,6 @@ public:
 
   /// \brief Destructor
   ~PointerDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static PointerDomain top() { return PointerDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static PointerDomain bottom() { return PointerDomain(BottomTag{}); }
 
   /*
    * Implement core::AbstractDomain

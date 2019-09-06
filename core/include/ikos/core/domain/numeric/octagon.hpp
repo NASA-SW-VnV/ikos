@@ -257,7 +257,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  Octagon() : Octagon(TopTag{}) {}
+  static Octagon top() { return Octagon(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static Octagon bottom() { return Octagon(BottomTag{}); }
 
   /// \brief Copy constructor
   Octagon(const Octagon&) = default;
@@ -273,12 +276,6 @@ public:
 
   /// \brief Destructor
   ~Octagon() override = default;
-
-  /// \brief Create the top abstract value
-  static Octagon top() { return Octagon(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static Octagon bottom() { return Octagon(BottomTag{}); }
 
 private:
   /// \brief Helper for normalization
@@ -480,7 +477,7 @@ private:
   static Octagon pointwise_binary_op(const Octagon& o1,
                                      const Octagon& o2,
                                      const BinaryOperator& op) {
-    Octagon n;
+    auto n = Octagon::top();
 
     // Set intersection of the two maps
     for (auto it = o1._var_index_map.begin(); it != o1._var_index_map.end();
@@ -656,7 +653,7 @@ public:
     if (this->_is_bottom || other._is_bottom) {
       return bottom();
     } else {
-      Octagon n;
+      auto n = Octagon::top();
 
       // Set union of the two maps
       for (auto it = this->_var_index_map.begin();
@@ -818,7 +815,7 @@ public:
     if (this->_is_bottom || other._is_bottom) {
       return bottom();
     } else {
-      Octagon n;
+      auto n = Octagon::top();
 
       // Set union of the two maps
       for (auto it = this->_var_index_map.begin();
@@ -1372,7 +1369,7 @@ private:
   ///
   /// Only to be used if cst is too hard for octagons
   bool check_sat(const LinearConstraintT& cst) {
-    IntervalDomainT inv;
+    auto inv = IntervalDomainT::top();
     this->normalize();
     for (const auto& term : cst) {
       inv.set(term.first, this->to_interval(term.first));

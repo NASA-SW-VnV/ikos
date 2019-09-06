@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!IntervalDomain::bottom().is_top());
   BOOST_CHECK(IntervalDomain::bottom().is_bottom());
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(iterators) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   BOOST_CHECK((inv.begin() == inv.end()));
 
   inv.set(x, Interval(1));
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -136,19 +136,19 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!IntervalDomain::top().leq(IntervalDomain::bottom()));
   BOOST_CHECK(IntervalDomain::top().leq(IntervalDomain::top()));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(inv1.leq(IntervalDomain::top()));
   BOOST_CHECK(!inv1.leq(IntervalDomain::bottom()));
 
-  IntervalDomain inv2;
+  auto inv2 = IntervalDomain::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(inv2.leq(IntervalDomain::top()));
   BOOST_CHECK(!inv2.leq(IntervalDomain::bottom()));
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  IntervalDomain inv3;
+  auto inv3 = IntervalDomain::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(inv3.leq(IntervalDomain::top()));
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  IntervalDomain inv4;
+  auto inv4 = IntervalDomain::top();
   inv4.set(x, Interval(0));
   inv4.set(y, Interval(Bound(0), Bound(2)));
   BOOST_CHECK(inv4.leq(IntervalDomain::top()));
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  IntervalDomain inv5;
+  auto inv5 = IntervalDomain::top();
   inv5.set(x, Interval(0));
   inv5.set(y, Interval(Bound(0), Bound(2)));
   inv5.set(z, Interval(Bound::minus_infinity(), Bound(0)));
@@ -188,20 +188,20 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(!IntervalDomain::top().equals(IntervalDomain::bottom()));
   BOOST_CHECK(IntervalDomain::top().equals(IntervalDomain::top()));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(!inv1.equals(IntervalDomain::top()));
   BOOST_CHECK(!inv1.equals(IntervalDomain::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  IntervalDomain inv2;
+  auto inv2 = IntervalDomain::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv2.equals(IntervalDomain::top()));
   BOOST_CHECK(!inv2.equals(IntervalDomain::bottom()));
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  IntervalDomain inv3;
+  auto inv3 = IntervalDomain::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv3.equals(IntervalDomain::top()));
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((IntervalDomain::top().join(IntervalDomain::bottom()) ==
                IntervalDomain::top()));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.join(IntervalDomain::top()) == IntervalDomain::top()));
   BOOST_CHECK((inv1.join(IntervalDomain::bottom()) == inv1));
@@ -234,14 +234,14 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((IntervalDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain::top();
+  auto inv3 = IntervalDomain::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  IntervalDomain inv4;
+  auto inv4 = IntervalDomain::top();
   inv4.set(x, Interval(Bound(-1), Bound(0)));
   inv4.set(y, Interval(0));
   BOOST_CHECK((inv4.join(inv2) == inv2));
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((IntervalDomain::top().widening(IntervalDomain::bottom()) ==
                IntervalDomain::top()));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.widening(IntervalDomain::top()) == IntervalDomain::top()));
   BOOST_CHECK((inv1.widening(IntervalDomain::bottom()) == inv1));
@@ -272,8 +272,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((IntervalDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain::top();
+  auto inv3 = IntervalDomain::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((IntervalDomain::top().meet(IntervalDomain::bottom()) ==
                IntervalDomain::bottom()));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.meet(IntervalDomain::top()) == inv1));
   BOOST_CHECK(
@@ -306,15 +306,15 @@ BOOST_AUTO_TEST_CASE(meet) {
       (IntervalDomain::bottom().meet(inv1) == IntervalDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain::top();
+  auto inv3 = IntervalDomain::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  IntervalDomain inv4;
-  IntervalDomain inv5;
+  auto inv4 = IntervalDomain::top();
+  auto inv5 = IntervalDomain::top();
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((IntervalDomain::top().narrowing(IntervalDomain::bottom()) ==
                IntervalDomain::bottom()));
 
-  IntervalDomain inv1;
+  auto inv1 = IntervalDomain::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.narrowing(IntervalDomain::top()) == inv1));
   BOOST_CHECK(
@@ -349,8 +349,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
       (IntervalDomain::bottom().narrowing(inv1) == IntervalDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  IntervalDomain inv2;
-  IntervalDomain inv3;
+  auto inv2 = IntervalDomain::top();
+  auto inv3 = IntervalDomain::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -363,8 +363,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv1;
-  IntervalDomain inv2;
+  auto inv1 = IntervalDomain::top();
+  auto inv2 = IntervalDomain::top();
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -392,8 +392,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv1;
-  IntervalDomain inv2;
+  auto inv1 = IntervalDomain::top();
+  auto inv2 = IntervalDomain::top();
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.set(y, Interval(Bound(1), Bound(2)));
 
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.add(VariableExpr(x) >= 1);
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
 
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -579,7 +579,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -614,7 +614,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
@@ -635,7 +635,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(2 * VariableExpr(x) + 1) ==
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_congruence(2 * VariableExpr(x) + 1) ==
@@ -667,7 +667,7 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalDomain inv;
+  auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval_congruence(2 * VariableExpr(x) + 1) ==

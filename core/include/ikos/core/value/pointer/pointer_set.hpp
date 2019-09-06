@@ -85,9 +85,26 @@ private:
   }
 
 public:
-  /// \brief Create the top pointer set
-  PointerSet()
-      : _points_to(PointsToSetT::top()), _offsets(MachineIntInterval::top()) {}
+  /// \brief Create the top pointer set with the given bit-width and signedness
+  /// for the offsets
+  static PointerSet top(unsigned bit_width, Signedness sign) {
+    return PointerSet(PointsToSetT::top(),
+                      MachineIntInterval::top(bit_width, sign));
+  }
+
+  /// \brief Create the bottom pointer set with the given bit-width and
+  /// signedness for the offsets
+  static PointerSet bottom(unsigned bit_width, Signedness sign) {
+    return PointerSet(PointsToSetT::bottom(),
+                      MachineIntInterval::bottom(bit_width, sign));
+  }
+
+  /// \brief Create the empty pointer set with the given bit-width and
+  /// signedness for the offsets
+  static PointerSet empty(unsigned bit_width, Signedness sign) {
+    return PointerSet(PointsToSetT::empty(),
+                      MachineIntInterval::bottom(bit_width, sign));
+  }
 
   /// \brief Create the pointer set with the given points-to set and interval
   PointerSet(PointsToSetT points_to, MachineIntInterval offsets)
@@ -109,42 +126,6 @@ public:
 
   /// \brief Destructor
   ~PointerSet() override = default;
-
-  /// \brief Create the top pointer set
-  static PointerSet top() {
-    return PointerSet(PointsToSetT::top(), MachineIntInterval::top());
-  }
-
-  /// \brief Create the top pointer set with the given bit-width and signedness
-  /// for the offsets
-  static PointerSet top(unsigned bit_width, Signedness sign) {
-    return PointerSet(PointsToSetT::top(),
-                      MachineIntInterval::top(bit_width, sign));
-  }
-
-  /// \brief Create the bottom pointer set
-  static PointerSet bottom() {
-    return PointerSet(PointsToSetT::bottom(), MachineIntInterval::bottom());
-  }
-
-  /// \brief Create the bottom pointer set with the given bit-width and
-  /// signedness for the offsets
-  static PointerSet bottom(unsigned bit_width, Signedness sign) {
-    return PointerSet(PointsToSetT::bottom(),
-                      MachineIntInterval::bottom(bit_width, sign));
-  }
-
-  /// \brief Create the empty pointer set
-  static PointerSet empty() {
-    return PointerSet(PointsToSetT::empty(), MachineIntInterval::bottom());
-  }
-
-  /// \brief Create the empty pointer set with the given bit-width and
-  /// signedness for the offsets
-  static PointerSet empty(unsigned bit_width, Signedness sign) {
-    return PointerSet(PointsToSetT::empty(),
-                      MachineIntInterval::bottom(bit_width, sign));
-  }
 
   /// \brief Return the points-to set
   const PointsToSetT& points_to() const { return this->_points_to; }

@@ -153,14 +153,6 @@ private:
   struct TopTag {};
   struct BottomTag {};
 
-  /// \brief Create the top interval-congruence
-  explicit IntervalCongruence(TopTag)
-      : _i(Interval::top()), _c(ZCongruence::top()) {}
-
-  /// \brief Create the bottom interval-congruence
-  explicit IntervalCongruence(BottomTag)
-      : _i(Interval::bottom()), _c(ZCongruence::bottom()) {}
-
   /// \brief Create the top interval-congruence for the given bit-width and
   /// signedness
   IntervalCongruence(TopTag, unsigned bit_width, Signedness sign)
@@ -172,8 +164,17 @@ private:
       : _i(Interval::bottom(bit_width, sign)), _c(ZCongruence::bottom()) {}
 
 public:
-  /// \brief Create the top interval-congruence
-  IntervalCongruence() : IntervalCongruence(TopTag{}) {}
+  /// \brief Create the top interval-congruence for the given bit-width and
+  /// signedness
+  static IntervalCongruence top(unsigned bit_width, Signedness sign) {
+    return IntervalCongruence(TopTag{}, bit_width, sign);
+  }
+
+  /// \brief Create the bottom interval-congruence for the given bit-width and
+  /// signedness
+  static IntervalCongruence bottom(unsigned bit_width, Signedness sign) {
+    return IntervalCongruence(BottomTag{}, bit_width, sign);
+  }
 
   /// \brief Create the interval-congruence ([n, n], 0Z+n)
   explicit IntervalCongruence(const MachineInt& n)
@@ -218,24 +219,6 @@ public:
 
   /// \brief Destructor
   ~IntervalCongruence() override = default;
-
-  /// \brief Create the top interval-congruence
-  static IntervalCongruence top() { return IntervalCongruence(TopTag{}); }
-
-  /// \brief Create the bottom interval-congruence
-  static IntervalCongruence bottom() { return IntervalCongruence(BottomTag{}); }
-
-  /// \brief Create the top interval-congruence for the given bit-width and
-  /// signedness
-  static IntervalCongruence top(unsigned bit_width, Signedness sign) {
-    return IntervalCongruence(TopTag{}, bit_width, sign);
-  }
-
-  /// \brief Create the bottom interval-congruence for the given bit-width and
-  /// signedness
-  static IntervalCongruence bottom(unsigned bit_width, Signedness sign) {
-    return IntervalCongruence(BottomTag{}, bit_width, sign);
-  }
 
   /// \brief Return the bit width of the interval-congruence
   unsigned bit_width() const { return this->_i.bit_width(); }

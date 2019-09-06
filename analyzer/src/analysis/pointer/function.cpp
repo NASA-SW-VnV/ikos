@@ -72,12 +72,22 @@ namespace {
 /// \brief Dummy machine integer abstract domain
 using MachineIntAbstractDomain = core::machine_int::DummyDomain< Variable* >;
 
+/// \brief Dummy nullity abstract domain
+using NullityAbstractDomain = core::nullity::DummyDomain< Variable* >;
+
+/// \brief Dummy uninitialized abstract domain
+using UninitializedAbstractDomain =
+    core::uninitialized::DummyDomain< Variable* >;
+
+/// \brief Dummy lifetime abstract domain
+using LifetimeAbstractDomain = core::lifetime::DummyDomain< MemoryLocation* >;
+
 /// \brief Dummy pointer abstract domain
 using PointerAbstractDomain =
     core::pointer::DummyDomain< Variable*,
                                 MemoryLocation*,
                                 MachineIntAbstractDomain,
-                                core::nullity::DummyDomain< Variable* > >;
+                                NullityAbstractDomain >;
 
 /// \brief Dummy memory abstract domain
 using MemoryAbstractDomain =
@@ -85,15 +95,28 @@ using MemoryAbstractDomain =
                                MemoryLocation*,
                                VariableFactory,
                                MachineIntAbstractDomain,
-                               core::nullity::DummyDomain< Variable* >,
+                               NullityAbstractDomain,
                                PointerAbstractDomain,
-                               core::uninitialized::DummyDomain< Variable* >,
-                               core::lifetime::DummyDomain< MemoryLocation* > >;
+                               UninitializedAbstractDomain,
+                               LifetimeAbstractDomain >;
 
 /// \brief Dummy abstract domain for the function pointer analysis
 ///
 /// This is either top or bottom.
 using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
+
+/// \brief Create the top abstract value
+AbstractDomain make_top_abstract_value() {
+  auto top =
+      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
+                                                     top(),
+                                                 NullityAbstractDomain::top()),
+                           UninitializedAbstractDomain::top(),
+                           LifetimeAbstractDomain::top());
+  return AbstractDomain(/*normal = */ top,
+                        /*caught_exceptions = */ top,
+                        /*propagated_exceptions = */ top);
+}
 
 /// \brief An empty code invariants
 class EmptyCodeInvariants {
@@ -103,7 +126,7 @@ public:
 public:
   /// \brief Get the invariant at the entry of the given basic block
   AbstractDomainT entry(ar::BasicBlock* /*bb*/) const {
-    return AbstractDomainT::top();
+    return make_top_abstract_value();
   }
 
   /// \brief Analyze the given statement and update the invariant

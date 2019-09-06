@@ -91,7 +91,12 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  ConstantDomain() : _inv(SeparateDomainT::top()) {}
+  static ConstantDomain top() { return ConstantDomain(SeparateDomainT::top()); }
+
+  /// \brief Create the bottom abstract value
+  static ConstantDomain bottom() {
+    return ConstantDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   ConstantDomain(const ConstantDomain&) noexcept = default;
@@ -107,14 +112,6 @@ public:
 
   /// \brief Destructor
   ~ConstantDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static ConstantDomain top() { return ConstantDomain(SeparateDomainT::top()); }
-
-  /// \brief Create the bottom abstract value
-  static ConstantDomain bottom() {
-    return ConstantDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (variable, constant)
   Iterator begin() const { return this->_inv.begin(); }
@@ -212,7 +209,7 @@ public:
       return;
     }
 
-    IntervalDomain< Number, VariableRef, MaxReductionCycles > e;
+    auto e = IntervalDomain< Number, VariableRef, MaxReductionCycles >::top();
     for (const auto& term : cst) {
       VariableRef x = term.first;
       boost::optional< Number > n = this->_inv.get(x).number();
@@ -241,7 +238,7 @@ public:
       return;
     }
 
-    IntervalDomain< Number, VariableRef, MaxReductionCycles > e;
+    auto e = IntervalDomain< Number, VariableRef, MaxReductionCycles >::top();
     for (VariableRef x : csts.variables()) {
       boost::optional< Number > n = this->_inv.get(x).number();
       if (n) {

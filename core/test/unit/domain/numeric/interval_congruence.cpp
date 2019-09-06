@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!IntervalCongruenceDomain::bottom().is_top());
   BOOST_CHECK(IntervalCongruenceDomain::bottom().is_bottom());
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(iterators) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   BOOST_CHECK((inv.begin() == inv.end()));
 
   inv.set(x, IntervalCongruence(1));
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -146,12 +146,12 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(
       IntervalCongruenceDomain::top().leq(IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, IntervalCongruence(1));
   BOOST_CHECK(inv1.leq(IntervalCongruenceDomain::top()));
   BOOST_CHECK(!inv1.leq(IntervalCongruenceDomain::bottom()));
 
-  IntervalCongruenceDomain inv2;
+  auto inv2 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Bound(-1), Bound(1)),
                               Congruence(ZNumber(2), ZNumber(1))));
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  IntervalCongruenceDomain inv3;
+  auto inv3 = IntervalCongruenceDomain::top();
   inv3.set(x, IntervalCongruence(1));
   inv3.set(y,
            IntervalCongruence(Interval(Bound(-1), Bound(1)),
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  IntervalCongruenceDomain inv4;
+  auto inv4 = IntervalCongruenceDomain::top();
   inv4.set(x, IntervalCongruence(0));
   inv4.set(y,
            IntervalCongruence(Interval(Bound(1), Bound(5)),
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  IntervalCongruenceDomain inv5;
+  auto inv5 = IntervalCongruenceDomain::top();
   inv5.set(x, IntervalCongruence(0));
   inv5.set(y,
            IntervalCongruence(Interval(Bound(1), Bound(3)),
@@ -212,13 +212,13 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(
       IntervalCongruenceDomain::top().equals(IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, IntervalCongruence(0));
   BOOST_CHECK(!inv1.equals(IntervalCongruenceDomain::top()));
   BOOST_CHECK(!inv1.equals(IntervalCongruenceDomain::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  IntervalCongruenceDomain inv2;
+  auto inv2 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Bound(-1), Bound(1)),
                               Congruence(ZNumber(2), ZNumber(1))));
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  IntervalCongruenceDomain inv3;
+  auto inv3 = IntervalCongruenceDomain::top();
   inv3.set(x, IntervalCongruence(0));
   inv3.set(y,
            IntervalCongruence(Interval(Bound(-1), Bound(1)),
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(join) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x,
            IntervalCongruence(Interval(Bound(0), Bound(4)),
                               Congruence(ZNumber(4), ZNumber(0))));
@@ -270,8 +270,8 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((IntervalCongruenceDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Bound(-6), Bound(1)),
                               Congruence(ZNumber(6), ZNumber(0))));
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  IntervalCongruenceDomain inv4;
+  auto inv4 = IntervalCongruenceDomain::top();
   inv4.set(x,
            IntervalCongruence(Interval(Bound(-6), Bound(1)),
                               Congruence(ZNumber(6), ZNumber(0))));
@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(widening) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::top()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.widening(IntervalCongruenceDomain::top()) ==
                IntervalCongruenceDomain::top()));
@@ -320,8 +320,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((IntervalCongruenceDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(meet) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::bottom()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x,
            IntervalCongruence(Interval(Bound(0), Bound(4)),
                               Congruence(ZNumber(4), ZNumber(0))));
@@ -360,8 +360,8 @@ BOOST_AUTO_TEST_CASE(meet) {
                IntervalCongruenceDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x,
            IntervalCongruence(Interval(Bound(-6), Bound(2)),
                               Congruence(ZNumber(6), ZNumber(0))));
@@ -369,8 +369,8 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  IntervalCongruenceDomain inv4;
-  IntervalCongruenceDomain inv5;
+  auto inv4 = IntervalCongruenceDomain::top();
+  auto inv5 = IntervalCongruenceDomain::top();
   inv4.set(x,
            IntervalCongruence(Interval(Bound(0), Bound(4)),
                               Congruence(ZNumber(4), ZNumber(0))));
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                    IntervalCongruenceDomain::bottom()) ==
                IntervalCongruenceDomain::bottom()));
 
-  IntervalCongruenceDomain inv1;
+  auto inv1 = IntervalCongruenceDomain::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.narrowing(IntervalCongruenceDomain::top()) == inv1));
   BOOST_CHECK((inv1.narrowing(IntervalCongruenceDomain::bottom()) ==
@@ -411,8 +411,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                IntervalCongruenceDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  IntervalCongruenceDomain inv2;
-  IntervalCongruenceDomain inv3;
+  auto inv2 = IntervalCongruenceDomain::top();
+  auto inv3 = IntervalCongruenceDomain::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -425,8 +425,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv1;
-  IntervalCongruenceDomain inv2;
+  auto inv1 = IntervalCongruenceDomain::top();
+  auto inv2 = IntervalCongruenceDomain::top();
   inv1.assign(x, 0);
   inv2.set(x, IntervalCongruence(0));
   BOOST_CHECK((inv1 == inv2));
@@ -464,8 +464,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv1;
-  IntervalCongruenceDomain inv2;
+  auto inv1 = IntervalCongruenceDomain::top();
+  auto inv2 = IntervalCongruenceDomain::top();
   inv1.set(x,
            IntervalCongruence(Interval(Bound(-2), Bound(4)),
                               Congruence(ZNumber(2), ZNumber(0))));
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.add(VariableExpr(x) >= 1);
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
 
@@ -705,7 +705,7 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -740,7 +740,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -784,7 +784,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
@@ -805,7 +805,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(2 * VariableExpr(x) + 1) ==
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.set(x, Congruence(ZNumber(3), ZNumber(0)));
   inv.set(y, Congruence(ZNumber(3), ZNumber(1)));
   BOOST_CHECK(inv.to_congruence(2 * VariableExpr(x) + 1) ==
@@ -837,7 +837,7 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  IntervalCongruenceDomain inv;
+  auto inv = IntervalCongruenceDomain::top();
   inv.refine(x, Interval(Bound(0), Bound(3)));
   inv.refine(y, Interval(Bound(4), Bound(7)));
   inv.refine(x, Congruence(ZNumber(3), ZNumber(0)));

@@ -112,8 +112,8 @@ IntOverflowCheckerBase::check_integer_overflow(
   const ScalarLit& left_lit = this->_lit_factory.get_scalar(stmt->left());
   const ScalarLit& right_lit = this->_lit_factory.get_scalar(stmt->right());
 
-  IntInterval left_interval;
-  IntInterval right_interval;
+  auto left_interval = IntInterval::bottom(1, Signed);
+  auto right_interval = IntInterval::bottom(1, Signed);
 
   if (left_lit.is_undefined() ||
       (left_lit.is_machine_int_var() &&
@@ -151,7 +151,7 @@ IntOverflowCheckerBase::check_integer_overflow(
     return {{CheckKind::UnexpectedOperand, Result::Error, {stmt->right()}, {}}};
   }
 
-  ZInterval result_interval;
+  auto result_interval = ZInterval::bottom();
 
   // Computes final interval, depending on the binary operator
   if (stmt->op() == ar::BinaryOperation::SAdd ||

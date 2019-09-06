@@ -95,7 +95,7 @@ ShiftCountChecker::CheckResult ShiftCountChecker::check_shift_count(
 
   const ScalarLit& shift_count = this->_lit_factory.get_scalar(stmt->right());
 
-  IntInterval shift_count_interval;
+  auto shift_count_interval = IntInterval::bottom(1, Signed);
   if (shift_count.is_undefined() ||
       (shift_count.is_machine_int_var() &&
        inv.normal().uninitialized().is_uninitialized(shift_count.var()))) {

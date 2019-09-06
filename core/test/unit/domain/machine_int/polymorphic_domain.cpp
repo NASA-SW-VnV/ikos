@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(PolymorphicDomain(IntervalDomain::bottom()).is_bottom());
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     BOOST_CHECK(inv.is_top());
     BOOST_CHECK(!inv.is_bottom());
 
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
     BOOST_CHECK(inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     BOOST_CHECK(inv.is_top());
     BOOST_CHECK(!inv.is_bottom());
 
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable y(vfac.get("y", 32, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     BOOST_CHECK(inv.is_top());
     BOOST_CHECK(!inv.is_bottom());
 
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
     BOOST_CHECK(!inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     BOOST_CHECK(inv.is_top());
     BOOST_CHECK(!inv.is_bottom());
 
@@ -156,19 +156,19 @@ BOOST_AUTO_TEST_CASE(leq) {
                   .leq(PolymorphicDomain(IntervalDomain::top())));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
     inv1.set(x, Interval(Int(0, 32, Signed)));
     BOOST_CHECK(inv1.leq(PolymorphicDomain(IntervalDomain::top())));
     BOOST_CHECK(!inv1.leq(PolymorphicDomain(IntervalDomain::bottom())));
 
-    PolymorphicDomain inv2(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
     inv2.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(inv2.leq(PolymorphicDomain(IntervalDomain::top())));
     BOOST_CHECK(!inv2.leq(PolymorphicDomain(IntervalDomain::bottom())));
     BOOST_CHECK(inv1.leq(inv2));
     BOOST_CHECK(!inv2.leq(inv1));
 
-    PolymorphicDomain inv3(IntervalDomain::top());
+    auto inv3 = PolymorphicDomain(IntervalDomain::top());
     inv3.set(x, Interval(Int(0, 32, Signed)));
     inv3.set(y, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(inv3.leq(PolymorphicDomain(IntervalDomain::top())));
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(leq) {
     BOOST_CHECK(inv3.leq(inv1));
     BOOST_CHECK(!inv1.leq(inv3));
 
-    PolymorphicDomain inv4(IntervalDomain::top());
+    auto inv4 = PolymorphicDomain(IntervalDomain::top());
     inv4.set(x, Interval(Int(0, 32, Signed)));
     inv4.set(y, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
     BOOST_CHECK(inv4.leq(PolymorphicDomain(IntervalDomain::top())));
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(leq) {
     BOOST_CHECK(!inv3.leq(inv4));
     BOOST_CHECK(!inv4.leq(inv3));
 
-    PolymorphicDomain inv5(IntervalDomain::top());
+    auto inv5 = PolymorphicDomain(IntervalDomain::top());
     inv5.set(x, Interval(Int(0, 32, Signed)));
     inv5.set(y, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
     inv5.set(z, Interval(Int::min(32, Signed), Int(0, 32, Signed)));
@@ -196,19 +196,19 @@ BOOST_AUTO_TEST_CASE(leq) {
     BOOST_CHECK(!inv4.leq(inv5));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
     inv1.set(x, Congruence(Int(0, 32, Signed)));
     BOOST_CHECK(inv1.leq(PolymorphicDomain(CongruenceDomain::top())));
     BOOST_CHECK(!inv1.leq(PolymorphicDomain(CongruenceDomain::bottom())));
 
-    PolymorphicDomain inv2(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
     inv2.set(x, Congruence(Int(2, 32, Signed), Int(0, 32, Signed)));
     BOOST_CHECK(inv2.leq(PolymorphicDomain(CongruenceDomain::top())));
     BOOST_CHECK(!inv2.leq(PolymorphicDomain(CongruenceDomain::bottom())));
     BOOST_CHECK(inv1.leq(inv2));
     BOOST_CHECK(!inv2.leq(inv1));
 
-    PolymorphicDomain inv3(CongruenceDomain::top());
+    auto inv3 = PolymorphicDomain(CongruenceDomain::top());
     inv3.set(x, Congruence(Int(0, 32, Signed)));
     inv3.set(y, Congruence(Int(2, 32, Signed), Int(0, 32, Signed)));
     BOOST_CHECK(inv3.leq(PolymorphicDomain(CongruenceDomain::top())));
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(leq) {
     BOOST_CHECK(inv3.leq(inv1));
     BOOST_CHECK(!inv1.leq(inv3));
 
-    PolymorphicDomain inv4(CongruenceDomain::top());
+    auto inv4 = PolymorphicDomain(CongruenceDomain::top());
     inv4.set(x, Congruence(Int(0, 32, Signed)));
     inv4.set(y, Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(inv4.leq(PolymorphicDomain(CongruenceDomain::top())));
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(leq) {
     BOOST_CHECK(!inv3.leq(inv4));
     BOOST_CHECK(!inv4.leq(inv3));
 
-    PolymorphicDomain inv5(CongruenceDomain::top());
+    auto inv5 = PolymorphicDomain(CongruenceDomain::top());
     inv5.set(x, Congruence(Int(0, 32, Signed)));
     inv5.set(y, Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
     inv5.set(z, Congruence(Int(3, 32, Signed), Int(0, 32, Signed)));
@@ -254,20 +254,20 @@ BOOST_AUTO_TEST_CASE(equals) {
                   .equals(PolymorphicDomain(IntervalDomain::top())));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
     inv1.set(x, Interval(Int(0, 32, Signed)));
     BOOST_CHECK(!inv1.equals(PolymorphicDomain(IntervalDomain::top())));
     BOOST_CHECK(!inv1.equals(PolymorphicDomain(IntervalDomain::bottom())));
     BOOST_CHECK(inv1.equals(inv1));
 
-    PolymorphicDomain inv2(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
     inv2.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(!inv2.equals(PolymorphicDomain(IntervalDomain::top())));
     BOOST_CHECK(!inv2.equals(PolymorphicDomain(IntervalDomain::bottom())));
     BOOST_CHECK(!inv1.equals(inv2));
     BOOST_CHECK(!inv2.equals(inv1));
 
-    PolymorphicDomain inv3(IntervalDomain::top());
+    auto inv3 = PolymorphicDomain(IntervalDomain::top());
     inv3.set(x, Interval(Int(0, 32, Signed)));
     inv3.set(y, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(!inv3.equals(PolymorphicDomain(IntervalDomain::top())));
@@ -276,20 +276,20 @@ BOOST_AUTO_TEST_CASE(equals) {
     BOOST_CHECK(!inv1.equals(inv3));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
     inv1.set(x, Congruence(Int(0, 32, Signed)));
     BOOST_CHECK(!inv1.equals(PolymorphicDomain(CongruenceDomain::top())));
     BOOST_CHECK(!inv1.equals(PolymorphicDomain(CongruenceDomain::bottom())));
     BOOST_CHECK(inv1.equals(inv1));
 
-    PolymorphicDomain inv2(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
     inv2.set(x, Congruence(Int(2, 32, Signed), Int(0, 32, Signed)));
     BOOST_CHECK(!inv2.equals(PolymorphicDomain(CongruenceDomain::top())));
     BOOST_CHECK(!inv2.equals(PolymorphicDomain(CongruenceDomain::bottom())));
     BOOST_CHECK(!inv1.equals(inv2));
     BOOST_CHECK(!inv2.equals(inv1));
 
-    PolymorphicDomain inv3(CongruenceDomain::top());
+    auto inv3 = PolymorphicDomain(CongruenceDomain::top());
     inv3.set(x, Congruence(Int(0, 32, Signed)));
     inv3.set(y, Congruence(Int(2, 32, Signed), Int(0, 32, Signed)));
     BOOST_CHECK(!inv3.equals(PolymorphicDomain(CongruenceDomain::top())));
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(join) {
                PolymorphicDomain(IntervalDomain::top())));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
     inv1.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.join(PolymorphicDomain(IntervalDomain::top())) ==
                  PolymorphicDomain(IntervalDomain::top())));
@@ -332,21 +332,21 @@ BOOST_AUTO_TEST_CASE(join) {
         (PolymorphicDomain(IntervalDomain::bottom()).join(inv1) == inv1));
     BOOST_CHECK((inv1.join(inv1) == inv1));
 
-    PolymorphicDomain inv2(IntervalDomain::top());
-    PolymorphicDomain inv3(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
+    auto inv3 = PolymorphicDomain(IntervalDomain::top());
     inv2.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
     inv3.set(x, Interval(Int(-1, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.join(inv2) == inv3));
     BOOST_CHECK((inv2.join(inv1) == inv3));
 
-    PolymorphicDomain inv4(IntervalDomain::top());
+    auto inv4 = PolymorphicDomain(IntervalDomain::top());
     inv4.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
     inv4.set(y, Interval(Int(0, 32, Signed)));
     BOOST_CHECK((inv4.join(inv2) == inv2));
     BOOST_CHECK((inv2.join(inv4) == inv2));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
     inv1.set(x, Congruence(Int(1, 32, Signed)));
     BOOST_CHECK((inv1.join(PolymorphicDomain(CongruenceDomain::top())) ==
                  PolymorphicDomain(CongruenceDomain::top())));
@@ -359,14 +359,14 @@ BOOST_AUTO_TEST_CASE(join) {
         (PolymorphicDomain(CongruenceDomain::bottom()).join(inv1) == inv1));
     BOOST_CHECK((inv1.join(inv1) == inv1));
 
-    PolymorphicDomain inv2(CongruenceDomain::top());
-    PolymorphicDomain inv3(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
+    auto inv3 = PolymorphicDomain(CongruenceDomain::top());
     inv2.set(x, Congruence(Int(3, 32, Signed)));
     inv3.set(x, Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.join(inv2) == inv3));
     BOOST_CHECK((inv2.join(inv1) == inv3));
 
-    PolymorphicDomain inv4(CongruenceDomain::top());
+    auto inv4 = PolymorphicDomain(CongruenceDomain::top());
     inv4.set(x, Congruence(Int(3, 32, Signed)));
     inv4.set(y, Congruence(Int(4, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv4.join(inv2) == inv2));
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(widening) {
                PolymorphicDomain(IntervalDomain::top())));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
     inv1.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.widening(PolymorphicDomain(IntervalDomain::top())) ==
                  PolymorphicDomain(IntervalDomain::top())));
@@ -407,15 +407,15 @@ BOOST_AUTO_TEST_CASE(widening) {
         (PolymorphicDomain(IntervalDomain::bottom()).widening(inv1) == inv1));
     BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-    PolymorphicDomain inv2(IntervalDomain::top());
-    PolymorphicDomain inv3(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
+    auto inv3 = PolymorphicDomain(IntervalDomain::top());
     inv2.set(x, Interval(Int(0, 32, Signed), Int(2, 32, Signed)));
     inv3.set(x, Interval(Int(0, 32, Signed), Int::max(32, Signed)));
     BOOST_CHECK((inv1.widening(inv2) == inv3));
     BOOST_CHECK((inv2.widening(inv1) == inv2));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
     inv1.set(x, Congruence(Int(1, 32, Signed)));
     BOOST_CHECK((inv1.widening(PolymorphicDomain(CongruenceDomain::top())) ==
                  PolymorphicDomain(CongruenceDomain::top())));
@@ -427,14 +427,14 @@ BOOST_AUTO_TEST_CASE(widening) {
         (PolymorphicDomain(CongruenceDomain::bottom()).widening(inv1) == inv1));
     BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-    PolymorphicDomain inv2(CongruenceDomain::top());
-    PolymorphicDomain inv3(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
+    auto inv3 = PolymorphicDomain(CongruenceDomain::top());
     inv2.set(x, Congruence(Int(3, 32, Signed)));
     inv3.set(x, Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.widening(inv2) == inv3));
     BOOST_CHECK((inv2.widening(inv1) == inv3));
 
-    PolymorphicDomain inv4(CongruenceDomain::top());
+    auto inv4 = PolymorphicDomain(CongruenceDomain::top());
     inv4.set(x, Congruence(Int(3, 32, Signed)));
     inv4.set(y, Congruence(Int(4, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv4.widening(inv2) == inv2));
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(meet) {
                PolymorphicDomain(IntervalDomain::bottom())));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
     inv1.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.meet(PolymorphicDomain(IntervalDomain::top())) == inv1));
     BOOST_CHECK((inv1.meet(PolymorphicDomain(IntervalDomain::bottom())) ==
@@ -473,15 +473,15 @@ BOOST_AUTO_TEST_CASE(meet) {
                  PolymorphicDomain(IntervalDomain::bottom())));
     BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-    PolymorphicDomain inv2(IntervalDomain::top());
-    PolymorphicDomain inv3(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
+    auto inv3 = PolymorphicDomain(IntervalDomain::top());
     inv2.set(x, Interval(Int(-1, 32, Signed), Int(0, 32, Signed)));
     inv3.set(x, Interval(Int(0, 32, Signed)));
     BOOST_CHECK((inv1.meet(inv2) == inv3));
     BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-    PolymorphicDomain inv4(IntervalDomain::top());
-    PolymorphicDomain inv5(IntervalDomain::top());
+    auto inv4 = PolymorphicDomain(IntervalDomain::top());
+    auto inv5 = PolymorphicDomain(IntervalDomain::top());
     inv4.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
     inv4.set(y, Interval(Int(0, 32, Signed)));
     inv5.set(x, Interval(Int(0, 32, Signed)));
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(meet) {
     BOOST_CHECK((inv2.meet(inv4) == inv5));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
     inv1.set(x, Congruence(Int(6, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(
         (inv1.meet(PolymorphicDomain(CongruenceDomain::top())) == inv1));
@@ -502,8 +502,8 @@ BOOST_AUTO_TEST_CASE(meet) {
                  PolymorphicDomain(CongruenceDomain::bottom())));
     BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-    PolymorphicDomain inv2(CongruenceDomain::top());
-    PolymorphicDomain inv3(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
+    auto inv3 = PolymorphicDomain(CongruenceDomain::top());
     inv2.set(x, Congruence(Int(8, 32, Signed), Int(7, 32, Signed)));
     inv3.set(x, Congruence(Int(24, 32, Signed), Int(7, 32, Signed)));
     BOOST_CHECK((inv1.meet(inv2) == inv3));
@@ -532,7 +532,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                PolymorphicDomain(IntervalDomain::bottom())));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
     inv1.set(x, Interval(Int(0, 32, Signed), Int::max(32, Signed)));
     BOOST_CHECK(
         (inv1.narrowing(PolymorphicDomain(IntervalDomain::top())) == inv1));
@@ -544,14 +544,14 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                  PolymorphicDomain(IntervalDomain::bottom())));
     BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-    PolymorphicDomain inv2(IntervalDomain::top());
-    PolymorphicDomain inv3(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
+    auto inv3 = PolymorphicDomain(IntervalDomain::top());
     inv2.set(x, Interval(Int(0, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK((inv1.narrowing(inv2) == inv2));
     BOOST_CHECK((inv2.narrowing(inv1) == inv2));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
     inv1.set(x, Congruence(Int(6, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(
         (inv1.narrowing(PolymorphicDomain(CongruenceDomain::top())) == inv1));
@@ -565,8 +565,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
          PolymorphicDomain(CongruenceDomain::bottom())));
     BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-    PolymorphicDomain inv2(CongruenceDomain::top());
-    PolymorphicDomain inv3(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
+    auto inv3 = PolymorphicDomain(CongruenceDomain::top());
     inv2.set(x, Congruence(Int(8, 32, Signed), Int(7, 32, Signed)));
     inv3.set(x, Congruence(Int(24, 32, Signed), Int(7, 32, Signed)));
     BOOST_CHECK((inv1.narrowing(inv2) == inv3));
@@ -582,8 +582,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable w(vfac.get("w", 32, Signed));
 
   {
-    PolymorphicDomain inv1(IntervalDomain::top());
-    PolymorphicDomain inv2(IntervalDomain::top());
+    auto inv1 = PolymorphicDomain(IntervalDomain::top());
+    auto inv2 = PolymorphicDomain(IntervalDomain::top());
     inv1.assign(x, Int(0, 32, Signed));
     inv2.set(x, Interval(Int(0, 32, Signed)));
     BOOST_CHECK((inv1 == inv2));
@@ -611,8 +611,8 @@ BOOST_AUTO_TEST_CASE(assign) {
                 Interval(Int(-7, 32, Signed), Int(0, 32, Signed)));
   }
   {
-    PolymorphicDomain inv1(CongruenceDomain::top());
-    PolymorphicDomain inv2(CongruenceDomain::top());
+    auto inv1 = PolymorphicDomain(CongruenceDomain::top());
+    auto inv2 = PolymorphicDomain(CongruenceDomain::top());
     inv1.assign(x, Int(0, 32, Signed));
     inv2.set(x, Congruence(Int(0, 32, Signed)));
     BOOST_CHECK((inv1 == inv2));
@@ -649,7 +649,7 @@ BOOST_AUTO_TEST_CASE(unary_apply) {
   Variable w(vfac.get("w", 8, Unsigned));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.assign(x, Int(85, 8, Signed));
     BOOST_CHECK(inv.to_interval(x) == Interval(Int(85, 8, Signed)));
     inv.apply(UnaryOperator::Trunc, y, x);
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE(unary_apply) {
     BOOST_CHECK(inv.to_interval(w) == Interval(Int(21, 8, Unsigned)));
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.assign(x, Int(85, 8, Signed));
     BOOST_CHECK(inv.to_congruence(x) == Congruence(Int(85, 8, Signed)));
     inv.apply(UnaryOperator::Trunc, y, x);
@@ -680,7 +680,7 @@ BOOST_AUTO_TEST_CASE(binary_apply) {
   Variable w(vfac.get("w", 8, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.assign(x, Int(85, 8, Signed));
     BOOST_CHECK(inv.to_interval(x) == Interval(Int(85, 8, Signed)));
     inv.apply(BinaryOperator::Add, y, x, Int(43, 8, Signed));
@@ -689,7 +689,7 @@ BOOST_AUTO_TEST_CASE(binary_apply) {
     BOOST_CHECK(inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.assign(x, Int(85, 8, Signed));
     BOOST_CHECK(inv.to_congruence(x) == Congruence(Int(85, 8, Signed)));
     inv.apply(BinaryOperator::Add, y, x, Int(43, 8, Signed));
@@ -707,7 +707,7 @@ BOOST_AUTO_TEST_CASE(add_var) {
   Variable w(vfac.get("w", 32, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.set(x, Interval(Int(0, 32, Signed), Int(4, 32, Signed)));
     inv.set(y, Interval(Int(-4, 32, Signed), Int(0, 32, Signed)));
     inv.add(Predicate::EQ, x, y);
@@ -754,7 +754,7 @@ BOOST_AUTO_TEST_CASE(add_var) {
     BOOST_CHECK(inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.set(x, Congruence(Int(6, 32, Signed), Int(1, 32, Signed)));
     inv.set(y, Congruence(Int(8, 32, Signed), Int(7, 32, Signed)));
     inv.add(Predicate::EQ, x, y);
@@ -773,7 +773,7 @@ BOOST_AUTO_TEST_CASE(add_int) {
   Variable w(vfac.get("w", 32, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.set(x, Interval(Int(0, 32, Signed), Int(4, 32, Signed)));
     inv.add(Predicate::EQ, x, Int(1, 32, Signed));
     BOOST_CHECK(inv.to_interval(x) == Interval(Int(1, 32, Signed)));
@@ -802,7 +802,7 @@ BOOST_AUTO_TEST_CASE(add_int) {
     BOOST_CHECK(inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.set(x, Congruence(Int(6, 32, Signed), Int(1, 32, Signed)));
     inv.add(Predicate::EQ, x, Int(7, 32, Signed));
     BOOST_CHECK(inv.to_congruence(x) == Congruence(Int(7, 32, Signed)));
@@ -817,21 +817,21 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable w(vfac.get("w", 32, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
     BOOST_CHECK(inv.to_interval(x) ==
                 Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
 
-    inv.set(x, Interval::bottom());
+    inv.set(x, Interval::bottom(32, Signed));
     BOOST_CHECK(inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.set(x, Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(inv.to_congruence(x) ==
                 Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
 
-    inv.set(x, Congruence::bottom());
+    inv.set(x, Congruence::bottom(32, Signed));
     BOOST_CHECK(inv.is_bottom());
   }
 }
@@ -844,7 +844,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable w(vfac.get("w", 32, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.refine(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
     BOOST_CHECK(inv.to_interval(x) ==
                 Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
@@ -853,7 +853,7 @@ BOOST_AUTO_TEST_CASE(refine) {
     BOOST_CHECK(inv.is_bottom());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.refine(x, Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(inv.to_congruence(x) ==
                 Congruence(Int(2, 32, Signed), Int(1, 32, Signed)));
@@ -871,7 +871,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable w(vfac.get("w", 32, Signed));
 
   {
-    PolymorphicDomain inv(IntervalDomain::top());
+    auto inv = PolymorphicDomain(IntervalDomain::top());
     inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
     inv.set(y, Interval(Int(3, 32, Signed), Int(4, 32, Signed)));
     BOOST_CHECK(inv.to_interval(x) ==
@@ -888,7 +888,7 @@ BOOST_AUTO_TEST_CASE(forget) {
     BOOST_CHECK(inv.is_top());
   }
   {
-    PolymorphicDomain inv(CongruenceDomain::top());
+    auto inv = PolymorphicDomain(CongruenceDomain::top());
     inv.set(x, Congruence(Int(2, 32, Signed), Int(0, 32, Signed)));
     inv.set(y, Congruence(Int(3, 32, Signed), Int(1, 32, Signed)));
     BOOST_CHECK(inv.to_congruence(x) ==
@@ -913,7 +913,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  PolymorphicDomain inv(IntervalDomain::top());
+  auto inv = PolymorphicDomain(IntervalDomain::top());
   inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
   inv.set(y, Interval(Int(3, 32, Signed), Int(4, 32, Signed)));
 
@@ -936,7 +936,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z", 32, Signed));
   Variable w(vfac.get("w", 32, Signed));
 
-  PolymorphicDomain inv(CongruenceDomain::top());
+  auto inv = PolymorphicDomain(CongruenceDomain::top());
   inv.set(x, Congruence(Int(6, 32, Signed), Int(1, 32, Signed)));
   inv.set(y, Congruence(Int(8, 32, Signed), Int(7, 32, Signed)));
 

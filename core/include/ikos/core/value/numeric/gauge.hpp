@@ -106,8 +106,15 @@ private:
   }
 
 public:
-  /// \brief No default constructor
-  GaugeBound() = delete;
+  /// \brief Return +oo
+  static GaugeBound plus_infinity() {
+    return GaugeBound(true, 1, Coefficients());
+  }
+
+  /// \brief Return -oo
+  static GaugeBound minus_infinity() {
+    return GaugeBound(true, -1, Coefficients());
+  }
 
   /// \brief Create the gauge bound `n`
   explicit GaugeBound(int n) : _is_infinite(false), _cst(n) {}
@@ -176,18 +183,6 @@ public:
   /// \brief Destructor
   ~GaugeBound() = default;
 
-public:
-  /// \brief Return +oo
-  static GaugeBound plus_infinity() {
-    return GaugeBound(true, 1, Coefficients());
-  }
-
-  /// \brief Return -oo
-  static GaugeBound minus_infinity() {
-    return GaugeBound(true, -1, Coefficients());
-  }
-
-public:
   /// \brief Return true if the bound is infinite
   bool is_infinite() const { return this->_is_infinite; }
 
@@ -987,7 +982,10 @@ private:
 
 public:
   /// \brief Create the gauge [-oo, +oo]
-  Gauge() : Gauge(TopTag{}) {}
+  static Gauge top() { return Gauge(TopTag{}); }
+
+  /// \brief Create the bottom gauge
+  static Gauge bottom() { return Gauge(BottomTag{}); }
 
   /// \brief Create the gauge [n, n]
   explicit Gauge(int n) : _lb(n), _ub(n) {}
@@ -1037,12 +1035,6 @@ public:
 
   /// \brief Destructor
   ~Gauge() override = default;
-
-  /// \brief Create the gauge [-oo, +oo]
-  static Gauge top() { return Gauge(TopTag{}); }
-
-  /// \brief Create the gauge interval
-  static Gauge bottom() { return Gauge(BottomTag{}); }
 
   /// \brief Return the lower bound
   const GaugeBoundT& lb() const {

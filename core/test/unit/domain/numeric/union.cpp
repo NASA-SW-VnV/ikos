@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!UnionDomain::bottom().is_top());
   BOOST_CHECK(UnionDomain::bottom().is_bottom());
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -119,8 +119,8 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!UnionDomain::top().leq(UnionDomain::bottom()));
   BOOST_CHECK(UnionDomain::top().leq(UnionDomain::top()));
 
-  UnionDomain inv_a;
-  UnionDomain inv_b;
+  auto inv_a = UnionDomain::top();
+  auto inv_b = UnionDomain::top();
   inv_a.assign(x, 1);
   BOOST_CHECK(inv_a.leq(inv_b));
 
@@ -170,20 +170,20 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(!UnionDomain::top().equals(UnionDomain::bottom()));
   BOOST_CHECK(UnionDomain::top().equals(UnionDomain::top()));
 
-  UnionDomain inv1;
+  auto inv1 = UnionDomain::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(!inv1.equals(UnionDomain::top()));
   BOOST_CHECK(!inv1.equals(UnionDomain::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  UnionDomain inv2;
+  auto inv2 = UnionDomain::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv2.equals(UnionDomain::top()));
   BOOST_CHECK(!inv2.equals(UnionDomain::bottom()));
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  UnionDomain inv3;
+  auto inv3 = UnionDomain::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv3.equals(UnionDomain::top()));
@@ -205,9 +205,9 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK(
       (UnionDomain::top().join(UnionDomain::bottom()) == UnionDomain::top()));
 
-  UnionDomain inv_a;
-  UnionDomain inv_b;
-  UnionDomain inv_c;
+  auto inv_a = UnionDomain::top();
+  auto inv_b = UnionDomain::top();
+  auto inv_c = UnionDomain::top();
 
   inv_a.set_to_top();
   inv_a.assign(x, 0);
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((UnionDomain::top().widening(UnionDomain::bottom()) ==
                UnionDomain::top()));
 
-  UnionDomain inv1;
+  auto inv1 = UnionDomain::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.widening(UnionDomain::top()) == UnionDomain::top()));
   BOOST_CHECK((inv1.widening(UnionDomain::bottom()) == inv1));
@@ -317,8 +317,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((UnionDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  UnionDomain inv2;
-  UnionDomain inv3;
+  auto inv2 = UnionDomain::top();
+  auto inv3 = UnionDomain::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -343,8 +343,8 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((UnionDomain::top().meet(UnionDomain::bottom()) ==
                UnionDomain::bottom()));
 
-  UnionDomain inv_a;
-  UnionDomain inv_b;
+  auto inv_a = UnionDomain::top();
+  auto inv_b = UnionDomain::top();
   inv_a.assign(x, 0);
   inv_b.assign(x, 10);
   inv_a.join_with(inv_b);
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(meet) {
   UnionDomain inv = inv_a.meet(inv_b);
   BOOST_CHECK(inv.to_interval(x) == Interval(0));
 
-  UnionDomain inv1;
+  auto inv1 = UnionDomain::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.meet(UnionDomain::top()) == inv1));
   BOOST_CHECK((inv1.meet(UnionDomain::bottom()) == UnionDomain::bottom()));
@@ -361,15 +361,15 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((UnionDomain::bottom().meet(inv1) == UnionDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  UnionDomain inv2;
-  UnionDomain inv3;
+  auto inv2 = UnionDomain::top();
+  auto inv3 = UnionDomain::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  UnionDomain inv4;
-  UnionDomain inv5;
+  auto inv4 = UnionDomain::top();
+  auto inv5 = UnionDomain::top();
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((UnionDomain::top().narrowing(UnionDomain::bottom()) ==
                UnionDomain::bottom()));
 
-  UnionDomain inv1;
+  auto inv1 = UnionDomain::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.narrowing(UnionDomain::top()) == inv1));
   BOOST_CHECK((inv1.narrowing(UnionDomain::bottom()) == UnionDomain::bottom()));
@@ -402,8 +402,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((UnionDomain::bottom().narrowing(inv1) == UnionDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  UnionDomain inv2;
-  UnionDomain inv3;
+  auto inv2 = UnionDomain::top();
+  auto inv3 = UnionDomain::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -416,8 +416,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv1;
-  UnionDomain inv2;
+  auto inv1 = UnionDomain::top();
+  auto inv2 = UnionDomain::top();
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -445,8 +445,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv1;
-  UnionDomain inv2;
+  auto inv1 = UnionDomain::top();
+  auto inv2 = UnionDomain::top();
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.set(y, Interval(Bound(1), Bound(2)));
 
@@ -557,7 +557,7 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   inv.add(VariableExpr(x) >= 1);
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
 
@@ -603,8 +603,8 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv_a;
-  UnionDomain inv_b;
+  auto inv_a = UnionDomain::top();
+  auto inv_b = UnionDomain::top();
   inv_a.assign(x, 0);
   inv_b.assign(x, 2);
   UnionDomain inv = inv_a.join(inv_b);
@@ -626,7 +626,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
@@ -675,7 +675,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(2 * VariableExpr(x) + 1) ==
@@ -691,7 +691,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_congruence(2 * VariableExpr(x) + 1) ==
@@ -707,7 +707,7 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  UnionDomain inv;
+  auto inv = UnionDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval_congruence(2 * VariableExpr(x) + 1) ==

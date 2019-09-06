@@ -95,11 +95,15 @@ private:
   WtoT _wto;
   InvariantTable _pre;
   InvariantTable _post;
+  AbstractValue _bottom;
 
 public:
   /// \brief Create an interleaved forward fixpoint iterator
-  explicit InterleavedFwdFixpointIterator(GraphRef cfg)
-      : _cfg(cfg), _wto(cfg) {}
+  ///
+  /// \param cfg The control flow graph
+  /// \param bottom The bottom abstract value
+  InterleavedFwdFixpointIterator(GraphRef cfg, AbstractValue bottom)
+      : _cfg(cfg), _wto(cfg), _bottom(std::move(bottom)) {}
 
   /// \brief No copy constructor
   InterleavedFwdFixpointIterator(const InterleavedFwdFixpointIterator&) =
@@ -122,9 +126,12 @@ public:
   /// \brief Get the weak topological order of the graph
   const WtoT& wto() const { return this->_wto; }
 
+  /// \brief Get the bottom abstract value
+  const AbstractValue& bottom() const { return this->_bottom; }
+
 private:
   /// \brief Set the invariant for the given node
-  static void set(InvariantTable& table, NodeRef node, AbstractValue inv) {
+  void set(InvariantTable& table, NodeRef node, AbstractValue inv) const {
     auto it = table.find(node);
     if (it != table.end()) {
       it->second = std::move(inv);
@@ -144,13 +151,12 @@ private:
   }
 
   /// \brief Get the invariant for the given node
-  static const AbstractValue& get(const InvariantTable& table, NodeRef node) {
+  const AbstractValue& get(const InvariantTable& table, NodeRef node) const {
     auto it = table.find(node);
     if (it != table.end()) {
       return it->second;
     } else {
-      static AbstractValue Bottom = AbstractValue::bottom();
-      return Bottom;
+      return this->_bottom;
     }
   }
 
@@ -324,7 +330,7 @@ public:
 
   void visit(const WtoVertexT& vertex) override {
     NodeRef node = vertex.node();
-    AbstractValue pre = AbstractValue::bottom();
+    AbstractValue pre = this->_iterator.bottom();
 
     // Use the invariant for the entry point
     if (node == this->_entry) {
@@ -347,7 +353,7 @@ public:
 
   void visit(const WtoCycleT& cycle) override {
     NodeRef head = cycle.head();
-    AbstractValue pre = AbstractValue::bottom();
+    AbstractValue pre = this->_iterator.bottom();
     const WtoNestingT& cycle_nesting = this->_iterator.wto().nesting(head);
 
     this->_iterator.notify_enter_cycle(head);
@@ -379,10 +385,10 @@ public:
       }
 
       // Invariant from the head of the loop
-      AbstractValue new_pre_in = AbstractValue::bottom();
+      AbstractValue new_pre_in = this->_iterator.bottom();
 
       // Invariant from the tail of the loop
-      AbstractValue new_pre_back = AbstractValue::bottom();
+      AbstractValue new_pre_back = this->_iterator.bottom();
 
       for (auto it = GraphTrait::predecessor_begin(head),
                 et = GraphTrait::predecessor_end(head);

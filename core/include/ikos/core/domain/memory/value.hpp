@@ -184,34 +184,12 @@ private:
   UninitializedDomain _uninitialized;
   LifetimeDomain _lifetime;
 
-private:
-  struct TopTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top abstract value
-  explicit ValueDomain(TopTag)
-      : _cells(MemLocToCellSetT::top()),
-        _pointer_sets(MemLocToPointerSetT::top()),
-        _pointer(PointerDomain::top()),
-        _uninitialized(UninitializedDomain::top()),
-        _lifetime(LifetimeDomain::top()) {}
-
-  /// \brief Create the bottom abstract value
-  explicit ValueDomain(BottomTag)
-      : _cells(MemLocToCellSetT::bottom()),
-        _pointer_sets(MemLocToPointerSetT::bottom()),
-        _pointer(PointerDomain::bottom()),
-        _uninitialized(UninitializedDomain::bottom()),
-        _lifetime(LifetimeDomain::bottom()) {}
-
 public:
-  /// \brief Create the top abstract value
-  ValueDomain() : ValueDomain(TopTag{}) {}
-
-  /// \brief Create an abstract value with the given underlying domains
+  /// \brief Create an abstract value with the given underlying abstract values
   ///
   /// \param pointer The pointer abstract value
   /// \param uninitialized The uninitialized abstract value
+  /// \param lifetime The lifetime abstract value
   explicit ValueDomain(PointerDomain pointer,
                        UninitializedDomain uninitialized,
                        LifetimeDomain lifetime)
@@ -249,12 +227,6 @@ public:
 
   /// \brief Destructor
   ~ValueDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static ValueDomain top() { return ValueDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static ValueDomain bottom() { return ValueDomain(BottomTag{}); }
 
   /*
    * Implement core::AbstractDomain
@@ -469,7 +441,7 @@ private:
   Interval cell_range(VariableRef cell) const {
     const MachineInt& offset = CellVariableTrait::offset(cell);
     const MachineInt& size = CellVariableTrait::size(cell);
-    MachineInt one(1, offset.bit_width(), Unsigned);
+    auto one = MachineInt(1, offset.bit_width(), Unsigned);
     return Interval(offset, offset + (size - one));
   }
 
@@ -498,7 +470,7 @@ private:
                           const MachineInt& size) const {
     const MachineInt& cell_offset = CellVariableTrait::offset(cell);
     const MachineInt& cell_size = CellVariableTrait::size(cell);
-    MachineInt one(1, size.bit_width(), Unsigned);
+    auto one = MachineInt(1, size.bit_width(), Unsigned);
 
     if (size != cell_size) {
       return false;
@@ -588,8 +560,9 @@ private:
                                                        const MachineInt& size) {
     // offset interval
     Interval offset_intv = this->integers().to_interval(offset);
-    Interval size_intv(MachineInt::zero(size.bit_width(), Unsigned),
-                       size - MachineInt(1, size.bit_width(), Unsigned));
+    Interval size_intv =
+        Interval(MachineInt::zero(size.bit_width(), Unsigned),
+                 size - MachineInt(1, size.bit_width(), Unsigned));
     Interval range = add(offset_intv, size_intv);
 
     const CellSetT& cells = this->_cells.get(base);
@@ -951,7 +924,7 @@ public:
 
     // Update pointer sets
 
-    PointerAbsValueT rhs_ptr;
+    auto rhs_ptr = PointerAbsValueT::bottom(1, Unsigned);
     if (rhs.is_memory_location()) {
       rhs_ptr =
           PointerAbsValueT(PointsToSetT{rhs.memory_location()},
@@ -1103,7 +1076,7 @@ public:
     // offsets and size intervals
     Interval src_intv = this->integers().to_interval(this->offset_var(src));
     Interval dest_intv = this->integers().to_interval(this->offset_var(dest));
-    Interval size_intv;
+    auto size_intv = Interval::bottom(1, Unsigned);
 
     if (size.is_machine_int()) {
       size_intv = Interval(size.machine_int());
@@ -1131,8 +1104,8 @@ public:
       MachineInt dest_offset = *dest_intv.singleton();
       MachineInt src_offset = *src_intv.singleton();
       const MachineInt& size_lb = size_intv.lb();
-      MachineInt one(1, dest_intv.bit_width(), Unsigned);
-      Interval src_range(src_offset, src_offset + (size_lb - one));
+      auto one = MachineInt(1, dest_intv.bit_width(), Unsigned);
+      auto src_range = Interval(src_offset, src_offset + (size_lb - one));
 
       ValueDomain prev(*this);
       bool first = true;
@@ -1176,8 +1149,7 @@ public:
     // Update pointer sets
 
     // Collect source pointer sets
-    PointerSetT src_pointer_set =
-        PointerSetT::bottom(src_intv.bit_width(), Unsigned);
+    auto src_pointer_set = PointerSetT::bottom(src_intv.bit_width(), Unsigned);
 
     if (src_addrs.is_top()) {
       src_pointer_set.set_to_top(); // sound
@@ -1230,8 +1202,8 @@ public:
 
     // offset, size and value intervals
     Interval dest_intv = this->integers().to_interval(this->offset_var(dest));
-    Interval size_intv;
-    Interval value_intv;
+    auto size_intv = Interval::bottom(1, Unsigned);
+    auto value_intv = Interval::bottom(1, Unsigned);
 
     if (size.is_machine_int()) {
       size_intv = Interval(size.machine_int());
@@ -1257,12 +1229,14 @@ public:
     if (value_intv.is_zero()) {
       // memory set to zero
       const MachineInt& size_lb = size_intv.lb();
-      MachineInt zero(0, size_lb.bit_width(), Unsigned);
-      MachineInt one(1, size_lb.bit_width(), Unsigned);
+      auto zero = MachineInt(0, size_lb.bit_width(), Unsigned);
+      auto one = MachineInt(1, size_lb.bit_width(), Unsigned);
 
       // offsets that are updated
-      Interval safe_range_lb(dest_intv.lb(), dest_intv.lb() + (size_lb - one));
-      Interval safe_range_ub(dest_intv.ub(), dest_intv.ub() + (size_lb - one));
+      auto safe_range_lb =
+          Interval(dest_intv.lb(), dest_intv.lb() + (size_lb - one));
+      auto safe_range_ub =
+          Interval(dest_intv.ub(), dest_intv.ub() + (size_lb - one));
       Interval safe_range = safe_range_lb.meet(safe_range_ub);
 
       // possibly updated offsets
@@ -1387,8 +1361,8 @@ private:
     }
 
     Interval offset_intv = this->integers().to_interval(offset);
-    Interval size_intv(MachineInt::zero(size.bit_width(), Unsigned),
-                       size - MachineInt(1, size.bit_width(), Unsigned));
+    auto size_intv = Interval(MachineInt::zero(size.bit_width(), Unsigned),
+                              size - MachineInt(1, size.bit_width(), Unsigned));
     this->forget_cells(addr, add(offset_intv, size_intv));
   }
 

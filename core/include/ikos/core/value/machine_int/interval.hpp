@@ -68,19 +68,18 @@ private:
 
   // Invariant: is_bottom() <=> _lb > _ub
 
-private:
-  struct TopTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top interval
-  explicit Interval(TopTag) : _lb(-1, 1, Signed), _ub(0, 1, Signed) {}
-
-  /// \brief Create the bottom interval
-  explicit Interval(BottomTag) : _lb(0, 1, Signed), _ub(-1, 1, Signed) {}
-
 public:
-  /// \brief Create the top interval
-  explicit Interval() : Interval(TopTag{}) {}
+  /// \brief Create the top interval for the given bit-width and signedness
+  static Interval top(unsigned bit_width, Signedness sign) {
+    return Interval(MachineInt::min(bit_width, sign),
+                    MachineInt::max(bit_width, sign));
+  }
+
+  /// \brief Create the bottom interval for the given bit-width and signedness
+  static Interval bottom(unsigned bit_width, Signedness sign) {
+    return Interval(MachineInt::max(bit_width, sign),
+                    MachineInt::min(bit_width, sign));
+  }
 
   /// \brief Create the interval [n, n]
   explicit Interval(const MachineInt& n) : _lb(n), _ub(n) {}
@@ -107,24 +106,6 @@ public:
 
   /// \brief Destructor
   ~Interval() override = default;
-
-  /// \brief Create the top interval
-  static Interval top() { return Interval(TopTag{}); }
-
-  /// \brief Create the bottom interval
-  static Interval bottom() { return Interval(BottomTag{}); }
-
-  /// \brief Create the top interval for the given bit-width and signedness
-  static Interval top(unsigned bit_width, Signedness sign) {
-    return Interval(MachineInt::min(bit_width, sign),
-                    MachineInt::max(bit_width, sign));
-  }
-
-  /// \brief Create the bottom interval for the given bit-width and signedness
-  static Interval bottom(unsigned bit_width, Signedness sign) {
-    return Interval(MachineInt::max(bit_width, sign),
-                    MachineInt::min(bit_width, sign));
-  }
 
   /// \brief Return the bit width of the interval
   unsigned bit_width() const { return this->_lb.bit_width(); }

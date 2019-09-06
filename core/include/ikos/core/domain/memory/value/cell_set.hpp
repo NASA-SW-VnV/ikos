@@ -78,8 +78,14 @@ private:
   explicit CellSet(EmptyTag) {}
 
 public:
+  /// \brief Create the top cell set
+  static CellSet top() { return CellSet(EmptyTag{}); }
+
+  /// \brief Create the bottom cell set
+  static CellSet bottom() { return CellSet(EmptyTag{}); }
+
   /// \brief Create the empty cell set
-  CellSet() : CellSet(EmptyTag{}) {}
+  static CellSet empty() { return CellSet(EmptyTag{}); }
 
   /// \brief Create the cell set with the given cells
   CellSet(std::initializer_list< VariableRef > cells) : _set(cells) {}
@@ -98,12 +104,6 @@ public:
 
   /// \brief Destructor
   ~CellSet() override = default;
-
-  /// \brief Create the top cell set (empty set)
-  static CellSet top() { return CellSet(EmptyTag{}); }
-
-  /// \brief Create the bottom cell set (empty set)
-  static CellSet bottom() { return CellSet(EmptyTag{}); }
 
   /// \brief Return the number of cells
   std::size_t size() const { return this->_set.size(); }

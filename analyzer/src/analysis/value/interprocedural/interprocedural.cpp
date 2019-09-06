@@ -82,7 +82,8 @@ void InterproceduralValueAnalysis::run() {
   }
 
   // Initial invariant
-  AbstractDomain init_inv = init_invariant(_ctx.opts.machine_int_domain);
+  AbstractDomain init_inv =
+      make_initial_abstract_value(_ctx.opts.machine_int_domain);
 
   // Initialize global variables
   {
@@ -183,7 +184,7 @@ void InterproceduralValueAnalysis::run() {
     }
 
     // Entry point initial invariant
-    AbstractDomain entry_inv = AbstractDomain::bottom();
+    AbstractDomain entry_inv = make_bottom_abstract_value();
 
     if (std::find(_ctx.opts.no_init_globals.begin(),
                   _ctx.opts.no_init_globals.end(),
@@ -192,7 +193,7 @@ void InterproceduralValueAnalysis::run() {
       entry_inv = init_inv;
     } else {
       // Default invariant
-      entry_inv = init_invariant(_ctx.opts.machine_int_domain);
+      entry_inv = make_initial_abstract_value(_ctx.opts.machine_int_domain);
     }
 
     if (entry_point->name() == "main" && entry_point->num_parameters() >= 2) {

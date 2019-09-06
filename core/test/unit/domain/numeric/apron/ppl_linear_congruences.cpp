@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!ApronDomain::bottom().is_top());
   BOOST_CHECK(ApronDomain::bottom().is_bottom());
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -121,19 +121,19 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!ApronDomain::top().leq(ApronDomain::bottom()));
   BOOST_CHECK(ApronDomain::top().leq(ApronDomain::top()));
 
-  ApronDomain inv1;
+  auto inv1 = ApronDomain::top();
   inv1.set(x, Congruence(0));
   BOOST_CHECK(inv1.leq(ApronDomain::top()));
   BOOST_CHECK(!inv1.leq(ApronDomain::bottom()));
 
-  ApronDomain inv2;
+  auto inv2 = ApronDomain::top();
   inv2.set(x, Congruence(ZNumber(2), ZNumber(0)));
   BOOST_CHECK(inv2.leq(ApronDomain::top()));
   BOOST_CHECK(!inv2.leq(ApronDomain::bottom()));
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  ApronDomain inv3;
+  auto inv3 = ApronDomain::top();
   inv3.set(x, Congruence(0));
   inv3.set(y, Congruence(ZNumber(2), ZNumber(1)));
   BOOST_CHECK(inv3.leq(ApronDomain::top()));
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  ApronDomain inv4;
+  auto inv4 = ApronDomain::top();
   inv4.set(x, Congruence(0));
   inv4.set(y, Congruence(ZNumber(2), ZNumber(0)));
   BOOST_CHECK(inv4.leq(ApronDomain::top()));
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  ApronDomain inv5;
+  auto inv5 = ApronDomain::top();
   inv5.set(x, Congruence(0));
   inv5.set(y, Congruence(ZNumber(2), ZNumber(0)));
   inv5.set(z, Congruence(ZNumber(4), ZNumber(0)));
@@ -173,20 +173,20 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(!ApronDomain::top().equals(ApronDomain::bottom()));
   BOOST_CHECK(ApronDomain::top().equals(ApronDomain::top()));
 
-  ApronDomain inv1;
+  auto inv1 = ApronDomain::top();
   inv1.set(x, Congruence(0));
   BOOST_CHECK(!inv1.equals(ApronDomain::top()));
   BOOST_CHECK(!inv1.equals(ApronDomain::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  ApronDomain inv2;
+  auto inv2 = ApronDomain::top();
   inv2.set(x, Congruence(ZNumber(2), ZNumber(0)));
   BOOST_CHECK(!inv2.equals(ApronDomain::top()));
   BOOST_CHECK(!inv2.equals(ApronDomain::bottom()));
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  ApronDomain inv3;
+  auto inv3 = ApronDomain::top();
   inv3.set(x, Congruence(0));
   inv3.set(y, Congruence(ZNumber(2), ZNumber(1)));
   BOOST_CHECK(!inv3.equals(ApronDomain::top()));
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK(
       (ApronDomain::top().join(ApronDomain::bottom()) == ApronDomain::top()));
 
-  ApronDomain inv1;
+  auto inv1 = ApronDomain::top();
   inv1.set(x, Congruence(1));
   BOOST_CHECK((inv1.join(ApronDomain::top()) == ApronDomain::top()));
   BOOST_CHECK((inv1.join(ApronDomain::bottom()) == inv1));
@@ -219,14 +219,14 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((ApronDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  ApronDomain inv2;
-  ApronDomain inv3;
+  auto inv2 = ApronDomain::top();
+  auto inv3 = ApronDomain::top();
   inv2.set(x, Congruence(3));
   inv3.set(x, Congruence(ZNumber(2), ZNumber(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  ApronDomain inv4;
+  auto inv4 = ApronDomain::top();
   inv4.set(x, Congruence(3));
   inv4.set(y, Interval(0));
   BOOST_CHECK((inv4.join(inv2) == inv2));
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((ApronDomain::top().widening(ApronDomain::bottom()) ==
                ApronDomain::top()));
 
-  ApronDomain inv1;
+  auto inv1 = ApronDomain::top();
   inv1.set(x, Congruence(1));
   // inv1 widen TOP gives {x = 0 mod 1}, and is not reduced to top.
   BOOST_CHECK((inv1.widening(ApronDomain::top()).to_congruence(x) ==
@@ -261,14 +261,14 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((ApronDomain::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  // ApronDomain inv2;
-  // ApronDomain inv3;
+  // auto inv2 = ApronDomain::top();
+  // auto inv3 = ApronDomain::top();
   // inv2.set(x, Congruence(3));
   // inv3.set(x, Congruence(ZNumber(2), ZNumber(1)));
   // BOOST_CHECK((inv1.widening(inv2) == inv3));
   // BOOST_CHECK((inv2.widening(inv1) == inv3));
 
-  // ApronDomain inv4;
+  // auto inv4 = ApronDomain::top();
   // inv4.set(x, Congruence(3));
   // inv4.set(y, Interval(0));
   // BOOST_CHECK((inv4.widening(inv2) == inv2));
@@ -291,7 +291,7 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((ApronDomain::top().meet(ApronDomain::bottom()) ==
                ApronDomain::bottom()));
 
-  ApronDomain inv1;
+  auto inv1 = ApronDomain::top();
   inv1.set(x, Congruence(ZNumber(2), ZNumber(0)));
   BOOST_CHECK((inv1.meet(ApronDomain::top()) == inv1));
   BOOST_CHECK((inv1.meet(ApronDomain::bottom()) == ApronDomain::bottom()));
@@ -299,15 +299,15 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((ApronDomain::bottom().meet(inv1) == ApronDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  ApronDomain inv2;
-  ApronDomain inv3;
+  auto inv2 = ApronDomain::top();
+  auto inv3 = ApronDomain::top();
   inv2.set(x, Congruence(ZNumber(3), ZNumber(1)));
   inv3.set(x, Congruence(ZNumber(6), ZNumber(4)));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  ApronDomain inv4;
-  ApronDomain inv5;
+  auto inv4 = ApronDomain::top();
+  auto inv5 = ApronDomain::top();
   inv4.set(x, Congruence(ZNumber(2), ZNumber(0)));
   inv4.set(y, Interval(0));
   inv5.set(x, Congruence(ZNumber(6), ZNumber(4)));
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((ApronDomain::top().narrowing(ApronDomain::bottom()) ==
                ApronDomain::bottom()));
 
-  ApronDomain inv1;
+  auto inv1 = ApronDomain::top();
   inv1.set(x, Congruence(ZNumber(2), ZNumber(0)));
   BOOST_CHECK((inv1.narrowing(ApronDomain::top()) == inv1));
   BOOST_CHECK((inv1.narrowing(ApronDomain::bottom()) == ApronDomain::bottom()));
@@ -340,15 +340,15 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((ApronDomain::bottom().narrowing(inv1) == ApronDomain::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  ApronDomain inv2;
-  ApronDomain inv3;
+  auto inv2 = ApronDomain::top();
+  auto inv3 = ApronDomain::top();
   inv2.set(x, Congruence(ZNumber(3), ZNumber(1)));
   inv3.set(x, Congruence(ZNumber(6), ZNumber(4)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv3));
   BOOST_CHECK((inv2.narrowing(inv1) == inv3));
 
-  ApronDomain inv4;
-  ApronDomain inv5;
+  auto inv4 = ApronDomain::top();
+  auto inv5 = ApronDomain::top();
   inv4.set(x, Congruence(ZNumber(2), ZNumber(0)));
   inv4.set(y, Interval(0));
   inv5.set(x, Congruence(ZNumber(6), ZNumber(4)));
@@ -364,8 +364,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv1;
-  ApronDomain inv2;
+  auto inv1 = ApronDomain::top();
+  auto inv2 = ApronDomain::top();
   inv1.assign(x, 0);
   inv2.set(x, Congruence(0));
   BOOST_CHECK((inv1 == inv2));
@@ -393,8 +393,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv1;
-  ApronDomain inv2;
+  auto inv1 = ApronDomain::top();
+  auto inv2 = ApronDomain::top();
   inv1.set(x, Congruence(ZNumber(2), ZNumber(0)));
   inv1.set(y, Congruence(ZNumber(3), ZNumber(1)));
 
@@ -505,7 +505,7 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   inv.add(VariableExpr(x) == 1);
   // BOOST_CHECK(inv.to_congruence(x) == Congruence(1));
 
@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval::top());
 
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   inv.refine(x, Congruence(ZNumber(3), ZNumber(1)));
   inv.refine(x, Interval(Bound(2), Bound(5)));
   // BOOST_CHECK(inv.to_congruence(x) == Congruence(4));
@@ -563,7 +563,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   inv.set(x, Congruence(ZNumber(2), ZNumber(1)));
   inv.set(y, Congruence(ZNumber(4), ZNumber(3)));
   // BOOST_CHECK(inv.to_congruence(x) == Congruence(ZNumber(2), ZNumber(1)));
@@ -584,7 +584,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   inv.set(x, Congruence(1));
   inv.set(y, Congruence(3));
   BOOST_CHECK(inv.to_interval(2 * VariableExpr(x) + 1) == Interval(3));
@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  ApronDomain inv;
+  auto inv = ApronDomain::top();
   inv.set(x, Congruence(ZNumber(3), ZNumber(0)));
   inv.set(y, Congruence(ZNumber(3), ZNumber(1)));
   // BOOST_CHECK(inv.to_congruence(2 * VariableExpr(x) + 1) ==

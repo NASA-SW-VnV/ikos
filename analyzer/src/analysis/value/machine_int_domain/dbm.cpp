@@ -51,10 +51,10 @@ namespace analyzer {
 namespace value {
 
 MachineIntAbstractDomain make_top_machine_int_dbm() {
+  using NumericDomain = core::numeric::DBM< ZNumber, Variable* >;
   return MachineIntAbstractDomain(
-      core::machine_int::NumericDomainAdapter<
-          Variable*,
-          core::numeric::DBM< ZNumber, Variable* > >::top());
+      core::machine_int::NumericDomainAdapter< Variable*, NumericDomain >(
+          NumericDomain::top()));
 }
 
 } // end namespace value

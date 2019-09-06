@@ -731,10 +731,15 @@ private:
 
 public:
   /// \brief Create a fixpoint iterator on the given ControlFlowGraph
-  explicit FixpointIterator(ControlFlowGraphT& cfg) : Parent(&cfg) {}
+  explicit FixpointIterator(ControlFlowGraphT& cfg)
+      : Parent(&cfg,
+               AbstractDomain(ZNumDomain::bottom(), QNumDomain::bottom())) {}
 
   /// \brief Compute the fixpoint
-  void run() { Parent::run(AbstractDomain::top()); }
+  void run() {
+    auto top = AbstractDomain(ZNumDomain::top(), QNumDomain::top());
+    Parent::run(top);
+  }
 
   /// \brief Return the invariant at the given checkpoint
   const AbstractDomain& checkpoint(const std::string& name) {
@@ -742,7 +747,8 @@ public:
     if (it != this->_checkpoints.end()) {
       return it->second;
     } else {
-      auto res = this->_checkpoints.emplace(name, AbstractDomain::bottom());
+      auto bottom = AbstractDomain(ZNumDomain::bottom(), QNumDomain::bottom());
+      auto res = this->_checkpoints.emplace(name, std::move(bottom));
       return res.first->second;
     }
   }
@@ -780,7 +786,14 @@ private:
 
     void operator()(QLinearAssertionT* s) { inv.second().add(s->constraint()); }
 
-    void operator()(CheckPointT* s) { checkpoints[s->name()] = inv; }
+    void operator()(CheckPointT* s) {
+      auto it = checkpoints.find(s->name());
+      if (it != checkpoints.end()) {
+        it->second = inv;
+      } else {
+        checkpoints.emplace(s->name(), inv);
+      }
+    }
 
   }; // end class ExecutionEngine
 

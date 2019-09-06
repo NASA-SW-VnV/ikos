@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!VarPackingDBM::bottom().is_top());
   BOOST_CHECK(VarPackingDBM::bottom().is_bottom());
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -121,19 +121,19 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!VarPackingDBM::top().leq(VarPackingDBM::bottom()));
   BOOST_CHECK(VarPackingDBM::top().leq(VarPackingDBM::top()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(inv1.leq(VarPackingDBM::top()));
   BOOST_CHECK(!inv1.leq(VarPackingDBM::bottom()));
 
-  VarPackingDBM inv2;
+  auto inv2 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(inv2.leq(VarPackingDBM::top()));
   BOOST_CHECK(!inv2.leq(VarPackingDBM::bottom()));
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  VarPackingDBM inv3;
+  auto inv3 = VarPackingDBM::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(inv3.leq(VarPackingDBM::top()));
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  VarPackingDBM inv4;
+  auto inv4 = VarPackingDBM::top();
   inv4.set(x, Interval(0));
   inv4.set(y, Interval(Bound(0), Bound(2)));
   BOOST_CHECK(inv4.leq(VarPackingDBM::top()));
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  VarPackingDBM inv5;
+  auto inv5 = VarPackingDBM::top();
   inv5.set(x, Interval(0));
   inv5.set(y, Interval(Bound(0), Bound(2)));
   inv5.set(z, Interval(Bound::minus_infinity(), Bound(0)));
@@ -216,20 +216,20 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(!VarPackingDBM::top().equals(VarPackingDBM::bottom()));
   BOOST_CHECK(VarPackingDBM::top().equals(VarPackingDBM::top()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(!inv1.equals(VarPackingDBM::top()));
   BOOST_CHECK(!inv1.equals(VarPackingDBM::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  VarPackingDBM inv2;
+  auto inv2 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv2.equals(VarPackingDBM::top()));
   BOOST_CHECK(!inv2.equals(VarPackingDBM::bottom()));
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  VarPackingDBM inv3;
+  auto inv3 = VarPackingDBM::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv3.equals(VarPackingDBM::top()));
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((VarPackingDBM::top().join(VarPackingDBM::bottom()) ==
                VarPackingDBM::top()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.join(VarPackingDBM::top()) == VarPackingDBM::top()));
   BOOST_CHECK((inv1.join(VarPackingDBM::bottom()) == inv1));
@@ -264,14 +264,14 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((VarPackingDBM::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  VarPackingDBM inv2;
-  VarPackingDBM inv3;
+  auto inv2 = VarPackingDBM::top();
+  auto inv3 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  VarPackingDBM inv4;
+  auto inv4 = VarPackingDBM::top();
   inv4.set(x, Interval(Bound(-1), Bound(0)));
   inv4.set(y, Interval(0));
   BOOST_CHECK((inv4.join(inv2) == inv2));
@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((VarPackingDBM::top().widening(VarPackingDBM::bottom()) ==
                VarPackingDBM::top()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.widening(VarPackingDBM::top()) == VarPackingDBM::top()));
   BOOST_CHECK((inv1.widening(VarPackingDBM::bottom()) == inv1));
@@ -377,8 +377,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((VarPackingDBM::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  VarPackingDBM inv2;
-  VarPackingDBM inv3;
+  auto inv2 = VarPackingDBM::top();
+  auto inv3 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
                                                        ZNumber(10)) ==
                VarPackingDBM::top()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.widening_threshold(VarPackingDBM::top(), ZNumber(10)) ==
                VarPackingDBM::top()));
@@ -418,16 +418,16 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
       (VarPackingDBM::bottom().widening_threshold(inv1, ZNumber(10)) == inv1));
   BOOST_CHECK((inv1.widening_threshold(inv1, ZNumber(10)) == inv1));
 
-  VarPackingDBM inv2;
-  VarPackingDBM inv3;
+  auto inv2 = VarPackingDBM::top();
+  auto inv3 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.widening_threshold(inv2, ZNumber(10)) == inv3));
   BOOST_CHECK((inv2.widening_threshold(inv1, ZNumber(10)) == inv2));
 
-  VarPackingDBM inv4;
-  VarPackingDBM inv5;
-  VarPackingDBM inv6;
+  auto inv4 = VarPackingDBM::top();
+  auto inv5 = VarPackingDBM::top();
+  auto inv6 = VarPackingDBM::top();
   inv4.set(x, Interval(Bound(-1), Bound(0)));
   inv5.set(x, Interval(Bound(-2), Bound(0)));
   inv6.set(x, Interval(Bound(-10), Bound(0)));
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
                                                         ZNumber(10)) ==
                VarPackingDBM::bottom()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK(
       (inv1.narrowing_threshold(VarPackingDBM::top(), ZNumber(10)) == inv1));
@@ -468,8 +468,8 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
                VarPackingDBM::bottom()));
   BOOST_CHECK((inv1.narrowing_threshold(inv1, ZNumber(10)) == inv1));
 
-  VarPackingDBM inv2;
-  VarPackingDBM inv3;
+  auto inv2 = VarPackingDBM::top();
+  auto inv3 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.narrowing_threshold(inv2, ZNumber(10)) == inv2));
@@ -478,8 +478,8 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
   BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(20)) == inv3));
   BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(5)) == inv3));
 
-  VarPackingDBM inv4;
-  VarPackingDBM inv5;
+  auto inv4 = VarPackingDBM::top();
+  auto inv5 = VarPackingDBM::top();
   inv4.set(x, Interval(Bound(-10), Bound(0)));
   inv5.set(x, Interval(Bound(-1), Bound(0)));
   BOOST_CHECK((inv4.narrowing_threshold(inv5, ZNumber(10)) == inv5));
@@ -505,7 +505,7 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((VarPackingDBM::top().meet(VarPackingDBM::bottom()) ==
                VarPackingDBM::bottom()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.meet(VarPackingDBM::top()) == inv1));
   BOOST_CHECK((inv1.meet(VarPackingDBM::bottom()) == VarPackingDBM::bottom()));
@@ -513,15 +513,15 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((VarPackingDBM::bottom().meet(inv1) == VarPackingDBM::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  VarPackingDBM inv2;
-  VarPackingDBM inv3;
+  auto inv2 = VarPackingDBM::top();
+  auto inv3 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  VarPackingDBM inv4;
-  VarPackingDBM inv5;
+  auto inv4 = VarPackingDBM::top();
+  auto inv5 = VarPackingDBM::top();
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -606,7 +606,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   BOOST_CHECK((VarPackingDBM::top().narrowing(VarPackingDBM::bottom()) ==
                VarPackingDBM::bottom()));
 
-  VarPackingDBM inv1;
+  auto inv1 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.narrowing(VarPackingDBM::top()) == inv1));
   BOOST_CHECK(
@@ -616,8 +616,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
       (VarPackingDBM::bottom().narrowing(inv1) == VarPackingDBM::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  VarPackingDBM inv2;
-  VarPackingDBM inv3;
+  auto inv2 = VarPackingDBM::top();
+  auto inv3 = VarPackingDBM::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -630,8 +630,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv1;
-  VarPackingDBM inv2;
+  auto inv1 = VarPackingDBM::top();
+  auto inv2 = VarPackingDBM::top();
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -667,8 +667,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv1;
-  VarPackingDBM inv2;
+  auto inv1 = VarPackingDBM::top();
+  auto inv2 = VarPackingDBM::top();
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.set(y, Interval(Bound(1), Bound(2)));
 
@@ -776,7 +776,7 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.add(VariableExpr(x) >= 1);
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
 
@@ -825,7 +825,7 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -854,7 +854,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
@@ -915,7 +915,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(2 * VariableExpr(x) + 1) ==
@@ -931,7 +931,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_congruence(2 * VariableExpr(x) + 1) ==
@@ -947,7 +947,7 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBM inv;
+  auto inv = VarPackingDBM::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval_congruence(2 * VariableExpr(x) + 1) ==

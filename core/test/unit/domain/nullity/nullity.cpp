@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!NullityDomain::bottom().is_top());
   BOOST_CHECK(NullityDomain::bottom().is_bottom());
 
-  NullityDomain inv;
+  auto inv = NullityDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  NullityDomain inv;
+  auto inv = NullityDomain::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -107,19 +107,19 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!NullityDomain::top().leq(NullityDomain::bottom()));
   BOOST_CHECK(NullityDomain::top().leq(NullityDomain::top()));
 
-  NullityDomain inv1;
+  auto inv1 = NullityDomain::top();
   inv1.set(x, Nullity::null());
   BOOST_CHECK(inv1.leq(NullityDomain::top()));
   BOOST_CHECK(!inv1.leq(NullityDomain::bottom()));
 
-  NullityDomain inv2;
+  auto inv2 = NullityDomain::top();
   inv2.set(x, Nullity::non_null());
   BOOST_CHECK(inv2.leq(NullityDomain::top()));
   BOOST_CHECK(!inv2.leq(NullityDomain::bottom()));
   BOOST_CHECK(!inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  NullityDomain inv3;
+  auto inv3 = NullityDomain::top();
   inv3.set(x, Nullity::null());
   inv3.set(y, Nullity::non_null());
   BOOST_CHECK(inv3.leq(NullityDomain::top()));
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((NullityDomain::top().join(NullityDomain::bottom()) ==
                NullityDomain::top()));
 
-  NullityDomain inv1;
+  auto inv1 = NullityDomain::top();
   inv1.set(x, Nullity::null());
   BOOST_CHECK((inv1.join(NullityDomain::top()) == NullityDomain::top()));
   BOOST_CHECK((inv1.join(NullityDomain::bottom()) == inv1));
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((NullityDomain::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  NullityDomain inv2;
+  auto inv2 = NullityDomain::top();
   inv2.set(x, Nullity::non_null());
   BOOST_CHECK((inv1.join(inv2) == NullityDomain::top()));
   BOOST_CHECK((inv2.join(inv1) == NullityDomain::top()));
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((NullityDomain::top().meet(NullityDomain::bottom()) ==
                NullityDomain::bottom()));
 
-  NullityDomain inv1;
+  auto inv1 = NullityDomain::top();
   inv1.set(x, Nullity::null());
   BOOST_CHECK((inv1.meet(NullityDomain::top()) == inv1));
   BOOST_CHECK((inv1.meet(NullityDomain::bottom()) == NullityDomain::bottom()));
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(meet) {
   BOOST_CHECK((NullityDomain::bottom().meet(inv1) == NullityDomain::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  NullityDomain inv2;
+  auto inv2 = NullityDomain::top();
   inv2.set(x, Nullity::non_null());
   BOOST_CHECK((inv1.meet(inv2) == NullityDomain::bottom()));
   BOOST_CHECK((inv2.meet(inv1) == NullityDomain::bottom()));

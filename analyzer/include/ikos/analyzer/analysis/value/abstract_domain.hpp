@@ -90,6 +90,13 @@ using MemoryAbstractDomain =
 /// \brief Abstract domain for the value analysis
 using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
 
+/// \brief Create the bottom abstract value
+AbstractDomain make_bottom_abstract_value();
+
+/// \brief Create the initial abstract value with the given machine int domain
+AbstractDomain make_initial_abstract_value(
+    MachineIntDomainOption machine_int_domain);
+
 } // end namespace value
 } // end namespace analyzer
 } // end namespace ikos

@@ -54,11 +54,6 @@ using Constant = ikos::core::machine_int::Constant;
 using ikos::core::Signed;
 using ikos::core::Unsigned;
 
-BOOST_AUTO_TEST_CASE(test_constructors) {
-  BOOST_CHECK(Constant::top() == Constant::top(1, Signed));
-  BOOST_CHECK(Constant::bottom() == Constant::bottom(1, Signed));
-}
-
 BOOST_AUTO_TEST_CASE(test_bit_width) {
   BOOST_CHECK(Constant(Int(0, 4, Signed)).bit_width() == 4);
   BOOST_CHECK(Constant(Int(0, 4, Unsigned)).bit_width() == 4);
@@ -106,13 +101,13 @@ BOOST_AUTO_TEST_CASE(test_set_to_top) {
 }
 
 BOOST_AUTO_TEST_CASE(test_leq) {
-  BOOST_CHECK(Constant::bottom().leq(Constant::bottom()));
-  BOOST_CHECK(Constant::bottom().leq(Constant::top()));
-  BOOST_CHECK(Constant::bottom().leq(Constant(Int(0, 1, Signed))));
+  BOOST_CHECK(Constant::bottom(1, Signed).leq(Constant::bottom(1, Signed)));
+  BOOST_CHECK(Constant::bottom(1, Signed).leq(Constant::top(1, Signed)));
+  BOOST_CHECK(Constant::bottom(1, Signed).leq(Constant(Int(0, 1, Signed))));
 
-  BOOST_CHECK(!Constant::top().leq(Constant::bottom()));
-  BOOST_CHECK(Constant::top().leq(Constant::top()));
-  BOOST_CHECK(!Constant::top().leq(Constant(Int(0, 1, Signed))));
+  BOOST_CHECK(!Constant::top(1, Signed).leq(Constant::bottom(1, Signed)));
+  BOOST_CHECK(Constant::top(1, Signed).leq(Constant::top(1, Signed)));
+  BOOST_CHECK(!Constant::top(1, Signed).leq(Constant(Int(0, 1, Signed))));
 
   BOOST_CHECK(!Constant(Int(0, 8, Signed)).leq(Constant::bottom(8, Signed)));
   BOOST_CHECK(Constant(Int(0, 8, Signed)).leq(Constant::top(8, Signed)));
@@ -128,13 +123,13 @@ BOOST_AUTO_TEST_CASE(test_leq) {
 }
 
 BOOST_AUTO_TEST_CASE(test_equals) {
-  BOOST_CHECK(Constant::bottom().equals(Constant::bottom()));
-  BOOST_CHECK(!Constant::bottom().equals(Constant::top()));
-  BOOST_CHECK(!Constant::bottom().equals(Constant(Int(0, 1, Signed))));
+  BOOST_CHECK(Constant::bottom(1, Signed).equals(Constant::bottom(1, Signed)));
+  BOOST_CHECK(!Constant::bottom(1, Signed).equals(Constant::top(1, Signed)));
+  BOOST_CHECK(!Constant::bottom(1, Signed).equals(Constant(Int(0, 1, Signed))));
 
-  BOOST_CHECK(!Constant::top().equals(Constant::bottom()));
-  BOOST_CHECK(Constant::top().equals(Constant::top()));
-  BOOST_CHECK(!Constant::top().equals(Constant(Int(0, 1, Signed))));
+  BOOST_CHECK(!Constant::top(1, Signed).equals(Constant::bottom(1, Signed)));
+  BOOST_CHECK(Constant::top(1, Signed).equals(Constant::top(1, Signed)));
+  BOOST_CHECK(!Constant::top(1, Signed).equals(Constant(Int(0, 1, Signed))));
 
   BOOST_CHECK(!Constant(Int(0, 8, Signed)).equals(Constant::bottom(8, Signed)));
   BOOST_CHECK(!Constant(Int(0, 8, Signed)).equals(Constant::top(8, Signed)));
@@ -152,15 +147,18 @@ BOOST_AUTO_TEST_CASE(test_equals) {
 }
 
 BOOST_AUTO_TEST_CASE(test_join) {
-  BOOST_CHECK(Constant::top().join(Constant::bottom()) == Constant::top());
-  BOOST_CHECK(Constant::top().join(Constant::top()) == Constant::top());
-  BOOST_CHECK(Constant::top().join(Constant(Int(0, 1, Signed))) ==
-              Constant::top());
+  BOOST_CHECK(Constant::top(1, Signed).join(Constant::bottom(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).join(Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).join(Constant(Int(0, 1, Signed))) ==
+              Constant::top(1, Signed));
 
-  BOOST_CHECK(Constant::bottom().join(Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(Constant::bottom().join(Constant::top()) == Constant::top());
-  BOOST_CHECK(Constant::bottom().join(Constant(Int(0, 1, Signed))) ==
+  BOOST_CHECK(Constant::bottom(1, Signed).join(Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).join(Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).join(Constant(Int(0, 1, Signed))) ==
               Constant(Int(0, 1, Signed)));
 
   BOOST_CHECK(Constant(Int(0, 8, Signed)).join(Constant::bottom(8, Signed)) ==
@@ -186,16 +184,19 @@ BOOST_AUTO_TEST_CASE(test_join) {
 }
 
 BOOST_AUTO_TEST_CASE(test_widening) {
-  BOOST_CHECK(Constant::top().widening(Constant::bottom()) == Constant::top());
-  BOOST_CHECK(Constant::top().widening(Constant::top()) == Constant::top());
-  BOOST_CHECK(Constant::top().widening(Constant(Int(0, 1, Signed))) ==
-              Constant::top());
+  BOOST_CHECK(Constant::top(1, Signed).widening(Constant::bottom(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).widening(Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).widening(Constant(Int(0, 1, Signed))) ==
+              Constant::top(1, Signed));
 
-  BOOST_CHECK(Constant::bottom().widening(Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(Constant::bottom().widening(Constant::top()) == Constant::top());
-  BOOST_CHECK(Constant::bottom().widening(Constant(Int(0, 1, Signed))) ==
-              Constant(Int(0, 1, Signed)));
+  BOOST_CHECK(Constant::bottom(1, Signed).widening(
+                  Constant::bottom(1, Signed)) == Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).widening(Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).widening(
+                  Constant(Int(0, 1, Signed))) == Constant(Int(0, 1, Signed)));
 
   BOOST_CHECK(
       Constant(Int(0, 8, Signed)).widening(Constant::bottom(8, Signed)) ==
@@ -224,16 +225,19 @@ BOOST_AUTO_TEST_CASE(test_widening) {
 }
 
 BOOST_AUTO_TEST_CASE(test_meet) {
-  BOOST_CHECK(Constant::top().meet(Constant::bottom()) == Constant::bottom());
-  BOOST_CHECK(Constant::top().meet(Constant::top()) == Constant::top());
-  BOOST_CHECK(Constant::top().meet(Constant(Int(0, 1, Signed))) ==
+  BOOST_CHECK(Constant::top(1, Signed).meet(Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).meet(Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).meet(Constant(Int(0, 1, Signed))) ==
               Constant(Int(0, 1, Signed)));
 
-  BOOST_CHECK(Constant::bottom().meet(Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(Constant::bottom().meet(Constant::top()) == Constant::bottom());
-  BOOST_CHECK(Constant::bottom().meet(Constant(Int(0, 1, Signed))) ==
-              Constant::bottom());
+  BOOST_CHECK(Constant::bottom(1, Signed).meet(Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).meet(Constant::top(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).meet(Constant(Int(0, 1, Signed))) ==
+              Constant::bottom(1, Signed));
 
   BOOST_CHECK(Constant(Int(0, 8, Signed)).meet(Constant::bottom(8, Signed)) ==
               Constant::bottom(8, Signed));
@@ -258,18 +262,19 @@ BOOST_AUTO_TEST_CASE(test_meet) {
 }
 
 BOOST_AUTO_TEST_CASE(test_narrowing) {
-  BOOST_CHECK(Constant::top().narrowing(Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(Constant::top().narrowing(Constant::top()) == Constant::top());
-  BOOST_CHECK(Constant::top().narrowing(Constant(Int(0, 1, Signed))) ==
+  BOOST_CHECK(Constant::top(1, Signed).narrowing(Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).narrowing(Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(Constant::top(1, Signed).narrowing(Constant(Int(0, 1, Signed))) ==
               Constant(Int(0, 1, Signed)));
 
-  BOOST_CHECK(Constant::bottom().narrowing(Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(Constant::bottom().narrowing(Constant::top()) ==
-              Constant::bottom());
-  BOOST_CHECK(Constant::bottom().narrowing(Constant(Int(0, 1, Signed))) ==
-              Constant::bottom());
+  BOOST_CHECK(Constant::bottom(1, Signed).narrowing(
+                  Constant::bottom(1, Signed)) == Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).narrowing(Constant::top(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(Constant::bottom(1, Signed).narrowing(
+                  Constant(Int(0, 1, Signed))) == Constant::bottom(1, Signed));
 
   BOOST_CHECK(
       Constant(Int(0, 8, Signed)).narrowing(Constant::bottom(8, Signed)) ==
@@ -433,11 +438,14 @@ BOOST_AUTO_TEST_CASE(test_contains) {
 }
 
 BOOST_AUTO_TEST_CASE(test_add) {
-  BOOST_CHECK(add(Constant::top(), Constant::bottom()) == Constant::bottom());
-  BOOST_CHECK(add(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(add(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(add(Constant::bottom(), Constant::top()) == Constant::bottom());
+  BOOST_CHECK(add(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(add(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(add(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(add(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+              Constant::bottom(1, Signed));
 
   BOOST_CHECK(add(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
               Constant::bottom(8, Signed));
@@ -470,13 +478,17 @@ BOOST_AUTO_TEST_CASE(test_add) {
 }
 
 BOOST_AUTO_TEST_CASE(test_add_no_wrap) {
-  BOOST_CHECK(add_no_wrap(Constant::top(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(add_no_wrap(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(add_no_wrap(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(add_no_wrap(Constant::bottom(), Constant::top()) ==
-              Constant::bottom());
+  BOOST_CHECK(
+      add_no_wrap(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+      Constant::bottom(1, Signed));
+  BOOST_CHECK(add_no_wrap(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(
+      add_no_wrap(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+      Constant::bottom(1, Signed));
+  BOOST_CHECK(
+      add_no_wrap(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+      Constant::bottom(1, Signed));
 
   BOOST_CHECK(
       add_no_wrap(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
@@ -518,11 +530,14 @@ BOOST_AUTO_TEST_CASE(test_add_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_sub) {
-  BOOST_CHECK(sub(Constant::top(), Constant::bottom()) == Constant::bottom());
-  BOOST_CHECK(sub(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(sub(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(sub(Constant::bottom(), Constant::top()) == Constant::bottom());
+  BOOST_CHECK(sub(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(sub(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(sub(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(sub(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+              Constant::bottom(1, Signed));
 
   BOOST_CHECK(sub(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
               Constant::bottom(8, Signed));
@@ -556,13 +571,17 @@ BOOST_AUTO_TEST_CASE(test_sub) {
 }
 
 BOOST_AUTO_TEST_CASE(test_sub_no_wrap) {
-  BOOST_CHECK(sub_no_wrap(Constant::top(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(sub_no_wrap(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(sub_no_wrap(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(sub_no_wrap(Constant::bottom(), Constant::top()) ==
-              Constant::bottom());
+  BOOST_CHECK(
+      sub_no_wrap(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+      Constant::bottom(1, Signed));
+  BOOST_CHECK(sub_no_wrap(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(
+      sub_no_wrap(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+      Constant::bottom(1, Signed));
+  BOOST_CHECK(
+      sub_no_wrap(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+      Constant::bottom(1, Signed));
 
   BOOST_CHECK(
       sub_no_wrap(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
@@ -601,11 +620,14 @@ BOOST_AUTO_TEST_CASE(test_sub_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_div) {
-  BOOST_CHECK(div(Constant::top(), Constant::bottom()) == Constant::bottom());
-  BOOST_CHECK(div(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(div(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(div(Constant::bottom(), Constant::top()) == Constant::bottom());
+  BOOST_CHECK(div(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(div(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(div(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(div(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+              Constant::bottom(1, Signed));
 
   BOOST_CHECK(div(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
               Constant::bottom(8, Signed));
@@ -647,13 +669,17 @@ BOOST_AUTO_TEST_CASE(test_div) {
 }
 
 BOOST_AUTO_TEST_CASE(test_div_exact) {
-  BOOST_CHECK(div_exact(Constant::top(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(div_exact(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(div_exact(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(div_exact(Constant::bottom(), Constant::top()) ==
-              Constant::bottom());
+  BOOST_CHECK(
+      div_exact(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+      Constant::bottom(1, Signed));
+  BOOST_CHECK(div_exact(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(
+      div_exact(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+      Constant::bottom(1, Signed));
+  BOOST_CHECK(
+      div_exact(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+      Constant::bottom(1, Signed));
 
   BOOST_CHECK(
       div_exact(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
@@ -707,11 +733,14 @@ BOOST_AUTO_TEST_CASE(test_div_exact) {
 }
 
 BOOST_AUTO_TEST_CASE(test_rem) {
-  BOOST_CHECK(rem(Constant::top(), Constant::bottom()) == Constant::bottom());
-  BOOST_CHECK(rem(Constant::top(), Constant::top()) == Constant::top());
-  BOOST_CHECK(rem(Constant::bottom(), Constant::bottom()) ==
-              Constant::bottom());
-  BOOST_CHECK(rem(Constant::bottom(), Constant::top()) == Constant::bottom());
+  BOOST_CHECK(rem(Constant::top(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(rem(Constant::top(1, Signed), Constant::top(1, Signed)) ==
+              Constant::top(1, Signed));
+  BOOST_CHECK(rem(Constant::bottom(1, Signed), Constant::bottom(1, Signed)) ==
+              Constant::bottom(1, Signed));
+  BOOST_CHECK(rem(Constant::bottom(1, Signed), Constant::top(1, Signed)) ==
+              Constant::bottom(1, Signed));
 
   BOOST_CHECK(rem(Constant(Int(0, 8, Signed)), Constant::bottom(8, Signed)) ==
               Constant::bottom(8, Signed));

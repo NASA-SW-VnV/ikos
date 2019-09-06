@@ -99,7 +99,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
     return {CheckKind::UninitializedVariable, Result::Error};
   }
 
-  IntInterval flag;
+  auto flag = IntInterval::bottom(32, Unsigned);
   if (cond.is_machine_int()) {
     flag = IntInterval(cond.machine_int());
   } else if (cond.is_machine_int_var()) {
@@ -117,7 +117,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
       *msg << ": ∀x ∈ " << cond << ", x == 0\n";
     }
     return {CheckKind::Assert, Result::Error};
-  } else if (flag.contains(MachineInt(0, flag.bit_width(), flag.sign()))) {
+  } else if (flag.contains(MachineInt(0, 32, Unsigned))) {
     // The condition may be 0
     if (auto msg = this->display_assert_check(Result::Warning, call)) {
       *msg << ": (∃x ∈ " << cond << ", x == 0) and (∃x ∈ " << cond

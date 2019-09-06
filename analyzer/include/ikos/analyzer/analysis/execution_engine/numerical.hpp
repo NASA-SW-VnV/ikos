@@ -3371,10 +3371,11 @@ private:
       return;
     }
 
-    AbstractDomain inv(AbstractDomain::bottom());
+    AbstractDomain inv = this->_inv;
+    inv.set_to_bottom();
 
     for (MemoryLocation* addr : addrs) {
-      AbstractDomain tmp(this->_inv);
+      AbstractDomain tmp = this->_inv;
 
       if (auto gv = dyn_cast< GlobalMemoryLocation >(addr)) {
         MachineInt alloc_size(this->_data_layout.store_size_in_bytes(

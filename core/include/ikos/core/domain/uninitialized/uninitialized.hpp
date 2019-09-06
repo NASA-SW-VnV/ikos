@@ -74,7 +74,14 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  UninitializedDomain() : _inv(SeparateDomainT::top()) {}
+  static UninitializedDomain top() {
+    return UninitializedDomain(SeparateDomainT::top());
+  }
+
+  /// \brief Create the bottom abstract value
+  static UninitializedDomain bottom() {
+    return UninitializedDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   UninitializedDomain(const UninitializedDomain&) noexcept = default;
@@ -90,16 +97,6 @@ public:
 
   /// \brief Destructor
   ~UninitializedDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static UninitializedDomain top() {
-    return UninitializedDomain(SeparateDomainT::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static UninitializedDomain bottom() {
-    return UninitializedDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (variable, uninitialized)
   Iterator begin() const { return this->_inv.begin(); }

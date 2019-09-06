@@ -238,7 +238,11 @@ private:
   explicit UnionDomain(TreePtr tree) : _tree(std::move(tree)) {}
 
 public:
-  UnionDomain() : _tree(make_leaf(NumericDomain::top())) {}
+  /// \brief Create the top abstract value
+  static UnionDomain top() { return UnionDomain(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static UnionDomain bottom() { return UnionDomain(BottomTag{}); }
 
   /// \brief Copy constructor
   UnionDomain(const UnionDomain&) noexcept = default;
@@ -254,12 +258,6 @@ public:
 
   /// \brief Destructor
   ~UnionDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static UnionDomain top() { return UnionDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static UnionDomain bottom() { return UnionDomain(BottomTag{}); }
 
   bool is_bottom() const override {
     // This is correct because make_leaf() calls .is_bottom() on leaf creation

@@ -55,18 +55,6 @@ namespace exception {
 template < typename UnderlyingDomain, typename Derived >
 class AbstractDomain : public core::AbstractDomain< Derived > {
 public:
-  ~AbstractDomain() override {
-    // Checks only when the Derived class is instantiated
-
-    /// static Derived Derived::top_no_exceptions()
-    ///   Return the top abstract value with no pending exceptions.
-    ///   Note that this is different from top() because top() represents the
-    ///   state with any pending exception.
-    static_assert(std::is_same< decltype(Derived::top_no_exceptions()),
-                                Derived >::value,
-                  "Derived::top_no_exceptions() does not exist");
-  }
-
   /// \brief Create the top abstract value
   AbstractDomain() = default;
 

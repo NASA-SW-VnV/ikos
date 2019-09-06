@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(test_1) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  Octagon inv = Octagon::top();
+  auto inv = Octagon::top();
   BOOST_CHECK(inv.is_top());
 
   inv.assign(x, 0);
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_2) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  Octagon inv = Octagon::top();
+  auto inv = Octagon::top();
   inv.add(VariableExpr(x) >= 0);
   inv.add(VariableExpr(y) >= VariableExpr(x));
   inv.add(VariableExpr(z) == 11);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(test_3) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  Octagon inv = Octagon::top();
+  auto inv = Octagon::top();
   inv.add(VariableExpr(x) == 0);
   inv.add(VariableExpr(y) == 10);
   inv.add(VariableExpr(z) >= VariableExpr(x));
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(test_4) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  Octagon inv1;
+  auto inv1 = Octagon::top();
   inv1.assign(x, 0);
   inv1.add(VariableExpr(x) <= VariableExpr(y) - 1);
   inv1.apply(BinaryOperator::Add, x, x, ZNumber(1));
@@ -158,13 +158,13 @@ BOOST_AUTO_TEST_CASE(test_5) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  Octagon inv1;
+  auto inv1 = Octagon::top();
   inv1.add(VariableExpr(y) >= 1);
   inv1.assign(x, 0);
   inv1.add(VariableExpr(x) <= VariableExpr(y) - 1);
   inv1.apply(BinaryOperator::Add, x, x, ZNumber(1));
 
-  Octagon inv2(inv1);
+  Octagon inv2 = inv1;
   inv2.add(VariableExpr(x) <= VariableExpr(y) - 1);
   inv2.apply(BinaryOperator::Add, x, x, ZNumber(1));
 
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(test_6) {
   Variable tmp2(vfac.get("tmp2"));
   Variable tmp3(vfac.get("tmp3"));
 
-  Octagon inv1;
+  auto inv1 = Octagon::top();
   inv1.add(VariableExpr(vn) >= 1);
   inv1.assign(vi, 0);
   inv1.add(VariableExpr(vi) <= VariableExpr(vn) - 1);
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(test_7) {
   Variable vj(vfac.get("j"));
   Variable vj1(vfac.get("j1"));
 
-  Octagon inv;
+  auto inv = Octagon::top();
   inv.add(VariableExpr(vj) >= 0);
   inv.add(VariableExpr(vj) <= 10);
   inv.add(VariableExpr(vj1) >= 1);
@@ -225,13 +225,13 @@ BOOST_AUTO_TEST_CASE(test_8) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  Octagon s1(Octagon::top());
+  auto s1 = Octagon::top();
 
   s1.assign(x, 0);
   s1.assign(y, 0);
 
   // std::cout << "Loc 1: " << s1 << std::endl;
-  Octagon s2(s1);
+  Octagon s2 = s1;
 
   s2.apply(BinaryOperator::Add, x, x, ZNumber(1));
   // std::cout << "Loc 2a (after x++): " << s2 << std::endl;
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(test_8) {
   Octagon s3 = s1.join(s2);
   // std::cout << "Loc 3, after join: " << s3 << std::endl;
 
-  Octagon s4(s3);
+  Octagon s4 = s3;
   s4.apply(BinaryOperator::Add, x, x, ZNumber(1));
   // std::cout << "Loc 4a (after x++): " << s4 << std::endl;
 
@@ -263,16 +263,16 @@ BOOST_AUTO_TEST_CASE(test_9) {
   Variable tmp_x(vfac.get("tmp_x"));
   Variable tmp_y(vfac.get("tmp_y"));
 
-  Octagon s1(Octagon::top());
+  auto s1 = Octagon::top();
   s1.assign(x, 0);
   s1.assign(y, 0);
   // std::cout << "Loc 1: " << s1 << std::endl;
 
-  Octagon s2(s1);
+  Octagon s2 = s1;
   s2.add(VariableExpr(x) <= VariableExpr(n));
   // std::cout << "Loc 2: " << s2 << std::endl;
 
-  Octagon s3(s2);
+  Octagon s3 = s2;
   s3.apply(BinaryOperator::Add, tmp_x, x, ZNumber(1));
   s3.apply(BinaryOperator::Add, tmp_y, y, ZNumber(1));
   s3.assign(x, tmp_x);
@@ -283,11 +283,11 @@ BOOST_AUTO_TEST_CASE(test_9) {
   Octagon s4 = s1.join(s3);
   // std::cout << "Loc 4: Loc 1 U Loc 3=" << s4 << std::endl;
 
-  Octagon s5(s4);
+  Octagon s5 = s4;
   s5.add(VariableExpr(x) <= VariableExpr(n));
   // std::cout << "Loc 2': x<=n " << s5 << std::endl;
 
-  Octagon s6(s5);
+  Octagon s6 = s5;
   s6.apply(BinaryOperator::Add, tmp_x, x, ZNumber(1));
   s6.apply(BinaryOperator::Add, tmp_y, y, ZNumber(1));
   s6.assign(x, tmp_x);
@@ -302,11 +302,11 @@ BOOST_AUTO_TEST_CASE(test_9) {
 
   // std::cout << "Loc 4': Widening(Loc 4, Loc 4')=" << s8 << std::endl;
 
-  Octagon s9(s8);
+  Octagon s9 = s8;
   s9.add(VariableExpr(x) <= VariableExpr(n));
   // std::cout << "Loc 2'': x<=n " << s9 << std::endl;
 
-  Octagon s10(s9);
+  Octagon s10 = s9;
   s10.apply(BinaryOperator::Add, tmp_x, x, ZNumber(1));
   s10.apply(BinaryOperator::Add, tmp_y, y, ZNumber(1));
   s10.assign(x, tmp_x);

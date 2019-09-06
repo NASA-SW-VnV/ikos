@@ -52,7 +52,7 @@ namespace interprocedural {
 
 GlobalVarInitializerFixpoint::GlobalVarInitializerFixpoint(
     Context& ctx, ar::GlobalVariable* gv)
-    : FwdFixpointIterator(gv->initializer()),
+    : FwdFixpointIterator(gv->initializer(), make_bottom_abstract_value()),
       _gv(gv),
       _ctx(ctx),
       _empty_call_context(ctx.call_context_factory->get_empty()) {}

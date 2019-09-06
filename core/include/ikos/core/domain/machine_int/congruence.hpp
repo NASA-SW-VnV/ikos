@@ -75,7 +75,14 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  CongruenceDomain() : _inv(SeparateDomainT::top()) {}
+  static CongruenceDomain top() {
+    return CongruenceDomain(SeparateDomainT::top());
+  }
+
+  /// \brief Create the bottom abstract value
+  static CongruenceDomain bottom() {
+    return CongruenceDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   CongruenceDomain(const CongruenceDomain&) noexcept = default;
@@ -91,16 +98,6 @@ public:
 
   /// \brief Destructor
   ~CongruenceDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static CongruenceDomain top() {
-    return CongruenceDomain(SeparateDomainT::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static CongruenceDomain bottom() {
-    return CongruenceDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (variable, congruence)
   Iterator begin() const { return this->_inv.begin(); }

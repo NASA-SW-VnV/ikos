@@ -97,13 +97,9 @@ public:
 private:
   NumDomain _inv;
 
-private:
-  /// \brief Private constructor
-  explicit NumericDomainAdapter(NumDomain inv) : _inv(std::move(inv)) {}
-
 public:
-  /// \brief Create the top abstract value
-  NumericDomainAdapter() : _inv(NumDomain::top()) {}
+  /// \brief Create an abstract value from the given numeric abstract domain
+  explicit NumericDomainAdapter(NumDomain inv) : _inv(std::move(inv)) {}
 
   /// \brief Copy constructor
   NumericDomainAdapter(const NumericDomainAdapter&) noexcept(
@@ -123,16 +119,6 @@ public:
 
   /// \brief Destructor
   ~NumericDomainAdapter() override = default;
-
-  /// \brief Create the top abstract value
-  static NumericDomainAdapter top() {
-    return NumericDomainAdapter(NumDomain::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static NumericDomainAdapter bottom() {
-    return NumericDomainAdapter(NumDomain::bottom());
-  }
 
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 

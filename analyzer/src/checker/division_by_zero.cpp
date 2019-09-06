@@ -103,7 +103,7 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
     return {CheckKind::UninitializedVariable, Result::Error, {}};
   }
 
-  IntInterval divisor;
+  auto divisor = IntInterval::bottom(1, Signed);
   if (lit.is_machine_int()) {
     divisor = IntInterval(lit.machine_int());
   } else if (lit.is_machine_int_var()) {

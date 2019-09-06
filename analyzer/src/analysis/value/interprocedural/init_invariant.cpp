@@ -50,19 +50,6 @@ namespace analyzer {
 namespace value {
 namespace interprocedural {
 
-AbstractDomain init_invariant(MachineIntDomainOption machine_int_domain) {
-  return AbstractDomain(
-      /*normal=*/
-      value::MemoryAbstractDomain(
-          value::PointerAbstractDomain(make_top_machine_int_domain(
-                                           machine_int_domain),
-                                       value::NullityAbstractDomain::top()),
-          value::UninitializedAbstractDomain::top(),
-          value::LifetimeAbstractDomain::top()),
-      /*caught_exceptions=*/value::MemoryAbstractDomain::bottom(),
-      /*propagated_exceptions=*/value::MemoryAbstractDomain::bottom());
-}
-
 AbstractDomain init_main_invariant(Context& ctx,
                                    ar::Function* main,
                                    AbstractDomain inv) {

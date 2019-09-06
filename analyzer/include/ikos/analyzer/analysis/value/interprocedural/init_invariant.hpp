@@ -51,9 +51,6 @@ namespace analyzer {
 namespace value {
 namespace interprocedural {
 
-/// \brief Return the initial invariant
-AbstractDomain init_invariant(MachineIntDomainOption machine_int_domain);
-
 /// \brief Initialize argc and argv
 AbstractDomain init_main_invariant(Context& ctx,
                                    ar::Function* main,

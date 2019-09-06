@@ -85,7 +85,14 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  IntervalCongruenceDomain() : _inv(SeparateDomainT::top()) {}
+  static IntervalCongruenceDomain top() {
+    return IntervalCongruenceDomain(SeparateDomainT::top());
+  }
+
+  /// \brief Create the bottom abstract value
+  static IntervalCongruenceDomain bottom() {
+    return IntervalCongruenceDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   IntervalCongruenceDomain(const IntervalCongruenceDomain&) noexcept = default;
@@ -103,16 +110,6 @@ public:
 
   /// \brief Destructor
   ~IntervalCongruenceDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static IntervalCongruenceDomain top() {
-    return IntervalCongruenceDomain(SeparateDomainT::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static IntervalCongruenceDomain bottom() {
-    return IntervalCongruenceDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (variable, interval-congruence)
   Iterator begin() const { return this->_inv.begin(); }

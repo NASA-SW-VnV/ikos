@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   BOOST_CHECK(!VarPackingDBMCongruence::bottom().is_top());
   BOOST_CHECK(VarPackingDBMCongruence::bottom().is_bottom());
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   BOOST_CHECK(inv.is_top());
   BOOST_CHECK(!inv.is_bottom());
 
@@ -126,19 +126,19 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(
       VarPackingDBMCongruence::top().leq(VarPackingDBMCongruence::top()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(inv1.leq(VarPackingDBMCongruence::top()));
   BOOST_CHECK(!inv1.leq(VarPackingDBMCongruence::bottom()));
 
-  VarPackingDBMCongruence inv2;
+  auto inv2 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(inv2.leq(VarPackingDBMCongruence::top()));
   BOOST_CHECK(!inv2.leq(VarPackingDBMCongruence::bottom()));
   BOOST_CHECK(inv1.leq(inv2));
   BOOST_CHECK(!inv2.leq(inv1));
 
-  VarPackingDBMCongruence inv3;
+  auto inv3 = VarPackingDBMCongruence::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(inv3.leq(VarPackingDBMCongruence::top()));
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(inv3.leq(inv1));
   BOOST_CHECK(!inv1.leq(inv3));
 
-  VarPackingDBMCongruence inv4;
+  auto inv4 = VarPackingDBMCongruence::top();
   inv4.set(x, Interval(0));
   inv4.set(y, Interval(Bound(0), Bound(2)));
   BOOST_CHECK(inv4.leq(VarPackingDBMCongruence::top()));
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(leq) {
   BOOST_CHECK(!inv3.leq(inv4));
   BOOST_CHECK(!inv4.leq(inv3));
 
-  VarPackingDBMCongruence inv5;
+  auto inv5 = VarPackingDBMCongruence::top();
   inv5.set(x, Interval(0));
   inv5.set(y, Interval(Bound(0), Bound(2)));
   inv5.set(z, Interval(Bound::minus_infinity(), Bound(0)));
@@ -225,20 +225,20 @@ BOOST_AUTO_TEST_CASE(equals) {
   BOOST_CHECK(
       VarPackingDBMCongruence::top().equals(VarPackingDBMCongruence::top()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(0));
   BOOST_CHECK(!inv1.equals(VarPackingDBMCongruence::top()));
   BOOST_CHECK(!inv1.equals(VarPackingDBMCongruence::bottom()));
   BOOST_CHECK(inv1.equals(inv1));
 
-  VarPackingDBMCongruence inv2;
+  auto inv2 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv2.equals(VarPackingDBMCongruence::top()));
   BOOST_CHECK(!inv2.equals(VarPackingDBMCongruence::bottom()));
   BOOST_CHECK(!inv1.equals(inv2));
   BOOST_CHECK(!inv2.equals(inv1));
 
-  VarPackingDBMCongruence inv3;
+  auto inv3 = VarPackingDBMCongruence::top();
   inv3.set(x, Interval(0));
   inv3.set(y, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK(!inv3.equals(VarPackingDBMCongruence::top()));
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(join) {
       (VarPackingDBMCongruence::top().join(VarPackingDBMCongruence::bottom()) ==
        VarPackingDBMCongruence::top()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.join(VarPackingDBMCongruence::top()) ==
                VarPackingDBMCongruence::top()));
@@ -279,14 +279,14 @@ BOOST_AUTO_TEST_CASE(join) {
   BOOST_CHECK((VarPackingDBMCongruence::bottom().join(inv1) == inv1));
   BOOST_CHECK((inv1.join(inv1) == inv1));
 
-  VarPackingDBMCongruence inv2;
-  VarPackingDBMCongruence inv3;
+  auto inv2 = VarPackingDBMCongruence::top();
+  auto inv3 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(Bound(-1), Bound(1)));
   BOOST_CHECK((inv1.join(inv2) == inv3));
   BOOST_CHECK((inv2.join(inv1) == inv3));
 
-  VarPackingDBMCongruence inv4;
+  auto inv4 = VarPackingDBMCongruence::top();
   inv4.set(x, Interval(Bound(-1), Bound(0)));
   inv4.set(y, Interval(0));
   BOOST_CHECK((inv4.join(inv2) == inv2));
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE(widening) {
                    VarPackingDBMCongruence::bottom()) ==
                VarPackingDBMCongruence::top()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.widening(VarPackingDBMCongruence::top()) ==
                VarPackingDBMCongruence::top()));
@@ -398,8 +398,8 @@ BOOST_AUTO_TEST_CASE(widening) {
   BOOST_CHECK((VarPackingDBMCongruence::bottom().widening(inv1) == inv1));
   BOOST_CHECK((inv1.widening(inv1) == inv1));
 
-  VarPackingDBMCongruence inv2;
-  VarPackingDBMCongruence inv3;
+  auto inv2 = VarPackingDBMCongruence::top();
+  auto inv3 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.widening(inv2) == inv3));
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
            .widening_threshold(VarPackingDBMCongruence::bottom(),
                                ZNumber(10)) == VarPackingDBMCongruence::top()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK(
       (inv1.widening_threshold(VarPackingDBMCongruence::top(), ZNumber(10)) ==
@@ -445,16 +445,16 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
       inv1));
   BOOST_CHECK((inv1.widening_threshold(inv1, ZNumber(10)) == inv1));
 
-  VarPackingDBMCongruence inv2;
-  VarPackingDBMCongruence inv3;
+  auto inv2 = VarPackingDBMCongruence::top();
+  auto inv3 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(0), Bound(2)));
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.widening_threshold(inv2, ZNumber(10)) == inv3));
   BOOST_CHECK((inv2.widening_threshold(inv1, ZNumber(10)) == inv2));
 
-  VarPackingDBMCongruence inv4;
-  VarPackingDBMCongruence inv5;
-  VarPackingDBMCongruence inv6;
+  auto inv4 = VarPackingDBMCongruence::top();
+  auto inv5 = VarPackingDBMCongruence::top();
+  auto inv6 = VarPackingDBMCongruence::top();
   inv4.set(x, Interval(Bound(-1), Bound(0)));
   inv5.set(x, Interval(Bound(-2), Bound(0)));
   inv6.set(x, Interval(Bound(-10), Bound(0)));
@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
                                         ZNumber(10)) ==
                VarPackingDBMCongruence::bottom()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.narrowing_threshold(VarPackingDBMCongruence::top(),
                                         ZNumber(10)) == inv1));
@@ -502,8 +502,8 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
        VarPackingDBMCongruence::bottom()));
   BOOST_CHECK((inv1.narrowing_threshold(inv1, ZNumber(10)) == inv1));
 
-  VarPackingDBMCongruence inv2;
-  VarPackingDBMCongruence inv3;
+  auto inv2 = VarPackingDBMCongruence::top();
+  auto inv3 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   inv3.set(x, Interval(Bound(0), Bound(10)));
   BOOST_CHECK((inv1.narrowing_threshold(inv2, ZNumber(10)) == inv2));
@@ -512,8 +512,8 @@ BOOST_AUTO_TEST_CASE(narrowing_threshold) {
   BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(20)) == inv3));
   BOOST_CHECK((inv3.narrowing_threshold(inv2, ZNumber(5)) == inv3));
 
-  VarPackingDBMCongruence inv4;
-  VarPackingDBMCongruence inv5;
+  auto inv4 = VarPackingDBMCongruence::top();
+  auto inv5 = VarPackingDBMCongruence::top();
   inv4.set(x, Interval(Bound(-10), Bound(0)));
   inv5.set(x, Interval(Bound(-1), Bound(0)));
   BOOST_CHECK((inv4.narrowing_threshold(inv5, ZNumber(10)) == inv5));
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE(meet) {
       (VarPackingDBMCongruence::top().meet(VarPackingDBMCongruence::bottom()) ==
        VarPackingDBMCongruence::bottom()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.meet(VarPackingDBMCongruence::top()) == inv1));
   BOOST_CHECK((inv1.meet(VarPackingDBMCongruence::bottom()) ==
@@ -553,15 +553,15 @@ BOOST_AUTO_TEST_CASE(meet) {
                VarPackingDBMCongruence::bottom()));
   BOOST_CHECK((inv1.meet(inv1) == inv1));
 
-  VarPackingDBMCongruence inv2;
-  VarPackingDBMCongruence inv3;
+  auto inv2 = VarPackingDBMCongruence::top();
+  auto inv3 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(-1), Bound(0)));
   inv3.set(x, Interval(0));
   BOOST_CHECK((inv1.meet(inv2) == inv3));
   BOOST_CHECK((inv2.meet(inv1) == inv3));
 
-  VarPackingDBMCongruence inv4;
-  VarPackingDBMCongruence inv5;
+  auto inv4 = VarPackingDBMCongruence::top();
+  auto inv5 = VarPackingDBMCongruence::top();
   inv4.set(x, Interval(Bound(0), Bound(1)));
   inv4.set(y, Interval(0));
   inv5.set(x, Interval(0));
@@ -650,7 +650,7 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                    VarPackingDBMCongruence::bottom()) ==
                VarPackingDBMCongruence::bottom()));
 
-  VarPackingDBMCongruence inv1;
+  auto inv1 = VarPackingDBMCongruence::top();
   inv1.set(x, Interval(Bound(0), Bound::plus_infinity()));
   BOOST_CHECK((inv1.narrowing(VarPackingDBMCongruence::top()) == inv1));
   BOOST_CHECK((inv1.narrowing(VarPackingDBMCongruence::bottom()) ==
@@ -660,8 +660,8 @@ BOOST_AUTO_TEST_CASE(narrowing) {
                VarPackingDBMCongruence::bottom()));
   BOOST_CHECK((inv1.narrowing(inv1) == inv1));
 
-  VarPackingDBMCongruence inv2;
-  VarPackingDBMCongruence inv3;
+  auto inv2 = VarPackingDBMCongruence::top();
+  auto inv3 = VarPackingDBMCongruence::top();
   inv2.set(x, Interval(Bound(0), Bound(1)));
   BOOST_CHECK((inv1.narrowing(inv2) == inv2));
   BOOST_CHECK((inv2.narrowing(inv1) == inv2));
@@ -674,8 +674,8 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv1;
-  VarPackingDBMCongruence inv2;
+  auto inv1 = VarPackingDBMCongruence::top();
+  auto inv2 = VarPackingDBMCongruence::top();
   inv1.assign(x, 0);
   inv2.set(x, Interval(0));
   BOOST_CHECK((inv1 == inv2));
@@ -711,8 +711,8 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv1;
-  VarPackingDBMCongruence inv2;
+  auto inv1 = VarPackingDBMCongruence::top();
+  auto inv2 = VarPackingDBMCongruence::top();
   inv1.set(x,
            IntervalCongruence(Interval(Bound(-2), Bound(4)),
                               Congruence(ZNumber(2), ZNumber(0))));
@@ -885,7 +885,7 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.add(VariableExpr(x) >= 1);
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
 
@@ -948,7 +948,7 @@ BOOST_AUTO_TEST_CASE(set) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -979,7 +979,7 @@ BOOST_AUTO_TEST_CASE(refine) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
 
@@ -1023,7 +1023,7 @@ BOOST_AUTO_TEST_CASE(forget) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(2)));
@@ -1049,7 +1049,7 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_interval(2 * VariableExpr(x) + 1) ==
@@ -1065,7 +1065,7 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
   inv.set(y, Interval(Bound(3), Bound(4)));
   BOOST_CHECK(inv.to_congruence(2 * VariableExpr(x) + 1) ==
@@ -1081,7 +1081,7 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   Variable z(vfac.get("z"));
   Variable w(vfac.get("w"));
 
-  VarPackingDBMCongruence inv;
+  auto inv = VarPackingDBMCongruence::top();
   inv.refine(x, Interval(Bound(0), Bound(3)));
   inv.refine(y, Interval(Bound(4), Bound(7)));
   inv.refine(x, Congruence(ZNumber(3), ZNumber(0)));

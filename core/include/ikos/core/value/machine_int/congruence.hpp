@@ -179,14 +179,6 @@ private:
   struct BottomTag {};
   struct NormalizedTag {};
 
-  /// \brief Create the top congruence 1Z + 0 (for bit-width 1)
-  explicit Congruence(TopTag)
-      : _c(ZCongruence::top()), _bit_width(1), _sign(Signed) {}
-
-  /// \brief Create the bottom congruence (for bit-width 1)
-  explicit Congruence(BottomTag)
-      : _c(ZCongruence::bottom()), _bit_width(1), _sign(Signed) {}
-
   /// \brief Create the top congruence for the given bit-width and signedness
   Congruence(TopTag, unsigned bit_width, Signedness sign)
       : _c(ZCongruence::top()), _bit_width(bit_width), _sign(sign) {}
@@ -200,8 +192,15 @@ private:
       : _c(std::move(c)), _bit_width(bit_width), _sign(sign) {}
 
 public:
-  /// \brief Create the top congruence
-  Congruence() : Congruence(TopTag{}) {}
+  /// \brief Create the top congruence for the given bit-width and signedness
+  static Congruence top(unsigned bit_width, Signedness sign) {
+    return Congruence(TopTag{}, bit_width, sign);
+  }
+
+  /// \brief Create the bottom congruence for the given bit-width and signedness
+  static Congruence bottom(unsigned bit_width, Signedness sign) {
+    return Congruence(BottomTag{}, bit_width, sign);
+  }
 
   /// \brief Create the congruence 0Z + n
   explicit Congruence(const MachineInt& n)
@@ -242,22 +241,6 @@ public:
 
   /// \brief Destructor
   ~Congruence() override = default;
-
-  /// \brief Create the top congruence
-  static Congruence top() { return Congruence(TopTag{}); }
-
-  /// \brief Create the bottom congruence
-  static Congruence bottom() { return Congruence(BottomTag{}); }
-
-  /// \brief Create the top congruence for the given bit-width and signedness
-  static Congruence top(unsigned bit_width, Signedness sign) {
-    return Congruence(TopTag{}, bit_width, sign);
-  }
-
-  /// \brief Create the bottom congruence for the given bit-width and signedness
-  static Congruence bottom(unsigned bit_width, Signedness sign) {
-    return Congruence(BottomTag{}, bit_width, sign);
-  }
 
   /// \brief Return the bit width of the congruence
   unsigned bit_width() const { return this->_bit_width; }

@@ -148,7 +148,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
     return {CheckKind::UnexpectedOperand, Result::Error, {stmt->right()}, {}};
   }
 
-  PointsToSet left_addrs;
+  auto left_addrs = PointsToSet::bottom();
   if (auto gv = dyn_cast< ar::GlobalVariable >(stmt->left())) {
     left_addrs = {_ctx.mem_factory->get_global(gv)};
   } else if (auto cst = dyn_cast< ar::FunctionPointerConstant >(stmt->left())) {
@@ -157,7 +157,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
     left_addrs = inv.normal().pointers().points_to(left_ptr.var());
   }
 
-  PointsToSet right_addrs;
+  auto right_addrs = PointsToSet::bottom();
   if (auto gv = dyn_cast< ar::GlobalVariable >(stmt->right())) {
     right_addrs = {_ctx.mem_factory->get_global(gv)};
   } else if (auto cst =

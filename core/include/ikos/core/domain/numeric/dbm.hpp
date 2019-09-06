@@ -263,7 +263,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  DBM() : DBM(TopTag{}) {}
+  static DBM top() { return DBM(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static DBM bottom() { return DBM(BottomTag{}); }
 
   /// \brief Copy constructor
   DBM(const DBM&) = default;
@@ -279,12 +282,6 @@ public:
 
   /// \brief Destructor
   ~DBM() override = default;
-
-  /// \brief Create the top abstract value
-  static DBM top() { return DBM(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static DBM bottom() { return DBM(BottomTag{}); }
 
   /// \brief Normalize the difference bound matrix
   void normalize() const override {
@@ -405,7 +402,7 @@ private:
   /// \brief Apply a pointwise binary operator
   template < typename BinaryOperator >
   DBM pointwise_binary_op(const DBM& other, const BinaryOperator& op) const {
-    DBM dbm; // result dbm
+    auto dbm = DBM::top(); // result dbm
 
     // marker for an invalid index
     const MatrixIndex none = std::numeric_limits< MatrixIndex >::max();

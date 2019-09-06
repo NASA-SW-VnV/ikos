@@ -101,8 +101,11 @@ private:
   }
 
 public:
-  /// \brief Create the top congruence
-  Congruence() : Congruence(TopTag{}) {}
+  /// \brief Create the congruence 1Z + 0
+  static Congruence top() { return Congruence(TopTag{}); }
+
+  /// \brief Create the bottom congruence
+  static Congruence bottom() { return Congruence(BottomTag{}); }
 
   /// \brief Create the congruence 0Z + n
   explicit Congruence(int n) : _is_bottom(false), _a(0), _b(n) {}
@@ -130,12 +133,6 @@ public:
 
   /// \brief Destructor
   ~Congruence() override = default;
-
-  /// \brief Create the congruence 1Z + 0
-  static Congruence top() { return Congruence(TopTag{}); }
-
-  /// \brief Create the bottom congruence
-  static Congruence bottom() { return Congruence(BottomTag{}); }
 
   /// \brief Return the modulus
   const ZNumber& modulus() const {
@@ -725,7 +722,9 @@ private:
   QConstant _cst;
 
 public:
-  Congruence() : _cst(QConstant::top()) {}
+  static Congruence top() { return Congruence(QConstant::top()); }
+
+  static Congruence bottom() { return Congruence(QConstant::bottom()); }
 
   explicit Congruence(int n) : _cst(n) {}
 
@@ -744,10 +743,6 @@ public:
   Congruence& operator=(Congruence&&) noexcept = default;
 
   ~Congruence() override = default;
-
-  static Congruence top() { return Congruence(QConstant::top()); }
-
-  static Congruence bottom() { return Congruence(QConstant::bottom()); }
 
   bool is_bottom() const override { return this->_cst.is_bottom(); }
 

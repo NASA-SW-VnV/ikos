@@ -81,7 +81,10 @@ private:
 
 public:
   /// \brief Create the top discrete domain
-  DiscreteDomain() : DiscreteDomain(TopTag{}) {}
+  static DiscreteDomain top() { return DiscreteDomain(TopTag{}); }
+
+  /// \brief Create the bottom discrete domain
+  static DiscreteDomain bottom() { return DiscreteDomain(BottomTag{}); }
 
   /// \brief Create the discrete domain with the given elements
   DiscreteDomain(std::initializer_list< Element > elements)
@@ -101,12 +104,6 @@ public:
 
   /// \brief Destructor
   ~DiscreteDomain() override = default;
-
-  /// \brief Create the top discrete domain
-  static DiscreteDomain top() { return DiscreteDomain(TopTag{}); }
-
-  /// \brief Create the bottom discrete domain
-  static DiscreteDomain bottom() { return DiscreteDomain(BottomTag{}); }
 
   /// \brief Return the number of elements in the discrete domain
   std::size_t size() const {

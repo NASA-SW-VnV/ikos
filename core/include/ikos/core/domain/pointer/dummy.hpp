@@ -79,22 +79,12 @@ private:
   MachineIntDomain _machine_int;
   NullityDomain _nullity;
 
-private:
-  struct TopTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top abstract value
-  explicit DummyDomain(TopTag)
-      : _machine_int(MachineIntDomain::top()), _nullity(NullityDomain::top()) {}
-
-  /// \brief Create the bottom abstract value
-  explicit DummyDomain(BottomTag)
-      : _machine_int(MachineIntDomain::bottom()),
-        _nullity(NullityDomain::bottom()) {}
-
 public:
-  /// \brief Create the top abstract value
-  DummyDomain() : DummyDomain(TopTag{}) {}
+  /// \brief Create an abstract value with the given underlying abstract values
+  DummyDomain(MachineIntDomain machine_int, NullityDomain nullity)
+      : _machine_int(std::move(machine_int)), _nullity(std::move(nullity)) {
+    this->normalize();
+  }
 
   /// \brief Copy constructor
   DummyDomain(const DummyDomain&) noexcept(
@@ -118,12 +108,6 @@ public:
 
   /// \brief Destructor
   ~DummyDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static DummyDomain top() { return DummyDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static DummyDomain bottom() { return DummyDomain(BottomTag{}); }
 
   bool is_bottom() const override {
     this->normalize();

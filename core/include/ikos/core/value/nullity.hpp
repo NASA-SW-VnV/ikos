@@ -71,8 +71,17 @@ private:
   explicit Nullity(Kind kind) : _kind(kind) {}
 
 public:
-  /// \brief Create the top nullity value
-  Nullity() = default;
+  /// \brief Return the top nullity value
+  static Nullity top() { return Nullity(TopKind); }
+
+  /// \brief Return the bottom nullity value
+  static Nullity bottom() { return Nullity(BottomKind); }
+
+  /// \brief Return the non-null nullity value
+  static Nullity non_null() { return Nullity(NonNullKind); }
+
+  /// \brief Return the null nullity value
+  static Nullity null() { return Nullity(NullKind); }
 
   /// \brief Copy constructor
   Nullity(const Nullity&) noexcept = default;
@@ -88,18 +97,6 @@ public:
 
   /// \brief Destructor
   ~Nullity() override = default;
-
-  /// \brief Return the top nullity value
-  static Nullity top() { return Nullity(TopKind); }
-
-  /// \brief Return the bottom nullity value
-  static Nullity bottom() { return Nullity(BottomKind); }
-
-  /// \brief Return the non-null nullity value
-  static Nullity non_null() { return Nullity(NonNullKind); }
-
-  /// \brief Return the null nullity value
-  static Nullity null() { return Nullity(NullKind); }
 
   bool is_bottom() const override { return this->_kind == BottomKind; }
 

@@ -93,7 +93,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  SeparateDomain() : SeparateDomain(TopTag{}) {}
+  static SeparateDomain top() { return SeparateDomain(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static SeparateDomain bottom() { return SeparateDomain(BottomTag{}); }
 
   /// \brief Copy constructor
   SeparateDomain(const SeparateDomain&) noexcept = default;
@@ -109,12 +112,6 @@ public:
 
   /// \brief Destructor
   ~SeparateDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static SeparateDomain top() { return SeparateDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static SeparateDomain bottom() { return SeparateDomain(BottomTag{}); }
 
   /// \brief Begin iterator over the pairs (variable, value)
   Iterator begin() const {

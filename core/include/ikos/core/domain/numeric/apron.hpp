@@ -538,7 +538,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  ApronDomain() : ApronDomain(TopTag{}) {}
+  static ApronDomain top() { return ApronDomain(TopTag{}); }
+
+  /// \brief Create the bottom abstract value
+  static ApronDomain bottom() { return ApronDomain(BottomTag{}); }
 
   /// \brief Copy constructor
   ApronDomain(const ApronDomain&) noexcept = default;
@@ -554,12 +557,6 @@ public:
 
   /// \brief Destructor
   ~ApronDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static ApronDomain top() { return ApronDomain(TopTag{}); }
-
-  /// \brief Create the bottom abstract value
-  static ApronDomain bottom() { return ApronDomain(BottomTag{}); }
 
   bool is_bottom() const override {
     return ap_abstract0_is_bottom(manager(), this->_inv.get());

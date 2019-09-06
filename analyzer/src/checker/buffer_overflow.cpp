@@ -159,7 +159,7 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
   }
 
   // Collect potential callees
-  PointsToSet callees;
+  auto callees = PointsToSet::bottom();
 
   if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
     callees = {_ctx.mem_factory->get_function(cst->function())};
@@ -851,7 +851,7 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   IntInterval offset_intv = inv.normal().integers().to_interval(offset_var);
   info.put("offset", to_json(offset_intv));
 
-  IntInterval size_intv;
+  auto size_intv = IntInterval::bottom(1, Signed);
   if (size.is_machine_int_var()) {
     size_intv = inv.normal().integers().to_interval(size.var());
   } else if (size.is_machine_int()) {

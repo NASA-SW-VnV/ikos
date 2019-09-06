@@ -93,7 +93,12 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  VarPackingDBM() : _inv(VarPackingDomainT::top()) {}
+  static VarPackingDBM top() { return VarPackingDBM(VarPackingDomainT::top()); }
+
+  /// \brief Create the bottom abstract value
+  static VarPackingDBM bottom() {
+    return VarPackingDBM(VarPackingDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   VarPackingDBM(const VarPackingDBM&) = default;
@@ -109,14 +114,6 @@ public:
 
   /// \brief Destructor
   ~VarPackingDBM() override = default;
-
-  /// \brief Create the top abstract value
-  static VarPackingDBM top() { return VarPackingDBM(VarPackingDomainT::top()); }
-
-  /// \brief Create the bottom abstract value
-  static VarPackingDBM bottom() {
-    return VarPackingDBM(VarPackingDomainT::bottom());
-  }
 
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 

@@ -62,9 +62,6 @@ using Congruence = ikos::core::machine_int::Congruence;
 using IntervalCongruence = ikos::core::machine_int::IntervalCongruence;
 
 BOOST_AUTO_TEST_CASE(test_constructors) {
-  // IntervalCongruence()
-  BOOST_CHECK(IntervalCongruence() == IntervalCongruence::top(1, Signed));
-
   // IntervalCongruence(Int)
   BOOST_CHECK(
       IntervalCongruence(Int(0, 8, Signed)) ==
@@ -175,11 +172,6 @@ BOOST_AUTO_TEST_CASE(test_constructors) {
       IntervalCongruence(Interval(Int(2, 8, Signed), Int(8, 8, Signed)),
                          Congruence(Int(8, 8, Signed), Int(1, 8, Signed)))
           .is_bottom());
-
-  // IntervalCongruence::top()/bottom()
-  BOOST_CHECK(IntervalCongruence::top() == IntervalCongruence::top(1, Signed));
-  BOOST_CHECK(IntervalCongruence::bottom() ==
-              IntervalCongruence::bottom(1, Signed));
 
   BOOST_CHECK(
       IntervalCongruence::top(1, Signed) ==

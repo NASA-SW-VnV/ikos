@@ -90,10 +90,7 @@ private:
   explicit DomainProduct2(Product product) : _product(std::move(product)) {}
 
 public:
-  /// \brief Create the top abstract value
-  DomainProduct2() = default;
-
-  /// \brief Create the abstract value with the given values
+  /// \brief Create the abstract value with the given abstract values
   DomainProduct2(Domain1 first, Domain2 second)
       : _product(std::move(first), std::move(second)) {}
 
@@ -119,12 +116,6 @@ public:
 
   /// \brief Destructor
   ~DomainProduct2() override = default;
-
-  /// \brief Create the top abstract value
-  static DomainProduct2 top() { return DomainProduct2(Product::top()); }
-
-  /// \brief Create the bottom abstract value
-  static DomainProduct2 bottom() { return DomainProduct2(Product::bottom()); }
 
   /// \brief Normalize the abstract value
   void normalize() const override {
@@ -441,7 +432,7 @@ public:
   /// \brief Create the top abstract value
   DomainProduct3() = default;
 
-  /// \brief Create the abstract value with the given values
+  /// \brief Create the abstract value with the given abstract values
   DomainProduct3(Domain1 first, Domain2 second, Domain3 third)
       : _product(Product12(std::move(first), std::move(second)),
                  std::move(third)) {}

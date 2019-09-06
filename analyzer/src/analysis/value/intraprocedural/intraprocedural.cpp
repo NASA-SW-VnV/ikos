@@ -78,15 +78,8 @@ void IntraproceduralValueAnalysis::run() {
   }
 
   // Initial invariant
-  AbstractDomain init_inv(
-      /*normal=*/value::MemoryAbstractDomain(
-          value::PointerAbstractDomain(value::make_top_machine_int_domain(
-                                           _ctx.opts.machine_int_domain),
-                                       value::NullityAbstractDomain::top()),
-          value::UninitializedAbstractDomain::top(),
-          value::LifetimeAbstractDomain::top()),
-      /*caught_exceptions=*/value::MemoryAbstractDomain::bottom(),
-      /*propagated_exceptions=*/value::MemoryAbstractDomain::bottom());
+  AbstractDomain init_inv =
+      make_initial_abstract_value(_ctx.opts.machine_int_domain);
 
   // Setup a progress logger
   std::unique_ptr< ProgressLogger > progress =

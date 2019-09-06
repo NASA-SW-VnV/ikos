@@ -538,10 +538,8 @@ private:
   explicit PolymorphicDomain(BottomTag) : _ptr(nullptr) {}
 
 public:
-  /// \brief Create the top abstract value
-  PolymorphicDomain() {
-    ikos_unreachable("cannot create a top abstract value of PolymorphicDomain");
-  }
+  /// \brief Create the bottom abstract value
+  static PolymorphicDomain bottom() { return PolymorphicDomain(BottomTag{}); }
 
   /// \brief Create a polymorphic domain with the given abstract value
   template < typename RuntimeDomain >
@@ -572,14 +570,6 @@ public:
 
   /// \brief Destructor
   ~PolymorphicDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static PolymorphicDomain top() {
-    ikos_unreachable("cannot create a top abstract value of PolymorphicDomain");
-  }
-
-  /// \brief Create the bottom abstract value
-  static PolymorphicDomain bottom() { return PolymorphicDomain(BottomTag{}); }
 
   bool is_bottom() const override {
     if (this->_ptr != nullptr) {

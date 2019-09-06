@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implement make_top_machine_int_apron_polka_polyhedra
+ * \brief Abstract domain for the value analysis
  *
  * Author: Maxime Arthaud
  *
@@ -9,7 +9,7 @@
  *
  * Notices:
  *
- * Copyright (c) 2018-2019 United States Government as represented by the
+ * Copyright (c) 2011-2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -41,28 +41,39 @@
  *
  ******************************************************************************/
 
-#ifdef HAS_APRON
-#include <ikos/core/domain/machine_int/numeric_domain_adapter.hpp>
-#include <ikos/core/domain/numeric/apron.hpp>
-#endif
-
-#include <ikos/analyzer/analysis/value/machine_int_domain.hpp>
-#include <ikos/analyzer/exception.hpp>
+#include <ikos/analyzer/analysis/value/abstract_domain.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
 
-MachineIntAbstractDomain make_top_machine_int_apron_polka_polyhedra() {
-#ifdef HAS_APRON
-  using NumericDomain = core::numeric::
-      ApronDomain< core::numeric::apron::PolkaPolyhedra, ZNumber, Variable* >;
-  return MachineIntAbstractDomain(
-      core::machine_int::NumericDomainAdapter< Variable*, NumericDomain >(
-          NumericDomain::top()));
-#else
-  throw LogicError("ikos was compiled without apron support");
-#endif
+AbstractDomain make_bottom_abstract_value() {
+  auto bottom = MemoryAbstractDomain(
+      PointerAbstractDomain(make_bottom_machine_int_abstract_value(),
+                            NullityAbstractDomain::bottom()),
+      UninitializedAbstractDomain::bottom(),
+      LifetimeAbstractDomain::bottom());
+  return AbstractDomain(/*normal = */ bottom,
+                        /*caught_exceptions = */ bottom,
+                        /*propagated_exceptions = */ bottom);
+}
+
+AbstractDomain make_initial_abstract_value(
+    MachineIntDomainOption machine_int_domain) {
+  auto top = MemoryAbstractDomain(
+      PointerAbstractDomain(make_top_machine_int_abstract_value(
+                                machine_int_domain),
+                            NullityAbstractDomain::top()),
+      UninitializedAbstractDomain::top(),
+      LifetimeAbstractDomain::top());
+  auto bottom = MemoryAbstractDomain(
+      PointerAbstractDomain(make_bottom_machine_int_abstract_value(),
+                            NullityAbstractDomain::bottom()),
+      UninitializedAbstractDomain::bottom(),
+      LifetimeAbstractDomain::bottom());
+  return AbstractDomain(/*normal = */ top,
+                        /*caught_exceptions = */ bottom,
+                        /*propagated_exceptions = */ bottom);
 }
 
 } // end namespace value

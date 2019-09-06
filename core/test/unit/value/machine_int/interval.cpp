@@ -57,8 +57,6 @@ using ZBound = ikos::core::Bound< ikos::core::ZNumber >;
 using ZInterval = ikos::core::numeric::ZInterval;
 
 BOOST_AUTO_TEST_CASE(test_constructors) {
-  BOOST_CHECK(Interval() == Interval::top(1, Signed));
-
   BOOST_CHECK(Interval(Int(0, 8, Signed)) ==
               Interval(Int(0, 8, Signed), Int(0, 8, Signed)));
   BOOST_CHECK(Interval(Int(1, 8, Unsigned)) ==
@@ -68,9 +66,6 @@ BOOST_AUTO_TEST_CASE(test_constructors) {
               Interval(Int(1, 8, Signed), Int(2, 8, Signed)));
   BOOST_CHECK(Interval(Int(1, 8, Unsigned), Int(2, 8, Unsigned)) ==
               Interval(Int(1, 8, Unsigned), Int(2, 8, Unsigned)));
-
-  BOOST_CHECK(Interval::top() == Interval::top(1, Signed));
-  BOOST_CHECK(Interval::bottom() == Interval::bottom(1, Signed));
 
   BOOST_CHECK(Interval::top(1, Signed) ==
               Interval(Int(-1, 1, Signed), Int(0, 1, Signed)));
@@ -150,11 +145,11 @@ BOOST_AUTO_TEST_CASE(test_set_to_top) {
 }
 
 BOOST_AUTO_TEST_CASE(test_leq) {
-  BOOST_CHECK(Interval::bottom().leq(Interval::bottom()));
-  BOOST_CHECK(Interval::bottom().leq(Interval::top()));
+  BOOST_CHECK(Interval::bottom(8, Signed).leq(Interval::bottom(8, Signed)));
+  BOOST_CHECK(Interval::bottom(8, Signed).leq(Interval::top(8, Signed)));
 
-  BOOST_CHECK(!Interval::top().leq(Interval::bottom()));
-  BOOST_CHECK(Interval::top().leq(Interval::top()));
+  BOOST_CHECK(!Interval::top(8, Signed).leq(Interval::bottom(8, Signed)));
+  BOOST_CHECK(Interval::top(8, Signed).leq(Interval::top(8, Signed)));
 
   BOOST_CHECK(!Interval(Int(0, 8, Signed)).leq(Interval::bottom(8, Signed)));
   BOOST_CHECK(Interval(Int(0, 8, Signed)).leq(Interval::top(8, Signed)));
@@ -196,11 +191,11 @@ BOOST_AUTO_TEST_CASE(test_leq) {
 }
 
 BOOST_AUTO_TEST_CASE(test_equals) {
-  BOOST_CHECK(Interval::bottom().equals(Interval::bottom()));
-  BOOST_CHECK(!Interval::bottom().equals(Interval::top()));
+  BOOST_CHECK(Interval::bottom(8, Signed).equals(Interval::bottom(8, Signed)));
+  BOOST_CHECK(!Interval::bottom(8, Signed).equals(Interval::top(8, Signed)));
 
-  BOOST_CHECK(!Interval::top().equals(Interval::bottom()));
-  BOOST_CHECK(Interval::top().equals(Interval::top()));
+  BOOST_CHECK(!Interval::top(8, Signed).equals(Interval::bottom(8, Signed)));
+  BOOST_CHECK(Interval::top(8, Signed).equals(Interval::top(8, Signed)));
 
   BOOST_CHECK(!Interval(Int(0, 8, Signed)).equals(Interval::bottom(8, Signed)));
   BOOST_CHECK(!Interval(Int(0, 8, Signed)).equals(Interval::top(8, Signed)));
@@ -251,12 +246,15 @@ BOOST_AUTO_TEST_CASE(test_equals) {
 }
 
 BOOST_AUTO_TEST_CASE(test_join) {
-  BOOST_CHECK(Interval::top().join(Interval::bottom()) == Interval::top());
-  BOOST_CHECK(Interval::top().join(Interval::top()) == Interval::top());
+  BOOST_CHECK(Interval::top(8, Signed).join(Interval::bottom(8, Signed)) ==
+              Interval::top(8, Signed));
+  BOOST_CHECK(Interval::top(8, Signed).join(Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
 
-  BOOST_CHECK(Interval::bottom().join(Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(Interval::bottom().join(Interval::top()) == Interval::top());
+  BOOST_CHECK(Interval::bottom(8, Signed).join(Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(Interval::bottom(8, Signed).join(Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
 
   BOOST_CHECK(Interval(Int(0, 8, Signed)).join(Interval::bottom(8, Signed)) ==
               Interval(Int(0, 8, Signed)));
@@ -335,12 +333,15 @@ BOOST_AUTO_TEST_CASE(test_join) {
 }
 
 BOOST_AUTO_TEST_CASE(test_widening) {
-  BOOST_CHECK(Interval::top().widening(Interval::bottom()) == Interval::top());
-  BOOST_CHECK(Interval::top().widening(Interval::top()) == Interval::top());
+  BOOST_CHECK(Interval::top(8, Signed).widening(Interval::bottom(8, Signed)) ==
+              Interval::top(8, Signed));
+  BOOST_CHECK(Interval::top(8, Signed).widening(Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
 
-  BOOST_CHECK(Interval::bottom().widening(Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(Interval::bottom().widening(Interval::top()) == Interval::top());
+  BOOST_CHECK(Interval::bottom(8, Signed).widening(
+                  Interval::bottom(8, Signed)) == Interval::bottom(8, Signed));
+  BOOST_CHECK(Interval::bottom(8, Signed).widening(Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
 
   BOOST_CHECK(
       Interval(Int(0, 8, Signed)).widening(Interval::bottom(8, Signed)) ==
@@ -421,12 +422,15 @@ BOOST_AUTO_TEST_CASE(test_widening) {
 }
 
 BOOST_AUTO_TEST_CASE(test_meet) {
-  BOOST_CHECK(Interval::top().meet(Interval::bottom()) == Interval::bottom());
-  BOOST_CHECK(Interval::top().meet(Interval::top()) == Interval::top());
+  BOOST_CHECK(Interval::top(8, Signed).meet(Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(Interval::top(8, Signed).meet(Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
 
-  BOOST_CHECK(Interval::bottom().meet(Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(Interval::bottom().meet(Interval::top()) == Interval::bottom());
+  BOOST_CHECK(Interval::bottom(8, Signed).meet(Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(Interval::bottom(8, Signed).meet(Interval::top(8, Signed)) ==
+              Interval::bottom(8, Signed));
 
   BOOST_CHECK(Interval(Int(0, 8, Signed)).meet(Interval::bottom(8, Signed)) ==
               Interval::bottom(8, Signed));
@@ -501,14 +505,15 @@ BOOST_AUTO_TEST_CASE(test_meet) {
 }
 
 BOOST_AUTO_TEST_CASE(test_narrowing) {
-  BOOST_CHECK(Interval::top().narrowing(Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(Interval::top().narrowing(Interval::top()) == Interval::top());
+  BOOST_CHECK(Interval::top(8, Signed).narrowing(Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(Interval::top(8, Signed).narrowing(Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
 
-  BOOST_CHECK(Interval::bottom().narrowing(Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(Interval::bottom().narrowing(Interval::top()) ==
-              Interval::bottom());
+  BOOST_CHECK(Interval::bottom(8, Signed).narrowing(
+                  Interval::bottom(8, Signed)) == Interval::bottom(8, Signed));
+  BOOST_CHECK(Interval::bottom(8, Signed).narrowing(Interval::top(8, Signed)) ==
+              Interval::bottom(8, Signed));
 
   BOOST_CHECK(
       Interval(Int(0, 8, Signed)).narrowing(Interval::bottom(8, Signed)) ==
@@ -807,11 +812,14 @@ BOOST_AUTO_TEST_CASE(test_contains) {
 }
 
 BOOST_AUTO_TEST_CASE(test_add) {
-  BOOST_CHECK(add(Interval::top(), Interval::bottom()) == Interval::bottom());
-  BOOST_CHECK(add(Interval::top(), Interval::top()) == Interval::top());
-  BOOST_CHECK(add(Interval::bottom(), Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(add(Interval::bottom(), Interval::top()) == Interval::bottom());
+  BOOST_CHECK(add(Interval::top(8, Signed), Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(add(Interval::top(8, Signed), Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
+  BOOST_CHECK(add(Interval::bottom(8, Signed), Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(add(Interval::bottom(8, Signed), Interval::top(8, Signed)) ==
+              Interval::bottom(8, Signed));
 
   BOOST_CHECK(add(Interval(Int(0, 8, Signed)), Interval::bottom(8, Signed)) ==
               Interval::bottom(8, Signed));
@@ -914,13 +922,17 @@ BOOST_AUTO_TEST_CASE(test_add) {
 }
 
 BOOST_AUTO_TEST_CASE(test_add_no_wrap) {
-  BOOST_CHECK(add_no_wrap(Interval::top(), Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(add_no_wrap(Interval::top(), Interval::top()) == Interval::top());
-  BOOST_CHECK(add_no_wrap(Interval::bottom(), Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(add_no_wrap(Interval::bottom(), Interval::top()) ==
-              Interval::bottom());
+  BOOST_CHECK(
+      add_no_wrap(Interval::top(8, Signed), Interval::bottom(8, Signed)) ==
+      Interval::bottom(8, Signed));
+  BOOST_CHECK(add_no_wrap(Interval::top(8, Signed), Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
+  BOOST_CHECK(
+      add_no_wrap(Interval::bottom(8, Signed), Interval::bottom(8, Signed)) ==
+      Interval::bottom(8, Signed));
+  BOOST_CHECK(
+      add_no_wrap(Interval::bottom(8, Signed), Interval::top(8, Signed)) ==
+      Interval::bottom(8, Signed));
 
   BOOST_CHECK(
       add_no_wrap(Interval(Int(0, 8, Signed)), Interval::bottom(8, Signed)) ==
@@ -1041,11 +1053,14 @@ BOOST_AUTO_TEST_CASE(test_add_no_wrap) {
 }
 
 BOOST_AUTO_TEST_CASE(test_sub) {
-  BOOST_CHECK(sub(Interval::top(), Interval::bottom()) == Interval::bottom());
-  BOOST_CHECK(sub(Interval::top(), Interval::top()) == Interval::top());
-  BOOST_CHECK(sub(Interval::bottom(), Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(sub(Interval::bottom(), Interval::top()) == Interval::bottom());
+  BOOST_CHECK(sub(Interval::top(8, Signed), Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(sub(Interval::top(8, Signed), Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
+  BOOST_CHECK(sub(Interval::bottom(8, Signed), Interval::bottom(8, Signed)) ==
+              Interval::bottom(8, Signed));
+  BOOST_CHECK(sub(Interval::bottom(8, Signed), Interval::top(8, Signed)) ==
+              Interval::bottom(8, Signed));
 
   BOOST_CHECK(sub(Interval(Int(0, 8, Signed)), Interval::bottom(8, Signed)) ==
               Interval::bottom(8, Signed));
@@ -1148,13 +1163,17 @@ BOOST_AUTO_TEST_CASE(test_sub) {
 }
 
 BOOST_AUTO_TEST_CASE(test_sub_no_wrap) {
-  BOOST_CHECK(sub_no_wrap(Interval::top(), Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(sub_no_wrap(Interval::top(), Interval::top()) == Interval::top());
-  BOOST_CHECK(sub_no_wrap(Interval::bottom(), Interval::bottom()) ==
-              Interval::bottom());
-  BOOST_CHECK(sub_no_wrap(Interval::bottom(), Interval::top()) ==
-              Interval::bottom());
+  BOOST_CHECK(
+      sub_no_wrap(Interval::top(8, Signed), Interval::bottom(8, Signed)) ==
+      Interval::bottom(8, Signed));
+  BOOST_CHECK(sub_no_wrap(Interval::top(8, Signed), Interval::top(8, Signed)) ==
+              Interval::top(8, Signed));
+  BOOST_CHECK(
+      sub_no_wrap(Interval::bottom(8, Signed), Interval::bottom(8, Signed)) ==
+      Interval::bottom(8, Signed));
+  BOOST_CHECK(
+      sub_no_wrap(Interval::bottom(8, Signed), Interval::top(8, Signed)) ==
+      Interval::bottom(8, Signed));
 
   BOOST_CHECK(
       sub_no_wrap(Interval(Int(0, 8, Signed)), Interval::bottom(8, Signed)) ==

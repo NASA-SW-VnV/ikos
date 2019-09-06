@@ -114,7 +114,7 @@ void MemoryWatchChecker::check_call(ar::CallBase* call,
   }
 
   // Collect potential callees
-  PointsToSet callees;
+  auto callees = PointsToSet::bottom();
 
   if (auto cst = dyn_cast< ar::FunctionPointerConstant >(call->called())) {
     callees = {_ctx.mem_factory->get_function(cst->function())};

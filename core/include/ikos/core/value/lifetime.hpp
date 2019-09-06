@@ -71,8 +71,17 @@ private:
   explicit Lifetime(Kind kind) : _kind(kind) {}
 
 public:
-  /// \brief Create the top lifetime value
-  Lifetime() = default;
+  /// \brief Return the top lifetime value
+  static Lifetime top() { return Lifetime(TopKind); }
+
+  /// \brief Return the bottom lifetime value
+  static Lifetime bottom() { return Lifetime(BottomKind); }
+
+  /// \brief Return the deallocated lifetime value
+  static Lifetime deallocated() { return Lifetime(DeallocatedKind); }
+
+  /// \brief Return the allocated lifetime value
+  static Lifetime allocated() { return Lifetime(AllocatedKind); }
 
   /// \brief Copy constructor
   Lifetime(const Lifetime&) noexcept = default;
@@ -88,18 +97,6 @@ public:
 
   /// \brief Destructor
   ~Lifetime() override = default;
-
-  /// \brief Return the top lifetime value
-  static Lifetime top() { return Lifetime(TopKind); }
-
-  /// \brief Return the bottom lifetime value
-  static Lifetime bottom() { return Lifetime(BottomKind); }
-
-  /// \brief Return the deallocated lifetime value
-  static Lifetime deallocated() { return Lifetime(DeallocatedKind); }
-
-  /// \brief Return the allocated lifetime value
-  static Lifetime allocated() { return Lifetime(AllocatedKind); }
 
   bool is_bottom() const override { return this->_kind == BottomKind; }
 

@@ -119,7 +119,20 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  GaugeIntervalCongruenceDomain() = default;
+  static GaugeIntervalCongruenceDomain top() {
+    return GaugeIntervalCongruenceDomain(
+        DomainProduct(GaugeDomainT::top(),
+                      IntervalDomainT::top(),
+                      CongruenceDomainT::top()));
+  }
+
+  /// \brief Create the bottom abstract value
+  static GaugeIntervalCongruenceDomain bottom() {
+    return GaugeIntervalCongruenceDomain(
+        DomainProduct(GaugeDomainT::bottom(),
+                      IntervalDomainT::bottom(),
+                      CongruenceDomainT::bottom()));
+  }
 
   /// \brief Copy constructor
   GaugeIntervalCongruenceDomain(const GaugeIntervalCongruenceDomain&) noexcept =
@@ -139,16 +152,6 @@ public:
 
   /// \brief Destructor
   ~GaugeIntervalCongruenceDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static GaugeIntervalCongruenceDomain top() {
-    return GaugeIntervalCongruenceDomain(DomainProduct::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static GaugeIntervalCongruenceDomain bottom() {
-    return GaugeIntervalCongruenceDomain(DomainProduct::bottom());
-  }
 
   /// \brief Return the first abstract value
   ///

@@ -186,7 +186,16 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  VarPackingDBMCongruence() = default;
+  static VarPackingDBMCongruence top() {
+    return VarPackingDBMCongruence(
+        DomainProduct(VarPackingDBMT::top(), CongruenceDomainT::top()));
+  }
+
+  /// \brief Create the bottom abstract value
+  static VarPackingDBMCongruence bottom() {
+    return VarPackingDBMCongruence(
+        DomainProduct(VarPackingDBMT::bottom(), CongruenceDomainT::bottom()));
+  }
 
   /// \brief Copy constructor
   VarPackingDBMCongruence(const VarPackingDBMCongruence&) = default;
@@ -202,16 +211,6 @@ public:
 
   /// \brief Destructor
   ~VarPackingDBMCongruence() override = default;
-
-  /// \brief Create the top abstract value
-  static VarPackingDBMCongruence top() {
-    return VarPackingDBMCongruence(DomainProduct::top());
-  }
-
-  /// \brief Create the bottom abstract value
-  static VarPackingDBMCongruence bottom() {
-    return VarPackingDBMCongruence(DomainProduct::bottom());
-  }
 
   /// \brief Return the first abstract value
   ///

@@ -83,7 +83,10 @@ private:
 
 public:
   /// \brief Create the top constant
-  Constant() : Constant(TopTag{}) {}
+  static Constant top() { return Constant(TopTag{}); }
+
+  /// \brief Create the bottom constant
+  static Constant bottom() { return Constant(BottomTag{}); }
 
   /// \brief Create the constant n
   explicit Constant(int n) : _kind(NumberKind), _n(n) {}
@@ -109,12 +112,6 @@ public:
 
   /// \brief Destructor
   ~Constant() override = default;
-
-  /// \brief Create the top constant
-  static Constant top() { return Constant(TopTag{}); }
-
-  /// \brief Create the bottom constant
-  static Constant bottom() { return Constant(BottomTag{}); }
 
   bool is_bottom() const override { return this->_kind == BottomKind; }
 

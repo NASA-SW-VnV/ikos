@@ -67,7 +67,10 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  DummyDomain() : _is_bottom(false) {}
+  static DummyDomain top() { return DummyDomain(false); }
+
+  /// \brief Create the bottom abstract value
+  static DummyDomain bottom() { return DummyDomain(true); }
 
   /// \brief Copy constructor
   DummyDomain(const DummyDomain&) noexcept = default;
@@ -83,12 +86,6 @@ public:
 
   /// \brief Destructor
   ~DummyDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static DummyDomain top() { return DummyDomain(false); }
-
-  /// \brief Create the bottom abstract value
-  static DummyDomain bottom() { return DummyDomain(true); }
 
   bool is_bottom() const override { return this->_is_bottom; }
 

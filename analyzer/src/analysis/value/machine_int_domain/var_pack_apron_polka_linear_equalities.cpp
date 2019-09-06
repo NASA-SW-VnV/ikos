@@ -57,16 +57,15 @@ namespace value {
 MachineIntAbstractDomain
 make_top_machine_int_var_pack_apron_polka_linear_equalities() {
 #ifdef HAS_APRON
+  using NumericDomain = core::numeric::VarPackingDomain<
+      ZNumber,
+      Variable*,
+      core::numeric::ApronDomain< core::numeric::apron::PolkaLinearEqualities,
+                                  ZNumber,
+                                  Variable* > >;
   return MachineIntAbstractDomain(
-      core::machine_int::NumericDomainAdapter<
-          Variable*,
-          core::numeric::VarPackingDomain<
-              ZNumber,
-              Variable*,
-              core::numeric::ApronDomain<
-                  core::numeric::apron::PolkaLinearEqualities,
-                  ZNumber,
-                  Variable* > > >::top());
+      core::machine_int::NumericDomainAdapter< Variable*, NumericDomain >(
+          NumericDomain::top()));
 #else
   throw LogicError("ikos was compiled without apron support");
 #endif

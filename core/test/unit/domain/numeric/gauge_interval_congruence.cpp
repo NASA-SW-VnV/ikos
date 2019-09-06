@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_constructors) {
   test_domain(GaugeIntervalCongruenceDomain::bottom(), true, false);
   test_domain(GaugeIntervalCongruenceDomain::top(), false, true);
 
-  GaugeIntervalCongruenceDomain d;
+  auto d = GaugeIntervalCongruenceDomain::top();
   d.set_to_top();
   d.init_counter(i, ZNumber(0));
   test_domain(d, false, false);
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_assign) {
                           x,
                           ZInterval::top());
 
-  GaugeIntervalCongruenceDomain d;
+  auto d = GaugeIntervalCongruenceDomain::top();
   d.init_counter(i, ZNumber(0));
   test_domain_get(d, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d, i, ZInterval(ZBound(0), ZBound(0)));
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_widening) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeIntervalCongruenceDomain d1;
+  auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_add) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeIntervalCongruenceDomain d1;
+  auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_forget) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeIntervalCongruenceDomain d1;
+  auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_set) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  GaugeIntervalCongruenceDomain d1;
+  auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.assign(x, 0);
   d1.assign(y, 1);
 
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_var) {
   Variable one(vfac.get("one"));
   Variable two(vfac.get("two"));
 
-  GaugeIntervalCongruenceDomain d1;
+  auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.assign(zero, 0);
   d1.assign(one, 1);
   d1.assign(two, 2);
@@ -512,7 +512,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_num) {
   Variable one(vfac.get("one"));
   Variable two(vfac.get("two"));
 
-  GaugeIntervalCongruenceDomain d1;
+  auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.init_counter(i, ZNumber(0));
   d1.assign(x, 3);
   d1.assign(y, 2);

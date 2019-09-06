@@ -74,7 +74,12 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  LifetimeDomain() : _inv(SeparateDomainT::top()) {}
+  static LifetimeDomain top() { return LifetimeDomain(SeparateDomainT::top()); }
+
+  /// \brief Create the bottom abstract value
+  static LifetimeDomain bottom() {
+    return LifetimeDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   LifetimeDomain(const LifetimeDomain&) noexcept = default;
@@ -90,14 +95,6 @@ public:
 
   /// \brief Destructor
   ~LifetimeDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static LifetimeDomain top() { return LifetimeDomain(SeparateDomainT::top()); }
-
-  /// \brief Create the bottom abstract value
-  static LifetimeDomain bottom() {
-    return LifetimeDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (memory location, lifetime)
   Iterator begin() const { return this->_inv.begin(); }

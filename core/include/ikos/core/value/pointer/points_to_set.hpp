@@ -90,7 +90,13 @@ private:
 
 public:
   /// \brief Create the top points-to set
-  PointsToSet() : PointsToSet(TopTag{}) {}
+  static PointsToSet top() { return PointsToSet(TopTag{}); }
+
+  /// \brief Create the bottom points-to set
+  static PointsToSet bottom() { return PointsToSet(BottomTag{}); }
+
+  /// \brief Create the empty points-to set
+  static PointsToSet empty() { return PointsToSet(EmptyTag{}); }
 
   /// \brief Create the points-to set with the given memory locations
   PointsToSet(std::initializer_list< MemoryLocationRef > elements)
@@ -110,15 +116,6 @@ public:
 
   /// \brief Destructor
   ~PointsToSet() override = default;
-
-  /// \brief Create the top points-to set
-  static PointsToSet top() { return PointsToSet(TopTag{}); }
-
-  /// \brief Create the bottom points-to set
-  static PointsToSet bottom() { return PointsToSet(BottomTag{}); }
-
-  /// \brief Create the empty points-to set
-  static PointsToSet empty() { return PointsToSet(EmptyTag{}); }
 
   /// \brief Return the number of memory locations in the points-to set
   std::size_t size() const {

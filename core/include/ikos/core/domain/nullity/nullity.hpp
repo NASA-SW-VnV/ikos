@@ -72,7 +72,12 @@ private:
 
 public:
   /// \brief Create the top abstract value
-  NullityDomain() : _inv(SeparateDomainT::top()) {}
+  static NullityDomain top() { return NullityDomain(SeparateDomainT::top()); }
+
+  /// \brief Create the bottom abstract value
+  static NullityDomain bottom() {
+    return NullityDomain(SeparateDomainT::bottom());
+  }
 
   /// \brief Copy constructor
   NullityDomain(const NullityDomain&) noexcept = default;
@@ -88,14 +93,6 @@ public:
 
   /// \brief Destructor
   ~NullityDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static NullityDomain top() { return NullityDomain(SeparateDomainT::top()); }
-
-  /// \brief Create the bottom abstract value
-  static NullityDomain bottom() {
-    return NullityDomain(SeparateDomainT::bottom());
-  }
 
   /// \brief Begin iterator over the pairs (variable, nullity)
   Iterator begin() const { return this->_inv.begin(); }

@@ -81,12 +81,22 @@ namespace {
 /// \brief Numerical abstract domain for the intra-procedural pointer analysis
 using MachineIntAbstractDomain = core::machine_int::IntervalDomain< Variable* >;
 
+/// \brief Dummy nullity abstract domain
+using NullityAbstractDomain = core::nullity::DummyDomain< Variable* >;
+
+/// \brief Dummy uninitialized abstract domain
+using UninitializedAbstractDomain =
+    core::uninitialized::DummyDomain< Variable* >;
+
+/// \brief Dummy lifetime abstract domain
+using LifetimeAbstractDomain = core::lifetime::DummyDomain< MemoryLocation* >;
+
 /// \brief Pointer abstract domain for the intra-procedural pointer analysis
 using PointerAbstractDomain =
     core::pointer::DummyDomain< Variable*,
                                 MemoryLocation*,
                                 MachineIntAbstractDomain,
-                                core::nullity::DummyDomain< Variable* > >;
+                                NullityAbstractDomain >;
 
 /// \brief Memory abstract domain for the intra-procedural pointer analysis
 using MemoryAbstractDomain =
@@ -94,13 +104,47 @@ using MemoryAbstractDomain =
                                MemoryLocation*,
                                VariableFactory,
                                MachineIntAbstractDomain,
-                               core::nullity::DummyDomain< Variable* >,
+                               NullityAbstractDomain,
                                PointerAbstractDomain,
-                               core::uninitialized::DummyDomain< Variable* >,
-                               core::lifetime::DummyDomain< MemoryLocation* > >;
+                               UninitializedAbstractDomain,
+                               LifetimeAbstractDomain >;
 
 /// \brief Abstract domain for the intra-procedural pointer analysis
 using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
+
+/// \brief Create the bottom abstract value
+AbstractDomain make_bottom_abstract_value() {
+  auto bottom =
+      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
+                                                     bottom(),
+                                                 NullityAbstractDomain::
+                                                     bottom()),
+                           UninitializedAbstractDomain::bottom(),
+                           LifetimeAbstractDomain::bottom());
+  return AbstractDomain(/*normal = */ bottom,
+                        /*caught_exceptions = */ bottom,
+                        /*propagated_exceptions = */ bottom);
+}
+
+/// \brief Create the initial abstract value
+AbstractDomain make_initial_abstract_value() {
+  auto top =
+      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
+                                                     top(),
+                                                 NullityAbstractDomain::top()),
+                           UninitializedAbstractDomain::top(),
+                           LifetimeAbstractDomain::top());
+  auto bottom =
+      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
+                                                     bottom(),
+                                                 NullityAbstractDomain::
+                                                     bottom()),
+                           UninitializedAbstractDomain::bottom(),
+                           LifetimeAbstractDomain::bottom());
+  return AbstractDomain(/*normal = */ top,
+                        /*caught_exceptions = */ bottom,
+                        /*propagated_exceptions = */ bottom);
+}
 
 /// \brief Numerical invariants on an ar::Code
 class NumericalCodeInvariants final
@@ -131,7 +175,7 @@ public:
   NumericalCodeInvariants(Context& ctx,
                           const FunctionPointerAnalysis& function_pointer,
                           ar::Code* code)
-      : FwdFixpointIterator(code),
+      : FwdFixpointIterator(code, make_bottom_abstract_value()),
         _ctx(ctx),
         _empty_call_context(ctx.call_context_factory->get_empty()),
         _fixpoint_parameters(
@@ -141,7 +185,7 @@ public:
         _function_pointer(function_pointer) {}
 
   /// \brief Compute an intra-procedural fixpoint on the given code
-  void run() { FwdFixpointIterator::run(AbstractDomainT::top_no_exceptions()); }
+  void run() { FwdFixpointIterator::run(make_initial_abstract_value()); }
 
   /// \brief Extrapolate the new state after an increasing iteration
   AbstractDomainT extrapolate(ar::BasicBlock* head,

@@ -75,34 +75,8 @@ private:
   /// through the control flow graph
   UnderlyingDomain _propagated_exceptions;
 
-private:
-  struct TopTag {};
-  struct TopNoExceptionsTag {};
-  struct BottomTag {};
-
-  /// \brief Create the top abstract value
-  explicit ExceptionDomain(TopTag)
-      : _normal(UnderlyingDomain::top()),
-        _caught_exceptions(UnderlyingDomain::top()),
-        _propagated_exceptions(UnderlyingDomain::top()) {}
-
-  /// \brief Create the top abstract value with no pending exceptions
-  explicit ExceptionDomain(TopNoExceptionsTag)
-      : _normal(UnderlyingDomain::top()),
-        _caught_exceptions(UnderlyingDomain::bottom()),
-        _propagated_exceptions(UnderlyingDomain::bottom()) {}
-
-  /// \brief Create the bottom abstract value
-  explicit ExceptionDomain(BottomTag)
-      : _normal(UnderlyingDomain::bottom()),
-        _caught_exceptions(UnderlyingDomain::bottom()),
-        _propagated_exceptions(UnderlyingDomain::bottom()) {}
-
 public:
-  /// \brief Create the top abstract value
-  ExceptionDomain() : ExceptionDomain(TopTag{}) {}
-
-  /// \brief Create an abstract value with the given underlying domains
+  /// \brief Create an abstract value with the given underlying abstract values
   ///
   /// \param normal Represents the normal execution flow state
   /// \param caught_exceptions Represents the state of uncaught exceptions
@@ -133,17 +107,6 @@ public:
 
   /// \brief Destructor
   ~ExceptionDomain() override = default;
-
-  /// \brief Create the top abstract value
-  static ExceptionDomain top() { return ExceptionDomain(TopTag{}); }
-
-  /// \brief Create the top abstract value with no pending exceptions
-  static ExceptionDomain top_no_exceptions() {
-    return ExceptionDomain(TopNoExceptionsTag{});
-  }
-
-  /// \brief Create the bottom abstract value
-  static ExceptionDomain bottom() { return ExceptionDomain(BottomTag{}); }
 
   bool is_bottom() const override {
     return this->_normal.is_bottom() && this->_caught_exceptions.is_bottom() &&

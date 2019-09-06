@@ -80,8 +80,18 @@ private:
   explicit LivenessDomain(DiscreteDomain inv) : _inv(std::move(inv)) {}
 
 public:
+  /// \brief Create the top liveness domain
+  static LivenessDomain top() { return LivenessDomain(DiscreteDomain::top()); }
+
+  /// \brief Create the bottom liveness domain
+  static LivenessDomain bottom() {
+    return LivenessDomain(DiscreteDomain::bottom());
+  }
+
   /// \brief Create the empty liveness domain
-  LivenessDomain() : _inv(DiscreteDomain::bottom()) {}
+  static LivenessDomain empty() {
+    return LivenessDomain(DiscreteDomain::bottom());
+  }
 
   /// \brief Create the liveness domain with the given elements
   LivenessDomain(std::initializer_list< VariableRef > elements)
@@ -101,14 +111,6 @@ public:
 
   /// \brief Destructor
   ~LivenessDomain() override = default;
-
-  /// \brief Create the top liveness domain
-  static LivenessDomain top() { return LivenessDomain(DiscreteDomain::top()); }
-
-  /// \brief Create the bottom liveness domain
-  static LivenessDomain bottom() {
-    return LivenessDomain(DiscreteDomain::bottom());
-  }
 
   /// \brief Return the number of elements in the liveness domain
   std::size_t size() const { return this->_inv.size(); }
@@ -249,7 +251,7 @@ private:
 
 public:
   LivenessFixpointIterator(ar::Code* code, VariableFactory& vfac)
-      : FwdFixpointIterator(code), _vfac(vfac) {
+      : FwdFixpointIterator(code, LivenessDomainT::bottom()), _vfac(vfac) {
     this->init();
   }
 
@@ -332,9 +334,9 @@ private:
 
   /// \brief Compute kill/gen sets for the given basic block
   void init(ar::BasicBlock* bb) {
-    LivenessDomainT kill;
-    LivenessDomainT gen;
-    LivenessDomainT all;
+    auto kill = LivenessDomainT::empty();
+    auto gen = LivenessDomainT::empty();
+    auto all = LivenessDomainT::empty();
 
     for (auto it = bb->rbegin(), et = bb->rend(); it != et; ++it) {
       ar::Statement* stmt = *it;
