@@ -80,11 +80,6 @@ The following illustrates the directory structure of this folder:
 │           ├── example
 │           │   └── machine_int
 │           ├── fixpoint
-│           ├── legacy
-│           │   ├── adt
-│           │   ├── common
-│           │   ├── domain
-│           │   └── example
 │           ├── number
 │           ├── semantic
 │           │   ├── machine_int
@@ -134,8 +129,6 @@ Contains Doxygen files.
 * [include/ikos/core/example](include/ikos/core/example) contains usage examples, e.g., muZQ: is a micro language for semantic modeling over integer and rational numbers.
 
 * [include/ikos/core/fixpoint](include/ikos/core/fixpoint) contains implementation of fixpoint iterators.
-
-* [include/ikos/core/legacy](include/ikos/core/legacy) contains unmaintained code that will be removed in the future.
 
 * [include/ikos/core/number](include/ikos/core/number) contains implementation of numbers, e.g, integers, rationals and machine integers.
 

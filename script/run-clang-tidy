@@ -61,7 +61,6 @@ IGNORE_DIRECTORIES = (
     '.git',
     'build',
     'analyzer/test/regression',
-    'core/include/ikos/core/legacy',
     'frontend/llvm/test/regression/import',
 )
 
