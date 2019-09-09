@@ -227,28 +227,28 @@ public:
   /// @{
 
   /// \brief Mark the variable `x` as a non-negative loop counter
-  virtual void mark_counter(VariableRef /*x*/) {}
+  virtual void counter_mark(VariableRef /*x*/) {}
 
   /// \brief Mark the variable `x` as a normal variable, without losing
   /// information
-  virtual void unmark_counter(VariableRef /*x*/) {}
+  virtual void counter_unmark(VariableRef /*x*/) {}
 
   /// \brief Initialize a non-negative loop counter: `x = c`
   ///
   /// Precondition: `c >= 0`
-  virtual void init_counter(VariableRef x, const Number& c) {
+  virtual void counter_init(VariableRef x, const Number& c) {
     this->assign(x, c);
   }
 
   /// \brief Increment a non-negative loop counter counter: `x += k`
   ///
   /// Precondition: `k >= 0`
-  virtual void incr_counter(VariableRef x, const Number& k) {
+  virtual void counter_incr(VariableRef x, const Number& k) {
     this->apply(BinaryOperator::Add, x, x, k);
   }
 
   /// \brief Forget a non-negative loop counter
-  virtual void forget_counter(VariableRef x) { this->forget(x); }
+  virtual void counter_forget(VariableRef x) { this->forget(x); }
 
   /// @}
 

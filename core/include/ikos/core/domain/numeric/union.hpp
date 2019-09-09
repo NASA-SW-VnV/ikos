@@ -679,37 +679,37 @@ public:
   /// \name Non-negative loop counter abstract domain methods
   /// @{
 
-  void mark_counter(VariableRef x) override {
+  void counter_mark(VariableRef x) override {
     this->_tree = transform(this->_tree, [&](NumericDomain inv) {
-      inv.mark_counter(x);
+      inv.counter_mark(x);
       return inv;
     });
   }
 
-  void unmark_counter(VariableRef x) override {
+  void counter_unmark(VariableRef x) override {
     this->_tree = transform(this->_tree, [&](NumericDomain inv) {
-      inv.unmark_counter(x);
+      inv.counter_unmark(x);
       return inv;
     });
   }
 
-  void init_counter(VariableRef x, const Number& c) override {
+  void counter_init(VariableRef x, const Number& c) override {
     this->_tree = transform(this->_tree, [&](NumericDomain inv) {
-      inv.init_counter(x, c);
+      inv.counter_init(x, c);
       return inv;
     });
   }
 
-  void incr_counter(VariableRef x, const Number& k) override {
+  void counter_incr(VariableRef x, const Number& k) override {
     this->_tree = transform(this->_tree, [&](NumericDomain inv) {
-      inv.incr_counter(x, k);
+      inv.counter_incr(x, k);
       return inv;
     });
   }
 
-  void forget_counter(VariableRef x) override {
+  void counter_forget(VariableRef x) override {
     this->_tree = transform(this->_tree, [&](NumericDomain inv) {
-      inv.forget_counter(x);
+      inv.counter_forget(x);
       return inv;
     });
   }

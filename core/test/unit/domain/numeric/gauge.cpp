@@ -425,129 +425,129 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_forget) {
   test_gauge_semilattice_forget(l5, y, l1);
 }
 
-static void test_gauge_semilattice_incr_counter(GaugeSemiLattice x,
+static void test_gauge_semilattice_counter_incr(GaugeSemiLattice x,
                                                 const Variable& v,
                                                 int k,
                                                 const GaugeSemiLattice& y) {
-  x.incr_counter(v, ZNumber(k));
+  x.counter_incr(v, ZNumber(k));
   BOOST_CHECK((x == y));
 }
 
-BOOST_AUTO_TEST_CASE(gauge_semilattice_incr_counter) {
+BOOST_AUTO_TEST_CASE(gauge_semilattice_counter_incr) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  test_gauge_semilattice_incr_counter(GaugeSemiLattice::top(),
+  test_gauge_semilattice_counter_incr(GaugeSemiLattice::top(),
                                       i,
                                       1,
                                       GaugeSemiLattice::top());
-  test_gauge_semilattice_incr_counter(GaugeSemiLattice::bottom(),
+  test_gauge_semilattice_counter_incr(GaugeSemiLattice::bottom(),
                                       i,
                                       1,
                                       GaugeSemiLattice::bottom());
 
-  // l1.incr_counter(i, 1)
-  test_gauge_semilattice_incr_counter(l1, i, 1, l1);
+  // l1.counter_incr(i, 1)
+  test_gauge_semilattice_counter_incr(l1, i, 1, l1);
 
-  // l2.incr_counter(i, 1)
+  // l2.counter_incr(i, 1)
   GaugeSemiLattice l2_prime = l1;
   l2_prime.set(x, Gauge(GaugeBound(0), GaugeBound(1)));
   l2_prime.set(y,
                Gauge(GaugeBound(-2) + GaugeBound(i),
                      GaugeBound(-1) + GaugeBound(2, i)));
-  test_gauge_semilattice_incr_counter(l2, i, 1, l2_prime);
+  test_gauge_semilattice_counter_incr(l2, i, 1, l2_prime);
 
-  // l3.incr_counter(i, 1)
-  test_gauge_semilattice_incr_counter(l3, i, 1, l3);
+  // l3.counter_incr(i, 1)
+  test_gauge_semilattice_counter_incr(l3, i, 1, l3);
 
-  // l4.incr_counter(i, 1)
+  // l4.counter_incr(i, 1)
   auto l4_prime = GaugeSemiLattice::top();
   l4_prime.set(x, Gauge(GaugeBound(0), GaugeBound::plus_infinity()));
   l4_prime.set(y,
                Gauge(GaugeBound(-3) + GaugeBound(i),
                      GaugeBound(-3) + GaugeBound(3, i)));
-  test_gauge_semilattice_incr_counter(l4, i, 1, l4_prime);
+  test_gauge_semilattice_counter_incr(l4, i, 1, l4_prime);
 
-  // l5.incr_counter(i, 1)
-  test_gauge_semilattice_incr_counter(l5, i, 1, l5);
+  // l5.counter_incr(i, 1)
+  test_gauge_semilattice_counter_incr(l5, i, 1, l5);
 
-  // l5.incr_counter(k, 2)
+  // l5.counter_incr(k, 2)
   auto l5_prime = GaugeSemiLattice::top();
   l5_prime.set(x, Gauge(GaugeBound(0), GaugeBound(1)));
   l5_prime.set(y,
                Gauge(GaugeBound(-4) + GaugeBound(2, k),
                      GaugeBound(-4) + GaugeBound(2, k)));
-  test_gauge_semilattice_incr_counter(l5, k, 2, l5_prime);
+  test_gauge_semilattice_counter_incr(l5, k, 2, l5_prime);
 
-  // l6.incr_counter(i, 1)
+  // l6.counter_incr(i, 1)
   auto l6_prime = GaugeSemiLattice::top();
   l6_prime.set(x, Gauge(GaugeBound(0), GaugeBound(1)));
   l6_prime.set(y, Gauge(GaugeBound(-2), GaugeBound(2, i) + GaugeBound(2, k)));
-  test_gauge_semilattice_incr_counter(l6, i, 1, l6_prime);
+  test_gauge_semilattice_counter_incr(l6, i, 1, l6_prime);
 
-  // l7.incr_counter(i, 1)
+  // l7.counter_incr(i, 1)
   auto l7_prime = GaugeSemiLattice::top();
   l7_prime.set(x, Gauge(GaugeBound(0), GaugeBound::plus_infinity()));
   l7_prime.set(y,
                Gauge(GaugeBound(-3),
                      GaugeBound(-2) + GaugeBound(3, i) + GaugeBound(2, k)));
-  test_gauge_semilattice_incr_counter(l7, i, 1, l7_prime);
+  test_gauge_semilattice_counter_incr(l7, i, 1, l7_prime);
 }
 
-static void test_gauge_semilattice_forget_counter(GaugeSemiLattice x,
+static void test_gauge_semilattice_counter_forget(GaugeSemiLattice x,
                                                   const Variable& v,
                                                   const GaugeSemiLattice& y) {
-  x.forget_counter(v);
+  x.counter_forget(v);
   BOOST_CHECK((x == y));
 }
 
-static void test_gauge_semilattice_forget_counter(GaugeSemiLattice x,
+static void test_gauge_semilattice_counter_forget(GaugeSemiLattice x,
                                                   const Variable& v,
                                                   const ZInterval& intv,
                                                   const GaugeSemiLattice& y) {
-  x.forget_counter(v, intv);
+  x.counter_forget(v, intv);
   BOOST_CHECK((x == y));
 }
 
-BOOST_AUTO_TEST_CASE(gauge_semilattice_forget_counter) {
+BOOST_AUTO_TEST_CASE(gauge_semilattice_counter_forget) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  test_gauge_semilattice_forget_counter(GaugeSemiLattice::top(),
+  test_gauge_semilattice_counter_forget(GaugeSemiLattice::top(),
                                         x,
                                         GaugeSemiLattice::top());
-  test_gauge_semilattice_forget_counter(GaugeSemiLattice::bottom(),
+  test_gauge_semilattice_counter_forget(GaugeSemiLattice::bottom(),
                                         x,
                                         GaugeSemiLattice::bottom());
-  test_gauge_semilattice_forget_counter(l1, i, l1);
-  test_gauge_semilattice_forget_counter(l2, i, l10);
-  test_gauge_semilattice_forget_counter(l2,
+  test_gauge_semilattice_counter_forget(l1, i, l1);
+  test_gauge_semilattice_counter_forget(l2, i, l10);
+  test_gauge_semilattice_counter_forget(l2,
                                         i,
                                         ZInterval(ZBound(1), ZBound(3)),
                                         l12);
-  test_gauge_semilattice_forget_counter(l3, i, l3);
-  test_gauge_semilattice_forget_counter(l4, i, l11);
-  test_gauge_semilattice_forget_counter(l5, i, l5);
-  test_gauge_semilattice_forget_counter(l5, k, l10);
-  test_gauge_semilattice_forget_counter(l6, i, l10);
-  test_gauge_semilattice_forget_counter(l6,
+  test_gauge_semilattice_counter_forget(l3, i, l3);
+  test_gauge_semilattice_counter_forget(l4, i, l11);
+  test_gauge_semilattice_counter_forget(l5, i, l5);
+  test_gauge_semilattice_counter_forget(l5, k, l10);
+  test_gauge_semilattice_counter_forget(l6, i, l10);
+  test_gauge_semilattice_counter_forget(l6,
                                         i,
                                         ZInterval(ZBound(1), ZBound(3)),
                                         l13);
-  test_gauge_semilattice_forget_counter(l6,
+  test_gauge_semilattice_counter_forget(l6,
                                         i,
                                         ZInterval(ZBound(1),
                                                   ZBound::plus_infinity()),
                                         l10);
-  test_gauge_semilattice_forget_counter(l6, k, l10);
-  test_gauge_semilattice_forget_counter(l7, i, l11);
-  test_gauge_semilattice_forget_counter(l7, k, l11);
+  test_gauge_semilattice_counter_forget(l6, k, l10);
+  test_gauge_semilattice_counter_forget(l7, i, l11);
+  test_gauge_semilattice_counter_forget(l7, k, l11);
 }
 
 #define test_gauge_semilattice_get(x, v, y) BOOST_CHECK((x).get(v) == (y))
@@ -591,11 +591,11 @@ BOOST_AUTO_TEST_CASE(gauge_domain_constructors) {
 
   auto d = GaugeDomain::top();
   d.set_to_top();
-  d.init_counter(i, ZNumber(0));
+  d.counter_init(i, ZNumber(0));
   test_gauge_domain(d, false, false);
 
   d.set_to_top();
-  d.init_counter(i, ZNumber(0));
+  d.counter_init(i, ZNumber(0));
   d.assign(x, 1);
   test_gauge_domain(d, false, false);
 }
@@ -618,7 +618,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_assign) {
   test_gauge_domain_to_interval(GaugeDomain::top(), x, ZInterval::top());
 
   auto d = GaugeDomain::top();
-  d.init_counter(i, ZNumber(0));
+  d.counter_init(i, ZNumber(0));
   test_gauge_domain_get(d, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d, i, ZInterval(ZBound(0), ZBound(0)));
   test_gauge_domain_get(d, x, Gauge::top());
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_assign) {
   test_gauge_domain_get(d, y, Gauge(GaugeBound(1) + GaugeBound(2, i)));
   test_gauge_domain_to_interval(d, y, ZInterval(ZBound(1), ZBound(1)));
 
-  d.incr_counter(i, ZNumber(1));
+  d.counter_incr(i, ZNumber(1));
   test_gauge_domain_get(d, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d, i, ZInterval(ZBound(1), ZBound(1)));
   test_gauge_domain_get(d, x, Gauge(GaugeBound(1), GaugeBound(1)));
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_assign) {
   test_gauge_domain_get(d, y, Gauge(GaugeBound(-1) + GaugeBound(2, i)));
   test_gauge_domain_to_interval(d, y, ZInterval(ZBound(1), ZBound(1)));
 
-  d.init_counter(k, ZNumber(0));
+  d.counter_init(k, ZNumber(0));
   test_gauge_domain_get(d, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d, i, ZInterval(ZBound(1), ZBound(1)));
   test_gauge_domain_get(d, k, Gauge(GaugeBound(k)));
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_assign) {
                               GaugeBound(3, k)));
   test_gauge_domain_to_interval(d, z, ZInterval(ZBound(2), ZBound(2)));
 
-  d.incr_counter(k, ZNumber(1));
+  d.counter_incr(k, ZNumber(1));
   test_gauge_domain_get(d, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d, i, ZInterval(ZBound(1), ZBound(1)));
   test_gauge_domain_get(d, k, Gauge(GaugeBound(k)));
@@ -695,7 +695,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
   test_gauge_domain_get(d1, i, Gauge(GaugeBound(i)));
@@ -706,7 +706,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening) {
   test_gauge_domain_to_interval(d1, y, ZInterval(1));
 
   GaugeDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
   test_gauge_domain_get(d2, i, Gauge(GaugeBound(i)));
@@ -759,12 +759,12 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening_narrowing_threshold) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
 
   GaugeDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
 
@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_add) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
   d1.add(VariableExpression(i) <= 10);
@@ -805,7 +805,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_add) {
   test_gauge_domain_get(d1, y, Gauge(1));
 
   GaugeDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
   d2.add(VariableExpression(i) <= 10);
@@ -854,13 +854,13 @@ BOOST_AUTO_TEST_CASE(gauge_domain_forget) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
   d1.add(VariableExpression(i) <= 10);
 
   GaugeDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
   d2.add(VariableExpression(i) <= 10);
@@ -936,7 +936,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_var) {
   d1.assign(zero, 0);
   d1.assign(one, 1);
   d1.assign(two, 2);
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 3);
   d1.assign(y, 2);
   d1.assign(z, 2);
@@ -969,7 +969,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_var) {
   test_gauge_domain_get(d2, k, Gauge(GaugeBound(1) + GaugeBound(i)));
   test_gauge_domain_to_interval(d2, k, ZInterval(1));
 
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   test_gauge_domain_get(d2, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d2, i, ZInterval(1));
   test_gauge_domain_get(d2, k, Gauge(GaugeBound(i)));
@@ -1029,7 +1029,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_var) {
                                 w,
                                 ZInterval(ZBound::minus_infinity(), ZBound(8)));
 
-  d4.incr_counter(i, ZNumber(1));
+  d4.counter_incr(i, ZNumber(1));
   test_gauge_domain_get(d4, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d4,
                                 i,
@@ -1100,7 +1100,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_num) {
   Variable two(vfac.get("two"));
 
   auto d1 = GaugeDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 3);
   d1.assign(y, 2);
   d1.assign(z, 2);
@@ -1133,7 +1133,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_num) {
   test_gauge_domain_get(d2, k, Gauge(GaugeBound(1) + GaugeBound(i)));
   test_gauge_domain_to_interval(d2, k, ZInterval(1));
 
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   test_gauge_domain_get(d2, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d2, i, ZInterval(1));
   test_gauge_domain_get(d2, k, Gauge(GaugeBound(i)));
@@ -1193,7 +1193,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_num) {
                                 w,
                                 ZInterval(ZBound::minus_infinity(), ZBound(8)));
 
-  d4.incr_counter(i, ZNumber(1));
+  d4.counter_incr(i, ZNumber(1));
   test_gauge_domain_get(d4, i, Gauge(GaugeBound(i)));
   test_gauge_domain_to_interval(d4,
                                 i,

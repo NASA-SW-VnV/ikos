@@ -315,13 +315,13 @@ public:
   }
 
   /// \brief Increment counter `v` by `k`
-  void incr_counter(VariableRef v, const Number& k) {
+  void counter_incr(VariableRef v, const Number& k) {
     if (this->is_bottom()) {
       return;
     }
 
     this->_tree.transform([v, k](VariableRef, const GaugeT& x) {
-      GaugeT y = x.incr_counter(v, k);
+      GaugeT y = x.counter_incr(v, k);
       if (y.is_top()) {
         return boost::optional< GaugeT >(boost::none);
       } else {
@@ -333,7 +333,7 @@ public:
   /// \brief Forget counter `v`
   ///
   /// \param value Interval for `v`
-  void forget_counter(VariableRef v, IntervalT value = IntervalT::top()) {
+  void counter_forget(VariableRef v, IntervalT value = IntervalT::top()) {
     if (this->is_bottom()) {
       return;
     }
@@ -580,10 +580,10 @@ private:
   /// \brief Make sure `l` and `r` have the same set of counters
   static void uniformize_counters(GaugeDomain& l, GaugeDomain& r) {
     for (VariableRef v : l._counters.difference(r._counters)) {
-      l.unmark_counter(v);
+      l.counter_unmark(v);
     }
     for (VariableRef v : r._counters.difference(l._counters)) {
-      r.unmark_counter(v);
+      r.counter_unmark(v);
     }
     ikos_assert(l._counters == r._counters);
   }
@@ -1075,7 +1075,7 @@ public:
     if (this->is_bottom()) {
       return;
     } else if (this->is_counter(x)) {
-      this->forget_counter(x);
+      this->counter_forget(x);
     } else {
       this->_gauges.forget(x);
     }
@@ -1198,7 +1198,7 @@ public:
   /// @{
 
   /// \brief Mark the variable `x` as a non-negative loop counter
-  void mark_counter(VariableRef x) override {
+  void counter_mark(VariableRef x) override {
     if (this->is_bottom()) {
       return;
     }
@@ -1225,7 +1225,7 @@ public:
 
   /// \brief Mark the variable `x` as a normal variable, without losing
   /// information
-  void unmark_counter(VariableRef x) override {
+  void counter_unmark(VariableRef x) override {
     if (this->is_bottom()) {
       return;
     }
@@ -1237,7 +1237,7 @@ public:
     IntervalT itv = this->_intervals.to_interval(x);
 
     this->_sections.forget(x);
-    this->_gauges.forget_counter(x, itv);
+    this->_gauges.counter_forget(x, itv);
     this->_gauges.set(x, GaugeT(itv));
     this->_counters.erase(x);
     this->_intervals.forget(x);
@@ -1246,7 +1246,7 @@ public:
   /// \brief Initialize a non-negative loop counter: `x = c`
   ///
   /// Precondition: `c >= 0`
-  void init_counter(VariableRef x, const Number& c) override {
+  void counter_init(VariableRef x, const Number& c) override {
     ikos_assert(c >= 0);
 
     if (this->is_bottom()) {
@@ -1254,7 +1254,7 @@ public:
     }
 
     if (this->_counters.contains(x)) {
-      this->_gauges.forget_counter(x, this->_intervals.to_interval(x));
+      this->_gauges.counter_forget(x, this->_intervals.to_interval(x));
     } else {
       this->_gauges.forget(x);
     }
@@ -1267,7 +1267,7 @@ public:
   /// \brief Increment a non-negative loop counter counter: `x += k`
   ///
   /// Precondition: `k >= 0`
-  void incr_counter(VariableRef x, const Number& k) override {
+  void counter_incr(VariableRef x, const Number& k) override {
     ikos_assert(k >= 0);
 
     if (this->is_bottom()) {
@@ -1275,12 +1275,12 @@ public:
     }
 
     this->_sections.apply(BinaryOperator::Add, x, x, k);
-    this->_gauges.incr_counter(x, k);
+    this->_gauges.counter_incr(x, k);
     this->_intervals.apply(BinaryOperator::Add, x, x, k);
   }
 
   /// \brief Forget a non-negative loop counter
-  void forget_counter(VariableRef x) override {
+  void counter_forget(VariableRef x) override {
     if (this->is_bottom()) {
       return;
     }
@@ -1288,7 +1288,7 @@ public:
     IntervalT itv = this->_intervals.to_interval(x);
 
     this->_sections.forget(x);
-    this->_gauges.forget_counter(x, itv);
+    this->_gauges.counter_forget(x, itv);
     this->_counters.erase(x);
     this->_intervals.forget(x);
   }

@@ -1296,7 +1296,7 @@ public:
   ///
   /// Note that there is a typo in the paper, it should be:
   /// [min(a_0 - k*a_j, b_0 - k*b_j) + ..; max(a_0 - k*a_j, b_0 - k*_bj) + ...]
-  Gauge incr_counter(VariableRef v, const Number& k) const {
+  Gauge counter_incr(VariableRef v, const Number& k) const {
     if (this->is_bottom()) {
       return bottom();
     } else if (this->_lb.is_finite() && this->_ub.is_finite()) {

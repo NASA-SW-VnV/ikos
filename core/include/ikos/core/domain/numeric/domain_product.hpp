@@ -352,29 +352,29 @@ public:
   /// \name Non-negative loop counter abstract domain methods
   /// @{
 
-  void mark_counter(VariableRef x) override {
-    this->_product.first().mark_counter(x);
-    this->_product.second().mark_counter(x);
+  void counter_mark(VariableRef x) override {
+    this->_product.first().counter_mark(x);
+    this->_product.second().counter_mark(x);
   }
 
-  void unmark_counter(VariableRef x) override {
-    this->_product.first().unmark_counter(x);
-    this->_product.second().unmark_counter(x);
+  void counter_unmark(VariableRef x) override {
+    this->_product.first().counter_unmark(x);
+    this->_product.second().counter_unmark(x);
   }
 
-  void init_counter(VariableRef x, const Number& c) override {
-    this->_product.first().init_counter(x, c);
-    this->_product.second().init_counter(x, c);
+  void counter_init(VariableRef x, const Number& c) override {
+    this->_product.first().counter_init(x, c);
+    this->_product.second().counter_init(x, c);
   }
 
-  void incr_counter(VariableRef x, const Number& k) override {
-    this->_product.first().incr_counter(x, k);
-    this->_product.second().incr_counter(x, k);
+  void counter_incr(VariableRef x, const Number& k) override {
+    this->_product.first().counter_incr(x, k);
+    this->_product.second().counter_incr(x, k);
   }
 
-  void forget_counter(VariableRef x) override {
-    this->_product.first().forget_counter(x);
-    this->_product.second().forget_counter(x);
+  void counter_forget(VariableRef x) override {
+    this->_product.first().counter_forget(x);
+    this->_product.second().counter_forget(x);
   }
 
   /// @}
@@ -654,22 +654,22 @@ public:
   /// \name Non-negative loop counter abstract domain methods
   /// @{
 
-  void mark_counter(VariableRef x) override { this->_product.mark_counter(x); }
+  void counter_mark(VariableRef x) override { this->_product.counter_mark(x); }
 
-  void unmark_counter(VariableRef x) override {
-    this->_product.unmark_counter(x);
+  void counter_unmark(VariableRef x) override {
+    this->_product.counter_unmark(x);
   }
 
-  void init_counter(VariableRef x, const Number& c) override {
-    this->_product.init_counter(x, c);
+  void counter_init(VariableRef x, const Number& c) override {
+    this->_product.counter_init(x, c);
   }
 
-  void incr_counter(VariableRef x, const Number& k) override {
-    this->_product.incr_counter(x, k);
+  void counter_incr(VariableRef x, const Number& k) override {
+    this->_product.counter_incr(x, k);
   }
 
-  void forget_counter(VariableRef x) override {
-    this->_product.forget_counter(x);
+  void counter_forget(VariableRef x) override {
+    this->_product.counter_forget(x);
   }
 
   /// @}

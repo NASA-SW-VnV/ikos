@@ -753,19 +753,19 @@ public:
   /// \name Non-negative loop counter abstract domain methods
   /// @{
 
-  void mark_counter(VariableRef x) override { this->_inv.mark_counter(x); }
+  void counter_mark(VariableRef x) override { this->_inv.counter_mark(x); }
 
-  void unmark_counter(VariableRef x) override { this->_inv.unmark_counter(x); }
+  void counter_unmark(VariableRef x) override { this->_inv.counter_unmark(x); }
 
-  void init_counter(VariableRef x, const MachineInt& c) override {
-    this->_inv.init_counter(x, c.to_z_number());
+  void counter_init(VariableRef x, const MachineInt& c) override {
+    this->_inv.counter_init(x, c.to_z_number());
   }
 
-  void incr_counter(VariableRef x, const MachineInt& k) override {
-    this->_inv.incr_counter(x, k.to_z_number());
+  void counter_incr(VariableRef x, const MachineInt& k) override {
+    this->_inv.counter_incr(x, k.to_z_number());
   }
 
-  void forget_counter(VariableRef x) override { this->_inv.forget_counter(x); }
+  void counter_forget(VariableRef x) override { this->_inv.counter_forget(x); }
 
   /// @}
 

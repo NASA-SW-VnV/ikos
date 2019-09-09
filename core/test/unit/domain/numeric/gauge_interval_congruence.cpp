@@ -83,11 +83,11 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_constructors) {
 
   auto d = GaugeIntervalCongruenceDomain::top();
   d.set_to_top();
-  d.init_counter(i, ZNumber(0));
+  d.counter_init(i, ZNumber(0));
   test_domain(d, false, false);
 
   d.set_to_top();
-  d.init_counter(i, ZNumber(0));
+  d.counter_init(i, ZNumber(0));
   d.assign(x, 1);
   test_domain(d, false, false);
 }
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_assign) {
                           ZInterval::top());
 
   auto d = GaugeIntervalCongruenceDomain::top();
-  d.init_counter(i, ZNumber(0));
+  d.counter_init(i, ZNumber(0));
   test_domain_get(d, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d, i, ZInterval(ZBound(0), ZBound(0)));
   test_domain_get(d, x, Gauge::top());
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_assign) {
   test_domain_get(d, y, Gauge(GaugeBound(1) + GaugeBound(2, i)));
   test_domain_to_interval(d, y, ZInterval(ZBound(1), ZBound(1)));
 
-  d.incr_counter(i, ZNumber(1));
+  d.counter_incr(i, ZNumber(1));
   test_domain_get(d, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d, i, ZInterval(ZBound(1), ZBound(1)));
   test_domain_get(d, x, Gauge(GaugeBound(1), GaugeBound(1)));
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_assign) {
   test_domain_get(d, y, Gauge(GaugeBound(-1) + GaugeBound(2, i)));
   test_domain_to_interval(d, y, ZInterval(ZBound(1), ZBound(1)));
 
-  d.init_counter(k, ZNumber(0));
+  d.counter_init(k, ZNumber(0));
   test_domain_get(d, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d, i, ZInterval(ZBound(1), ZBound(1)));
   test_domain_get(d, k, Gauge(GaugeBound(k)));
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_assign) {
                   Gauge(GaugeBound(-2) + GaugeBound(4, i) + GaugeBound(3, k)));
   test_domain_to_interval(d, z, ZInterval(ZBound(2), ZBound(2)));
 
-  d.incr_counter(k, ZNumber(1));
+  d.counter_incr(k, ZNumber(1));
   test_domain_get(d, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d, i, ZInterval(ZBound(1), ZBound(1)));
   test_domain_get(d, k, Gauge(GaugeBound(k)));
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_widening) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
   test_domain_get(d1, i, Gauge(GaugeBound(i)));
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_widening) {
   test_domain_to_interval(d1, y, ZInterval(1));
 
   GaugeIntervalCongruenceDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
   test_domain_get(d2, i, Gauge(GaugeBound(i)));
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_add) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
   d1.add(VariableExpression(i) <= 10);
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_add) {
   test_domain_get(d1, y, Gauge(1));
 
   GaugeIntervalCongruenceDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
   d2.add(VariableExpression(i) <= 10);
@@ -303,13 +303,13 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_forget) {
   Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 0);
   d1.assign(y, 1);
   d1.add(VariableExpression(i) <= 10);
 
   GaugeIntervalCongruenceDomain d2 = d1;
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   d2.assign(x, VariableExpression(x) + 2);
   d2.assign(y, VariableExpression(y) + 3);
   d2.add(VariableExpression(i) <= 10);
@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_var) {
   d1.assign(zero, 0);
   d1.assign(one, 1);
   d1.assign(two, 2);
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 3);
   d1.assign(y, 2);
   d1.assign(z, 2);
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_var) {
   test_domain_get(d2, k, Gauge(GaugeBound(1) + GaugeBound(i)));
   test_domain_to_interval(d2, k, ZInterval(1));
 
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   test_domain_get(d2, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d2, i, ZInterval(1));
   test_domain_get(d2, k, Gauge(GaugeBound(i)));
@@ -461,7 +461,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_var) {
                           w,
                           ZInterval(ZBound::minus_infinity(), ZBound(8)));
 
-  d4.incr_counter(i, ZNumber(1));
+  d4.counter_incr(i, ZNumber(1));
   test_domain_get(d4, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d4, i, ZInterval(ZBound(1), ZBound::plus_infinity()));
   test_domain_get(d4, k, Gauge(GaugeBound(i)));
@@ -513,7 +513,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_num) {
   Variable two(vfac.get("two"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
-  d1.init_counter(i, ZNumber(0));
+  d1.counter_init(i, ZNumber(0));
   d1.assign(x, 3);
   d1.assign(y, 2);
   d1.assign(z, 2);
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_num) {
   test_domain_get(d2, k, Gauge(GaugeBound(1) + GaugeBound(i)));
   test_domain_to_interval(d2, k, ZInterval(1));
 
-  d2.incr_counter(i, ZNumber(1));
+  d2.counter_incr(i, ZNumber(1));
   test_domain_get(d2, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d2, i, ZInterval(1));
   test_domain_get(d2, k, Gauge(GaugeBound(i)));
@@ -591,7 +591,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_num) {
                           w,
                           ZInterval(ZBound::minus_infinity(), ZBound(8)));
 
-  d4.incr_counter(i, ZNumber(1));
+  d4.counter_incr(i, ZNumber(1));
   test_domain_get(d4, i, Gauge(GaugeBound(i)));
   test_domain_to_interval(d4, i, ZInterval(ZBound(1), ZBound::plus_infinity()));
   test_domain_get(d4, k, Gauge(GaugeBound(i)));

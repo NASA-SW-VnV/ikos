@@ -2537,7 +2537,7 @@ private:
                     "left hand side is not an integer variable");
     ikos_assert_msg(init.is_machine_int(), "operand is not a machine integer");
 
-    this->_inv.normal().integers().init_counter(ret.var(), init.machine_int());
+    this->_inv.normal().integers().counter_init(ret.var(), init.machine_int());
     this->_inv.normal().uninitialized().assign_initialized(ret.var());
   }
 
@@ -2554,7 +2554,7 @@ private:
                     "left hand side is not an integer variable");
     ikos_assert_msg(incr.is_machine_int(), "operand is not a machine integer");
 
-    this->_inv.normal().integers().incr_counter(ret.var(), incr.machine_int());
+    this->_inv.normal().integers().counter_incr(ret.var(), incr.machine_int());
     this->_inv.normal().uninitialized().assign_initialized(ret.var());
   }
 

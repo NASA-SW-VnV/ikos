@@ -1523,10 +1523,10 @@ BOOST_AUTO_TEST_CASE(gauge_coalesce) {
                       Gauge::top());
 }
 
-#define test_gauge_incr_counter(x, v, k, y) \
-  BOOST_CHECK((x).incr_counter(v, ZNumber(k)) == (y))
+#define test_gauge_counter_incr(x, v, k, y) \
+  BOOST_CHECK((x).counter_incr(v, ZNumber(k)) == (y))
 
-BOOST_AUTO_TEST_CASE(gauge_incr_counter) {
+BOOST_AUTO_TEST_CASE(gauge_counter_incr) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
@@ -1534,48 +1534,48 @@ BOOST_AUTO_TEST_CASE(gauge_incr_counter) {
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
-  test_gauge_incr_counter(Gauge::top(), i, 1, Gauge::top());
-  test_gauge_incr_counter(Gauge::bottom(), i, 1, Gauge::bottom());
-  test_gauge_incr_counter(Gauge(GaugeBound(0), GaugeBound(1)),
+  test_gauge_counter_incr(Gauge::top(), i, 1, Gauge::top());
+  test_gauge_counter_incr(Gauge::bottom(), i, 1, Gauge::bottom());
+  test_gauge_counter_incr(Gauge(GaugeBound(0), GaugeBound(1)),
                           i,
                           1,
                           Gauge(GaugeBound(0), GaugeBound(1)));
-  test_gauge_incr_counter(Gauge(GaugeBound(0), GaugeBound::plus_infinity()),
+  test_gauge_counter_incr(Gauge(GaugeBound(0), GaugeBound::plus_infinity()),
                           i,
                           1,
                           Gauge(GaugeBound(0), GaugeBound::plus_infinity()));
-  test_gauge_incr_counter(Gauge(GaugeBound(1) + GaugeBound(2, i),
+  test_gauge_counter_incr(Gauge(GaugeBound(1) + GaugeBound(2, i),
                                 GaugeBound::plus_infinity()),
                           i,
                           1,
                           Gauge(GaugeBound(-1) + GaugeBound(2, i),
                                 GaugeBound::plus_infinity()));
-  test_gauge_incr_counter(Gauge(GaugeBound::minus_infinity(), GaugeBound(1)),
+  test_gauge_counter_incr(Gauge(GaugeBound::minus_infinity(), GaugeBound(1)),
                           i,
                           1,
                           Gauge(GaugeBound::minus_infinity(), GaugeBound(1)));
-  test_gauge_incr_counter(Gauge(GaugeBound::minus_infinity(),
+  test_gauge_counter_incr(Gauge(GaugeBound::minus_infinity(),
                                 GaugeBound(1) + GaugeBound(2, i)),
                           i,
                           1,
                           Gauge(GaugeBound::minus_infinity(),
                                 GaugeBound(-1) + GaugeBound(2, i)));
-  test_gauge_incr_counter(Gauge(GaugeBound(i)),
+  test_gauge_counter_incr(Gauge(GaugeBound(i)),
                           i,
                           1,
                           Gauge(GaugeBound(-1) + GaugeBound(i),
                                 GaugeBound(-1) + GaugeBound(i)));
-  test_gauge_incr_counter(Gauge(GaugeBound(0), GaugeBound(2, i)),
+  test_gauge_counter_incr(Gauge(GaugeBound(0), GaugeBound(2, i)),
                           i,
                           1,
                           Gauge(GaugeBound(-2), GaugeBound(2, i)));
-  test_gauge_incr_counter(Gauge(GaugeBound(1),
+  test_gauge_counter_incr(Gauge(GaugeBound(1),
                                 GaugeBound(2) + GaugeBound(3, i)),
                           i,
                           1,
                           Gauge(GaugeBound(-1),
                                 GaugeBound(1) + GaugeBound(3, i)));
-  test_gauge_incr_counter(Gauge(GaugeBound(-2) + GaugeBound(2, i) +
+  test_gauge_counter_incr(Gauge(GaugeBound(-2) + GaugeBound(2, i) +
                                     GaugeBound(2, k),
                                 GaugeBound(2) + GaugeBound(3, i) +
                                     GaugeBound(3, k)),
@@ -1585,7 +1585,7 @@ BOOST_AUTO_TEST_CASE(gauge_incr_counter) {
                                     GaugeBound(2, k),
                                 GaugeBound(-1) + GaugeBound(3, i) +
                                     GaugeBound(3, k)));
-  test_gauge_incr_counter(Gauge(GaugeBound(-2) + GaugeBound(2, i) +
+  test_gauge_counter_incr(Gauge(GaugeBound(-2) + GaugeBound(2, i) +
                                     GaugeBound(2, k),
                                 GaugeBound(2) + GaugeBound(3, i) +
                                     GaugeBound(3, k)),

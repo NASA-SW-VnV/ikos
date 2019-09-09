@@ -227,20 +227,20 @@ private:
         const LinearExpressionT& e) const = 0;
 
     /// \brief Mark the variable `x` as a non-negative loop counter
-    virtual void mark_counter(VariableRef x) = 0;
+    virtual void counter_mark(VariableRef x) = 0;
 
     /// \brief Mark the variable `x` as a normal variable, without losing
     /// information
-    virtual void unmark_counter(VariableRef x) = 0;
+    virtual void counter_unmark(VariableRef x) = 0;
 
     /// \brief Initialize a non-negative loop counter: `x = c`
-    virtual void init_counter(VariableRef x, const MachineInt& c) = 0;
+    virtual void counter_init(VariableRef x, const MachineInt& c) = 0;
 
     /// \brief Increment a non-negative loop counter counter: `x += k`
-    virtual void incr_counter(VariableRef x, const MachineInt& k) = 0;
+    virtual void counter_incr(VariableRef x, const MachineInt& k) = 0;
 
     /// \brief Forget a non-negative loop counter
-    virtual void forget_counter(VariableRef x) = 0;
+    virtual void counter_forget(VariableRef x) = 0;
 
     /// \brief Dump the abstract value, for debugging purpose
     virtual void dump(std::ostream&) const = 0;
@@ -499,27 +499,27 @@ private:
     }
 
     /// \brief Mark the variable `x` as a non-negative loop counter
-    void mark_counter(VariableRef x) override { this->_inv.mark_counter(x); }
+    void counter_mark(VariableRef x) override { this->_inv.counter_mark(x); }
 
     /// \brief Mark the variable `x` as a normal variable, without losing
     /// information
-    void unmark_counter(VariableRef x) override {
-      this->_inv.unmark_counter(x);
+    void counter_unmark(VariableRef x) override {
+      this->_inv.counter_unmark(x);
     }
 
     /// \brief Initialize a non-negative loop counter: `x = c`
-    void init_counter(VariableRef x, const MachineInt& c) override {
-      this->_inv.init_counter(x, c);
+    void counter_init(VariableRef x, const MachineInt& c) override {
+      this->_inv.counter_init(x, c);
     }
 
     /// \brief Increment a non-negative loop counter counter: `x += k`
-    void incr_counter(VariableRef x, const MachineInt& k) override {
-      this->_inv.incr_counter(x, k);
+    void counter_incr(VariableRef x, const MachineInt& k) override {
+      this->_inv.counter_incr(x, k);
     }
 
     /// \brief Forget a non-negative loop counter
-    void forget_counter(VariableRef x) override {
-      this->_inv.forget_counter(x);
+    void counter_forget(VariableRef x) override {
+      this->_inv.counter_forget(x);
     }
 
     /// \brief Dump the abstract value, for debugging purpose
@@ -882,33 +882,33 @@ public:
   /// \name Non-negative loop counter abstract domain methods
   /// @{
 
-  void mark_counter(VariableRef x) override {
+  void counter_mark(VariableRef x) override {
     if (this->_ptr != nullptr) {
-      this->_ptr->mark_counter(x);
+      this->_ptr->counter_mark(x);
     }
   }
 
-  void unmark_counter(VariableRef x) override {
+  void counter_unmark(VariableRef x) override {
     if (this->_ptr != nullptr) {
-      this->_ptr->unmark_counter(x);
+      this->_ptr->counter_unmark(x);
     }
   }
 
-  void init_counter(VariableRef x, const MachineInt& c) override {
+  void counter_init(VariableRef x, const MachineInt& c) override {
     if (this->_ptr != nullptr) {
-      this->_ptr->init_counter(x, c);
+      this->_ptr->counter_init(x, c);
     }
   }
 
-  void incr_counter(VariableRef x, const MachineInt& k) override {
+  void counter_incr(VariableRef x, const MachineInt& k) override {
     if (this->_ptr != nullptr) {
-      this->_ptr->incr_counter(x, k);
+      this->_ptr->counter_incr(x, k);
     }
   }
 
-  void forget_counter(VariableRef x) override {
+  void counter_forget(VariableRef x) override {
     if (this->_ptr != nullptr) {
-      this->_ptr->forget_counter(x);
+      this->_ptr->counter_forget(x);
     }
   }
 
