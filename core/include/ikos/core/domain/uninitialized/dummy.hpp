@@ -125,7 +125,9 @@ public:
 
   void assign(VariableRef, VariableRef) override {}
 
-  void assign(VariableRef, std::initializer_list< VariableRef >) override {}
+  void assert_initialized(VariableRef) override {}
+
+  void assert_uninitialized(VariableRef) override {}
 
   bool is_initialized(VariableRef) const override {
     ikos_assert_msg(!this->_is_bottom,

@@ -148,33 +148,12 @@ public:
     this->_inv.set(x, this->_inv.get(y));
   }
 
-  void assign(VariableRef x, std::initializer_list< VariableRef > l) override {
-    if (this->is_bottom()) {
-      return;
-    }
+  void assert_initialized(VariableRef x) override {
+    this->_inv.refine(x, Uninitialized::initialized());
+  }
 
-    bool has_top = false;
-    bool has_uninitialized = false;
-
-    for (VariableRef y : l) {
-      Uninitialized yv = this->_inv.get(y);
-
-      if (yv.is_top()) {
-        has_top = true;
-      } else if (yv.is_uninitialized()) {
-        has_uninitialized = true;
-      } else {
-        ikos_assert(yv.is_initialized());
-      }
-    }
-
-    if (has_top) {
-      this->_inv.set(x, Uninitialized::top());
-    } else if (has_uninitialized) {
-      this->_inv.set(x, Uninitialized::uninitialized());
-    } else {
-      this->_inv.set(x, Uninitialized::initialized());
-    }
+  void assert_uninitialized(VariableRef x) override {
+    this->_inv.refine(x, Uninitialized::uninitialized());
   }
 
   bool is_initialized(VariableRef x) const override {

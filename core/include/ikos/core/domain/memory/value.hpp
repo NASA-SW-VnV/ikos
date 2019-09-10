@@ -100,6 +100,8 @@ struct CellFactoryTraits {};
 /// `memory::CellVariableTraits`. The variable doesn't have a fixed type. It is
 /// either an integer of 8*size bits, a floating point of 8*size bits or a
 /// pointer.
+///
+/// Note that offset variables should be unsigned.
 template < typename VariableRef,
            typename MemoryLocationRef,
            typename VariableFactory,

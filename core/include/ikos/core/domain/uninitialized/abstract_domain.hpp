@@ -44,8 +44,6 @@
 
 #pragma once
 
-#include <initializer_list>
-
 #include <ikos/core/domain/abstract_domain.hpp>
 #include <ikos/core/semantic/variable.hpp>
 #include <ikos/core/value/uninitialized.hpp>
@@ -73,9 +71,11 @@ public:
   /// \brief Assign `x = y`
   virtual void assign(VariableRef x, VariableRef y) = 0;
 
-  /// \brief Assign `x = f(a, b, c, ..)`
-  virtual void assign(VariableRef x,
-                      std::initializer_list< VariableRef > l) = 0;
+  /// \brief Add the constraint `x == initialized`
+  virtual void assert_initialized(VariableRef x) = 0;
+
+  /// \brief Add the constraint `x == uninitialized`
+  virtual void assert_uninitialized(VariableRef x) = 0;
 
   /// \brief Return true if x is initialized, otherwise false
   virtual bool is_initialized(VariableRef x) const = 0;
