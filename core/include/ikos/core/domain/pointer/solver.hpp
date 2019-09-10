@@ -608,10 +608,10 @@ private:
       }
       case OperandT::AddressKind: {
         auto address_op = static_cast< const AddressOperandT* >(op);
-        return PointerAbsValueT(PointsToSetT{address_op->address()},
-                                address_op->offset(),
+        return PointerAbsValueT(Uninitialized::top(),
                                 Nullity::top(),
-                                Uninitialized::top());
+                                PointsToSetT{address_op->address()},
+                                address_op->offset());
       }
       default: {
         ikos_unreachable("unexpected kind");

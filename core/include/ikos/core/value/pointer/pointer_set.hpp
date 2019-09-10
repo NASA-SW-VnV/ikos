@@ -127,17 +127,17 @@ public:
   /// \brief Destructor
   ~PointerSet() override = default;
 
+  /// \brief Return the uninitialized
+  Uninitialized uninitialized() const { return Uninitialized::top(); }
+
+  /// \brief Return the nullity
+  Nullity nullity() const { return Nullity::top(); }
+
   /// \brief Return the points-to set
   const PointsToSetT& points_to() const { return this->_points_to; }
 
   /// \brief Return the interval offsets
   const MachineIntInterval& offsets() const { return this->_offsets; }
-
-  /// \brief Return the nullity
-  Nullity nullity() const { return Nullity::top(); }
-
-  /// \brief Return the uninitialized
-  Uninitialized uninitialized() const { return Uninitialized::top(); }
 
   bool is_bottom() const override {
     return this->_points_to.is_bottom(); // Correct because of normalization

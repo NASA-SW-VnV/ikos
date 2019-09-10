@@ -929,11 +929,11 @@ public:
     auto rhs_ptr = PointerAbsValueT::bottom(1, Unsigned);
     if (rhs.is_memory_location()) {
       rhs_ptr =
-          PointerAbsValueT(PointsToSetT{rhs.memory_location()},
-                           Interval(MachineInt::zero(offset_intv.bit_width(),
-                                                     Unsigned)),
+          PointerAbsValueT(Uninitialized::initialized(),
                            Nullity::non_null(),
-                           Uninitialized::initialized());
+                           PointsToSetT{rhs.memory_location()},
+                           Interval(MachineInt::zero(offset_intv.bit_width(),
+                                                     Unsigned)));
     } else if (rhs.is_pointer_var()) {
       rhs_ptr = this->_pointer.get(rhs.var());
     } else {

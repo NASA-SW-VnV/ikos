@@ -614,10 +614,10 @@ public:
   }
 
   PointerAbsValueT get(VariableRef p) const override {
-    return PointerAbsValueT(this->_points_to_map.get(p),
-                            this->_inv.to_interval(this->offset_var(p)),
+    return PointerAbsValueT(Uninitialized::top(),
                             this->_nullity.get(p),
-                            Uninitialized::top());
+                            this->_points_to_map.get(p),
+                            this->_inv.to_interval(this->offset_var(p)));
   }
 
   void forget(VariableRef p) override {
