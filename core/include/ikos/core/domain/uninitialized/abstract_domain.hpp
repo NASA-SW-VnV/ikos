@@ -77,10 +77,10 @@ public:
   /// \brief Add the constraint `x == uninitialized`
   virtual void assert_uninitialized(VariableRef x) = 0;
 
-  /// \brief Return true if x is initialized, otherwise false
+  /// \brief Return true if `x` is initialized, otherwise false
   virtual bool is_initialized(VariableRef x) const = 0;
 
-  /// \brief Return true if x is uninitialized, otherwise false
+  /// \brief Return true if `x` is uninitialized, otherwise false
   virtual bool is_uninitialized(VariableRef x) const = 0;
 
   /// \brief Set the uninitialized value of a variable

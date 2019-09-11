@@ -133,7 +133,7 @@ public:
   /// \brief Perform a union on two consecutive iterations of a fix-point
   /// algorithm
   ///
-  /// Example: x(n).join_iter_with(x(n+1))
+  /// Example: `x(n).join_iter_with(x(n+1))`
   ///
   /// For most abstract domains, this is equivalent to join_with.
   virtual void join_iter_with(const Derived& other) { this->join_with(other); }

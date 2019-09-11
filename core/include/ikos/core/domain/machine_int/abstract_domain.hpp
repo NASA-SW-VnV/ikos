@@ -184,12 +184,12 @@ public:
 
   /// \brief Projection to an interval
   ///
-  /// Return an overapproximation of the value of x as an interval
+  /// Return an overapproximation of the value of `x` as an interval
   virtual Interval to_interval(VariableRef x) const = 0;
 
   /// \brief Projection to an interval
   ///
-  /// Return an overapproximation of the linear expression e as an interval
+  /// Return an overapproximation of the linear expression `e` as an interval
   ///
   /// Note that it wraps on integer overflow.
   /// Note that it will automatically cast variables to the type of
@@ -198,12 +198,12 @@ public:
 
   /// \brief Projection to a congruence
   ///
-  /// Return an overapproximation of the value of x as a congruence
+  /// Return an overapproximation of the value of `x` as a congruence
   virtual Congruence to_congruence(VariableRef x) const = 0;
 
   /// \brief Projection to a congruence
   ///
-  /// Return an overapproximation of the linear expression e as a congruence
+  /// Return an overapproximation of the linear expression `e` as a congruence
   ///
   /// Note that it wraps on integer overflow.
   /// Note that it will automatically cast variables to the type of
@@ -212,12 +212,12 @@ public:
 
   /// \brief Projection to an interval-congruence
   ///
-  /// Return an overapproximation of the value of x as an interval-congruence
+  /// Return an overapproximation of the value of `x` as an interval-congruence
   virtual IntervalCongruence to_interval_congruence(VariableRef x) const = 0;
 
   /// \brief Projection to an interval-congruence
   ///
-  /// Return an overapproximation of the linear expression e as an
+  /// Return an overapproximation of the linear expression `e` as an
   /// interval-congruence
   ///
   /// Note that it wraps on integer overflow.

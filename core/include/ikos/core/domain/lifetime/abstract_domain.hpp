@@ -74,10 +74,10 @@ public:
   /// \brief Add the constraint `x != deallocated`
   virtual void assert_deallocated(MemoryLocationRef x) = 0;
 
-  /// \brief Return true if x is allocated, otherwise false
+  /// \brief Return true if `x` is allocated, otherwise false
   virtual bool is_allocated(MemoryLocationRef x) const = 0;
 
-  /// \brief Return true if x is deallocated, otherwise false
+  /// \brief Return true if `x` is deallocated, otherwise false
   virtual bool is_deallocated(MemoryLocationRef x) const = 0;
 
   /// \brief Set the lifetime of a memory location

@@ -82,10 +82,10 @@ public:
   // \brief Add the constraint `x pred y`
   virtual void add(Predicate pred, VariableRef x, VariableRef y) = 0;
 
-  /// \brief Return true if x is null, otherwise false
+  /// \brief Return true if `x` is null, otherwise false
   virtual bool is_null(VariableRef x) const = 0;
 
-  /// \brief Return true if x is non null, otherwise false
+  /// \brief Return true if `x` is non null, otherwise false
   virtual bool is_non_null(VariableRef x) const = 0;
 
   /// \brief Set the nullity value of a variable
