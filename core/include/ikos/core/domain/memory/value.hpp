@@ -1586,7 +1586,7 @@ public:
   }
 
   static std::string name() {
-    return "value domain with " + PointerDomain::name() + ", " +
+    return "value domain using " + PointerDomain::name() + ", " +
            UninitializedDomain::name() + " and " + LifetimeDomain::name();
   }
 

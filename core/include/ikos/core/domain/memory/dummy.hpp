@@ -401,7 +401,7 @@ public:
   }
 
   static std::string name() {
-    return "dummy memory domain with " + PointerDomain::name() + ", " +
+    return "dummy memory domain using " + PointerDomain::name() + ", " +
            UninitializedDomain::name() + " and " + LifetimeDomain::name();
   }
 

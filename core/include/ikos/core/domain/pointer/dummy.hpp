@@ -342,7 +342,7 @@ public:
   }
 
   static std::string name() {
-    return "dummy pointer domain with " + MachineIntDomain::name() + ", " +
+    return "dummy pointer domain using " + MachineIntDomain::name() + ", " +
            NullityDomain::name();
   }
 
