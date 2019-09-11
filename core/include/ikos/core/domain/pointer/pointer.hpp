@@ -573,22 +573,19 @@ public:
   void refine(VariableRef p, const PointerAbsValueT& value) override {
     if (value.is_bottom()) {
       this->set_to_bottom();
-      return;
-    }
-
-    // Update points-to map
-    this->_points_to_map.refine(p, value.points_to());
-
-    // Update offset
-    if (value.points_to().is_empty()) {
-      // value.offset() is bottom because the pointer is null or uninitialized
+    } else if (value.is_uninitialized()) {
+      this->_points_to_map.refine(p, PointsToSetT::empty());
+      this->_nullity.forget(p);
+      this->_inv.forget(this->offset_var(p));
+    } else if (value.is_null()) {
+      this->_points_to_map.refine(p, PointsToSetT::empty());
+      this->_nullity.refine(p, Nullity::null());
       this->_inv.forget(this->offset_var(p));
     } else {
+      this->_points_to_map.refine(p, value.points_to());
+      this->_nullity.refine(p, value.nullity());
       this->_inv.refine(this->offset_var(p), value.offset());
     }
-
-    // Update nullity
-    this->_nullity.refine(p, value.nullity());
   }
 
   void refine(VariableRef p, const PointerSetT& value) override {

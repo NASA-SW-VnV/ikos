@@ -81,15 +81,20 @@ private:
 private:
   /// \brief Normalize the pointer abstract value
   void normalize() {
-    if (this->_uninitialized.is_bottom() || this->_nullity.is_bottom() ||
-        this->_points_to.is_bottom()) {
+    if (this->_uninitialized.is_bottom()) {
       this->set_to_bottom();
     } else if (this->_uninitialized.is_uninitialized()) {
       this->set_to_uninitialized();
+    } else if (this->_nullity.is_bottom()) {
+      this->set_to_bottom();
     } else if (this->_nullity.is_null()) {
       this->set_to_null();
+    } else if (this->_points_to.is_bottom()) {
+      this->set_to_bottom();
     } else if (this->_points_to.is_empty()) {
-      this->_offset.set_to_bottom();
+      this->set_to_bottom();
+    } else if (this->_offset.is_bottom()) {
+      this->set_to_bottom();
     }
   }
 
@@ -116,8 +121,8 @@ public:
   /// signedness for the offset
   static PointerAbsValue uninitialized(unsigned bit_width, Signedness sign) {
     return PointerAbsValue(Uninitialized::uninitialized(),
-                           Nullity::top(),
-                           PointsToSetT::empty(),
+                           Nullity::bottom(),
+                           PointsToSetT::bottom(),
                            MachineIntInterval::bottom(bit_width, sign));
   }
 
@@ -126,7 +131,7 @@ public:
   static PointerAbsValue null(unsigned bit_width, Signedness sign) {
     return PointerAbsValue(Uninitialized::initialized(),
                            Nullity::null(),
-                           PointsToSetT::empty(),
+                           PointsToSetT::bottom(),
                            MachineIntInterval::bottom(bit_width, sign));
   }
 
@@ -201,19 +206,19 @@ public:
     this->_offset.set_to_top();
   }
 
+  /// \brief Set the pointer to uninitialized
+  void set_to_uninitialized() {
+    this->_uninitialized.set_to_uninitialized();
+    this->_nullity.set_to_bottom();
+    this->_points_to.set_to_bottom();
+    this->_offset.set_to_bottom();
+  }
+
   /// \brief Set the pointer to null
   void set_to_null() {
     this->_uninitialized.set_to_initialized();
     this->_nullity.set_to_null();
-    this->_points_to.set_to_empty();
-    this->_offset.set_to_bottom();
-  }
-
-  /// \brief Set the pointer to uninitialized
-  void set_to_uninitialized() {
-    this->_uninitialized.set_to_uninitialized();
-    this->_nullity.set_to_top();
-    this->_points_to.set_to_empty();
+    this->_points_to.set_to_bottom();
     this->_offset.set_to_bottom();
   }
 
