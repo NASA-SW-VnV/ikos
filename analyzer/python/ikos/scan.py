@@ -97,8 +97,9 @@ class ClangArgumentParser:
             '-emit-llvm': (0, self._set_emit_llvm),
             '-v': (0, self._set_verbose),
             '--verbose': (0, self._set_verbose),
-            '-w': (0, self._set_compile_only),
-            '-W': (0, self._set_compile_only),
+            # Warnings
+            '-w': (0, self._add_compile_link_unary),
+            '-W': (0, self._add_compile_link_unary),
             # Preprocessor assertions
             '-A': (1, self._add_compile_binary),
             '-D': (1, self._add_compile_binary),
@@ -253,7 +254,7 @@ class ClangArgumentParser:
             r'^-U.+$': (0, self._add_compile_unary),
             r'^-Wl,.+$': (0, self._add_link_unary),
             r'^-W[^l].+$': (0, self._add_compile_unary),
-            r'^-W[l][^,].+$': (0, self._add_compile_unary),
+            r'^-Wl[^,].+$': (0, self._add_compile_unary),
             r'^-fsanitize=.+$': (0, self._add_compile_link_unary),
             r'^-f.+$': (0, self._add_compile_unary),
             r'^-rtlib=.+$': (0, self._add_link_unary),
