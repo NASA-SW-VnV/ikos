@@ -507,8 +507,11 @@ During the analysis, the analyzer will make the following assumptions:
 extern void f(int** p); // Assume to write on *p but not **p
 ```
 * Extern functions do not call user-defined functions (no callbacks).
+* Extern functions can throw exceptions.
 * Extern functions return well-initialized values.
-* Recursive function calls are treated as extern function calls.
+* Recursive function calls can update any value in memory.
+* Recursive function calls can throw exceptions.
+* Recursive function calls return well-initialized values.
 * Assembly codes are treated as extern function calls.
 * C standard library functions do not throw exceptions.
 
