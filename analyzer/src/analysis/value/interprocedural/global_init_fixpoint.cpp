@@ -52,7 +52,7 @@ namespace interprocedural {
 
 GlobalVarInitializerFixpoint::GlobalVarInitializerFixpoint(
     Context& ctx, ar::GlobalVariable* gv)
-    : FwdFixpointIterator(gv->initializer(), make_bottom_abstract_value()),
+    : FwdFixpointIterator(gv->initializer(), make_bottom_abstract_value(ctx)),
       _gv(gv),
       _ctx(ctx),
       _empty_call_context(ctx.call_context_factory->get_empty()) {}
@@ -72,7 +72,6 @@ void GlobalVarInitializerFixpoint::run(AbstractDomain inv) {
       .allocate_memory(_ctx.var_factory->get_global(_gv),
                        _ctx.mem_factory->get_global(_gv),
                        core::Nullity::non_null(),
-                       core::Uninitialized::initialized(),
                        core::Lifetime::top(),
                        NumericalExecutionEngineT::MemoryInitialValue::Zero);
 

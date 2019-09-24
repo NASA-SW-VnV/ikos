@@ -185,6 +185,7 @@ default_analyses = (
     'dbz',
     'nullity',
     'prover',
+    'uva',
     'sio',
     'shc',
     'pcmp',

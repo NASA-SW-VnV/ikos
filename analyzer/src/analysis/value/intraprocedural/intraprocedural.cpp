@@ -78,8 +78,7 @@ void IntraproceduralValueAnalysis::run() {
   }
 
   // Initial invariant
-  AbstractDomain init_inv =
-      make_initial_abstract_value(_ctx.opts.machine_int_domain);
+  AbstractDomain init_inv = make_initial_abstract_value(_ctx);
 
   // Setup a progress logger
   std::unique_ptr< ProgressLogger > progress =

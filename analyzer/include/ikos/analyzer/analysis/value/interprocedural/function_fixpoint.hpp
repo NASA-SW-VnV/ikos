@@ -78,9 +78,6 @@ private:
       InlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
 
 private:
-  /// \brief Analysis context
-  Context& _ctx;
-
   /// \brief Analyzed function
   ar::Function* _function;
 

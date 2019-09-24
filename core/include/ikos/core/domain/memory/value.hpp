@@ -53,211 +53,179 @@
 
 #include <type_traits>
 
+#include <ikos/core/domain/lifetime/abstract_domain.hpp>
 #include <ikos/core/domain/memory/abstract_domain.hpp>
 #include <ikos/core/domain/memory/value/cell_set.hpp>
 #include <ikos/core/domain/memory/value/mem_loc_to_cell_set.hpp>
 #include <ikos/core/domain/memory/value/mem_loc_to_pointer_set.hpp>
-#include <ikos/core/semantic/memory/cell.hpp>
+#include <ikos/core/semantic/machine_int/variable.hpp>
+#include <ikos/core/semantic/memory/value/cell_factory.hpp>
+#include <ikos/core/semantic/memory/value/cell_variable.hpp>
 
 namespace ikos {
 namespace core {
 namespace memory {
 
-/// \brief Traits for creating cell variables
-///
-/// Elements to provide:
-///
-/// static VariableRef cell(VariableFactory& vfac,
-///                         MemoryLocationRef base,
-///                         const MachineInt& offset,
-///                         const MachineInt& size,
-///                         Signedness sign)
-///   Get or create the cell with the given base address, offset and size
-///   If a new cell is created, it will have the given signedness
-template < typename VariableRef,
-           typename MemoryLocationRef,
-           typename VariableFactory >
-struct CellFactoryTraits {};
-
 /// \brief Value abstract domain
 ///
-/// Memory abstraction consisting of cells and a pointer abstraction
-/// augmented with uninitialized variable information.
+/// Memory abstraction consisting of cells and a scalar abstract domain.
 ///
-/// This domain abstracts memory into a set of synthetic cells with
+/// This domain abstracts memory into a set of memory cells with
 /// integer, float or pointer type following Mine's paper. If a cell is
 /// of type integer this domain can model its value and whether it is
 /// initialized or not. If the cell is of type float, the domain keeps
 /// track of whether it is initialized or not. If the cell is of pointer
 /// type this domain keeps track of its address, its offset, whether it is
 /// null or not and whether it is initialized or not.
-/// We also allow reduction with an external pointer analysis that can
-/// provide points-to set and offset information.
 ///
 /// A memory cell is a triple `(base, offset, size)` modelling all bytes at
 /// address `base`, starting at offset `offset` up to `offset + size - 1`. A
 /// memory cell is represented by a variable implementing
-/// `memory::CellVariableTraits`. The variable doesn't have a fixed type. It is
+/// `memory::CellVariableTraits`. The variable has a dynamic type. It is
 /// either an integer of 8*size bits, a floating point of 8*size bits or a
 /// pointer.
 ///
 /// Note that offset variables should be unsigned.
 template < typename VariableRef,
            typename MemoryLocationRef,
-           typename VariableFactory,
-           typename MachineIntDomain,
-           typename NullityDomain,
-           typename PointerDomain,
-           typename UninitializedDomain,
+           typename CellFactoryRef,
+           typename ScalarDomain,
            typename LifetimeDomain >
 class ValueDomain final
     : public memory::AbstractDomain< VariableRef,
                                      MemoryLocationRef,
-                                     VariableFactory,
-                                     MachineIntDomain,
-                                     NullityDomain,
-                                     PointerDomain,
-                                     UninitializedDomain,
-                                     LifetimeDomain,
                                      ValueDomain< VariableRef,
                                                   MemoryLocationRef,
-                                                  VariableFactory,
-                                                  MachineIntDomain,
-                                                  NullityDomain,
-                                                  PointerDomain,
-                                                  UninitializedDomain,
+                                                  CellFactoryRef,
+                                                  ScalarDomain,
                                                   LifetimeDomain > > {
 public:
   static_assert(memory::IsCellVariable< VariableRef, MemoryLocationRef >::value,
                 "VariableRef must implement memory::CellVariableTraits");
+  static_assert(memory::IsCellFactory< VariableRef,
+                                       MemoryLocationRef,
+                                       CellFactoryRef >::value,
+                "CellFactoryRef must implement memory::CellFactoryTraits");
+  static_assert(scalar::IsAbstractDomain< ScalarDomain,
+                                          VariableRef,
+                                          MemoryLocationRef >::value,
+                "ScalarDomain must implement scalar::AbstractDomain");
+  static_assert(
+      lifetime::IsAbstractDomain< LifetimeDomain, MemoryLocationRef >::value,
+      "LifetimeDomain must implement lifetime::AbstractDomain");
 
-private:
-  /// \brief Trait for typed variables,
-  /// see ikos/core/semantic/memory/variable.hpp
-  using MemVariableTrait = memory::VariableTraits< VariableRef >;
-
-  /// \brief Trait for integer variables,
-  /// see ikos/core/semantic/machine_int/variable.hpp
-  using MachIntVariableTrait = machine_int::VariableTraits< VariableRef >;
-
-  /// \brief Trait for cell variables,
-  /// see ikos/core/semantic/memory/cell.hpp
-  using CellVariableTrait =
-      CellVariableTraits< VariableRef, MemoryLocationRef >;
-
-  /// \brief Trait for creating cell variables, see above
-  using CellFactoryTrait =
-      CellFactoryTraits< VariableRef, MemoryLocationRef, VariableFactory >;
-
-  /// \brief Set of cells
-  using CellSetT = CellSet< VariableRef >;
-
-  /// \brief Map from base addresses to set of synthetic cells
-  ///
-  /// TODO(jnavas): it should be a map from pointer offsets to set of
-  /// overlapping cells to make operations faster.
-  using MemLocToCellSetT = MemLocToCellSet< MemoryLocationRef, VariableRef >;
-
-  /// \brief Points-to set
+public:
+  using IntUnaryOperator = machine_int::UnaryOperator;
+  using IntBinaryOperator = machine_int::BinaryOperator;
+  using IntPredicate = machine_int::Predicate;
+  using IntLinearExpression = LinearExpression< MachineInt, VariableRef >;
+  using IntInterval = machine_int::Interval;
+  using IntCongruence = machine_int::Congruence;
+  using IntIntervalCongruence = machine_int::IntervalCongruence;
+  using PointerPredicate = pointer::Predicate;
   using PointsToSetT = PointsToSet< MemoryLocationRef >;
-
-  /// \brief Pointer abstract value
   using PointerAbsValueT = PointerAbsValue< MemoryLocationRef >;
-
-  /// \brief Pointer set
   using PointerSetT = PointerSet< MemoryLocationRef >;
-
-  /// \brief Map from base addresses to set of pointers
-  using MemLocToPointerSetT = MemLocToPointerSet< MemoryLocationRef >;
-
-  /// \brief Literal
   using LiteralT = Literal< VariableRef, MemoryLocationRef >;
 
-  /// \brief Machine integer interval
-  using Interval = machine_int::Interval;
-
-  /// \brief Machine integer interval-congruence
-  using IntervalCongruence = machine_int::IntervalCongruence;
+private:
+  using CellSetT = CellSet< VariableRef >;
+  using MemLocToCellSetT = MemLocToCellSet< MemoryLocationRef, VariableRef >;
+  using MemLocToPointerSetT = MemLocToPointerSet< MemoryLocationRef >;
+  using MachIntVariableTrait = machine_int::VariableTraits< VariableRef >;
+  using ScalarVariableTrait = scalar::VariableTraits< VariableRef >;
+  using CellVariableTrait =
+      memory::CellVariableTraits< VariableRef, MemoryLocationRef >;
+  using CellFactoryTrait = memory::
+      CellFactoryTraits< VariableRef, MemoryLocationRef, CellFactoryRef >;
 
 private:
+  /// \brief Cell factory
+  CellFactoryRef _cell_factory;
+
+  /// \brief Underlying scalar domain
+  ScalarDomain _scalar;
+
+  /// \brief Map from memory location to set of cells
   MemLocToCellSetT _cells;
+
+  /// \brief Map from memory location to set of pointers
   MemLocToPointerSetT _pointer_sets;
-  PointerDomain _pointer;
-  UninitializedDomain _uninitialized;
+
+  /// \brief Underlying lifetime abstract domain
   LifetimeDomain _lifetime;
 
 public:
   /// \brief Create an abstract value with the given underlying abstract values
   ///
-  /// \param pointer The pointer abstract value
-  /// \param uninitialized The uninitialized abstract value
+  /// \param cell_factory The cell factory
+  /// \param scalar The scalar abstract value
   /// \param lifetime The lifetime abstract value
-  explicit ValueDomain(PointerDomain pointer,
-                       UninitializedDomain uninitialized,
+  explicit ValueDomain(CellFactoryRef cell_factory,
+                       ScalarDomain scalar,
                        LifetimeDomain lifetime)
-      : _cells(MemLocToCellSetT::top()),
+      : _cell_factory(std::move(cell_factory)),
+        _scalar(std::move(scalar)),
+        _cells(MemLocToCellSetT::top()),
         _pointer_sets(MemLocToPointerSetT::top()),
-        _pointer(std::move(pointer)),
-        _uninitialized(std::move(uninitialized)),
         _lifetime(std::move(lifetime)) {
     this->normalize();
   }
 
   /// \brief Copy constructor
   ValueDomain(const ValueDomain&) noexcept(
-      (std::is_nothrow_copy_constructible< PointerDomain >::value) &&
-      (std::is_nothrow_copy_constructible< UninitializedDomain >::value) &&
+      (std::is_nothrow_copy_constructible< ScalarDomain >::value) &&
       (std::is_nothrow_copy_constructible< LifetimeDomain >::value)) = default;
 
   /// \brief Move constructor
   ValueDomain(ValueDomain&&) noexcept(
-      (std::is_nothrow_move_constructible< PointerDomain >::value) &&
-      (std::is_nothrow_move_constructible< UninitializedDomain >::value) &&
+      (std::is_nothrow_move_constructible< ScalarDomain >::value) &&
       (std::is_nothrow_move_constructible< LifetimeDomain >::value)) = default;
 
   /// \brief Copy assignment operator
   ValueDomain& operator=(const ValueDomain&) noexcept(
-      (std::is_nothrow_copy_assignable< PointerDomain >::value) &&
-      (std::is_nothrow_copy_assignable< UninitializedDomain >::value) &&
+      (std::is_nothrow_copy_assignable< ScalarDomain >::value) &&
       (std::is_nothrow_copy_assignable< LifetimeDomain >::value)) = default;
 
   /// \brief Move assignment operator
   ValueDomain& operator=(ValueDomain&&) noexcept(
-      (std::is_nothrow_move_assignable< PointerDomain >::value) &&
-      (std::is_nothrow_move_assignable< UninitializedDomain >::value) &&
+      (std::is_nothrow_move_assignable< ScalarDomain >::value) &&
       (std::is_nothrow_move_assignable< LifetimeDomain >::value)) = default;
 
   /// \brief Destructor
   ~ValueDomain() override = default;
 
-  /*
-   * Implement core::AbstractDomain
-   */
+  /// \name Implement core abstract domain methods
+  /// @{
 
+private:
+  /// \brief Return true if the abstract value is bottom
+  ///
+  /// Does not normalize.
+  bool is_bottom_fast() const { return this->_cells.is_bottom(); }
+
+public:
   bool is_bottom() const override {
     this->normalize();
     return this->_cells.is_bottom(); // Correct because of normalization
   }
 
   bool is_top() const override {
-    return this->_cells.is_top() && this->_pointer_sets.is_top() &&
-           this->_pointer.is_top() && this->_uninitialized.is_top() &&
-           this->_lifetime.is_top();
+    return this->_scalar.is_top() && this->_cells.is_top() &&
+           this->_pointer_sets.is_top() && this->_lifetime.is_top();
   }
 
   void set_to_bottom() override {
+    this->_scalar.set_to_bottom();
     this->_cells.set_to_bottom();
     this->_pointer_sets.set_to_bottom();
-    this->_pointer.set_to_bottom();
-    this->_uninitialized.set_to_bottom();
     this->_lifetime.set_to_bottom();
   }
 
   void set_to_top() override {
+    this->_scalar.set_to_top();
     this->_cells.set_to_top();
     this->_pointer_sets.set_to_top();
-    this->_pointer.set_to_top();
-    this->_uninitialized.set_to_top();
     this->_lifetime.set_to_top();
   }
 
@@ -267,10 +235,9 @@ public:
     } else if (other.is_bottom()) {
       return false;
     } else {
-      return this->_cells.leq(other._cells) &&
+      return this->_scalar.leq(other._scalar) &&
+             this->_cells.leq(other._cells) &&
              this->_pointer_sets.leq(other._pointer_sets) &&
-             this->_pointer.leq(other._pointer) &&
-             this->_uninitialized.leq(other._uninitialized) &&
              this->_lifetime.leq(other._lifetime);
     }
   }
@@ -281,10 +248,9 @@ public:
     } else if (other.is_bottom()) {
       return false;
     } else {
-      return this->_cells.equals(other._cells) &&
+      return this->_scalar.equals(other._scalar) &&
+             this->_cells.equals(other._cells) &&
              this->_pointer_sets.equals(other._pointer_sets) &&
-             this->_pointer.equals(other._pointer) &&
-             this->_uninitialized.equals(other._uninitialized) &&
              this->_lifetime.equals(other._lifetime);
     }
   }
@@ -295,10 +261,9 @@ public:
     } else if (other.is_bottom()) {
       return;
     } else {
+      this->_scalar.join_with(other._scalar);
       this->_cells.join_with(other._cells);
       this->_pointer_sets.join_with(other._pointer_sets);
-      this->_pointer.join_with(other._pointer);
-      this->_uninitialized.join_with(other._uninitialized);
       this->_lifetime.join_with(other._lifetime);
     }
   }
@@ -309,10 +274,9 @@ public:
     } else if (other.is_bottom()) {
       return;
     } else {
+      this->_scalar.join_loop_with(other._scalar);
       this->_cells.join_loop_with(other._cells);
       this->_pointer_sets.join_loop_with(other._pointer_sets);
-      this->_pointer.join_loop_with(other._pointer);
-      this->_uninitialized.join_loop_with(other._uninitialized);
       this->_lifetime.join_loop_with(other._lifetime);
     }
   }
@@ -323,10 +287,9 @@ public:
     } else if (other.is_bottom()) {
       return;
     } else {
+      this->_scalar.join_iter_with(other._scalar);
       this->_cells.join_iter_with(other._cells);
       this->_pointer_sets.join_iter_with(other._pointer_sets);
-      this->_pointer.join_iter_with(other._pointer);
-      this->_uninitialized.join_iter_with(other._uninitialized);
       this->_lifetime.join_iter_with(other._lifetime);
     }
   }
@@ -337,10 +300,9 @@ public:
     } else if (other.is_bottom()) {
       return;
     } else {
+      this->_scalar.widen_with(other._scalar);
       this->_cells.widen_with(other._cells);
       this->_pointer_sets.widen_with(other._pointer_sets);
-      this->_pointer.widen_with(other._pointer);
-      this->_uninitialized.widen_with(other._uninitialized);
       this->_lifetime.widen_with(other._lifetime);
     }
   }
@@ -352,10 +314,9 @@ public:
     } else if (other.is_bottom()) {
       return;
     } else {
+      this->_scalar.widen_threshold_with(other._scalar, threshold);
       this->_cells.widen_with(other._cells);
       this->_pointer_sets.join_with(other._pointer_sets);
-      this->_pointer.widen_threshold_with(other._pointer, threshold);
-      this->_uninitialized.widen_with(other._uninitialized);
       this->_lifetime.widen_with(other._lifetime);
     }
   }
@@ -366,10 +327,9 @@ public:
     } else if (other.is_bottom()) {
       this->set_to_bottom();
     } else {
+      this->_scalar.meet_with(other._scalar);
       this->_cells.meet_with(other._cells);
       this->_pointer_sets.meet_with(other._pointer_sets);
-      this->_pointer.meet_with(other._pointer);
-      this->_uninitialized.meet_with(other._uninitialized);
       this->_lifetime.meet_with(other._lifetime);
     }
   }
@@ -380,10 +340,9 @@ public:
     } else if (other.is_bottom()) {
       this->set_to_bottom();
     } else {
+      this->_scalar.narrow_with(other._scalar);
       this->_cells.narrow_with(other._cells);
       this->_pointer_sets.narrow_with(other._pointer_sets);
-      this->_pointer.narrow_with(other._pointer);
-      this->_uninitialized.narrow_with(other._uninitialized);
       this->_lifetime.narrow_with(other._lifetime);
     }
   }
@@ -395,419 +354,423 @@ public:
     } else if (other.is_bottom()) {
       this->set_to_bottom();
     } else {
+      this->_scalar.narrow_threshold_with(other._scalar, threshold);
       this->_cells.narrow_with(other._cells);
       this->_pointer_sets.narrow_with(other._pointer_sets);
-      this->_pointer.narrow_threshold_with(other._pointer, threshold);
-      this->_uninitialized.narrow_with(other._uninitialized);
       this->_lifetime.narrow_with(other._lifetime);
     }
   }
 
-  /*
-   * Implement memory::AbstractDomain
-   */
+  /// @}
+  /// \name Implement uninitialized abstract domain methods
+  /// @{
 
-  MachineIntDomain& integers() override { return this->_pointer.integers(); }
-
-  const MachineIntDomain& integers() const override {
-    return this->_pointer.integers();
+  void uninit_assert_initialized(VariableRef x) override {
+    this->_scalar.uninit_assert_initialized(x);
   }
 
-  NullityDomain& nullity() override { return this->_pointer.nullity(); }
-
-  const NullityDomain& nullity() const override {
-    return this->_pointer.nullity();
+  bool uninit_is_initialized(VariableRef x) const override {
+    return this->_scalar.uninit_is_initialized(x);
   }
 
-  PointerDomain& pointers() override { return this->_pointer; }
-
-  const PointerDomain& pointers() const override { return this->_pointer; }
-
-  UninitializedDomain& uninitialized() override { return this->_uninitialized; }
-
-  const UninitializedDomain& uninitialized() const override {
-    return this->_uninitialized;
+  bool uninit_is_uninitialized(VariableRef x) const override {
+    return this->_scalar.uninit_is_uninitialized(x);
   }
 
-  LifetimeDomain& lifetime() override { return this->_lifetime; }
+  void uninit_refine(VariableRef x, Uninitialized value) override {
+    this->_scalar.uninit_refine(x, value);
+  }
 
-  const LifetimeDomain& lifetime() const override { return this->_lifetime; }
+  Uninitialized uninit_to_uninitialized(VariableRef x) const override {
+    return this->_scalar.uninit_to_uninitialized(x);
+  }
+
+  /// @}
+  /// \name Implement machine integer abstract domain methods
+  /// @{
+
+  void int_assign(VariableRef x, const MachineInt& n) override {
+    this->_scalar.int_assign(x, n);
+  }
+
+  void int_assign_undef(VariableRef x) override {
+    this->_scalar.int_assign_undef(x);
+  }
+
+  void int_assign_nondet(VariableRef x) override {
+    this->_scalar.int_assign_nondet(x);
+  }
+
+  void int_assign(VariableRef x, VariableRef y) override {
+    this->_scalar.int_assign(x, y);
+  }
+
+  void int_assign(VariableRef x, const IntLinearExpression& e) override {
+    this->_scalar.int_assign(x, e);
+  }
+
+  void int_apply(IntUnaryOperator op, VariableRef x, VariableRef y) override {
+    this->_scalar.int_apply(op, x, y);
+  }
+
+  void int_apply(IntBinaryOperator op,
+                 VariableRef x,
+                 VariableRef y,
+                 VariableRef z) override {
+    this->_scalar.int_apply(op, x, y, z);
+  }
+
+  void int_apply(IntBinaryOperator op,
+                 VariableRef x,
+                 VariableRef y,
+                 const MachineInt& z) override {
+    this->_scalar.int_apply(op, x, y, z);
+  }
+
+  void int_apply(IntBinaryOperator op,
+                 VariableRef x,
+                 const MachineInt& y,
+                 VariableRef z) override {
+    this->_scalar.int_apply(op, x, y, z);
+  }
+
+  void int_add(IntPredicate pred, VariableRef x, VariableRef y) override {
+    this->_scalar.int_add(pred, x, y);
+  }
+
+  void int_add(IntPredicate pred, VariableRef x, const MachineInt& y) override {
+    this->_scalar.int_add(pred, x, y);
+  }
+
+  void int_add(IntPredicate pred, const MachineInt& x, VariableRef y) override {
+    this->_scalar.int_add(pred, x, y);
+  }
+
+  void int_set(VariableRef x, const IntInterval& value) override {
+    this->_scalar.int_set(x, value);
+  }
+
+  void int_set(VariableRef x, const IntCongruence& value) override {
+    this->_scalar.int_set(x, value);
+  }
+
+  void int_set(VariableRef x, const IntIntervalCongruence& value) override {
+    this->_scalar.int_set(x, value);
+  }
+
+  void int_refine(VariableRef x, const IntInterval& value) override {
+    this->_scalar.int_refine(x, value);
+  }
+
+  void int_refine(VariableRef x, const IntCongruence& value) override {
+    this->_scalar.int_refine(x, value);
+  }
+
+  void int_refine(VariableRef x, const IntIntervalCongruence& value) override {
+    this->_scalar.int_refine(x, value);
+  }
+
+  void int_forget(VariableRef x) override { this->_scalar.int_forget(x); }
+
+  IntInterval int_to_interval(VariableRef x) const override {
+    return this->_scalar.int_to_interval(x);
+  }
+
+  IntInterval int_to_interval(const IntLinearExpression& e) const override {
+    return this->_scalar.int_to_interval(e);
+  }
+
+  IntCongruence int_to_congruence(VariableRef x) const override {
+    return this->_scalar.int_to_congruence(x);
+  }
+
+  IntCongruence int_to_congruence(const IntLinearExpression& e) const override {
+    return this->_scalar.int_to_congruence(e);
+  }
+
+  IntIntervalCongruence int_to_interval_congruence(
+      VariableRef x) const override {
+    return this->_scalar.int_to_interval_congruence(x);
+  }
+
+  IntIntervalCongruence int_to_interval_congruence(
+      const IntLinearExpression& e) const override {
+    return this->_scalar.int_to_interval_congruence(e);
+  }
+
+  /// @}
+  /// \name Implement non-negative loop counter abstract domain methods
+  /// @{
+
+  void counter_mark(VariableRef x) override { this->_scalar.counter_mark(x); }
+
+  void counter_unmark(VariableRef x) override {
+    this->_scalar.counter_unmark(x);
+  }
+
+  void counter_init(VariableRef x, const MachineInt& c) override {
+    this->_scalar.counter_init(x, c);
+  }
+
+  void counter_incr(VariableRef x, const MachineInt& k) override {
+    this->_scalar.counter_incr(x, k);
+  }
+
+  void counter_forget(VariableRef x) override {
+    this->_scalar.counter_forget(x);
+  }
+
+  /// @}
+  /// \name Implement floating point abstract domain methods
+  /// @{
+
+  void float_assign_undef(VariableRef x) override {
+    this->_scalar.float_assign_undef(x);
+  }
+
+  void float_assign_nondet(VariableRef x) override {
+    this->_scalar.float_assign_nondet(x);
+  }
+
+  void float_assign(VariableRef x, VariableRef y) override {
+    this->_scalar.float_assign(x, y);
+  }
+
+  void float_forget(VariableRef x) override { this->_scalar.float_forget(x); }
+
+  /// @}
+  /// \name Implement nullity abstract domain methods
+  /// @{
+
+  void nullity_assert_null(VariableRef p) override {
+    this->_scalar.nullity_assert_null(p);
+  }
+
+  void nullity_assert_non_null(VariableRef p) override {
+    this->_scalar.nullity_assert_non_null(p);
+  }
+
+  bool nullity_is_null(VariableRef p) const override {
+    return this->_scalar.nullity_is_null(p);
+  }
+
+  bool nullity_is_non_null(VariableRef p) const override {
+    return this->_scalar.nullity_is_non_null(p);
+  }
+
+  void nullity_set(VariableRef p, Nullity value) override {
+    this->_scalar.nullity_set(p, value);
+  }
+
+  void nullity_refine(VariableRef p, Nullity value) override {
+    this->_scalar.nullity_refine(p, value);
+  }
+
+  Nullity nullity_to_nullity(VariableRef p) const override {
+    return this->_scalar.nullity_to_nullity(p);
+  }
+
+  /// @}
+  /// \name Implement pointer abstract domain methods
+  /// @{
+
+  void pointer_assign(VariableRef p,
+                      MemoryLocationRef addr,
+                      Nullity nullity) override {
+    this->_scalar.pointer_assign(p, addr, nullity);
+  }
+
+  void pointer_assign_null(VariableRef p) override {
+    this->_scalar.pointer_assign_null(p);
+  }
+
+  void pointer_assign_undef(VariableRef p) override {
+    this->_scalar.pointer_assign_undef(p);
+  }
+
+  void pointer_assign_nondet(VariableRef p) override {
+    this->_scalar.pointer_assign_nondet(p);
+  }
+
+  void pointer_assign(VariableRef p, VariableRef q) override {
+    this->_scalar.pointer_assign(p, q);
+  }
+
+  void pointer_assign(VariableRef p, VariableRef q, VariableRef o) override {
+    this->_scalar.pointer_assign(p, q, o);
+  }
+
+  void pointer_assign(VariableRef p,
+                      VariableRef q,
+                      const MachineInt& o) override {
+    this->_scalar.pointer_assign(p, q, o);
+  }
+
+  void pointer_assign(VariableRef p,
+                      VariableRef q,
+                      const IntLinearExpression& o) override {
+    this->_scalar.pointer_assign(p, q, o);
+  }
+
+  void pointer_add(PointerPredicate pred,
+                   VariableRef p,
+                   VariableRef q) override {
+    this->_scalar.pointer_add(pred, p, q);
+  }
+
+  void pointer_refine(VariableRef p, const PointsToSetT& addrs) override {
+    this->_scalar.pointer_refine(p, addrs);
+  }
+
+  void pointer_refine(VariableRef p,
+                      const PointsToSetT& addrs,
+                      const IntInterval& offset) override {
+    this->_scalar.pointer_refine(p, addrs, offset);
+  }
+
+  void pointer_refine(VariableRef p, const PointerAbsValueT& value) override {
+    this->_scalar.pointer_refine(p, value);
+  }
+
+  void pointer_refine(VariableRef p, const PointerSetT& set) override {
+    this->_scalar.pointer_refine(p, set);
+  }
+
+  void pointer_offset_to_int(VariableRef x, VariableRef p) override {
+    this->_scalar.pointer_offset_to_int(x, p);
+  }
+
+  IntInterval pointer_offset_to_interval(VariableRef p) const override {
+    return this->_scalar.pointer_offset_to_interval(p);
+  }
+
+  IntCongruence pointer_offset_to_congruence(VariableRef p) const override {
+    return this->_scalar.pointer_offset_to_congruence(p);
+  }
+
+  IntIntervalCongruence pointer_offset_to_interval_congruence(
+      VariableRef p) const override {
+    return this->_scalar.pointer_offset_to_interval_congruence(p);
+  }
+
+  PointsToSetT pointer_to_points_to(VariableRef p) const override {
+    return this->_scalar.pointer_to_points_to(p);
+  }
+
+  PointerAbsValueT pointer_to_pointer(VariableRef p) const override {
+    return this->_scalar.pointer_to_pointer(p);
+  }
+
+  void pointer_forget_offset(VariableRef p) override {
+    this->_scalar.pointer_forget_offset(p);
+  }
+
+  void pointer_forget(VariableRef p) override {
+    this->_scalar.pointer_forget(p);
+  }
+
+  /// @}
+  /// \name Implement dynamically typed variables abstract domain methods
+  /// @{
+
+  void dynamic_assign(VariableRef x, VariableRef y) override {
+    this->_scalar.dynamic_assign(x, y);
+  }
+
+  void dynamic_write_undef(VariableRef x) override {
+    this->_scalar.dynamic_write_undef(x);
+  }
+
+  void dynamic_write_nondet(VariableRef x) override {
+    this->_scalar.dynamic_write_nondet(x);
+  }
+
+  void dynamic_write_int(VariableRef x, const MachineInt& n) override {
+    this->_scalar.dynamic_write_int(x, n);
+  }
+
+  void dynamic_write_nondet_int(VariableRef x) override {
+    this->_scalar.dynamic_write_nondet_int(x);
+  }
+
+  void dynamic_write_int(VariableRef x, VariableRef y) override {
+    this->_scalar.dynamic_write_int(x, y);
+  }
+
+  void dynamic_write_nondet_float(VariableRef x) override {
+    this->_scalar.dynamic_write_nondet_float(x);
+  }
+
+  void dynamic_write_null(VariableRef x) override {
+    this->_scalar.dynamic_write_null(x);
+  }
+
+  void dynamic_write_pointer(VariableRef x,
+                             MemoryLocationRef addr,
+                             Nullity nullity) override {
+    this->_scalar.dynamic_write_pointer(x, addr, nullity);
+  }
+
+  void dynamic_write_pointer(VariableRef x, VariableRef y) override {
+    this->_scalar.dynamic_write_pointer(x, y);
+  }
+
+  void dynamic_read_int(VariableRef x, VariableRef y) override {
+    this->_scalar.dynamic_read_int(x, y);
+  }
+
+  void dynamic_read_pointer(VariableRef x, VariableRef y) override {
+    this->_scalar.dynamic_read_pointer(x, y);
+  }
+
+  bool dynamic_is_zero(VariableRef x) const override {
+    return this->_scalar.dynamic_is_zero(x);
+  }
+
+  bool dynamic_is_null(VariableRef x) const override {
+    return this->_scalar.dynamic_is_null(x);
+  }
+
+  void dynamic_forget(VariableRef x) override {
+    this->_scalar.dynamic_forget(x);
+  }
+
+  /// @}
+  /// \name Implement scalar abstract domain methods
+  /// @{
+
+  void scalar_assign_undef(VariableRef x) override {
+    this->_scalar.scalar_assign_undef(x);
+  }
+
+  void scalar_assign_nondet(VariableRef x) override {
+    this->_scalar.scalar_assign_nondet(x);
+  }
+
+  void scalar_pointer_to_int(VariableRef x,
+                             VariableRef p,
+                             MemoryLocationRef absolute_zero) override {
+    this->_scalar.scalar_pointer_to_int(x, p, absolute_zero);
+  }
+
+  void scalar_int_to_pointer(VariableRef p,
+                             VariableRef x,
+                             MemoryLocationRef absolute_zero) override {
+    this->_scalar.scalar_int_to_pointer(p, x, absolute_zero);
+  }
+
+  void scalar_forget(VariableRef x) override { this->_scalar.scalar_forget(x); }
+
+  /// @}
+  /// \name Implement memory abstract domain methods
+  /// @{
 
 private:
-  /// \brief Return the offset variable associated to `p`
-  VariableRef offset_var(VariableRef p) const {
-    return this->_pointer.offset_var(p);
-  }
-
-  /// \brief Return the byte range for a given cell
-  Interval cell_range(VariableRef cell) const {
-    const MachineInt& offset = CellVariableTrait::offset(cell);
-    const MachineInt& size = CellVariableTrait::size(cell);
-    auto one = MachineInt(1, offset.bit_width(), Unsigned);
-    return Interval(offset, offset + (size - one));
-  }
-
-  /// \brief Return true if the given cell overlaps with the given byte range
-  bool cell_overlap(VariableRef cell, const Interval& range) const {
-    Interval meet = this->cell_range(cell).meet(range);
-    return !meet.is_bottom();
-  }
-
-  /// \brief Return true if the given cells overlap
-  bool cell_overlap(VariableRef a, VariableRef b) const {
-    return this->cell_overlap(a, this->cell_range(b));
-  }
-
-  /// \brief Return true if the memory write at `offset` of size `size`
-  /// can update the given cell. Return false if the number of overlaps between
-  /// the cell and the memory write is not exactly 1.
-  ///
-  /// For instance:
-  ///   * If Cell{o,4,4}, offset=[0, 8], size=4: returns false
-  ///   * If Cell{o,4,4}, offset=[4, 4], size=2: returns false
-  ///   * If Cell{o,4,4}, offset=[0, 8], offset=4Z+0, size=4, returns true
-  ///   * If Cell{o,4,4}, offset=[0, 8], offset=4Z+1, size=4, returns false
-  bool cell_realizes_once(VariableRef cell,
-                          VariableRef offset,
-                          const MachineInt& size) const {
-    const MachineInt& cell_offset = CellVariableTrait::offset(cell);
-    const MachineInt& cell_size = CellVariableTrait::size(cell);
-    auto one = MachineInt(1, size.bit_width(), Unsigned);
-
-    if (size != cell_size) {
-      return false;
-    }
-
-    IntervalCongruence offset_ic =
-        this->integers().to_interval_congruence(offset);
-
-    // Keep offsets that could 'touch' the cell
-    bool overflow = false;
-
-    // offset <= cell_offset + cell_size - 1
-    MachineInt ub = add(cell_offset, cell_size - one, overflow);
-    if (overflow) {
-      ub.set_max();
-    }
-
-    // offset + size - 1 >= cell_offset
-    MachineInt lb = sub(cell_offset, size - one, overflow);
-    if (overflow) {
-      lb.set_min();
-    }
-
-    offset_ic.meet_with(IntervalCongruence(Interval(lb, ub)));
-
-    return offset_ic == IntervalCongruence(cell_offset);
-  }
-
-  /// \brief Get or create the cell with the given base address, offset and size
-  ///
-  /// If a new cell is created, it will have the given signedness
-  VariableRef cell(VariableFactory& vfac,
-                   MemoryLocationRef base,
-                   const MachineInt& offset,
-                   const MachineInt& size,
-                   Signedness sign) {
-    ikos_assert(offset.sign() == Unsigned);
-    ikos_assert(size.sign() == Unsigned);
-    ikos_assert(size.is_strictly_positive());
-    VariableRef c = CellFactoryTrait::cell(vfac, base, offset, size, sign);
-    ikos_assert(MemVariableTrait::is_cell(c));
-    ikos_assert(MachIntVariableTrait::bit_width(c) ==
-                size.to< unsigned >() * 8);
-    return c;
-  }
-
-  /// \brief Create a new cell for a write, performing reduction if possible
-  VariableRef write_realize_single_cell(VariableFactory& vfac,
-                                        MemoryLocationRef base,
-                                        const MachineInt& offset,
-                                        const MachineInt& size,
-                                        Signedness sign) {
-    VariableRef new_cell = this->cell(vfac, base, offset, size, sign);
-    const CellSetT& cells = this->_cells.get(base);
-
-    if (cells.is_empty()) {
-      // no cell found for the base address
-      this->_cells.set(base, CellSetT{new_cell});
-      return new_cell;
-    }
-
-    CellSetT new_cells = cells;
-    bool found = false;
-
-    // remove overlapping cells
-    for (VariableRef cell : cells) {
-      if (cell == new_cell) {
-        found = true;
-      } else if (this->cell_overlap(cell, new_cell)) {
-        this->forget_surface_cell(cell);
-        new_cells.remove(cell);
-      }
-    }
-
-    if (!found) {
-      new_cells.add(new_cell);
-    }
-    this->_cells.set(base, new_cells);
-    return new_cell;
-  }
-
-  /// \brief Perform a write with an approximated offset.
-  ///
-  /// Returns a list of cells on which we should perform a weak update.
-  std::vector< VariableRef > write_realize_range_cells(MemoryLocationRef base,
-                                                       VariableRef offset,
-                                                       const MachineInt& size) {
-    // offset interval
-    Interval offset_intv = this->integers().to_interval(offset);
-    Interval size_intv =
-        Interval(MachineInt::zero(size.bit_width(), Unsigned),
-                 size - MachineInt(1, size.bit_width(), Unsigned));
-    Interval range = add(offset_intv, size_intv);
-
-    const CellSetT& cells = this->_cells.get(base);
-
-    if (cells.is_empty()) {
-      // no cell found for the base address
-      return {};
-    }
-
-    CellSetT new_cells = cells;
-    std::vector< VariableRef > updated_cells;
-
-    for (VariableRef cell : cells) {
-      if (this->cell_overlap(cell, range)) {
-        if (this->cell_realizes_once(cell, offset, size)) {
-          // that cell has only one way to be affected by the write statement
-          updated_cells.push_back(cell);
-        } else {
-          this->forget_surface_cell(cell);
-          new_cells.remove(cell);
-        }
-      }
-    }
-
-    this->_cells.set(base, new_cells);
-    return updated_cells;
-  }
-
-  /// \brief Create a new cell for a read
-  VariableRef read_realize_single_cell(VariableFactory& vfac,
-                                       MemoryLocationRef base,
-                                       const MachineInt& offset,
-                                       const MachineInt& size,
-                                       Signedness sign) {
-    VariableRef new_cell = this->cell(vfac, base, offset, size, sign);
-    CellSetT cells = this->_cells.get(base);
-    cells.add(new_cell);
-    this->_cells.set(base, cells);
-
-    // TODO(marthaud): perform further reduction in case of partial overlaps
-    return new_cell;
-  }
-
-  /// \brief Assignment `var = literal`
-  class LiteralWriter : public LiteralT::template Visitor<> {
-  private:
-    VariableRef _lhs; // cell variable
-    MachineIntDomain& _integer;
-    PointerDomain& _pointer;
-    UninitializedDomain& _uninitialized;
-
-  public:
-    LiteralWriter(VariableRef lhs,
-                  PointerDomain& pointer,
-                  UninitializedDomain& uninitialized)
-        : _lhs(lhs),
-          _integer(pointer.integers()),
-          _pointer(pointer),
-          _uninitialized(uninitialized) {}
-
-    void machine_int(const MachineInt& rhs) {
-      if (MachIntVariableTrait::bit_width(_lhs) == rhs.bit_width()) {
-        Signedness lhs_sign = MachIntVariableTrait::sign(_lhs);
-        if (lhs_sign == rhs.sign()) {
-          _integer.assign(_lhs, rhs);
-        } else {
-          _integer.assign(_lhs, rhs.sign_cast(lhs_sign));
-        }
-      } else {
-        _integer.forget(_lhs);
-      }
-      _pointer.forget(_lhs);
-      _uninitialized.assign_initialized(_lhs);
-    }
-
-    void floating_point(const DummyNumber&) {
-      _integer.forget(_lhs);
-      _pointer.forget(_lhs);
-      _uninitialized.assign_initialized(_lhs);
-    }
-
-    void memory_location(MemoryLocationRef addr) {
-      _integer.forget(_lhs);
-      _pointer.assign_address(_lhs, addr, Nullity::non_null());
-      _uninitialized.assign_initialized(_lhs);
-    }
-
-    void null() {
-      _integer.forget(_lhs);
-      _pointer.assign_null(_lhs);
-      _uninitialized.assign_initialized(_lhs);
-    }
-
-    void undefined() {
-      _integer.forget(_lhs);
-      _pointer.assign_undef(_lhs);
-      _uninitialized.assign_uninitialized(_lhs);
-    }
-
-    void machine_int_var(VariableRef rhs) {
-      if (MachIntVariableTrait::bit_width(_lhs) ==
-          MachIntVariableTrait::bit_width(rhs)) {
-        if (MachIntVariableTrait::sign(_lhs) ==
-            MachIntVariableTrait::sign(rhs)) {
-          _integer.assign(_lhs, rhs);
-        } else {
-          _integer.apply(machine_int::UnaryOperator::SignCast, _lhs, rhs);
-        }
-      } else {
-        _integer.forget(_lhs);
-      }
-      _pointer.forget(_lhs);
-      _uninitialized.assign(_lhs, rhs);
-    }
-
-    void floating_point_var(VariableRef rhs) {
-      _integer.forget(_lhs);
-      _pointer.forget(_lhs);
-      _uninitialized.assign(_lhs, rhs);
-    }
-
-    void pointer_var(VariableRef rhs) {
-      _integer.forget(_lhs);
-      _pointer.assign(_lhs, rhs);
-      _uninitialized.assign(_lhs, rhs);
-    }
-
-  }; // end class LiteralWriter
-
-  /// \brief Assignment `literal = var`
-  class LiteralReader : public LiteralT::template Visitor<> {
-  private:
-    VariableRef _rhs; // cell variable
-    MachineIntDomain& _integer;
-    NullityDomain& _nullity;
-    PointerDomain& _pointer;
-    UninitializedDomain& _uninitialized;
-
-  public:
-    LiteralReader(VariableRef rhs,
-                  PointerDomain& pointer,
-                  UninitializedDomain& uninitialized)
-        : _rhs(rhs),
-          _integer(pointer.integers()),
-          _nullity(pointer.nullity()),
-          _pointer(pointer),
-          _uninitialized(uninitialized) {}
-
-    void machine_int(const MachineInt&) {
-      ikos_unreachable("trying to assign a machine integer");
-    }
-
-    void floating_point(const DummyNumber&) {
-      ikos_unreachable("trying to assign a floating point");
-    }
-
-    void memory_location(MemoryLocationRef) {
-      ikos_unreachable("trying to assign a memory location");
-    }
-
-    void null() { ikos_unreachable("trying to assign to null"); }
-
-    void undefined() { ikos_unreachable("trying to assign to undefined"); }
-
-    void machine_int_var(VariableRef lhs) {
-      // in case the rhs is a null pointer, assign the integer to zero
-      // (implicit cast from pointer to int)
-      if (_nullity.is_null(_rhs)) {
-        _integer.assign(lhs,
-                        MachineInt::zero(MachIntVariableTrait::bit_width(lhs),
-                                         MachIntVariableTrait::sign(lhs)));
-      } else if (MachIntVariableTrait::bit_width(lhs) ==
-                 MachIntVariableTrait::bit_width(_rhs)) {
-        if (MachIntVariableTrait::sign(lhs) ==
-            MachIntVariableTrait::sign(_rhs)) {
-          _integer.assign(lhs, _rhs);
-        } else {
-          _integer.apply(machine_int::UnaryOperator::SignCast, lhs, _rhs);
-        }
-      } else {
-        _integer.forget(lhs);
-      }
-      _uninitialized.assign(lhs, _rhs);
-    }
-
-    void floating_point_var(VariableRef lhs) {
-      _uninitialized.assign(lhs, _rhs);
-    }
-
-    void pointer_var(VariableRef lhs) {
-      // in case the rhs is the integer zero, assign the pointer to null
-      // (implicit cast from int to pointer)
-      if (_integer.to_interval(_rhs).is_zero()) {
-        _pointer.assign_null(lhs);
-      } else {
-        _pointer.assign(lhs, _rhs);
-      }
-      _uninitialized.assign(lhs, _rhs);
-    }
-
-  }; // end class LiteralReader
-
-  /// \brief Perform a strong update `lhs = rhs`
-  void strong_update(VariableRef lhs, const LiteralT& rhs) {
-    LiteralWriter v(lhs, this->_pointer, this->_uninitialized);
-    rhs.apply_visitor(v);
-  }
-
-  /// \brief Perform a weak update `lhs = rhs`
-  void weak_update(VariableRef lhs, const LiteralT& rhs) {
-    PointerDomain pointer_inv(this->_pointer);
-    UninitializedDomain uninitialized_inv(this->_uninitialized);
-
-    LiteralWriter v(lhs, pointer_inv, uninitialized_inv);
-    rhs.apply_visitor(v);
-
-    this->_pointer.join_with(pointer_inv);
-    this->_uninitialized.join_with(uninitialized_inv);
-  }
-
-  /// \brief Perform a strong update `lhs = rhs`
-  void strong_update(const LiteralT& lhs, VariableRef rhs) {
-    LiteralReader v(rhs, this->_pointer, this->_uninitialized);
-    lhs.apply_visitor(v);
-  }
-
-  /// \brief Perform a weak update `lhs = rhs`
-  void weak_update(const LiteralT& lhs, VariableRef rhs) {
-    PointerDomain pointer_inv(this->_pointer);
-    UninitializedDomain uninitialized_inv(this->_uninitialized);
-
-    LiteralReader v(rhs, pointer_inv, uninitialized_inv);
-    lhs.apply_visitor(v);
-
-    this->_pointer.join_with(pointer_inv);
-    this->_uninitialized.join_with(uninitialized_inv);
-  }
-
   /// \brief Preferred signedness for a cell created from a literal
   ///
   /// For machine integers, return the integer sign
+  /// For floating points, return Signed
   /// For pointers, return Unsigned
-  /// By default, return Signed
   class LiteralPreferredSignedness
       : public LiteralT::template Visitor< Signedness > {
   public:
@@ -839,57 +802,374 @@ private:
     return lit.apply_visitor(LiteralPreferredSignedness());
   }
 
+  /// \brief Get or create the cell with the given base address, offset and size
+  ///
+  /// If a new cell is created, it will have the given signedness
+  VariableRef make_cell(MemoryLocationRef base,
+                        const MachineInt& offset,
+                        const MachineInt& size,
+                        Signedness sign) {
+    ikos_assert(offset.sign() == Unsigned);
+    ikos_assert(size.sign() == Unsigned);
+    ikos_assert(size.is_strictly_positive());
+    VariableRef c =
+        CellFactoryTrait::cell(this->_cell_factory, base, offset, size, sign);
+    ikos_assert(CellVariableTrait::is_cell(c));
+    ikos_assert(MachIntVariableTrait::bit_width(c) ==
+                size.to< unsigned >() * 8);
+    return c;
+  }
+
+  /// \brief Return the byte range for a given cell
+  IntInterval cell_range(VariableRef cell) const {
+    const MachineInt& offset = CellVariableTrait::offset(cell);
+    const MachineInt& size = CellVariableTrait::size(cell);
+    auto one = MachineInt(1, offset.bit_width(), Unsigned);
+    return IntInterval(offset, offset + (size - one));
+  }
+
+  /// \brief Return true if the given cell overlaps with the given byte range
+  bool cell_overlap(VariableRef cell, const IntInterval& range) const {
+    IntInterval meet = this->cell_range(cell).meet(range);
+    return !meet.is_bottom();
+  }
+
+  /// \brief Return true if the given cells overlap
+  bool cell_overlap(VariableRef a, VariableRef b) const {
+    return this->cell_overlap(a, this->cell_range(b));
+  }
+
+  /// \brief Return true if the memory write at `offset` of size `size`
+  /// can update the given cell. Return false if the number of overlaps between
+  /// the cell and the memory write is not exactly 1.
+  ///
+  /// For instance:
+  ///   * If Cell{o,4,4}, offset=[0, 8], size=4: returns false
+  ///   * If Cell{o,4,4}, offset=[4, 4], size=2: returns false
+  ///   * If Cell{o,4,4}, offset=[0, 8], offset=4Z+0, size=4, returns true
+  ///   * If Cell{o,4,4}, offset=[0, 8], offset=4Z+1, size=4, returns false
+  bool cell_realizes_once(VariableRef cell,
+                          IntIntervalCongruence offset,
+                          const MachineInt& size) const {
+    const MachineInt& cell_offset = CellVariableTrait::offset(cell);
+    const MachineInt& cell_size = CellVariableTrait::size(cell);
+    auto one = MachineInt(1, size.bit_width(), Unsigned);
+
+    if (size != cell_size) {
+      return false;
+    }
+
+    // Keep offsets that could 'touch' the cell
+    bool overflow = false;
+
+    // offset <= cell_offset + cell_size - 1
+    MachineInt ub = add(cell_offset, cell_size - one, overflow);
+    if (overflow) {
+      ub.set_max();
+    }
+
+    // offset + size - 1 >= cell_offset
+    MachineInt lb = sub(cell_offset, size - one, overflow);
+    if (overflow) {
+      lb.set_min();
+    }
+
+    offset.meet_with(IntIntervalCongruence(IntInterval(lb, ub)));
+
+    return offset == IntIntervalCongruence(cell_offset);
+  }
+
+  /// \brief Create a new cell for a write, performing reduction if possible
+  VariableRef write_realize_single_cell(MemoryLocationRef base,
+                                        const MachineInt& offset,
+                                        const MachineInt& size,
+                                        Signedness sign) {
+    VariableRef new_cell = this->make_cell(base, offset, size, sign);
+    const CellSetT& cells = this->_cells.get(base);
+
+    if (cells.is_empty()) {
+      // No cell found for the base address
+      this->_cells.set(base, CellSetT{new_cell});
+      return new_cell;
+    }
+
+    CellSetT new_cells = cells;
+    bool found = false;
+
+    // Remove overlapping cells
+    for (VariableRef cell : cells) {
+      if (cell == new_cell) {
+        found = true;
+      } else if (this->cell_overlap(cell, new_cell)) {
+        this->_scalar.dynamic_forget(cell);
+        new_cells.remove(cell);
+      }
+    }
+
+    if (!found) {
+      new_cells.add(new_cell);
+    }
+    this->_cells.set(base, new_cells);
+    return new_cell;
+  }
+
+  /// \brief Perform a write with an approximated offset.
+  ///
+  /// Returns a list of cells on which we should perform a weak update.
+  std::vector< VariableRef > write_realize_range_cells(
+      MemoryLocationRef base,
+      const IntIntervalCongruence& offset,
+      const MachineInt& size) {
+    // Write byte range
+    auto zero = MachineInt::zero(size.bit_width(), Unsigned);
+    auto one = MachineInt(1, size.bit_width(), Unsigned);
+    IntInterval range = add(offset.interval(), IntInterval(zero, size - one));
+
+    // Current list of cells
+    const CellSetT& cells = this->_cells.get(base);
+
+    if (cells.is_empty()) {
+      // no cell found for the base address
+      return {};
+    }
+
+    CellSetT new_cells = cells;
+    std::vector< VariableRef > updated_cells;
+
+    for (VariableRef cell : cells) {
+      if (this->cell_overlap(cell, range)) {
+        if (this->cell_realizes_once(cell, offset, size)) {
+          // This cell has only one way to be affected by the write statement
+          updated_cells.push_back(cell);
+        } else {
+          this->_scalar.dynamic_forget(cell);
+          new_cells.remove(cell);
+        }
+      }
+    }
+
+    this->_cells.set(base, new_cells);
+    return updated_cells;
+  }
+
+  /// \brief Create a new cell for a read
+  VariableRef read_realize_single_cell(MemoryLocationRef base,
+                                       const MachineInt& offset,
+                                       const MachineInt& size,
+                                       Signedness sign) {
+    VariableRef new_cell = this->make_cell(base, offset, size, sign);
+    CellSetT cells = this->_cells.get(base);
+    cells.add(new_cell);
+    this->_cells.set(base, cells);
+
+    // TODO(marthaud): perform further reduction in case of partial overlaps
+    return new_cell;
+  }
+
+  /// \brief Assignment `var = literal`
+  class LiteralWriter : public LiteralT::template Visitor<> {
+  private:
+    /// \brief Cell variable
+    VariableRef _lhs;
+
+    /// \brief Scalar abstract value
+    ScalarDomain& _scalar;
+
+  public:
+    LiteralWriter(VariableRef lhs, ScalarDomain& scalar)
+        : _lhs(lhs), _scalar(scalar) {}
+
+    void machine_int(const MachineInt& rhs) {
+      if (MachIntVariableTrait::bit_width(this->_lhs) == rhs.bit_width()) {
+        this->_scalar.dynamic_write_int(this->_lhs, rhs);
+      } else {
+        this->_scalar.dynamic_write_nondet_int(this->_lhs);
+      }
+    }
+
+    void floating_point(const DummyNumber&) {
+      this->_scalar.dynamic_write_nondet_float(this->_lhs);
+    }
+
+    void memory_location(MemoryLocationRef addr) {
+      this->_scalar.dynamic_write_pointer(this->_lhs,
+                                          addr,
+                                          Nullity::non_null());
+    }
+
+    void null() { this->_scalar.dynamic_write_null(this->_lhs); }
+
+    void undefined() { this->_scalar.dynamic_write_undef(this->_lhs); }
+
+    void machine_int_var(VariableRef rhs) {
+      if (MachIntVariableTrait::bit_width(_lhs) ==
+          MachIntVariableTrait::bit_width(rhs)) {
+        this->_scalar.dynamic_write_int(this->_lhs, rhs);
+      } else {
+        this->_scalar.dynamic_write_nondet_int(this->_lhs);
+      }
+    }
+
+    void floating_point_var(VariableRef /*rhs*/) {
+      this->_scalar.dynamic_write_nondet_float(this->_lhs);
+    }
+
+    void pointer_var(VariableRef rhs) {
+      this->_scalar.dynamic_write_pointer(this->_lhs, rhs);
+    }
+
+  }; // end class LiteralWriter
+
+  /// \brief Assignment `literal = var`
+  class LiteralReader : public LiteralT::template Visitor<> {
+  private:
+    /// \brief Cell variable
+    VariableRef _rhs;
+
+    /// \brief Scalar abstract value
+    ScalarDomain& _scalar;
+
+  public:
+    LiteralReader(VariableRef rhs, ScalarDomain& scalar)
+        : _rhs(rhs), _scalar(scalar) {}
+
+    void machine_int(const MachineInt&) {
+      ikos_unreachable("trying to assign a machine integer");
+    }
+
+    void floating_point(const DummyNumber&) {
+      ikos_unreachable("trying to assign a floating point");
+    }
+
+    void memory_location(MemoryLocationRef) {
+      ikos_unreachable("trying to assign a memory location");
+    }
+
+    void null() { ikos_unreachable("trying to assign to null"); }
+
+    void undefined() { ikos_unreachable("trying to assign to undefined"); }
+
+    void machine_int_var(VariableRef lhs) {
+      // If the right hand side is a null pointer, assign the integer to zero
+      // (implicit cast from pointer to int)
+      if (this->_scalar.dynamic_is_null(this->_rhs)) {
+        auto zero = MachineInt::zero(MachIntVariableTrait::bit_width(lhs),
+                                     MachIntVariableTrait::sign(lhs));
+        this->_scalar.int_assign(lhs, zero);
+      } else if (MachIntVariableTrait::bit_width(lhs) ==
+                 MachIntVariableTrait::bit_width(this->_rhs)) {
+        this->_scalar.dynamic_read_int(lhs, this->_rhs);
+      } else {
+        this->_scalar.int_assign_nondet(lhs);
+      }
+    }
+
+    void floating_point_var(VariableRef lhs) {
+      this->_scalar.float_assign_nondet(lhs);
+    }
+
+    void pointer_var(VariableRef lhs) {
+      // If the right hand side is the integer zero, assign the pointer to null
+      // (implicit cast from int to pointer)
+      if (this->_scalar.dynamic_is_zero(this->_rhs)) {
+        this->_scalar.pointer_assign_null(lhs);
+      } else {
+        this->_scalar.dynamic_read_pointer(lhs, this->_rhs);
+      }
+    }
+
+  }; // end class LiteralReader
+
+  /// \brief Perform a strong update `lhs = rhs`
+  void strong_update(VariableRef lhs, const LiteralT& rhs) {
+    LiteralWriter v(lhs, this->_scalar);
+    rhs.apply_visitor(v);
+  }
+
+  /// \brief Perform a weak update `lhs = rhs`
+  void weak_update(VariableRef lhs, const LiteralT& rhs) {
+    ScalarDomain scalar = this->_scalar;
+    LiteralWriter v(lhs, scalar);
+    rhs.apply_visitor(v);
+    this->_scalar.join_with(scalar);
+  }
+
+  /// \brief Perform a strong update `lhs = rhs`
+  void strong_update(const LiteralT& lhs, VariableRef rhs) {
+    LiteralReader v(rhs, this->_scalar);
+    lhs.apply_visitor(v);
+  }
+
+  /// \brief Perform a weak update `lhs = rhs`
+  void weak_update(const LiteralT& lhs, VariableRef rhs) {
+    ScalarDomain scalar = this->_scalar;
+    LiteralReader v(rhs, scalar);
+    lhs.apply_visitor(v);
+    this->_scalar.join_with(scalar);
+  }
+
 public:
-  void mem_write(VariableFactory& vfac,
-                 VariableRef ptr,
+  void mem_write(VariableRef ptr,
                  const LiteralT& rhs,
                  const MachineInt& size) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(ptr));
+
     if (this->is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(ptr) ||
-        this->uninitialized().is_uninitialized(ptr)) {
-      // null/undefined dereference
+    // Null/undefined pointer dereference
+    this->_scalar.nullity_assert_non_null(ptr);
+
+    // Writing an uninitialized variable is an error
+    // Note that writing the undefined constant is allowed
+    if (rhs.is_var()) {
+      this->_scalar.uninit_assert_initialized(rhs.var());
+    }
+
+    if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(ptr);
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(ptr);
 
     if (addrs.is_empty()) {
-      // invalid dereference
+      // Invalid dereference
       this->set_to_bottom();
       return;
     }
 
     if (size.is_zero()) {
-      // does nothing
+      // Does nothing
       return;
     }
 
     if (addrs.is_top()) {
-      this->forget_mem(); // very conservative, but sound
+      this->mem_forget_all(); // Very conservative, but sound
       return;
     }
 
-    // Update synthetic cells
+    //
+    // Update memory cells
+    //
 
-    // offset interval
-    Interval offset_intv = this->integers().to_interval(this->offset_var(ptr));
-    ikos_assert(offset_intv.sign() == Unsigned);
+    // Offset interval-congruence
+    IntIntervalCongruence offset_ic =
+        this->_scalar.pointer_offset_to_interval_congruence(ptr);
+    ikos_assert(offset_ic.sign() == Unsigned);
 
-    if (offset_intv.singleton()) {
+    if (offset_ic.singleton()) {
       // The offset has one possible value.
       //
       // We can perform the usual reduction and update.
-      MachineInt offset = *offset_intv.singleton();
+      MachineInt offset = *offset_ic.singleton();
       Signedness sign = this->preferred_cell_sign(rhs);
 
       for (MemoryLocationRef addr : addrs) {
         VariableRef cell =
-            this->write_realize_single_cell(vfac, addr, offset, size, sign);
+            this->write_realize_single_cell(addr, offset, size, sign);
 
         if (addrs.size() == 1) {
           this->strong_update(cell, rhs);
@@ -917,14 +1197,16 @@ public:
 
       for (MemoryLocationRef addr : addrs) {
         std::vector< VariableRef > cells =
-            this->write_realize_range_cells(addr, this->offset_var(ptr), size);
+            this->write_realize_range_cells(addr, offset_ic, size);
         for (VariableRef cell : cells) {
           this->weak_update(cell, rhs);
         }
       }
     }
 
+    //
     // Update pointer sets
+    //
 
     auto rhs_ptr = PointerAbsValueT::bottom(1, Unsigned);
     if (rhs.is_memory_location()) {
@@ -932,59 +1214,62 @@ public:
           PointerAbsValueT(Uninitialized::initialized(),
                            Nullity::non_null(),
                            PointsToSetT{rhs.memory_location()},
-                           Interval(MachineInt::zero(offset_intv.bit_width(),
-                                                     Unsigned)));
+                           IntInterval(MachineInt::zero(offset_ic.bit_width(),
+                                                        Unsigned)));
     } else if (rhs.is_pointer_var()) {
-      rhs_ptr = this->_pointer.get(rhs.var());
+      rhs_ptr = this->_scalar.pointer_to_pointer(rhs.var());
     } else {
-      // right hand side is not a pointer, nothing else to do
+      // Right hand side is not a pointer, nothing else to do
       return;
     }
 
     for (MemoryLocationRef addr : addrs) {
       PointerSetT pointer_set =
-          this->_pointer_sets.get(addr, offset_intv.bit_width(), Unsigned);
+          this->_pointer_sets.get(addr, offset_ic.bit_width(), Unsigned);
       pointer_set.add(rhs_ptr);
       this->_pointer_sets.set(addr, pointer_set);
     }
   }
 
-  void mem_read(VariableFactory& vfac,
-                const LiteralT& lhs,
+  void mem_read(const LiteralT& lhs,
                 VariableRef ptr,
                 const MachineInt& size) override {
     ikos_assert(lhs.is_var());
+    ikos_assert(ScalarVariableTrait::is_pointer(ptr));
     ikos_assert(size.is_strictly_positive());
 
     if (this->is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(ptr) ||
-        this->uninitialized().is_uninitialized(ptr)) {
-      // null/undefined dereference
+    // Null/undefined pointer dereference
+    this->_scalar.nullity_assert_non_null(ptr);
+
+    if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(ptr);
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(ptr);
 
     if (addrs.is_empty()) {
-      // invalid dereference
+      // Invalid dereference
       this->set_to_bottom();
       return;
     }
 
     if (addrs.is_top()) {
-      this->forget_surface(lhs.var());
+      this->_scalar.scalar_assign_nondet(lhs.var());
       return;
     }
 
-    // Handle synthetic cells
+    //
+    // Handle memory cells
+    //
 
-    // offset interval
-    Interval offset_intv = this->integers().to_interval(this->offset_var(ptr));
+    // Offset interval
+    IntInterval offset_intv = this->_scalar.pointer_offset_to_interval(ptr);
     ikos_assert(offset_intv.sign() == Unsigned);
 
     if (offset_intv.singleton()) {
@@ -997,7 +1282,7 @@ public:
 
       for (MemoryLocationRef addr : addrs) {
         VariableRef cell =
-            this->read_realize_single_cell(vfac, addr, offset, size, sign);
+            this->read_realize_single_cell(addr, offset, size, sign);
 
         if (first) {
           this->strong_update(lhs, cell);
@@ -1023,10 +1308,12 @@ public:
       // summarization array-based domain (e.g.,some array domain
       // such as a trivial array smashing or something more
       // expressive like Cousot&Logozzo's POPL'11).
-      this->forget_surface(lhs.var());
+      this->_scalar.scalar_assign_nondet(lhs.var());
     }
 
+    //
     // Handle pointer sets
+    //
 
     if (lhs.is_pointer_var()) {
       PointerSetT pointer_set =
@@ -1037,124 +1324,134 @@ public:
             this->_pointer_sets.get(addr, offset_intv.bit_width(), Unsigned));
       }
 
-      this->_pointer.refine(lhs.var(), pointer_set);
+      this->_scalar.pointer_refine(lhs.var(), pointer_set);
     }
+
+    // Reading uninitialized memory is an error
+    // Therefore, the result of a read is always initialized
+    this->_scalar.uninit_assert_initialized(lhs.var());
   }
 
-  void mem_copy(VariableFactory& vfac,
-                VariableRef dest,
+  void mem_copy(VariableRef dest,
                 VariableRef src,
                 const LiteralT& size) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(dest));
+    ikos_assert(ScalarVariableTrait::is_pointer(src));
+
     if (this->is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(dest) ||
-        this->uninitialized().is_uninitialized(dest) ||
-        this->nullity().is_null(src) ||
-        this->uninitialized().is_uninitialized(src)) {
-      // null/undefined dereference
+    // Null/undefined pointer dereference
+    this->_scalar.nullity_assert_non_null(src);
+    this->_scalar.nullity_assert_non_null(dest);
+
+    if (size.is_undefined()) {
+      this->_scalar.set_to_bottom();
+      return;
+    } else if (size.is_var()) {
+      this->_scalar.uninit_assert_initialized(size.var());
+    }
+
+    if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by dest and src
-    PointsToSetT src_addrs = this->_pointer.points_to(src);
-    PointsToSetT dest_addrs = this->_pointer.points_to(dest);
+    // Memory locations pointed by dest and src
+    PointsToSetT src_addrs = this->_scalar.pointer_to_points_to(src);
+    PointsToSetT dest_addrs = this->_scalar.pointer_to_points_to(dest);
 
     if (src_addrs.is_empty() || dest_addrs.is_empty()) {
-      // invalid dereference
+      // Invalid dereference
       this->set_to_bottom();
       return;
     }
 
     if (dest_addrs.is_top()) {
-      this->forget_mem(); // very conservative, but sound
+      this->mem_forget_all(); // Very conservative, but sound
       return;
     }
 
-    // Update synthetic cells
+    //
+    // Update memory cells
+    //
 
-    // offsets and size intervals
-    Interval src_intv = this->integers().to_interval(this->offset_var(src));
-    Interval dest_intv = this->integers().to_interval(this->offset_var(dest));
-    auto size_intv = Interval::bottom(1, Unsigned);
+    // Offsets and size intervals
+    IntInterval src_intv = this->_scalar.pointer_offset_to_interval(src);
+    IntInterval dest_intv = this->_scalar.pointer_offset_to_interval(dest);
+    auto size_intv = IntInterval::bottom(1, Unsigned);
 
     if (size.is_machine_int()) {
-      size_intv = Interval(size.machine_int());
+      size_intv = IntInterval(size.machine_int());
     } else if (size.is_machine_int_var()) {
-      size_intv = this->integers().to_interval(size.var());
+      size_intv = this->_scalar.int_to_interval(size.var());
     } else {
       ikos_unreachable("unexpected literal for size");
     }
     assert_compatible(size_intv, src_intv);
 
     if (size_intv.ub().is_zero()) {
-      return; // does nothing
+      return; // Does nothing
     }
 
-    // to be sound, remove all reachable cells
+    // To be sound, remove all reachable cells
     for (MemoryLocationRef addr : dest_addrs) {
-      this->forget_cells(addr, this->offset_var(dest), size_intv.ub());
+      this->mem_forget_cells(addr, dest_intv, size_intv.ub());
     }
 
     if (dest_addrs.singleton() && dest_intv.singleton() &&
         !src_addrs.is_top() && src_intv.singleton() &&
         !size_intv.lb().is_zero()) {
-      // in that case, we can be more precise
+      // In this case, we can be more precise
       MemoryLocationRef dest_addr = *dest_addrs.singleton();
       MachineInt dest_offset = *dest_intv.singleton();
       MachineInt src_offset = *src_intv.singleton();
       const MachineInt& size_lb = size_intv.lb();
       auto one = MachineInt(1, dest_intv.bit_width(), Unsigned);
-      auto src_range = Interval(src_offset, src_offset + (size_lb - one));
+      auto src_range = IntInterval(src_offset, src_offset + (size_lb - one));
 
-      ValueDomain prev(*this);
-      bool first = true;
+      boost::optional< ScalarDomain > new_scalar;
+      CellSetT dest_cells = this->_cells.get(dest_addr);
 
       for (MemoryLocationRef src_addr : src_addrs) {
-        // copy from src_addr/src_offset to dest_addr/dest_offset
-        ValueDomain inv(prev);
-        const CellSetT& src_cells = inv._cells.get(src_addr);
+        // Copy from src_addr/src_offset to dest_addr/dest_offset
+        ScalarDomain scalar = this->_scalar;
+        const CellSetT& src_cells = this->_cells.get(src_addr);
 
-        if (!src_cells.is_empty()) {
-          CellSetT dest_cells = inv._cells.get(dest_addr);
-
-          for (VariableRef cell : src_cells) {
-            if (this->cell_range(cell).leq(src_range)) {
-              VariableRef new_cell =
-                  this->cell(vfac,
-                             dest_addr,
-                             dest_offset +
-                                 (CellVariableTrait::offset(cell) - src_offset),
-                             CellVariableTrait::size(cell),
-                             MachIntVariableTrait::sign(cell));
-              dest_cells.add(new_cell);
-              inv.integers().assign(new_cell, cell);
-              inv.pointers().assign(new_cell, cell);
-              inv.uninitialized().assign(new_cell, cell);
-            }
+        for (VariableRef cell : src_cells) {
+          if (this->cell_range(cell).leq(src_range)) {
+            VariableRef new_cell =
+                this->make_cell(dest_addr,
+                                dest_offset + (CellVariableTrait::offset(cell) -
+                                               src_offset),
+                                CellVariableTrait::size(cell),
+                                MachIntVariableTrait::sign(cell));
+            dest_cells.add(new_cell);
+            scalar.dynamic_assign(new_cell, cell);
           }
-
-          inv._cells.set(dest_addr, dest_cells);
         }
 
-        if (first) {
-          this->operator=(std::move(inv));
-          first = false;
+        if (!new_scalar) {
+          new_scalar = std::move(scalar);
         } else {
-          this->join_with(inv);
+          new_scalar->join_with(scalar);
         }
       }
+
+      ikos_assert(new_scalar);
+      this->_scalar = std::move(*new_scalar);
+      this->_cells.set(dest_addr, dest_cells);
     }
 
+    //
     // Update pointer sets
+    //
 
     // Collect source pointer sets
     auto src_pointer_set = PointerSetT::bottom(src_intv.bit_width(), Unsigned);
-
     if (src_addrs.is_top()) {
-      src_pointer_set.set_to_top(); // sound
+      src_pointer_set.set_to_top(); // Be sound
     } else {
       for (MemoryLocationRef addr : src_addrs) {
         src_pointer_set.join_with(
@@ -1171,79 +1468,97 @@ public:
     }
   }
 
-  void mem_set(VariableFactory& /*vfac*/,
-               VariableRef dest,
+  void mem_set(VariableRef dest,
                const LiteralT& value,
                const LiteralT& size) override {
-    if (this->is_bottom()) {
+    ikos_assert(ScalarVariableTrait::is_pointer(dest));
+
+    if (this->_scalar.is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(dest) ||
-        this->uninitialized().is_uninitialized(dest)) {
-      // null/undefined dereference
+    // Null/undefined pointer dereference
+    this->_scalar.nullity_assert_non_null(dest);
+
+    if (value.is_undefined()) {
+      this->_scalar.set_to_bottom();
+      return;
+    } else if (value.is_var()) {
+      this->_scalar.uninit_assert_initialized(value.var());
+    }
+
+    if (size.is_undefined()) {
+      this->_scalar.set_to_bottom();
+      return;
+    } else if (size.is_var()) {
+      this->_scalar.uninit_assert_initialized(size.var());
+    }
+
+    if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by dest
-    PointsToSetT addrs = this->_pointer.points_to(dest);
+    // Memory locations pointed by dest
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(dest);
 
     if (addrs.is_empty()) {
-      // invalid dereference
+      // Invalid dereference
       this->set_to_bottom();
       return;
     }
 
     if (addrs.is_top()) {
-      this->forget_cells(); // very conservative, but sound
+      this->mem_forget_cells(); // Very conservative, but sound
       return;
     }
 
-    // Update synthetic cells
+    //
+    // Update memory cells
+    //
 
-    // offset, size and value intervals
-    Interval dest_intv = this->integers().to_interval(this->offset_var(dest));
-    auto size_intv = Interval::bottom(1, Unsigned);
-    auto value_intv = Interval::bottom(1, Unsigned);
+    // Offset, size and value intervals
+    IntInterval dest_intv = this->_scalar.pointer_offset_to_interval(dest);
+    auto size_intv = IntInterval::bottom(1, Unsigned);
+    auto value_intv = IntInterval::bottom(1, Unsigned);
 
     if (size.is_machine_int()) {
-      size_intv = Interval(size.machine_int());
+      size_intv = IntInterval(size.machine_int());
     } else if (size.is_machine_int_var()) {
-      size_intv = this->integers().to_interval(size.var());
+      size_intv = this->_scalar.int_to_interval(size.var());
     } else {
       ikos_unreachable("unexpected literal for size");
     }
     assert_compatible(size_intv, dest_intv);
 
     if (value.is_machine_int()) {
-      value_intv = Interval(value.machine_int());
+      value_intv = IntInterval(value.machine_int());
     } else if (size.is_machine_int_var()) {
-      value_intv = this->integers().to_interval(value.var());
+      value_intv = this->_scalar.int_to_interval(value.var());
     } else {
       ikos_unreachable("unexpected literal for value");
     }
 
     if (size_intv.ub().is_zero()) {
-      return; // does nothing
+      return; // Does nothing
     }
 
     if (value_intv.is_zero()) {
-      // memory set to zero
+      // Memory set to zero
       const MachineInt& size_lb = size_intv.lb();
-      auto zero = MachineInt(0, size_lb.bit_width(), Unsigned);
+      auto zero = MachineInt::zero(size_lb.bit_width(), Unsigned);
       auto one = MachineInt(1, size_lb.bit_width(), Unsigned);
 
-      // offsets that are updated
+      // Offsets that are updated
       auto safe_range_lb =
-          Interval(dest_intv.lb(), dest_intv.lb() + (size_lb - one));
+          IntInterval(dest_intv.lb(), dest_intv.lb() + (size_lb - one));
       auto safe_range_ub =
-          Interval(dest_intv.ub(), dest_intv.ub() + (size_lb - one));
-      Interval safe_range = safe_range_lb.meet(safe_range_ub);
+          IntInterval(dest_intv.ub(), dest_intv.ub() + (size_lb - one));
+      IntInterval safe_range = safe_range_lb.meet(safe_range_ub);
 
-      // possibly updated offsets
-      Interval unsafe_range =
-          add(dest_intv, Interval(zero, size_intv.ub() - one));
+      // Possibly updated offsets
+      IntInterval unsafe_range =
+          add(dest_intv, IntInterval(zero, size_intv.ub() - one));
 
       for (MemoryLocationRef addr : addrs) {
         const CellSetT& cells = this->_cells.get(addr);
@@ -1252,20 +1567,19 @@ public:
           CellSetT new_cells = cells;
 
           for (VariableRef cell : cells) {
-            Interval range = this->cell_range(cell);
+            IntInterval range = this->cell_range(cell);
 
             if (range.leq(safe_range)) {
               LiteralT zero_lit = LiteralT::machine_int(
-                  MachineInt(0,
-                             MachIntVariableTrait::bit_width(cell),
-                             MachIntVariableTrait::sign(cell)));
+                  MachineInt::zero(MachIntVariableTrait::bit_width(cell),
+                                   MachIntVariableTrait::sign(cell)));
               if (addrs.singleton()) {
                 this->strong_update(cell, zero_lit);
               } else {
                 this->weak_update(cell, zero_lit);
               }
-            } else if (range.leq(unsafe_range)) {
-              this->forget_surface_cell(cell);
+            } else if (!range.meet(unsafe_range).is_bottom()) {
+              this->_scalar.dynamic_forget(cell);
               new_cells.remove(cell);
             }
           }
@@ -1274,42 +1588,18 @@ public:
         }
       }
     } else {
-      // to be sound, remove all reachable cells
+      // To be sound, remove all reachable cells
       for (MemoryLocationRef addr : addrs) {
-        this->forget_cells(addr, this->offset_var(dest), size_intv.ub());
+        this->mem_forget_cells(addr, dest_intv, size_intv.ub());
       }
     }
 
     // Nothing to do for pointer sets
   }
 
-  void forget_surface(VariableRef x) override {
-    if (MemVariableTrait::is_cell(x)) {
-      this->forget_surface_cell(x);
-    } else if (MemVariableTrait::is_int(x)) {
-      this->integers().forget(x);
-      this->uninitialized().forget(x);
-    } else if (MemVariableTrait::is_float(x)) {
-      this->uninitialized().forget(x);
-    } else if (MemVariableTrait::is_pointer(x)) {
-      this->pointers().forget(x);
-      this->uninitialized().forget(x);
-    } else {
-      ikos_unreachable("unexpected type");
-    }
-  }
-
 private:
-  /// \brief Forget a cell variable
-  void forget_surface_cell(VariableRef x) {
-    ikos_assert(MemVariableTrait::is_cell(x));
-    this->integers().forget(x);
-    this->pointers().forget(x);
-    this->uninitialized().forget(x);
-  }
-
-  /// \brief Forget all synthetic cells
-  void forget_cells() {
+  /// \brief Forget all memory cells
+  void mem_forget_cells() {
     if (this->_cells.is_bottom()) {
       return;
     }
@@ -1323,15 +1613,15 @@ private:
       }
 
       for (VariableRef cell : cells) {
-        this->forget_surface_cell(cell);
+        this->_scalar.dynamic_forget(cell);
       }
     }
 
     this->_cells.set_to_top();
   }
 
-  /// \brief Forget the synthetic cells for the given memory location
-  void forget_cells(MemoryLocationRef addr) {
+  /// \brief Forget the memory cells for the given memory location
+  void mem_forget_cells(MemoryLocationRef addr) {
     const CellSetT& cells = this->_cells.get(addr);
 
     if (cells.is_bottom()) {
@@ -1339,50 +1629,40 @@ private:
     }
 
     for (VariableRef cell : cells) {
-      this->forget_surface_cell(cell);
+      this->_scalar.dynamic_forget(cell);
     }
 
     this->_cells.forget(addr);
   }
 
-  /// \brief Forget the synthetic cells in range
+  /// \brief Forget the memory cells in range
   /// `[addr + offset, addr + offset + size - 1]`
-  void forget_cells(MemoryLocationRef addr,
-                    VariableRef offset,
-                    const MachineInt& size) {
-    if (this->is_bottom()) {
-      return;
-    }
-
+  void mem_forget_cells(MemoryLocationRef addr,
+                        const IntInterval& offset,
+                        const MachineInt& size) {
     if (size.is_zero()) {
       return;
     }
-    if (size.is_max()) {
-      this->forget_mem(addr);
-      return;
-    }
 
-    Interval offset_intv = this->integers().to_interval(offset);
-    auto size_intv = Interval(MachineInt::zero(size.bit_width(), Unsigned),
-                              size - MachineInt(1, size.bit_width(), Unsigned));
-    this->forget_cells(addr, add(offset_intv, size_intv));
+    auto zero = MachineInt::zero(size.bit_width(), Unsigned);
+    auto one = MachineInt(1, size.bit_width(), Unsigned);
+    this->mem_forget_cells(addr, add(offset, IntInterval(zero, size - one)));
   }
 
-  /// \brief Forget the synthetic cells in
+  /// \brief Forget the memory cells in
   /// `[addr + range.lb(), addr + range.ub()]`
-  void forget_cells(MemoryLocationRef addr, const Interval& range) {
-    ikos_assert(!range.is_bottom());
-
+  void mem_forget_cells(MemoryLocationRef addr, const IntInterval& range) {
     const CellSetT& cells = this->_cells.get(addr);
-    CellSetT new_cells = cells;
 
-    if (cells.is_empty()) {
+    if (cells.is_bottom() || cells.is_empty()) {
       return;
     }
 
+    CellSetT new_cells = cells;
+
     for (VariableRef cell : cells) {
-      if (cell_overlap(cell, range)) {
-        this->forget_surface_cell(cell);
+      if (this->cell_overlap(cell, range)) {
+        this->_scalar.dynamic_forget(cell);
         new_cells.remove(cell);
       }
     }
@@ -1391,176 +1671,257 @@ private:
   }
 
   /// \brief Forget all pointer sets
-  void forget_pointer_sets() { this->_pointer_sets.set_to_top(); }
+  void mem_forget_pointer_sets() { this->_pointer_sets.set_to_top(); }
 
   /// \brief Forget the pointer set for the given memory location
-  void forget_pointer_set(MemoryLocationRef addr) {
+  void mem_forget_pointer_set(MemoryLocationRef addr) {
     this->_pointer_sets.forget(addr);
   }
 
 public:
-  void forget_mem() override {
-    this->forget_cells();
-    this->forget_pointer_sets();
+  void mem_forget_all() override {
+    this->mem_forget_cells();
+    this->mem_forget_pointer_sets();
   }
 
-  void forget_mem(MemoryLocationRef addr) override {
-    this->forget_cells(addr);
-    this->forget_pointer_set(addr);
+  void mem_forget(MemoryLocationRef addr) override {
+    this->mem_forget_cells(addr);
+    this->mem_forget_pointer_set(addr);
   }
 
-  void forget_mem(MemoryLocationRef addr,
-                  VariableRef offset,
+  void mem_forget(MemoryLocationRef addr,
+                  const IntInterval& offset,
                   const MachineInt& size) override {
-    if (this->is_bottom()) {
-      return;
-    }
-
     if (size.is_zero()) {
       return;
     }
 
-    this->forget_cells(addr, offset, size);
-    this->forget_pointer_set(addr);
+    this->mem_forget_cells(addr, offset, size);
+    this->mem_forget_pointer_set(addr);
   }
 
-  void forget_mem(MemoryLocationRef addr, const Interval& range) override {
-    this->forget_cells(addr, range);
-    this->forget_pointer_set(addr);
+  void mem_forget(MemoryLocationRef addr, const IntInterval& range) override {
+    this->mem_forget_cells(addr, range);
+    this->mem_forget_pointer_set(addr);
   }
 
-  void forget_reachable_mem(VariableRef p) override {
+  void mem_forget_reachable(VariableRef p) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(p));
+
     if (this->is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(p)) {
+    this->_scalar.uninit_assert_initialized(p);
+
+    if (this->_scalar.is_bottom()) {
+      this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(p);
+    if (this->_scalar.nullity_is_null(p)) {
+      return; // Does nothing
+    }
+
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(p);
 
     if (addrs.is_top()) {
-      this->forget_mem(); // very conservative, but sound
+      this->mem_forget_all(); // Very conservative, but sound
       return;
     }
 
     for (MemoryLocationRef addr : addrs) {
-      this->forget_mem(addr);
+      this->mem_forget(addr);
     }
   }
 
-  void forget_reachable_mem(VariableRef p, const MachineInt& size) override {
+  void mem_forget_reachable(VariableRef p, const MachineInt& size) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(p));
+
     if (this->is_bottom()) {
       return;
+    }
+
+    this->_scalar.uninit_assert_initialized(p);
+
+    if (this->_scalar.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    if (this->_scalar.nullity_is_null(p)) {
+      return; // Does nothing
     }
 
     if (size.is_zero()) {
-      return;
+      return; // Does nothing
     }
 
-    if (this->nullity().is_null(p)) {
-      return;
-    }
-
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(p);
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(p);
 
     if (addrs.is_top()) {
-      this->forget_mem(); // very conservative, but sound
+      this->mem_forget_all(); // very conservative, but sound
       return;
     }
 
+    // Offset interval
+    IntInterval offset_intv = this->_scalar.pointer_offset_to_interval(p);
+
     for (MemoryLocationRef addr : addrs) {
-      this->forget_mem(addr, this->offset_var(p), size);
+      this->mem_forget(addr, offset_intv, size);
     }
   }
 
-  void abstract_reachable_mem(VariableRef p) override {
+  void mem_abstract_reachable(VariableRef p) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(p));
+
     if (this->is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(p)) {
+    this->_scalar.uninit_assert_initialized(p);
+
+    if (this->_scalar.is_bottom()) {
+      this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(p);
+    if (this->_scalar.nullity_is_null(p)) {
+      return; // Does nothing
+    }
+
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(p);
 
     if (addrs.is_top()) {
-      this->forget_cells(); // very conservative, but sound
+      this->mem_forget_cells(); // Very conservative, but sound
       return;
     }
 
     for (MemoryLocationRef addr : addrs) {
-      this->forget_cells(addr);
+      this->mem_forget_cells(addr);
     }
   }
 
-  void abstract_reachable_mem(VariableRef p, const MachineInt& size) override {
+  void mem_abstract_reachable(VariableRef p, const MachineInt& size) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(p));
+
     if (this->is_bottom()) {
       return;
+    }
+
+    this->_scalar.uninit_assert_initialized(p);
+
+    if (this->_scalar.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    if (this->_scalar.nullity_is_null(p)) {
+      return; // Does nothing
     }
 
     if (size.is_zero()) {
-      return;
+      return; // Does nothing
     }
 
-    if (this->nullity().is_null(p)) {
-      return;
-    }
-
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(p);
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(p);
 
     if (addrs.is_top()) {
-      this->forget_cells(); // very conservative, but sound
+      this->mem_forget_cells(); // Very conservative, but sound
       return;
     }
 
+    // Offset interval
+    IntInterval offset_intv = this->_scalar.pointer_offset_to_interval(p);
+
     for (MemoryLocationRef addr : addrs) {
-      this->forget_cells(addr, this->offset_var(p), size);
+      this->mem_forget_cells(addr, offset_intv, size);
     }
   }
 
-  void zero_reachable_mem(VariableRef p) override {
-    this->uninitialize_reachable_mem(p);
+  void mem_zero_reachable(VariableRef p) override {
+    this->mem_uninitialize_reachable(p);
   }
 
-  void uninitialize_reachable_mem(VariableRef p) override {
+  void mem_uninitialize_reachable(VariableRef p) override {
+    ikos_assert(ScalarVariableTrait::is_pointer(p));
+
     if (this->is_bottom()) {
       return;
     }
 
-    if (this->nullity().is_null(p)) {
+    this->_scalar.uninit_assert_initialized(p);
+
+    if (this->_scalar.is_bottom()) {
+      this->set_to_bottom();
       return;
     }
 
-    // memory locations pointed by the pointer
-    PointsToSetT addrs = this->_pointer.points_to(p);
+    if (this->_scalar.nullity_is_null(p)) {
+      return; // Does nothing
+    }
+
+    // Memory locations pointed by the pointer
+    PointsToSetT addrs = this->_scalar.pointer_to_points_to(p);
 
     if (addrs.is_top()) {
-      this->forget_mem(); // very conservative, but sound
+      this->mem_forget_all(); // Very conservative, but sound
       return;
     }
 
     for (MemoryLocationRef addr : addrs) {
-      this->forget_mem(addr);
+      this->mem_forget(addr);
     }
 
     if (auto addr = addrs.singleton()) {
-      unsigned bit_width = MachIntVariableTrait::bit_width(this->offset_var(p));
+      unsigned bit_width =
+          MachIntVariableTrait::bit_width(ScalarVariableTrait::offset_var(p));
       this->_pointer_sets.set(*addr, PointerSetT::empty(bit_width, Unsigned));
     }
   }
 
+  /// @}
+  /// \name Lifetime abstract domain methods
+  /// @{
+
+  void lifetime_assign_allocated(MemoryLocationRef m) override {
+    this->_lifetime.assign_allocated(m);
+  }
+
+  void lifetime_assign_deallocated(MemoryLocationRef m) override {
+    this->_lifetime.assign_deallocated(m);
+  }
+
+  void lifetime_assert_allocated(MemoryLocationRef m) override {
+    this->_lifetime.assert_allocated(m);
+  }
+
+  void lifetime_assert_deallocated(MemoryLocationRef m) override {
+    this->_lifetime.assert_deallocated(m);
+  }
+
+  void lifetime_forget(MemoryLocationRef m) override {
+    this->_lifetime.forget(m);
+  }
+
+  void lifetime_set(MemoryLocationRef m, Lifetime value) override {
+    this->_lifetime.set(m, value);
+  }
+
+  Lifetime lifetime_to_lifetime(MemoryLocationRef m) const override {
+    return this->_lifetime.get(m);
+  }
+
+  /// @}
+
   void normalize() const override {
     // is_bottom() will normalize
-    if (this->_cells.is_bottom() || this->_pointer_sets.is_bottom() ||
-        this->_pointer.is_bottom() || this->_uninitialized.is_bottom() ||
-        this->_lifetime.is_bottom()) {
+    if (this->_lifetime.is_bottom() || this->_pointer_sets.is_bottom() ||
+        this->_cells.is_bottom() || this->_scalar.is_bottom()) {
       const_cast< ValueDomain* >(this)->set_to_bottom();
     }
   }
@@ -1572,13 +1933,11 @@ public:
       o << "T";
     } else {
       o << "(";
+      this->_scalar.dump(o);
+      o << ", ";
       this->_cells.dump(o);
       o << ", ";
       this->_pointer_sets.dump(o);
-      o << ", ";
-      this->_pointer.dump(o);
-      o << ", ";
-      this->_uninitialized.dump(o);
       o << ", ";
       this->_lifetime.dump(o);
       o << ")";
@@ -1586,8 +1945,8 @@ public:
   }
 
   static std::string name() {
-    return "value domain using " + PointerDomain::name() + ", " +
-           UninitializedDomain::name() + " and " + LifetimeDomain::name();
+    return "value domain using " + ScalarDomain::name() + " and " +
+           LifetimeDomain::name();
   }
 
 }; // end class ValueDomain

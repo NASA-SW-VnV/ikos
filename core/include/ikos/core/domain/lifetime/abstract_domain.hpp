@@ -62,35 +62,35 @@ public:
                 "location types");
 
 public:
-  /// \brief Assign `x = allocated`
-  virtual void assign_allocated(MemoryLocationRef x) = 0;
+  /// \brief Assign `m = allocated`
+  virtual void assign_allocated(MemoryLocationRef m) = 0;
 
-  /// \brief Assign `x = deallocated`
-  virtual void assign_deallocated(MemoryLocationRef x) = 0;
+  /// \brief Assign `m = deallocated`
+  virtual void assign_deallocated(MemoryLocationRef m) = 0;
 
-  /// \brief Add the constraint `x == allocated`
-  virtual void assert_allocated(MemoryLocationRef x) = 0;
+  /// \brief Add the constraint `m == allocated`
+  virtual void assert_allocated(MemoryLocationRef m) = 0;
 
-  /// \brief Add the constraint `x != deallocated`
-  virtual void assert_deallocated(MemoryLocationRef x) = 0;
+  /// \brief Add the constraint `m == deallocated`
+  virtual void assert_deallocated(MemoryLocationRef m) = 0;
 
-  /// \brief Return true if `x` is allocated, otherwise false
-  virtual bool is_allocated(MemoryLocationRef x) const = 0;
+  /// \brief Return true if `m` is allocated, otherwise false
+  virtual bool is_allocated(MemoryLocationRef m) const = 0;
 
-  /// \brief Return true if `x` is deallocated, otherwise false
-  virtual bool is_deallocated(MemoryLocationRef x) const = 0;
+  /// \brief Return true if `m` is deallocated, otherwise false
+  virtual bool is_deallocated(MemoryLocationRef m) const = 0;
 
   /// \brief Set the lifetime of a memory location
-  virtual void set(MemoryLocationRef x, const Lifetime& value) = 0;
+  virtual void set(MemoryLocationRef m, const Lifetime& value) = 0;
 
   /// \brief Forget the lifetime of a memory location
-  virtual void forget(MemoryLocationRef x) = 0;
+  virtual void forget(MemoryLocationRef m) = 0;
 
   /// \brief Normalize the abstract value
   virtual void normalize() const = 0;
 
   /// \brief Get the lifetime value for the given memory location
-  virtual Lifetime get(MemoryLocationRef x) const = 0;
+  virtual Lifetime get(MemoryLocationRef m) const = 0;
 
 }; // end class AbstractDomain
 

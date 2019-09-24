@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Generic API for pointer variables
+ * \brief Generic API for scalar variables
  *
  * Author: Maxime Arthaud
  *
@@ -9,7 +9,7 @@
  *
  * Notices:
  *
- * Copyright (c) 2018-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -47,13 +47,23 @@
 
 namespace ikos {
 namespace core {
-namespace pointer {
+namespace scalar {
 
-/// \brief Traits for pointer variables
-///
-/// This class should be specialized for pointer variables.
+/// \brief Traits for scalar variables
 ///
 /// Elements to provide:
+///
+/// static bool is_int(VariableRef)
+///   Return true if the given variable is a machine integer variable
+///
+/// static bool is_float(VariableRef)
+///   Return true if the given variable is a floating point variable
+///
+/// static bool is_pointer(VariableRef)
+///   Return true if the given variable is a pointer variable
+///
+/// static bool is_dynamic(VariableRef)
+///   Return true if the given variable is a dynamically typed variable
 ///
 /// static VariableRef offset_var(VariableRef)
 ///   Return the machine integer offset variable of the given pointer variable
@@ -67,14 +77,31 @@ template < typename VariableRef,
 struct IsVariable : std::false_type {};
 
 template < typename VariableRef, typename VariableTrait >
-struct IsVariable< VariableRef,
-                   VariableTrait,
-                   std::enable_if_t< std::is_same<
-                       VariableRef,
-                       decltype(VariableTrait::offset_var(
-                           std::declval< VariableRef >())) >::value > >
+struct IsVariable<
+    VariableRef,
+    VariableTrait,
+    void_t< std::enable_if_t<
+                std::is_same< bool,
+                              decltype(VariableTrait::is_int(
+                                  std::declval< VariableRef >())) >::value >,
+            std::enable_if_t<
+                std::is_same< bool,
+                              decltype(VariableTrait::is_float(
+                                  std::declval< VariableRef >())) >::value >,
+            std::enable_if_t<
+                std::is_same< bool,
+                              decltype(VariableTrait::is_pointer(
+                                  std::declval< VariableRef >())) >::value >,
+            std::enable_if_t<
+                std::is_same< bool,
+                              decltype(VariableTrait::is_dynamic(
+                                  std::declval< VariableRef >())) >::value >,
+            std::enable_if_t<
+                std::is_same< VariableRef,
+                              decltype(VariableTrait::offset_var(
+                                  std::declval< VariableRef >())) >::value > > >
     : std::true_type {};
 
-} // end namespace pointer
+} // end namespace scalar
 } // end namespace core
 } // end namespace ikos

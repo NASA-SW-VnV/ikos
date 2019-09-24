@@ -178,6 +178,34 @@ public:
 #endif
   }
 
+private:
+  /// \brief Visitor that returns true if the literal is a variable
+  struct IsVariableLit : public boost::static_visitor< bool > {
+    bool operator()(const ScalarLit& lit) const { return lit.is_var(); }
+
+    bool operator()(const AggregateLit& lit) const { return lit.is_var(); }
+  };
+
+public:
+  // \brief Return true if the literal is a variable
+  bool is_var() const {
+    return boost::apply_visitor(IsVariableLit(), this->_lit);
+  }
+
+private:
+  /// \brief Visitor that returns the variable
+  struct GetVariable : public boost::static_visitor< Variable* > {
+    Variable* operator()(const ScalarLit& lit) const { return lit.var(); }
+
+    Variable* operator()(const AggregateLit& lit) const { return lit.var(); }
+  };
+
+public:
+  /// \brief Get the variable
+  Variable* var() const {
+    return boost::apply_visitor(GetVariable(), this->_lit);
+  }
+
 public:
   /// \brief Literal visitor
   ///

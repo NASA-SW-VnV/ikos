@@ -152,10 +152,6 @@ public:
     this->_inv.refine(x, Uninitialized::initialized());
   }
 
-  void assert_uninitialized(VariableRef x) override {
-    this->_inv.refine(x, Uninitialized::uninitialized());
-  }
-
   bool is_initialized(VariableRef x) const override {
     ikos_assert_msg(!this->is_bottom(),
                     "trying to call is_initialized() on bottom");

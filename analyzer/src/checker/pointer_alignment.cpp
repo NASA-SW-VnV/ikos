@@ -139,9 +139,8 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
 
   const ScalarLit& ptr = this->_lit_factory.get_scalar(operand);
 
-  if (ptr.is_undefined() ||
-      (ptr.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
+  if (ptr.is_undefined() || (ptr.is_pointer_var() &&
+                             inv.normal().uninit_is_uninitialized(ptr.var()))) {
     // Undefined operand
     if (auto msg =
             this->display_alignment_check(Result::Error, stmt, operand)) {
@@ -151,7 +150,7 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
   }
 
   if (ptr.is_null() ||
-      (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
+      (ptr.is_pointer_var() && inv.normal().nullity_is_null(ptr.var()))) {
     // Null operand
     if (auto msg =
             this->display_alignment_check(Result::Error, stmt, operand)) {
@@ -176,11 +175,8 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
   // Pointer variable
   Variable* ptr_var = ptr.var();
 
-  // Variable representing the pointer offset
-  Variable* offset_var = inv.normal().pointers().offset_var(ptr_var);
-
   // Points-to set of the pointer
-  PointsToSet addrs = inv.normal().pointers().points_to(ptr_var);
+  PointsToSet addrs = inv.normal().pointer_to_points_to(ptr_var);
 
   if (auto gv = dyn_cast< ar::GlobalVariable >(operand)) {
     addrs = PointsToSet{_ctx.mem_factory->get_global(gv)};
@@ -205,7 +201,7 @@ PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
   }
 
   Congruence alignment_req_c = to_congruence(alignment_req, 0);
-  Congruence offset_c = inv.normal().integers().to_congruence(offset_var);
+  Congruence offset_c = inv.normal().pointer_offset_to_congruence(ptr_var);
 
   if (isa< ar::GlobalVariable >(operand)) {
     offset_c = to_congruence(0, 0);

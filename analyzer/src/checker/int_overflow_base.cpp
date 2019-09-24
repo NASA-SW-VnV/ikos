@@ -117,7 +117,7 @@ IntOverflowCheckerBase::check_integer_overflow(
 
   if (left_lit.is_undefined() ||
       (left_lit.is_machine_int_var() &&
-       inv.normal().uninitialized().is_uninitialized(left_lit.var()))) {
+       inv.normal().uninit_is_uninitialized(left_lit.var()))) {
     // Undefined operand
     if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
       *msg << ": undefined left operand\n";
@@ -127,7 +127,7 @@ IntOverflowCheckerBase::check_integer_overflow(
   } else if (left_lit.is_machine_int()) {
     left_interval = IntInterval(left_lit.machine_int());
   } else if (left_lit.is_machine_int_var()) {
-    left_interval = inv.normal().integers().to_interval(left_lit.var());
+    left_interval = inv.normal().int_to_interval(left_lit.var());
   } else {
     log::error("unexpected operand to binary operation");
     return {{CheckKind::UnexpectedOperand, Result::Error, {stmt->left()}, {}}};
@@ -135,7 +135,7 @@ IntOverflowCheckerBase::check_integer_overflow(
 
   if (right_lit.is_undefined() ||
       (right_lit.is_machine_int_var() &&
-       inv.normal().uninitialized().is_uninitialized(right_lit.var()))) {
+       inv.normal().uninit_is_uninitialized(right_lit.var()))) {
     // Undefined operand
     if (auto msg = this->display_int_overflow_check(Result::Error, stmt)) {
       *msg << ": undefined right operand\n";
@@ -145,7 +145,7 @@ IntOverflowCheckerBase::check_integer_overflow(
   } else if (right_lit.is_machine_int()) {
     right_interval = IntInterval(right_lit.machine_int());
   } else if (right_lit.is_machine_int_var()) {
-    right_interval = inv.normal().integers().to_interval(right_lit.var());
+    right_interval = inv.normal().int_to_interval(right_lit.var());
   } else {
     log::error("unexpected operand to binary operation");
     return {{CheckKind::UnexpectedOperand, Result::Error, {stmt->right()}, {}}};

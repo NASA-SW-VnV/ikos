@@ -51,12 +51,7 @@
 #include <ikos/ar/verify/type.hpp>
 
 #include <ikos/core/domain/exception/abstract_domain.hpp>
-#include <ikos/core/domain/lifetime/abstract_domain.hpp>
-#include <ikos/core/domain/machine_int/abstract_domain.hpp>
 #include <ikos/core/domain/memory/abstract_domain.hpp>
-#include <ikos/core/domain/nullity/abstract_domain.hpp>
-#include <ikos/core/domain/pointer/abstract_domain.hpp>
-#include <ikos/core/domain/uninitialized/abstract_domain.hpp>
 
 #include <ikos/analyzer/analysis/context.hpp>
 #include <ikos/analyzer/analysis/execution_engine/engine.hpp>
@@ -75,70 +70,48 @@ namespace analyzer {
 /// This class performs the transfer function on each AR (Abstract
 /// Representation) statement with different levels of precision.
 ///
-/// It relies on a abstract domain (template parameter AbstractDomain).
+/// It relies on an abstract domain.
+///
+/// The abstract domain must implement the exception abstract domain interface
+/// to handle exception propagation correctly.
+///
+/// The exception abstract domain must provide an underlying abstract domain
+/// that must implement the memory abstract domain interface to handle scalar
+/// variables and memory operations.
 ///
 /// It can reason about registers (Precision::Register), pointers
 /// (Precision::Pointer) and memory contents (Precision::Memory).
 ///
 /// Levels of precision:
 ///
-/// 1) If level of precision is Precision::Register then only integer scalar
-/// variables are modelled using a numerical abstraction.
+/// 1) If level of precision is Precision::Register then only integer variables
+/// are modelled using a numerical abstraction.
 ///
 /// 2) If the level of precision is Precision::Pointer then both integer and
-/// pointer scalar variables are modelled. If a variable is a pointer we model
+/// pointer variables are modelled. If a variable is a pointer we model
 /// its address, offset and size. The offset and size are modelled by a
 /// numerical abstraction while the address is modelled by a symbolic
 /// abstraction. This symbolic abstraction consists of a set of points-to
 /// relationships that keeps track of all possible memory objects (i.e., &'s and
 /// mallocs) to which the pointer may point to.
 ///
-/// Thus, a pointer is abstracted by a triple <A,O,S> where A is the set of
-/// addresses to which p may point to, O is the offset from the beginning of the
-/// block expressed in bytes, and S is the size of the block. The value domain
-/// keeps tracks of these triples.
-///
 /// 3) If the level of precision is Precision::Memory then same level than
-/// Precision::Pointer plus memory contents. That is, we can keep track of which
-/// values are stored in a triple <A,O,S>.
-///
-/// Abstractions:
-///
-/// - For an integer scalar x:
-///
-///   - A range that over-approximates the value of x. The representation of the
-///     range depends on the underlying numerical domain.
-///
-///   - Whether x might be uninitialized or not.
-///
-/// - For a pointer scalar p (only if _precision >= Precision::Pointer):
-///
-///   - The offset from the base address of the object that contains p. For
-///     this, we rely on the pointer_domain_impl that uses the variable
-///     offset_var(p) = "p.offset" in the underlying numerical domain to
-///     represent p's offset.
-///
-///   - The actual size of the allocated memory for p (including padding). For
-///     this, we add a shadow variable get_alloc_size(obj) = "shadow.obj.size"
-///     that keeps track of the allocated size by the memory object (&'s and
-///     mallocs) associated with p in the underlying numerical domain.
-///
-///   - The address of p via a set of memory objects (&'s and mallocs) to which
-///     p may point to (ie., points-to sets).
-///
-///   - Whether p might be null or not.
-///
-///   - Whether p might be uninitialized or not.
-///
-///   - Whether *p might be allocated or deallocated.
-///
-///   - In addition to this, if _precision == Precision::Memory, it also keeps
-///     track of the content of p (i.e., *p). This is handled internally by the
-///     value analysis (Load and Store).
+/// Precision::Pointer plus memory contents.
 template < typename AbstractDomain >
 class NumericalExecutionEngine final : public ExecutionEngine {
+public:
+  static_assert(core::exception::IsAbstractDomain< AbstractDomain >::value,
+                "AbstractDomain must implement exception::AbstractDomain");
+  static_assert(core::memory::IsAbstractDomain<
+                    typename AbstractDomain::UnderlyingDomainT,
+                    Variable*,
+                    MemoryLocation* >::value,
+                "AbstractDomain::UnderlyingDomainT must implement "
+                "memory::AbstractDomain");
+
 private:
   using IntInterval = core::machine_int::Interval;
+  using IntIntervalCongruence = core::machine_int::IntervalCongruence;
   using IntVariable = core::VariableExpression< MachineInt, Variable* >;
   using IntLinearExpression = core::LinearExpression< MachineInt, Variable* >;
   using IntLinearConstraint = core::LinearConstraint< MachineInt, Variable* >;
@@ -150,7 +123,7 @@ private:
   using IntUnaryOperator = core::machine_int::UnaryOperator;
   using IntBinaryOperator = core::machine_int::BinaryOperator;
   using IntPredicate = core::machine_int::Predicate;
-  using PtrPredicate = core::pointer::Predicate;
+  using PointerPredicate = core::pointer::Predicate;
 
 private:
   /// \brief Current invariant
@@ -162,7 +135,7 @@ private:
   /// \brief Memory location factory
   MemoryFactory& _mem_factory;
 
-  /// \brief Variable name factory
+  /// \brief Variable factory
   VariableFactory& _var_factory;
 
   /// \brief Literal factory
@@ -227,7 +200,6 @@ public:
   /// \brief Destructor
   ~NumericalExecutionEngine() override = default;
 
-public:
   /// \brief Create a fresh numerical execution engine, with its own abstract
   /// domain
   NumericalExecutionEngine fork() const { return *this; }
@@ -251,24 +223,8 @@ public:
   const PointerInfo* pointer_info() const { return this->_pointer_info; }
 
 public:
-  /// \name Helpers for memory statements
+  /// \name Helpers to allocate memory
   /// @{
-
-  /// \brief Assign a pointer variable `ptr`
-  void assign_pointer(Variable* ptr,
-                      MemoryLocation* addr,
-                      Nullity null_val,
-                      Uninitialized uninit_val) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
-    // Update pointer info, offset and nullity
-    this->_inv.normal().pointers().assign_address(ptr, addr, null_val);
-
-    // Update uninitialized variables
-    this->_inv.normal().uninitialized().set(ptr, uninit_val);
-  }
 
   /// \brief Initial value for a memory block
   enum class MemoryInitialValue {
@@ -290,26 +246,30 @@ public:
   /// have been taken are translated to global variables by the front-end.
   void allocate_memory(Variable* ptr,
                        MemoryLocation* addr,
-                       Nullity null_val,
-                       Uninitialized uninit_val,
+                       Nullity nullity,
                        Lifetime lifetime,
                        MemoryInitialValue init_val) {
-    this->assign_pointer(ptr, addr, null_val, uninit_val);
+    if (this->_precision < Precision::Pointer) {
+      return;
+    }
+
+    // Update pointer
+    this->_inv.normal().pointer_assign(ptr, addr, nullity);
 
     if (this->_precision < Precision::Memory) {
       return;
     }
 
     // Update memory location lifetime
-    this->_inv.normal().lifetime().set(addr, lifetime);
+    this->_inv.normal().lifetime_set(addr, lifetime);
 
     // Update memory value
     if (init_val == MemoryInitialValue::Zero) {
-      this->_inv.normal().zero_reachable_mem(ptr);
+      this->_inv.normal().mem_zero_reachable(ptr);
     } else if (init_val == MemoryInitialValue::Uninitialized) {
-      this->_inv.normal().uninitialize_reachable_mem(ptr);
+      this->_inv.normal().mem_uninitialize_reachable(ptr);
     } else if (init_val == MemoryInitialValue::Unknown) {
-      this->_inv.normal().forget_reachable_mem(ptr);
+      this->_inv.normal().mem_forget_reachable(ptr);
     } else {
       ikos_unreachable("unreachable");
     }
@@ -318,14 +278,12 @@ public:
   /// \brief Allocate a new memory object `addr` of size `alloc_size` (in bytes)
   void allocate_memory(Variable* ptr,
                        MemoryLocation* addr,
-                       Nullity null_val,
-                       Uninitialized uninit_val,
+                       Nullity nullity,
                        Lifetime lifetime,
                        MemoryInitialValue init_val,
                        const MachineInt& alloc_size) {
-    // Update pointer info, offset, nullity, uninitialized variables, lifetime
-    // and initial value for the memory location
-    this->allocate_memory(ptr, addr, null_val, uninit_val, lifetime, init_val);
+    // Update pointer, lifetime and initial value for the memory location
+    this->allocate_memory(ptr, addr, nullity, lifetime, init_val);
 
     if (this->_precision < Precision::Memory) {
       return;
@@ -333,20 +291,18 @@ public:
 
     // Update allocated size var
     Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-    this->_inv.normal().integers().assign(alloc_size_var, alloc_size);
+    this->_inv.normal().int_assign(alloc_size_var, alloc_size);
   }
 
   /// \brief Allocate a new memory object `addr` of size `alloc_size` (in bytes)
   void allocate_memory(Variable* ptr,
                        MemoryLocation* addr,
-                       Nullity null_val,
-                       Uninitialized uninit_val,
+                       Nullity nullity,
                        Lifetime lifetime,
                        MemoryInitialValue init_val,
                        Variable* alloc_size) {
-    // Update pointer info, offset, nullity, uninitialized variables, lifetime
-    // and initial value for the memory location
-    this->allocate_memory(ptr, addr, null_val, uninit_val, lifetime, init_val);
+    // Update pointer, lifetime and initial value for the memory location
+    this->allocate_memory(ptr, addr, nullity, lifetime, init_val);
 
     if (this->_precision < Precision::Memory) {
       return;
@@ -354,10 +310,15 @@ public:
 
     // Update allocated size var
     Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-    this->_inv.normal().integers().assign(alloc_size_var, alloc_size);
+    this->_inv.normal().uninit_assert_initialized(alloc_size);
+    this->_inv.normal().int_assign(alloc_size_var, alloc_size);
   }
 
 private:
+  /// @}
+  /// \name Internal helpers
+  /// @{
+
   /// \brief Initialize a global variable or function pointer operand
   ///
   /// Global variables and constant function pointers are not stored in the
@@ -369,16 +330,15 @@ private:
     }
 
     if (auto gv = dyn_cast< ar::GlobalVariable >(value)) {
-      this->assign_pointer(this->_var_factory.get_global(gv),
-                           this->_mem_factory.get_global(gv),
-                           Nullity::non_null(),
-                           Uninitialized::initialized());
+      this->_inv.normal().pointer_assign(this->_var_factory.get_global(gv),
+                                         this->_mem_factory.get_global(gv),
+                                         Nullity::non_null());
     } else if (auto fun_ptr = dyn_cast< ar::FunctionPointerConstant >(value)) {
       auto fun = fun_ptr->function();
-      this->assign_pointer(this->_var_factory.get_function_ptr(fun),
-                           this->_mem_factory.get_function(fun),
-                           Nullity::non_null(),
-                           Uninitialized::initialized());
+      this->_inv.normal().pointer_assign(this->_var_factory.get_function_ptr(
+                                             fun),
+                                         this->_mem_factory.get_function(fun),
+                                         Nullity::non_null());
     } else if (auto struct_cst = dyn_cast< ar::StructConstant >(value)) {
       for (auto it = struct_cst->field_begin(), et = struct_cst->field_end();
            it != et;
@@ -394,137 +354,82 @@ private:
     }
   }
 
-private:
+  /// \brief Initialize global variables and function pointer operands
+  void init_global_operands(ar::Statement* s) {
+    for (auto it = s->op_begin(), et = s->op_end(); it != et; ++it) {
+      this->init_global_operand(*it);
+    }
+  }
+
   /// \brief Prepare a memory access (read/write) on the given pointer
   ///
   /// Return true if the memory access can be performed, i.e the pointer is
   /// non-null and well defined
   bool prepare_mem_access(const ScalarLit& ptr) {
     if (ptr.is_undefined()) {
-      // undefined pointer dereference
+      // Undefined pointer dereference
       this->_inv.set_normal_flow_to_bottom();
       return false;
     } else if (ptr.is_null()) {
-      // null pointer dereference
+      // Null pointer dereference
       this->_inv.set_normal_flow_to_bottom();
       return false;
     }
 
     ikos_assert_msg(ptr.is_pointer_var(), "unexpected parameter");
 
-    // reduction between value and pointer analysis
+    // Reduction between value and pointer analysis
     this->refine_addresses_offset(ptr.var());
 
-    if (this->_inv.is_normal_flow_bottom()) {
-      return false;
-    }
+    // Assert `ptr != null`
+    this->_inv.normal().nullity_assert_non_null(ptr.var());
 
-    if (this->_inv.normal().uninitialized().is_uninitialized(ptr.var())) {
-      // undefined pointer dereference
-      this->_inv.set_normal_flow_to_bottom();
-      return false;
-    } else if (this->_inv.normal().nullity().is_null(ptr.var())) {
-      // null pointer dereference
-      this->_inv.set_normal_flow_to_bottom();
-      return false;
-    }
-
-    return true; // ready for read/write
+    // Ready for read/write
+    return !this->_inv.is_normal_flow_bottom();
   }
 
-private:
-  /// \brief Model a pointer arithmetic `lhs = base + offset`
-  void pointer_shift(const ScalarLit& lhs,
-                     const ScalarLit& base,
-                     const ScalarLit& offset) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
-    ikos_assert_msg(lhs.is_pointer_var(),
-                    "left hand side is not a pointer variable");
-    ikos_assert_msg(!base.is_undefined(), "base is not defined");
-    ikos_assert_msg(!offset.is_undefined(), "offset is not defined");
-
-    if (base.is_null()) {
-      this->_inv.normal().pointers().assign_address(lhs.var(),
-                                                    this->_mem_factory
-                                                        .get_absolute_zero(),
-                                                    Nullity::null());
-      if (offset.is_machine_int_var()) {
-        this->_inv.normal().pointers().assign(lhs.var(),
-                                              lhs.var(),
-                                              offset.var());
-      } else if (offset.is_machine_int()) {
-        this->_inv.normal().pointers().assign(lhs.var(),
-                                              lhs.var(),
-                                              offset.machine_int());
-      } else {
-        ikos_unreachable("unexpected offset operand");
-      }
-    } else if (base.is_pointer_var()) {
-      if (offset.is_machine_int_var()) {
-        this->_inv.normal().pointers().assign(lhs.var(),
-                                              base.var(),
-                                              offset.var());
-      } else if (offset.is_machine_int()) {
-        this->_inv.normal().pointers().assign(lhs.var(),
-                                              base.var(),
-                                              offset.machine_int());
-      } else {
-        ikos_unreachable("unexpected offset operand");
-      }
-    } else {
-      ikos_unreachable("unexpected base operand");
-    }
-
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
-    this->normalize_absolute_zero_nullity(lhs.var());
-  }
-
-private:
   /// \brief Normalize the nullity domain
   ///
   /// Check if the given pointer variable points to AbsoluteZeroMemoryLocation.
   /// If so, check if the offset interval contains zero, and update the nullity
   /// domain accordingly.
-  void normalize_absolute_zero_nullity(Variable* var) {
-    if (this->_precision < Precision::Pointer ||
-        this->_inv.normal().nullity().is_bottom() ||
-        this->_inv.normal().nullity().get(var).is_top()) {
+  void normalize_absolute_zero_nullity(Variable* p) {
+    if (this->_precision < Precision::Pointer) {
       return;
     }
 
-    PointsToSet addrs = this->_inv.normal().pointers().points_to(var);
+    auto nullity = this->_inv.normal().nullity_to_nullity(p);
+    if (nullity.is_bottom() || nullity.is_top()) {
+      return;
+    }
+
+    PointsToSet addrs = this->_inv.normal().pointer_to_points_to(p);
 
     if (addrs.contains(this->_mem_factory.get_absolute_zero())) {
-      auto offset_interval = this->_inv.normal().integers().to_interval(
-          this->_inv.normal().pointers().offset_var(var));
-      MachineInt zero =
-          MachineInt::zero(offset_interval.bit_width(), offset_interval.sign());
+      IntIntervalCongruence offset =
+          this->_inv.normal().pointer_offset_to_interval_congruence(p);
+      auto zero = MachineInt::zero(offset.bit_width(), offset.sign());
 
-      if (offset_interval.is_bottom()) {
+      if (offset.is_bottom()) {
         return;
       } else if (addrs.singleton()) {
-        if (offset_interval.singleton() ==
-            boost::optional< MachineInt >(zero)) {
+        if (offset.singleton() == boost::optional< MachineInt >(zero)) {
           // Pointer is definitely null (base is zero, offset = 0)
-          this->_inv.normal().pointers().assign_null(var);
-        } else if (!offset_interval.contains(zero)) {
+          this->_inv.normal().nullity_set(p, Nullity::null());
+        } else if (!offset.contains(zero)) {
           // Pointer is definitely non-null (base is zero, offset != 0)
-          this->_inv.normal().nullity().assign_non_null(var);
+          this->_inv.normal().nullity_set(p, Nullity::non_null());
         } else {
           // Pointer might be null (base is zero, offset contains zero)
-          this->_inv.normal().nullity().forget(var);
+          this->_inv.normal().nullity_set(p, Nullity::top());
         }
-      } else if (offset_interval.contains(zero)) {
+      } else if (offset.contains(zero)) {
         // Pointer might be null (base might be zero, offset contains zero)
-        this->_inv.normal().nullity().forget(var);
+        this->_inv.normal().nullity_set(p, Nullity::top());
       }
     }
   }
 
-private:
   /// \brief Refine the addresses of `ptr` using information from an external
   /// pointer analysis
   void refine_addresses(Variable* ptr) {
@@ -536,10 +441,9 @@ private:
     }
 
     PointerAbsValue value = this->_pointer_info->get(ptr);
-    this->_inv.normal().pointers().refine(ptr, value.points_to());
+    this->_inv.normal().pointer_refine(ptr, value.points_to());
   }
 
-private:
   /// \brief Refine the addresses and offset of `ptr` using information from an
   /// external pointer analysis
   void refine_addresses_offset(Variable* ptr) {
@@ -551,7 +455,7 @@ private:
     }
 
     PointerAbsValue value = this->_pointer_info->get(ptr);
-    this->_inv.normal().pointers().refine(ptr, value);
+    this->_inv.normal().pointer_refine(ptr, value);
   }
 
 private:
@@ -560,8 +464,6 @@ private:
   /// @{
 
   /// \brief Integer variable assignment
-  ///
-  /// Support implicit bitcasts (see is_implicit_bitcast in ar::TypeVerifier)
   class IntegerAssign : public ScalarLit::template Visitor<> {
   private:
     Variable* _lhs;
@@ -571,19 +473,7 @@ private:
     IntegerAssign(Variable* lhs, AbstractDomain& inv) : _lhs(lhs), _inv(inv) {}
 
     void machine_int(const MachineInt& rhs) {
-      auto type = ar::cast< ar::IntegerType >(this->_lhs->type());
-
-      // Update numerical abstraction
-      ikos_assert(type->bit_width() == rhs.bit_width());
-      if (type->sign() == rhs.sign()) {
-        this->_inv.normal().integers().assign(this->_lhs, rhs);
-      } else {
-        this->_inv.normal().integers().assign(this->_lhs,
-                                              rhs.sign_cast(type->sign()));
-      }
-
-      // Update uninitialized variables
-      this->_inv.normal().uninitialized().assign_initialized(this->_lhs);
+      this->_inv.normal().int_assign(this->_lhs, rhs);
     }
 
     void floating_point(const DummyNumber&) { ikos_unreachable("unreachable"); }
@@ -592,30 +482,10 @@ private:
 
     void null() { ikos_unreachable("unreachable"); }
 
-    void undefined() {
-      // Update numerical abstraction
-      this->_inv.normal().integers().forget(this->_lhs);
-
-      // Update uninitialized variables
-      this->_inv.normal().uninitialized().assign_uninitialized(this->_lhs);
-    }
+    void undefined() { this->_inv.normal().int_assign_undef(this->_lhs); }
 
     void machine_int_var(Variable* rhs) {
-      auto lhs_type = ar::cast< ar::IntegerType >(this->_lhs->type());
-      auto rhs_type = ar::cast< ar::IntegerType >(rhs->type());
-
-      // Update numerical abstraction
-      ikos_assert(lhs_type->bit_width() == rhs_type->bit_width());
-      if (lhs_type->sign() == rhs_type->sign()) {
-        this->_inv.normal().integers().assign(this->_lhs, rhs);
-      } else {
-        this->_inv.normal().integers().apply(IntUnaryOperator::SignCast,
-                                             this->_lhs,
-                                             rhs);
-      }
-
-      // Update uninitialized variables
-      this->_inv.normal().uninitialized().assign(this->_lhs, rhs);
+      this->_inv.normal().int_assign(this->_lhs, rhs);
     }
 
     void floating_point_var(Variable*) { ikos_unreachable("unreachable"); }
@@ -637,30 +507,19 @@ private:
     void machine_int(const MachineInt&) { ikos_unreachable("unreachable"); }
 
     void floating_point(const DummyNumber&) {
-      // TODO(marthaud): Update numerical abstraction
-
-      // Update uninitialized variables
-      this->_inv.normal().uninitialized().assign_initialized(this->_lhs);
+      this->_inv.normal().float_assign_nondet(this->_lhs);
     }
 
     void memory_location(MemoryLocation*) { ikos_unreachable("unreachable"); }
 
     void null() { ikos_unreachable("unreachable"); }
 
-    void undefined() {
-      // TODO(marthaud): Update numerical abstraction
-
-      // Update uninitialized variables
-      this->_inv.normal().uninitialized().assign_uninitialized(this->_lhs);
-    }
+    void undefined() { this->_inv.normal().float_assign_undef(this->_lhs); }
 
     void machine_int_var(Variable*) { ikos_unreachable("unreachable"); }
 
     void floating_point_var(Variable* rhs) {
-      // TODO(marthaud): Update numerical abstraction
-
-      // Update uninitialized variables
-      this->_inv.normal().uninitialized().assign(this->_lhs, rhs);
+      this->_inv.normal().float_assign(this->_lhs, rhs);
     }
 
     void pointer_var(Variable*) { ikos_unreachable("unreachable"); }
@@ -681,35 +540,27 @@ private:
     void floating_point(const DummyNumber&) { ikos_unreachable("unreachable"); }
 
     void memory_location(MemoryLocation* addr) {
-      this->_inv.normal().pointers().assign_address(this->_lhs,
-                                                    addr,
-                                                    Nullity::non_null());
-      this->_inv.normal().uninitialized().assign_initialized(this->_lhs);
+      this->_inv.normal().pointer_assign(this->_lhs, addr, Nullity::non_null());
     }
 
-    void null() {
-      this->_inv.normal().pointers().assign_null(this->_lhs);
-      this->_inv.normal().uninitialized().assign_initialized(this->_lhs);
-    }
+    void null() { this->_inv.normal().pointer_assign_null(this->_lhs); }
 
-    void undefined() {
-      this->_inv.normal().pointers().assign_undef(this->_lhs);
-      this->_inv.normal().uninitialized().assign_uninitialized(this->_lhs);
-    }
+    void undefined() { this->_inv.normal().pointer_assign_undef(this->_lhs); }
 
     void machine_int_var(Variable*) { ikos_unreachable("unreachable"); }
 
     void floating_point_var(Variable*) { ikos_unreachable("unreachable"); }
 
     void pointer_var(Variable* rhs) {
-      this->_inv.normal().pointers().assign(this->_lhs, rhs);
-      this->_inv.normal().uninitialized().assign(this->_lhs, rhs);
+      this->_inv.normal().pointer_assign(this->_lhs, rhs);
     }
 
   }; // end class PointerAssign
 
-public:
   /// \brief Scalar assignment `lhs = rhs`
+  ///
+  /// Requires that `lhs` and `rhs` have the same type.
+  /// Propagates uninitialized variables.
   void assign(const ScalarLit& lhs, const ScalarLit& rhs) {
     if (lhs.is_machine_int_var()) {
       IntegerAssign v(lhs.var(), this->_inv);
@@ -719,9 +570,8 @@ public:
       rhs.apply_visitor(v);
     } else if (lhs.is_pointer_var()) {
       if (this->_precision < Precision::Pointer) {
-        return; // ignore pointers
+        return; // Ignore pointers
       }
-
       PointerAssign v(lhs.var(), this->_inv);
       rhs.apply_visitor(v);
     } else {
@@ -731,113 +581,250 @@ public:
 
 private:
   /// @}
-  /// \name Helpers for aggregate (struct,array) statements
+  /// \name Helpers for implicit bitcasts
   /// @{
 
-  /// \brief Return the AR type void*
+  /// \brief Integer variable implicit bitcast
+  class IntegerImplicitBitcast : public ScalarLit::template Visitor<> {
+  private:
+    Variable* _lhs;
+    ar::IntegerType* _type;
+    AbstractDomain& _inv;
+
+  public:
+    IntegerImplicitBitcast(Variable* lhs, AbstractDomain& inv)
+        : _lhs(lhs),
+          _type(ar::cast< ar::IntegerType >(lhs->type())),
+          _inv(inv) {}
+
+    void machine_int(const MachineInt& rhs) {
+      ikos_assert(this->_type->bit_width() == rhs.bit_width());
+      if (this->_type->sign() == rhs.sign()) {
+        this->_inv.normal().int_assign(this->_lhs, rhs);
+      } else {
+        this->_inv.normal().int_assign(this->_lhs,
+                                       rhs.sign_cast(this->_type->sign()));
+      }
+    }
+
+    void floating_point(const DummyNumber&) { ikos_unreachable("unreachable"); }
+
+    void memory_location(MemoryLocation*) { ikos_unreachable("unreachable"); }
+
+    void null() { ikos_unreachable("unreachable"); }
+
+    void undefined() { this->_inv.set_normal_flow_to_bottom(); }
+
+    void machine_int_var(Variable* rhs) {
+      auto rhs_type = ar::cast< ar::IntegerType >(rhs->type());
+
+      ikos_assert(this->_type->bit_width() == rhs_type->bit_width());
+      if (this->_type->sign() == rhs_type->sign()) {
+        this->_inv.normal().uninit_assert_initialized(rhs);
+        this->_inv.normal().int_assign(this->_lhs, rhs);
+      } else {
+        this->_inv.normal().int_apply(IntUnaryOperator::SignCast,
+                                      this->_lhs,
+                                      rhs);
+      }
+    }
+
+    void floating_point_var(Variable*) { ikos_unreachable("unreachable"); }
+
+    void pointer_var(Variable*) { ikos_unreachable("unreachable"); }
+
+  }; // end class IntegerImplicitBitcast
+
+  /// \brief Floating point variable implement bitcast
+  class FloatingPointImplicitBitcast : public ScalarLit::template Visitor<> {
+  private:
+    Variable* _lhs;
+    AbstractDomain& _inv;
+
+  public:
+    FloatingPointImplicitBitcast(Variable* lhs, AbstractDomain& inv)
+        : _lhs(lhs), _inv(inv) {}
+
+    void machine_int(const MachineInt&) { ikos_unreachable("unreachable"); }
+
+    void floating_point(const DummyNumber&) {
+      this->_inv.normal().float_assign_nondet(this->_lhs);
+    }
+
+    void memory_location(MemoryLocation*) { ikos_unreachable("unreachable"); }
+
+    void null() { ikos_unreachable("unreachable"); }
+
+    void undefined() { this->_inv.set_normal_flow_to_bottom(); }
+
+    void machine_int_var(Variable*) { ikos_unreachable("unreachable"); }
+
+    void floating_point_var(Variable* rhs) {
+      this->_inv.normal().uninit_assert_initialized(rhs);
+      this->_inv.normal().float_assign(this->_lhs, rhs);
+    }
+
+    void pointer_var(Variable*) { ikos_unreachable("unreachable"); }
+
+  }; // end class FloatingPointImplicitBitcast
+
+  /// \brief Pointer variable implicit bitcast
+  class PointerImplicitBitcast : public ScalarLit::template Visitor<> {
+  private:
+    Variable* _lhs;
+    AbstractDomain& _inv;
+
+  public:
+    PointerImplicitBitcast(Variable* lhs, AbstractDomain& inv)
+        : _lhs(lhs), _inv(inv) {}
+
+    void machine_int(const MachineInt&) { ikos_unreachable("unreachable"); }
+
+    void floating_point(const DummyNumber&) { ikos_unreachable("unreachable"); }
+
+    void memory_location(MemoryLocation* addr) {
+      this->_inv.normal().pointer_assign(this->_lhs, addr, Nullity::non_null());
+    }
+
+    void null() { this->_inv.normal().pointer_assign_null(this->_lhs); }
+
+    void undefined() { this->_inv.set_normal_flow_to_bottom(); }
+
+    void machine_int_var(Variable*) { ikos_unreachable("unreachable"); }
+
+    void floating_point_var(Variable*) { ikos_unreachable("unreachable"); }
+
+    void pointer_var(Variable* rhs) {
+      this->_inv.normal().uninit_assert_initialized(rhs);
+      this->_inv.normal().pointer_assign(this->_lhs, rhs);
+    }
+
+  }; // end class PointerImplicitBitcast
+
+  /// \brief Implicit bitcast `lhs = rhs`
+  ///
+  /// Requires either one of:
+  ///  - `lhs` and `rhs` have the same type
+  ///  - `lhs` and `rhs` are integers of same bit-width (signed <-> unsigned)
+  ///  - `lhs` and `rhs` are pointer types (ie., A* <-> B*)
+  ///
+  /// Implicit bitcast on an uninitialized variable is an error.
+  void implicit_bitcast(const ScalarLit& lhs, const ScalarLit& rhs) {
+    if (lhs.is_machine_int_var()) {
+      IntegerImplicitBitcast v(lhs.var(), this->_inv);
+      rhs.apply_visitor(v);
+    } else if (lhs.is_floating_point_var()) {
+      FloatingPointImplicitBitcast v(lhs.var(), this->_inv);
+      rhs.apply_visitor(v);
+    } else if (lhs.is_pointer_var()) {
+      if (this->_precision < Precision::Pointer) {
+        return; // Ignore pointers
+      }
+      PointerImplicitBitcast v(lhs.var(), this->_inv);
+      rhs.apply_visitor(v);
+    } else {
+      ikos_unreachable("left hand side is not a variable");
+    }
+  }
+
+private:
+  /// @}
+  /// \name Helpers for aggregate (struct, array) statements
+  /// @{
+
+  /// \brief Return the type void*
   ar::Type* void_ptr_type() const {
     ar::Context& ctx = _ctx.bundle->context();
     return ar::PointerType::get(ctx, ar::VoidType::get(ctx));
   }
 
-  /// \brief Initialize an aggregate memory block
+  /// \brief Initialize an aggregate memory location
   ///
   /// Internal variables of aggregate types are modeled as if they were in
   /// memory, at a symbolic location.
   ///
   /// Returns a pointer to the symbolic location of the aggregate in memory.
-  ScalarLit init_aggregate_memory(const AggregateLit& aggregate) {
+  Variable* init_aggregate_memory(const AggregateLit& aggregate) {
     ikos_assert_msg(aggregate.is_var(), "aggregate is not a variable");
 
     auto var = cast< InternalVariable >(aggregate.var());
     this->allocate_memory(var,
                           this->_mem_factory.get_aggregate(var->internal_var()),
                           Nullity::non_null(),
-                          Uninitialized::initialized(),
                           Lifetime::top(),
                           MemoryInitialValue::Zero);
-    return ScalarLit::pointer_var(var);
+    return var;
   }
 
   /// \brief Return a pointer to the symbolic location of the aggregate in
   /// memory
-  ScalarLit aggregate_pointer(const AggregateLit& aggregate) {
+  Variable* aggregate_pointer(const AggregateLit& aggregate) {
     ikos_assert_msg(aggregate.is_var(), "aggregate is not a variable");
 
     auto var = cast< InternalVariable >(aggregate.var());
-    this->assign_pointer(var,
-                         this->_mem_factory.get_aggregate(var->internal_var()),
-                         Nullity::non_null(),
-                         Uninitialized::initialized());
-    return ScalarLit::pointer_var(var);
+    this->_inv.normal().pointer_assign(var,
+                                       this->_mem_factory.get_aggregate(
+                                           var->internal_var()),
+                                       Nullity::non_null());
+    return var;
   }
 
   /// \brief Write an aggregate in the memory
-  void mem_write_aggregate(const ScalarLit& ptr,
-                           const AggregateLit& aggregate) {
-    ikos_assert_msg(ptr.is_pointer_var(), "unexpected pointer");
-
+  void mem_write_aggregate(Variable* ptr, const AggregateLit& aggregate) {
     if (this->_precision < Precision::Memory) {
       return;
     }
 
     if (aggregate.size().is_zero()) {
-      return; // nothing to do
+      return; // Nothing to do
     } else if (aggregate.is_cst()) {
       // Pointer to write the aggregate in the memory
-      ScalarLit write_ptr = ScalarLit::pointer_var(
-          this->_var_factory
-              .get_named_shadow(this->void_ptr_type(),
-                                "shadow.mem_write_aggregate.ptr"));
+      Variable* write_ptr =
+          this->_var_factory.get_named_shadow(this->void_ptr_type(),
+                                              "shadow.mem_write_aggregate.ptr");
 
       for (const auto& field : aggregate.fields()) {
-        this->pointer_shift(write_ptr,
-                            ptr,
-                            ScalarLit::machine_int(field.offset));
-        this->_inv.normal().mem_write(this->_var_factory,
-                                      write_ptr.var(),
-                                      field.value,
-                                      field.size);
+        this->_inv.normal().pointer_assign(write_ptr, ptr, field.offset);
+        this->_inv.normal().mem_write(write_ptr, field.value, field.size);
       }
 
-      // clean-up
-      this->_inv.normal().forget_surface(write_ptr.var());
+      // Clean-up
+      this->_inv.normal().pointer_forget(write_ptr);
     } else if (aggregate.is_zero() || aggregate.is_undefined()) {
       // aggregate.size() is in bytes, compute bit-width, and check
       // if the bit-width fits in an unsigned int
+      // XXX: We should use mem_zero_reachable and mem_uninitialize_reachable
       bool overflow;
       MachineInt eight(8, aggregate.size().bit_width(), Unsigned);
       MachineInt bit_width = mul(aggregate.size(), eight, overflow);
       if (overflow || !bit_width.fits< unsigned >()) {
-        // too big for a cell
-        this->_inv.normal().forget_reachable_mem(ptr.var());
+        // Too big for a cell
+        this->_inv.normal().mem_forget_reachable(ptr);
       } else if (aggregate.is_zero()) {
         MachineInt zero(0, bit_width.to< unsigned >(), Signed);
-        this->_inv.normal().mem_write(this->_var_factory,
-                                      ptr.var(),
+        this->_inv.normal().mem_write(ptr,
                                       ScalarLit::machine_int(zero),
                                       aggregate.size());
       } else if (aggregate.is_undefined()) {
-        this->_inv.normal().mem_write(this->_var_factory,
-                                      ptr.var(),
+        this->_inv.normal().mem_write(ptr,
                                       ScalarLit::undefined(),
                                       aggregate.size());
       } else {
         ikos_unreachable("unreachable");
       }
     } else if (aggregate.is_var()) {
-      ScalarLit aggregate_ptr = this->aggregate_pointer(aggregate);
-      this->_inv.normal().mem_copy(this->_var_factory,
-                                   ptr.var(),
-                                   aggregate_ptr.var(),
+      Variable* aggregate_ptr = this->aggregate_pointer(aggregate);
+      this->_inv.normal().mem_copy(ptr,
+                                   aggregate_ptr,
                                    ScalarLit::machine_int(aggregate.size()));
     } else {
       ikos_unreachable("unreachable");
     }
   }
 
-public:
   /// \brief Aggregate assignment `lhs = rhs`
+  ///
+  /// Propagates uninitialized variables.
   void assign(const AggregateLit& lhs, const AggregateLit& rhs) {
     ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
@@ -845,11 +832,14 @@ public:
       return;
     }
 
-    ScalarLit ptr = this->init_aggregate_memory(lhs);
+    Variable* ptr = this->init_aggregate_memory(lhs);
     this->mem_write_aggregate(ptr, rhs);
   }
 
   /// \brief Assignment `lhs = rhs`
+  ///
+  /// Requires that `lhs` and `rhs` have the same type.
+  /// Propagates uninitialized variables.
   void assign(const Literal& lhs, const Literal& rhs) {
     if (lhs.is_scalar()) {
       ikos_assert_msg(rhs.is_scalar(), "unexpected right hand side");
@@ -862,7 +852,26 @@ public:
     }
   }
 
-private:
+  /// \brief Implicit bitcast `lhs = rhs`
+  ///
+  /// Requires either one of:
+  ///  - `lhs` and `rhs` have the same type
+  ///  - `lhs` and `rhs` are integers of same bit-width (signed <-> unsigned)
+  ///  - `lhs` and `rhs` are pointer types (ie., A* <-> B*)
+  ///
+  /// Implicit bitcast on an uninitialized variable is an error.
+  void implicit_bitcast(const Literal& lhs, const Literal& rhs) {
+    if (lhs.is_scalar()) {
+      ikos_assert_msg(rhs.is_scalar(), "unexpected right hand side");
+      this->implicit_bitcast(lhs.scalar(), rhs.scalar());
+    } else if (lhs.is_aggregate()) {
+      ikos_assert_msg(rhs.is_aggregate(), "unexpected right hand side");
+      this->assign(lhs.aggregate(), rhs.aggregate());
+    } else {
+      ikos_unreachable("unreachable");
+    }
+  }
+
   /// \brief Randomly throw unknown exceptions with the current invariant
   ///
   /// Equivalent to if (rand()) { throw rand(); }
@@ -882,29 +891,29 @@ public:
       LocalVariable* var = this->_var_factory.get_local(*it);
       MemoryLocation* addr = this->_mem_factory.get_local(*it);
 
-      // Forget the allocated size
-      AllocSizeVariable* alloc_size_var =
-          this->_var_factory.get_alloc_size(addr);
-      this->_inv.normal().integers().forget(alloc_size_var);
-      this->_inv.caught_exceptions().integers().forget(alloc_size_var);
-      this->_inv.propagated_exceptions().integers().forget(alloc_size_var);
-
-      // Set the memory location lifetime to deallocated
-      this->_inv.normal().lifetime().assign_deallocated(addr);
-      this->_inv.caught_exceptions().lifetime().assign_deallocated(addr);
-      this->_inv.propagated_exceptions().lifetime().assign_deallocated(addr);
+      // Forget local variable pointer
+      this->_inv.normal().pointer_forget(var);
+      this->_inv.caught_exceptions().pointer_forget(var);
+      this->_inv.propagated_exceptions().pointer_forget(var);
 
       if (this->_precision >= Precision::Memory) {
         // Forget the memory content
-        this->_inv.normal().forget_mem(addr);
-        this->_inv.caught_exceptions().forget_mem(addr);
-        this->_inv.propagated_exceptions().forget_mem(addr);
-      }
+        this->_inv.normal().mem_forget(addr);
+        this->_inv.caught_exceptions().mem_forget(addr);
+        this->_inv.propagated_exceptions().mem_forget(addr);
 
-      // Forget local variable pointer
-      this->_inv.normal().forget_surface(var);
-      this->_inv.caught_exceptions().forget_surface(var);
-      this->_inv.propagated_exceptions().forget_surface(var);
+        // Forget the allocated size
+        AllocSizeVariable* alloc_size_var =
+            this->_var_factory.get_alloc_size(addr);
+        this->_inv.normal().int_forget(alloc_size_var);
+        this->_inv.caught_exceptions().int_forget(alloc_size_var);
+        this->_inv.propagated_exceptions().int_forget(alloc_size_var);
+
+        // Set the memory location lifetime to deallocated
+        this->_inv.normal().lifetime_assign_deallocated(addr);
+        this->_inv.caught_exceptions().lifetime_assign_deallocated(addr);
+        this->_inv.propagated_exceptions().lifetime_assign_deallocated(addr);
+      }
     }
   }
 
@@ -938,10 +947,9 @@ public:
 
       if (ret->has_operand()) {
         const Literal& v = this->_lit_factory.get(ret->operand());
-        if (v.is_scalar() && v.scalar().is_var()) {
-          returned_var = v.scalar().var();
-        } else if (v.is_aggregate() && v.aggregate().is_var()) {
-          returned_var = v.aggregate().var();
+
+        if (v.is_var()) {
+          returned_var = v.var();
         }
       }
     }
@@ -957,17 +965,17 @@ public:
           ar::InternalVariable* ar_iv = iv->internal_var();
           if (ar_iv->type()->is_aggregate()) {
             MemoryLocation* addr = this->_mem_factory.get_aggregate(ar_iv);
-            this->_inv.normal().forget_mem(addr);
-            this->_inv.caught_exceptions().forget_mem(addr);
-            this->_inv.propagated_exceptions().forget_mem(addr);
+            this->_inv.normal().mem_forget(addr);
+            this->_inv.caught_exceptions().mem_forget(addr);
+            this->_inv.propagated_exceptions().mem_forget(addr);
           }
         }
       }
 
-      // Clean-up memory surface
-      this->_inv.normal().forget_surface(var);
-      this->_inv.caught_exceptions().forget_surface(var);
-      this->_inv.propagated_exceptions().forget_surface(var);
+      // Clean-up scalars
+      this->_inv.normal().scalar_forget(var);
+      this->_inv.caught_exceptions().scalar_forget(var);
+      this->_inv.propagated_exceptions().scalar_forget(var);
     }
   }
 
@@ -995,9 +1003,10 @@ public:
   }
 
   /// \brief Execute an Assignment statement
+  ///
+  /// Unlike most statements, this propagates uninitialized variables.
   void exec(ar::Assignment* s) override {
-    // initialize lazily global objects
-    this->init_global_operand(s->operand());
+    this->init_global_operands(s);
 
     this->assign(this->_lit_factory.get(s->result()),
                  this->_lit_factory.get(s->operand()));
@@ -1005,10 +1014,12 @@ public:
 
   /// \brief Execute an UnaryOperation statement
   void exec(ar::UnaryOperation* s) override {
-    if (s->operand()->is_undefined_constant()) {
+    if (s->has_undefined_constant_operand()) {
       this->_inv.set_normal_flow_to_bottom();
       return;
     }
+
+    this->init_global_operands(s);
 
     const Literal& lhs = this->_lit_factory.get(s->result());
     const Literal& rhs = this->_lit_factory.get(s->operand());
@@ -1020,9 +1031,7 @@ public:
                             lhs.scalar(),
                             rhs.scalar());
       } break;
-      case ar::UnaryOperation::ZExt: {
-        this->exec_int_conv(IntUnaryOperator::Ext, lhs.scalar(), rhs.scalar());
-      } break;
+      case ar::UnaryOperation::ZExt:
       case ar::UnaryOperation::SExt: {
         this->exec_int_conv(IntUnaryOperator::Ext, lhs.scalar(), rhs.scalar());
       } break;
@@ -1040,7 +1049,7 @@ public:
       } break;
       case ar::UnaryOperation::PtrToUI:
       case ar::UnaryOperation::PtrToSI: {
-        this->exec_ptr_to_int_conv(s, lhs.scalar(), rhs.scalar());
+        this->exec_ptr_to_int_conv(lhs.scalar(), rhs.scalar());
       } break;
       case ar::UnaryOperation::UIToPtr:
       case ar::UnaryOperation::SIToPtr: {
@@ -1049,11 +1058,6 @@ public:
       case ar::UnaryOperation::Bitcast: {
         this->exec_bitcast(s, lhs, rhs);
       } break;
-    }
-
-    if (lhs.is_scalar()) {
-      this->_inv.normal().uninitialized().assign_initialized(
-          lhs.scalar().var());
     }
   }
 
@@ -1068,81 +1072,71 @@ private:
     if (rhs.is_machine_int()) {
       auto type = cast< ar::IntegerType >(lhs.var()->type());
       this->_inv.normal()
-          .integers()
-          .assign(lhs.var(),
-                  core::machine_int::apply_unary_operator(op,
-                                                          rhs.machine_int(),
-                                                          type->bit_width(),
-                                                          type->sign()));
+          .int_assign(lhs.var(),
+                      core::machine_int::apply_unary_operator(op,
+                                                              rhs.machine_int(),
+                                                              type->bit_width(),
+                                                              type->sign()));
     } else if (rhs.is_machine_int_var()) {
-      this->_inv.normal().integers().apply(op, lhs.var(), rhs.var());
+      this->_inv.normal().int_apply(op, lhs.var(), rhs.var());
     } else {
       ikos_unreachable("unexpected arguments");
     }
   }
 
   /// \brief Execute a floating point conversion
-  void exec_float_conv(const ScalarLit& lhs, const ScalarLit& /*rhs*/) {
+  void exec_float_conv(const ScalarLit& lhs, const ScalarLit& rhs) {
     ikos_assert_msg(lhs.is_floating_point_var(),
                     "left hand side is not a floating point variable");
-    ikos_ignore(lhs);
+
+    if (rhs.is_floating_point_var()) {
+      this->_inv.normal().uninit_assert_initialized(rhs.var());
+    }
+    this->_inv.normal().float_assign_nondet(lhs.var());
   }
 
   /// \brief Execute a conversion from floating point to integer
-  void exec_float_to_int_conv(const ScalarLit& lhs, const ScalarLit& /*rhs*/) {
+  void exec_float_to_int_conv(const ScalarLit& lhs, const ScalarLit& rhs) {
     ikos_assert_msg(lhs.is_machine_int_var(),
                     "left hand side is not an integer variable");
 
-    this->_inv.normal().integers().forget(lhs.var());
+    if (rhs.is_floating_point_var()) {
+      this->_inv.normal().uninit_assert_initialized(rhs.var());
+    }
+    this->_inv.normal().int_assign_nondet(lhs.var());
   }
 
   /// \brief Execute a conversion from integer to floating point
-  void exec_int_to_float_conv(const ScalarLit& lhs, const ScalarLit& /*rhs*/) {
+  void exec_int_to_float_conv(const ScalarLit& lhs, const ScalarLit& rhs) {
     ikos_assert_msg(lhs.is_floating_point_var(),
                     "left hand side is not a floating point variable");
-    ikos_ignore(lhs);
+
+    if (rhs.is_machine_int_var()) {
+      this->_inv.normal().uninit_assert_initialized(rhs.var());
+    }
+    this->_inv.normal().float_assign_nondet(lhs.var());
   }
 
   /// \brief Execute a conversion from pointer to integer
-  void exec_ptr_to_int_conv(ar::UnaryOperation* s,
-                            const ScalarLit& lhs,
-                            const ScalarLit& rhs) {
+  void exec_ptr_to_int_conv(const ScalarLit& lhs, const ScalarLit& rhs) {
     ikos_assert_msg(lhs.is_machine_int_var(),
                     "left hand side is not an integer variable");
 
     if (rhs.is_null()) {
       auto type = cast< ar::IntegerType >(lhs.var()->type());
-      MachineInt zero(0, type->bit_width(), type->sign());
-      this->_inv.normal().integers().assign(lhs.var(), zero);
+      auto zero = MachineInt::zero(type->bit_width(), type->sign());
+      this->_inv.normal().int_assign(lhs.var(), zero);
     } else if (rhs.is_pointer_var()) {
-      if (this->_inv.is_normal_flow_bottom()) {
-        return;
-      }
-
-      this->init_global_operand(s->operand());
-      PointsToSet addrs = this->_inv.normal().pointers().points_to(rhs.var());
-
-      if (this->_inv.normal().nullity().is_null(rhs.var())) {
-        auto type = cast< ar::IntegerType >(lhs.var()->type());
-        MachineInt zero(0, type->bit_width(), type->sign());
-        this->_inv.normal().integers().assign(lhs.var(), zero);
-      } else if (addrs == PointsToSet{this->_mem_factory.get_absolute_zero()}) {
-        // This could be an hardware address
-        auto offset_var = this->_inv.normal().pointers().offset_var(rhs.var());
-        this->_inv.normal().integers().apply(IntUnaryOperator::Cast,
-                                             lhs.var(),
-                                             offset_var);
-      } else {
-        this->_inv.normal().integers().forget(lhs.var());
-      }
+      this->_inv.normal()
+          .scalar_pointer_to_int(lhs.var(),
+                                 rhs.var(),
+                                 this->_mem_factory.get_absolute_zero());
     } else {
       ikos_unreachable("unreachable");
     }
   }
 
   /// \brief Execute a conversion from integer to pointer
-  ///
-  /// For instance: int x = 5; int *px = x;
   void exec_int_to_ptr_conv(const ScalarLit& lhs, const ScalarLit& rhs) {
     if (this->_precision < Precision::Pointer) {
       return;
@@ -1152,37 +1146,40 @@ private:
       MachineInt addr = rhs.machine_int();
 
       if (addr.is_zero()) {
-        this->_inv.normal().pointers().assign_null(lhs.var());
+        this->_inv.normal().pointer_assign_null(lhs.var());
       } else {
         addr = addr.cast(this->_data_layout.pointers.bit_width, Unsigned);
-        this->_inv.normal().pointers().assign_address(lhs.var(),
-                                                      this->_mem_factory
-                                                          .get_absolute_zero(),
-                                                      Nullity::non_null());
-
-        auto offset_var = this->_inv.normal().pointers().offset_var(lhs.var());
-        this->_inv.normal().integers().assign(offset_var, addr);
+        this->_inv.normal()
+            .pointer_assign(lhs.var(),
+                            this->_mem_factory.get_absolute_zero(),
+                            Nullity::non_null());
+        this->_inv.normal().pointer_assign(lhs.var(), lhs.var(), addr);
       }
     } else if (rhs.is_machine_int_var()) {
-      this->_inv.normal().pointers().assign_address(lhs.var(),
-                                                    this->_mem_factory
-                                                        .get_absolute_zero(),
-                                                    Nullity::null());
-
-      auto offset_var = this->_inv.normal().pointers().offset_var(lhs.var());
-      this->_inv.normal().integers().apply(IntUnaryOperator::Cast,
-                                           offset_var,
-                                           rhs.var());
-      this->normalize_absolute_zero_nullity(lhs.var());
+      this->_inv.normal()
+          .scalar_int_to_pointer(lhs.var(),
+                                 rhs.var(),
+                                 this->_mem_factory.get_absolute_zero());
     } else {
       ikos_unreachable("unexpected operand");
     }
   }
 
   /// \brief Execute a bitcast
+  ///
+  /// Valid bitcasts are:
+  ///   * pointer casts: A* to B*
+  ///   * primitive type casts with the same bit-width
+  ///
+  /// A primitive type is either an integer, a floating point or a vector
+  /// of integers or floating points.
   void exec_bitcast(ar::UnaryOperation* s,
                     const Literal& lhs,
                     const Literal& rhs) {
+    if (rhs.is_var()) {
+      this->_inv.normal().uninit_assert_initialized(rhs.var());
+    }
+
     if (lhs.is_scalar()) {
       this->exec_bitcast(s, lhs.scalar(), rhs);
     } else if (lhs.is_aggregate()) {
@@ -1197,29 +1194,23 @@ private:
                     const ScalarLit& lhs,
                     const Literal& rhs) {
     if (lhs.is_pointer_var()) {
-      // pointer cast: A* to B*
-      if (this->_precision < Precision::Pointer) {
-        return;
-      }
-
-      this->init_global_operand(s->operand());
+      // Pointer cast: A* to B*
       this->assign(lhs, rhs.scalar());
     } else if (lhs.is_machine_int_var()) {
       if (rhs.is_scalar() && rhs.scalar().is_machine_int()) {
-        // sign cast: (u|s)iN to (u|s)iN
+        // Sign cast: (u|s)iN to (u|s)iN
         auto type = ar::cast< ar::IntegerType >(s->result()->type());
         this->_inv.normal()
-            .integers()
-            .assign(lhs.var(),
-                    rhs.scalar().machine_int().cast(type->bit_width(),
-                                                    type->sign()));
+            .int_assign(lhs.var(),
+                        rhs.scalar().machine_int().cast(type->bit_width(),
+                                                        type->sign()));
       } else if (rhs.is_scalar() && rhs.scalar().is_machine_int_var()) {
-        // sign cast: (u|s)iN to (u|s)iN
-        this->_inv.normal().integers().apply(IntUnaryOperator::SignCast,
-                                             lhs.var(),
-                                             rhs.scalar().var());
+        // Sign cast: (u|s)iN to (u|s)iN
+        this->_inv.normal().int_apply(IntUnaryOperator::SignCast,
+                                      lhs.var(),
+                                      rhs.scalar().var());
       } else {
-        this->_inv.normal().integers().forget(lhs.var());
+        this->_inv.normal().int_assign_nondet(lhs.var());
       }
     } else {
       ikos_unreachable("unexpected left hand side");
@@ -1237,8 +1228,8 @@ private:
     }
 
     if (rhs.is_scalar()) {
-      ScalarLit ptr = this->init_aggregate_memory(lhs);
-      this->_inv.normal().forget_reachable_mem(ptr.var());
+      Variable* ptr = this->init_aggregate_memory(lhs);
+      this->_inv.normal().mem_forget_reachable(ptr);
     } else if (rhs.is_aggregate()) {
       this->assign(lhs, rhs.aggregate());
     } else {
@@ -1249,8 +1240,7 @@ private:
 public:
   /// \brief Execute a BinaryOperation statement
   void exec(ar::BinaryOperation* s) override {
-    if (s->left()->is_undefined_constant() ||
-        s->right()->is_undefined_constant()) {
+    if (s->has_undefined_constant_operand()) {
       this->_inv.set_normal_flow_to_bottom();
       return;
     }
@@ -1354,8 +1344,6 @@ public:
         ikos_unreachable("unreachable");
       }
     }
-
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
   }
 
 private:
@@ -1369,30 +1357,27 @@ private:
 
     if (left.is_machine_int()) {
       if (right.is_machine_int()) {
-        this->_inv.normal().integers().assign(lhs.var(), left.machine_int());
-        this->_inv.normal().integers().apply(op,
-                                             lhs.var(),
-                                             lhs.var(),
-                                             right.machine_int());
+        this->_inv.normal().int_assign(lhs.var(), left.machine_int());
+        this->_inv.normal().int_apply(op,
+                                      lhs.var(),
+                                      lhs.var(),
+                                      right.machine_int());
       } else if (right.is_machine_int_var()) {
-        this->_inv.normal().integers().apply(op,
-                                             lhs.var(),
-                                             left.machine_int(),
-                                             right.var());
+        this->_inv.normal().int_apply(op,
+                                      lhs.var(),
+                                      left.machine_int(),
+                                      right.var());
       } else {
         ikos_unreachable("unexpected right operand");
       }
     } else if (left.is_machine_int_var()) {
       if (right.is_machine_int()) {
-        this->_inv.normal().integers().apply(op,
-                                             lhs.var(),
-                                             left.var(),
-                                             right.machine_int());
+        this->_inv.normal().int_apply(op,
+                                      lhs.var(),
+                                      left.var(),
+                                      right.machine_int());
       } else if (right.is_machine_int_var()) {
-        this->_inv.normal().integers().apply(op,
-                                             lhs.var(),
-                                             left.var(),
-                                             right.var());
+        this->_inv.normal().int_apply(op, lhs.var(), left.var(), right.var());
       } else {
         ikos_unreachable("unexpected right operand");
       }
@@ -1403,13 +1388,20 @@ private:
 
   /// \brief Execute a floating point binary operation
   void exec_float_bin_operation(const ScalarLit& lhs,
-                                const ScalarLit& /*left*/,
-                                const ScalarLit& /*right*/) {
+                                const ScalarLit& left,
+                                const ScalarLit& right) {
     ikos_assert_msg(lhs.is_floating_point_var(),
                     "left hand side is not a floating point variable");
 
-    // TODO(marthaud): floating point reasoning
-    ikos_ignore(lhs);
+    // TODO(marthaud): add floating point reasoning
+
+    if (left.is_floating_point_var()) {
+      this->_inv.normal().uninit_assert_initialized(left.var());
+    }
+    if (right.is_floating_point_var()) {
+      this->_inv.normal().uninit_assert_initialized(right.var());
+    }
+    this->_inv.normal().float_assign_nondet(lhs.var());
   }
 
   /// \brief Execute a vector binary operation
@@ -1422,25 +1414,22 @@ private:
     }
 
     // Ignore the semantic while being sound
-    ScalarLit ptr = this->init_aggregate_memory(lhs);
-    this->_inv.normal().forget_reachable_mem(ptr.var());
+    Variable* ptr = this->init_aggregate_memory(lhs);
+    this->_inv.normal().mem_forget_reachable(ptr);
   }
 
 public:
   /// \brief Execute a Comparison statement
   void exec(ar::Comparison* s) override {
-    const ScalarLit& left = this->_lit_factory.get_scalar(s->left());
-    const ScalarLit& right = this->_lit_factory.get_scalar(s->right());
-
-    if (left.is_undefined() || right.is_undefined()) {
+    if (s->has_undefined_constant_operand()) {
       this->_inv.set_normal_flow_to_bottom();
       return;
     }
 
-    if (s->is_pointer_predicate()) {
-      this->init_global_operand(s->left());
-      this->init_global_operand(s->right());
-    }
+    this->init_global_operands(s);
+
+    const ScalarLit& left = this->_lit_factory.get_scalar(s->left());
+    const ScalarLit& right = this->_lit_factory.get_scalar(s->right());
 
     switch (s->predicate()) {
       case ar::Comparison::UIEQ:
@@ -1484,22 +1473,22 @@ public:
         this->exec_float_comparison(left, right);
       } break;
       case ar::Comparison::PEQ: {
-        this->exec_ptr_comparison(PtrPredicate::EQ, left, right);
+        this->exec_ptr_comparison(PointerPredicate::EQ, left, right);
       } break;
       case ar::Comparison::PNE: {
-        this->exec_ptr_comparison(PtrPredicate::NE, left, right);
+        this->exec_ptr_comparison(PointerPredicate::NE, left, right);
       } break;
       case ar::Comparison::PGT: {
-        this->exec_ptr_comparison(PtrPredicate::GT, left, right);
+        this->exec_ptr_comparison(PointerPredicate::GT, left, right);
       } break;
       case ar::Comparison::PGE: {
-        this->exec_ptr_comparison(PtrPredicate::GE, left, right);
+        this->exec_ptr_comparison(PointerPredicate::GE, left, right);
       } break;
       case ar::Comparison::PLT: {
-        this->exec_ptr_comparison(PtrPredicate::LT, left, right);
+        this->exec_ptr_comparison(PointerPredicate::LT, left, right);
       } break;
       case ar::Comparison::PLE: {
-        this->exec_ptr_comparison(PtrPredicate::LE, left, right);
+        this->exec_ptr_comparison(PointerPredicate::LE, left, right);
       } break;
       default: {
         ikos_unreachable("unreachable");
@@ -1518,19 +1507,15 @@ private:
           this->_inv.set_normal_flow_to_bottom();
         }
       } else if (right.is_machine_int_var()) {
-        this->_inv.normal().integers().add(pred,
-                                           left.machine_int(),
-                                           right.var());
+        this->_inv.normal().int_add(pred, left.machine_int(), right.var());
       } else {
         ikos_unreachable("unexpected right operand");
       }
     } else if (left.is_machine_int_var()) {
       if (right.is_machine_int()) {
-        this->_inv.normal().integers().add(pred,
-                                           left.var(),
-                                           right.machine_int());
+        this->_inv.normal().int_add(pred, left.var(), right.machine_int());
       } else if (right.is_machine_int_var()) {
-        this->_inv.normal().integers().add(pred, left.var(), right.var());
+        this->_inv.normal().int_add(pred, left.var(), right.var());
       } else {
         ikos_unreachable("unexpected right operand");
       }
@@ -1540,13 +1525,19 @@ private:
   }
 
   /// \brief Execute a floating point comparison
-  void exec_float_comparison(const ScalarLit& /*left*/,
-                             const ScalarLit& /*right*/) {
-    // TODO(marthaud): no floating point reasoning
+  void exec_float_comparison(const ScalarLit& left, const ScalarLit& right) {
+    // TODO(marthaud): add floating point reasoning
+
+    if (left.is_floating_point_var()) {
+      this->_inv.normal().uninit_assert_initialized(left.var());
+    }
+    if (right.is_floating_point_var()) {
+      this->_inv.normal().uninit_assert_initialized(right.var());
+    }
   }
 
   /// \brief Execute a pointer comparison
-  void exec_ptr_comparison(PtrPredicate pred,
+  void exec_ptr_comparison(PointerPredicate pred,
                            const ScalarLit& left,
                            const ScalarLit& right) {
     if (this->_precision < Precision::Pointer) {
@@ -1554,18 +1545,22 @@ private:
     } else if (left.is_null()) {
       if (right.is_null()) {
         // Compare `null pred null`
-        if (pred == PtrPredicate::NE || pred == PtrPredicate::GT ||
-            pred == PtrPredicate::LT) {
+        if (pred == PointerPredicate::NE || pred == PointerPredicate::GT ||
+            pred == PointerPredicate::LT) {
           this->_inv.set_normal_flow_to_bottom();
         }
       } else if (right.is_pointer_var()) {
         // Compare `null pred p`
         this->refine_addresses(right.var());
-        if (pred == PtrPredicate::EQ) {
-          this->_inv.normal().pointers().assert_null(right.var());
-        } else if (pred == PtrPredicate::NE || pred == PtrPredicate::GT ||
-                   pred == PtrPredicate::LT) {
-          this->_inv.normal().pointers().assert_non_null(right.var());
+
+        if (pred == PointerPredicate::EQ) {
+          this->_inv.normal().nullity_assert_null(right.var());
+        } else if (pred == PointerPredicate::NE ||
+                   pred == PointerPredicate::GT ||
+                   pred == PointerPredicate::LT) {
+          this->_inv.normal().nullity_assert_non_null(right.var());
+        } else {
+          this->_inv.normal().uninit_assert_initialized(right.var());
         }
       } else {
         ikos_unreachable("unexpected right operand");
@@ -1574,11 +1569,15 @@ private:
       if (right.is_null()) {
         // Compare `p pred null`
         this->refine_addresses(left.var());
-        if (pred == PtrPredicate::EQ) {
-          this->_inv.normal().pointers().assert_null(left.var());
-        } else if (pred == PtrPredicate::NE || pred == PtrPredicate::GT ||
-                   pred == PtrPredicate::LT) {
-          this->_inv.normal().pointers().assert_non_null(left.var());
+
+        if (pred == PointerPredicate::EQ) {
+          this->_inv.normal().nullity_assert_null(left.var());
+        } else if (pred == PointerPredicate::NE ||
+                   pred == PointerPredicate::GT ||
+                   pred == PointerPredicate::LT) {
+          this->_inv.normal().nullity_assert_non_null(left.var());
+        } else {
+          this->_inv.normal().uninit_assert_initialized(left.var());
         }
       } else if (right.is_pointer_var()) {
         // Compare `p pred q`
@@ -1587,7 +1586,7 @@ private:
         this->refine_addresses_offset(left.var());
         this->refine_addresses_offset(right.var());
 
-        this->_inv.normal().pointers().add(pred, left.var(), right.var());
+        this->_inv.normal().pointer_add(pred, left.var(), right.var());
       } else {
         ikos_unreachable("unexpected right operand");
       }
@@ -1599,12 +1598,17 @@ private:
 public:
   /// \brief Execute an Unreachable statement
   void exec(ar::Unreachable*) override {
-    // Unreachable should propagate exceptions
+    // Unreachable propagates exceptions
     this->_inv.set_normal_flow_to_bottom();
   }
 
   /// \brief Execute an Allocate statement
   void exec(ar::Allocate* s) override {
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
     if (this->_precision < Precision::Pointer) {
       return;
     }
@@ -1620,9 +1624,12 @@ public:
     this->allocate_memory(lhs.var(),
                           addr,
                           Nullity::non_null(),
-                          Uninitialized::initialized(),
                           Lifetime::allocated(),
                           MemoryInitialValue::Uninitialized);
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
 
     // Set the alloc size symbolic variable
     Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
@@ -1637,13 +1644,13 @@ public:
       if (overflow) {
         this->_inv.set_normal_flow_to_bottom(); // undefined behavior
       } else {
-        this->_inv.normal().integers().assign(alloc_size_var, alloc_size_int);
+        this->_inv.normal().int_assign(alloc_size_var, alloc_size_int);
       }
     } else if (array_size.is_machine_int_var()) {
-      this->_inv.normal().integers().apply(IntBinaryOperator::MulNoWrap,
-                                           alloc_size_var,
-                                           array_size.var(),
-                                           element_size);
+      this->_inv.normal().int_apply(IntBinaryOperator::MulNoWrap,
+                                    alloc_size_var,
+                                    array_size.var(),
+                                    element_size);
     } else {
       ikos_unreachable("unexpected array size parameter");
     }
@@ -1651,38 +1658,32 @@ public:
 
   /// \brief Execute a PointerShift statement
   void exec(ar::PointerShift* s) override {
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
     if (this->_precision < Precision::Pointer) {
       return;
     }
 
-    // initialize lazily global objects
-    this->init_global_operand(s->pointer());
+    this->init_global_operands(s);
 
     const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
     const ScalarLit& base = this->_lit_factory.get_scalar(s->pointer());
     ikos_assert_msg(lhs.is_pointer_var(),
                     "left hand side is not a pointer variable");
-
-    if (base.is_undefined()) {
-      this->_inv.set_normal_flow_to_bottom();
-      return;
-    }
-
     ikos_assert_msg(base.is_null() || base.is_pointer_var(),
                     "unexpected base operand");
 
-    // Update the pointer info, offset, nullity and uninitialized variables
+    // Build a linear expression of the operands
     unsigned bit_width = this->_data_layout.pointers.bit_width;
-    IntLinearExpression offset_expr(MachineInt::zero(bit_width, Unsigned));
+    auto zero = MachineInt::zero(bit_width, Unsigned);
+    auto offset_expr = IntLinearExpression(zero);
 
     for (auto it = s->term_begin(), et = s->term_end(); it != et; ++it) {
       auto term = *it;
       const ScalarLit& offset = this->_lit_factory.get_scalar(term.second);
-
-      if (offset.is_undefined()) {
-        this->_inv.set_normal_flow_to_bottom();
-        return;
-      }
 
       if (offset.is_machine_int()) {
         offset_expr.add(
@@ -1695,23 +1696,27 @@ public:
     }
 
     if (base.is_null()) {
-      this->_inv.normal().pointers().assign_address(lhs.var(),
-                                                    this->_mem_factory
-                                                        .get_absolute_zero(),
-                                                    Nullity::null());
-      this->_inv.normal().pointers().assign(lhs.var(), lhs.var(), offset_expr);
+      this->_inv.normal().pointer_assign(lhs.var(),
+                                         this->_mem_factory.get_absolute_zero(),
+                                         Nullity::null());
+      this->_inv.normal().pointer_assign(lhs.var(), lhs.var(), offset_expr);
     } else {
-      this->_inv.normal().pointers().assign(lhs.var(), base.var(), offset_expr);
+      this->_inv.normal().pointer_assign(lhs.var(), base.var(), offset_expr);
     }
 
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
     this->normalize_absolute_zero_nullity(lhs.var());
   }
 
   /// \brief Execute a Load statement
+  ///
+  /// Reading uninitialized memory is an error.
   void exec(ar::Load* s) override {
-    // initialize lazily global objects
-    this->init_global_operand(s->operand());
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
+    this->init_global_operands(s);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(s->operand());
 
@@ -1721,22 +1726,23 @@ public:
 
     const Literal& result = this->_lit_factory.get(s->result());
 
-    MachineInt size(this->_data_layout.store_size_in_bytes(s->result()->type()),
-                    this->_data_layout.pointers.bit_width,
-                    Unsigned);
+    auto size =
+        MachineInt(this->_data_layout.store_size_in_bytes(s->result()->type()),
+                   this->_data_layout.pointers.bit_width,
+                   Unsigned);
 
     if (result.is_scalar()) {
       const ScalarLit& lhs = result.scalar();
       ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
       if (!s->is_volatile()) {
-        // perform memory read in the value domain
-        this->_inv.normal().mem_read(this->_var_factory, lhs, ptr.var(), size);
+        // Perform memory read in the value domain
+        this->_inv.normal().mem_read(lhs, ptr.var(), size);
       } else {
-        this->_inv.normal().forget_surface(lhs.var());
+        this->_inv.normal().scalar_assign_nondet(lhs.var());
       }
 
-      // reduction between value and pointer analysis
+      // Reduction between value and pointer analysis
       if (lhs.is_pointer_var()) {
         this->refine_addresses_offset(lhs.var());
       }
@@ -1744,16 +1750,15 @@ public:
       const AggregateLit& lhs = result.aggregate();
       ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
-      ScalarLit lhs_ptr = this->init_aggregate_memory(lhs);
+      Variable* lhs_ptr = this->init_aggregate_memory(lhs);
 
       if (!s->is_volatile()) {
-        // perform memory read in the value domain
-        this->_inv.normal().mem_copy(this->_var_factory,
-                                     lhs_ptr.var(),
+        // Perform memory read in the value domain
+        this->_inv.normal().mem_copy(lhs_ptr,
                                      ptr.var(),
                                      ScalarLit::machine_int(size));
       } else {
-        this->_inv.normal().forget_reachable_mem(lhs_ptr.var());
+        this->_inv.normal().mem_forget_reachable(lhs_ptr);
       }
     } else {
       ikos_unreachable("unexpected left hand side");
@@ -1761,9 +1766,15 @@ public:
   }
 
   /// \brief Execute a Store statement
+  ///
+  /// Writing an uninitialized variable is an error.
   void exec(ar::Store* s) override {
-    // initialize lazily global objects
-    this->init_global_operand(s->pointer());
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
+    this->init_global_operands(s);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(s->pointer());
 
@@ -1771,43 +1782,30 @@ public:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore memory write, analysis could be unsound.
       // See CheckKind::IgnoredStore
       return;
     }
 
-    // initialize lazily global objects
-    this->init_global_operand(s->value());
-
     const Literal& val = this->_lit_factory.get(s->value());
 
-    MachineInt size(this->_data_layout.store_size_in_bytes(s->value()->type()),
-                    this->_data_layout.pointers.bit_width,
-                    Unsigned);
+    auto size =
+        MachineInt(this->_data_layout.store_size_in_bytes(s->value()->type()),
+                   this->_data_layout.pointers.bit_width,
+                   Unsigned);
 
     if (val.is_scalar()) {
       const ScalarLit& rhs = val.scalar();
-
-      if (rhs.is_undefined()) {
-        this->_inv.set_normal_flow_to_bottom();
-        return;
-      }
-
-      if (rhs.is_var()) {
-        // Store of undefined is U.B. (but checked by uva)
-        // if it's successful, assume that the variable is initialized
-        this->_inv.normal().uninitialized().assign_initialized(rhs.var());
-      }
 
       if (rhs.is_pointer_var()) {
         this->refine_addresses_offset(rhs.var());
       }
 
-      // perform memory write in the value domain
-      this->_inv.normal().mem_write(this->_var_factory, ptr.var(), rhs, size);
+      // Perform memory write in the value domain
+      this->_inv.normal().mem_write(ptr.var(), rhs, size);
     } else if (val.is_aggregate()) {
-      this->mem_write_aggregate(ptr, val.aggregate());
+      this->mem_write_aggregate(ptr.var(), val.aggregate());
     } else {
       ikos_unreachable("unexpected right hand side");
     }
@@ -1815,112 +1813,153 @@ public:
 
   /// \brief Execute an ExtractElement statement
   void exec(ar::ExtractElement* s) override {
-    const Literal& lhs = this->_lit_factory.get(s->result());
-    const AggregateLit& rhs = this->_lit_factory.get_aggregate(s->aggregate());
-    const ScalarLit& offset = this->_lit_factory.get_scalar(s->offset());
-    ikos_assert_msg(rhs.is_var(), "right hand side is not a variable");
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
 
     if (this->_precision < Precision::Memory) {
       return;
     }
 
-    ScalarLit rhs_ptr = this->aggregate_pointer(rhs);
-    ScalarLit read_ptr = ScalarLit::pointer_var(
-        this->_var_factory.get_named_shadow(this->void_ptr_type(),
-                                            "shadow.extract_element.ptr"));
-    this->pointer_shift(read_ptr, rhs_ptr, offset);
+    this->init_global_operands(s);
 
-    MachineInt size(this->_data_layout.store_size_in_bytes(s->result()->type()),
-                    this->_data_layout.pointers.bit_width,
-                    Unsigned);
+    const Literal& lhs = this->_lit_factory.get(s->result());
+    const AggregateLit& rhs = this->_lit_factory.get_aggregate(s->aggregate());
+    const ScalarLit& offset = this->_lit_factory.get_scalar(s->offset());
+    ikos_assert_msg(rhs.is_var(), "right hand side is not a variable");
+
+    Variable* rhs_ptr = this->aggregate_pointer(rhs);
+    Variable* read_ptr =
+        this->_var_factory.get_named_shadow(this->void_ptr_type(),
+                                            "shadow.extract_element.ptr");
+    if (offset.is_machine_int_var()) {
+      this->_inv.normal().pointer_assign(read_ptr, rhs_ptr, offset.var());
+    } else if (offset.is_machine_int()) {
+      this->_inv.normal().pointer_assign(read_ptr,
+                                         rhs_ptr,
+                                         offset.machine_int());
+    } else {
+      ikos_unreachable("unexpected offset operand");
+    }
+
+    auto size =
+        MachineInt(this->_data_layout.store_size_in_bytes(s->result()->type()),
+                   this->_data_layout.pointers.bit_width,
+                   Unsigned);
 
     if (lhs.is_scalar()) {
       ikos_assert_msg(lhs.scalar().is_var(),
                       "left hand side is not a variable");
 
-      this->_inv.normal().mem_read(this->_var_factory,
-                                   lhs.scalar(),
-                                   read_ptr.var(),
-                                   size);
+      this->_inv.normal().mem_read(lhs.scalar(), read_ptr, size);
     } else if (lhs.is_aggregate()) {
       ikos_assert_msg(lhs.aggregate().is_var(),
                       "left hand side is not a variable");
 
-      ScalarLit lhs_ptr = this->init_aggregate_memory(lhs.aggregate());
-      this->_inv.normal().mem_copy(this->_var_factory,
-                                   lhs_ptr.var(),
-                                   read_ptr.var(),
+      Variable* lhs_ptr = this->init_aggregate_memory(lhs.aggregate());
+      this->_inv.normal().mem_copy(lhs_ptr,
+                                   read_ptr,
                                    ScalarLit::machine_int(size));
     } else {
       ikos_unreachable("unexpected left hand side");
     }
 
-    // clean-up
-    this->_inv.normal().forget_surface(read_ptr.var());
+    // Clean-up
+    this->_inv.normal().pointer_forget(read_ptr);
   }
 
   /// \brief Execute an InsertElement statement
+  ///
+  /// Unlike most statements, this accepts undefined aggregate operands
   void exec(ar::InsertElement* s) override {
+    if (s->offset()->is_undefined_constant() ||
+        s->element()->is_undefined_constant()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
+
+    this->init_global_operands(s);
+
     const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
     const AggregateLit& rhs = this->_lit_factory.get_aggregate(s->aggregate());
     const ScalarLit& offset = this->_lit_factory.get_scalar(s->offset());
     const Literal& element = this->_lit_factory.get(s->element());
     ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
+    Variable* lhs_ptr = this->init_aggregate_memory(lhs);
 
-    ScalarLit lhs_ptr = this->init_aggregate_memory(lhs);
-
-    // first, copy the aggregate value
+    // First, copy the aggregate value
     this->mem_write_aggregate(lhs_ptr, rhs);
 
-    // then insert the element
-    ScalarLit write_ptr = ScalarLit::pointer_var(
+    // Then, insert the element
+    Variable* write_ptr =
         this->_var_factory.get_named_shadow(this->void_ptr_type(),
-                                            "shadow.insert_element.ptr"));
-    this->pointer_shift(write_ptr, lhs_ptr, offset);
+                                            "shadow.insert_element.ptr");
+    if (offset.is_machine_int_var()) {
+      this->_inv.normal().pointer_assign(write_ptr, lhs_ptr, offset.var());
+    } else if (offset.is_machine_int()) {
+      this->_inv.normal().pointer_assign(write_ptr,
+                                         lhs_ptr,
+                                         offset.machine_int());
+    } else {
+      ikos_unreachable("unexpected offset operand");
+    }
 
-    MachineInt size(this->_data_layout.store_size_in_bytes(
-                        s->element()->type()),
-                    this->_data_layout.pointers.bit_width,
-                    Unsigned);
+    auto size =
+        MachineInt(this->_data_layout.store_size_in_bytes(s->element()->type()),
+                   this->_data_layout.pointers.bit_width,
+                   Unsigned);
 
     if (element.is_scalar()) {
-      this->_inv.normal().mem_write(this->_var_factory,
-                                    write_ptr.var(),
-                                    element.scalar(),
-                                    size);
+      this->_inv.normal().mem_write(write_ptr, element.scalar(), size);
     } else if (element.is_aggregate()) {
       this->mem_write_aggregate(write_ptr, element.aggregate());
     } else {
       ikos_unreachable("unexpected element operand");
     }
 
-    // clean-up
-    this->_inv.normal().forget_surface(write_ptr.var());
+    // Clean-up
+    this->_inv.normal().pointer_forget(write_ptr);
   }
 
   /// \brief Execute a ShuffleVector statement
   void exec(ar::ShuffleVector* s) override {
-    const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
-    ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
 
     if (this->_precision < Precision::Memory) {
       return;
     }
 
+    this->init_global_operands(s);
+
+    const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
+    ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
+
     // Ignore the semantic while being sound
-    ScalarLit ptr = this->init_aggregate_memory(lhs);
-    this->_inv.normal().forget_reachable_mem(ptr.var());
+    Variable* ptr = this->init_aggregate_memory(lhs);
+    this->_inv.normal().mem_forget_reachable(ptr);
   }
 
   /// \brief Execute a LandingPad statement
   void exec(ar::LandingPad*) override {}
 
   /// \brief Execute a Resume statement
-  void exec(ar::Resume*) override { this->_inv.resume_exception(); }
+  void exec(ar::Resume* s) override {
+    if (s->has_undefined_constant_operand()) {
+      this->_inv.set_normal_flow_to_bottom();
+      return;
+    }
+
+    this->_inv.resume_exception();
+  }
 
   /// @}
   /// \name Execute call statements
@@ -1940,6 +1979,23 @@ public:
 
   /// \brief Execute a call to the given intrinsic function
   void exec_intrinsic_call(ar::CallBase* call, ar::Intrinsic::ID id) override {
+    if (this->_inv.is_normal_flow_bottom()) {
+      return;
+    }
+
+    // Check for uninitialized variables
+    for (auto it = call->op_begin(), et = call->op_end(); it != et; ++it) {
+      ar::Value* op = *it;
+
+      if (isa< ar::UndefinedConstant >(op)) {
+        this->_inv.set_normal_flow_to_bottom();
+        return;
+      } else if (auto iv = dyn_cast< ar::InternalVariable >(op)) {
+        Variable* var = this->_var_factory.get_internal(iv);
+        this->_inv.normal().uninit_assert_initialized(var);
+      }
+    }
+
     if (this->_inv.is_normal_flow_bottom()) {
       return;
     }
@@ -2345,26 +2401,26 @@ public:
     }
 
     // Check for uninitialized variables
-    for (auto it = call->arg_begin(), et = call->arg_end(); it != et; ++it) {
-      ar::Value* arg = *it;
+    for (auto it = call->op_begin(), et = call->op_end(); it != et; ++it) {
+      ar::Value* op = *it;
 
-      if (isa< ar::UndefinedConstant >(arg)) {
-        this->_inv.set_normal_flow_to_bottom(); // undefined behavior
+      if (isa< ar::UndefinedConstant >(op)) {
+        this->_inv.set_normal_flow_to_bottom();
         return;
-      } else if (auto iv = dyn_cast< ar::InternalVariable >(arg)) {
+      } else if (auto iv = dyn_cast< ar::InternalVariable >(op)) {
         Variable* var = this->_var_factory.get_internal(iv);
-
-        if (this->_inv.normal().uninitialized().is_uninitialized(var)) {
-          this->_inv.set_normal_flow_to_bottom(); // undefined behavior
-          return;
-        }
+        this->_inv.normal().uninit_assert_initialized(var);
       }
+    }
+
+    if (this->_inv.is_normal_flow_bottom()) {
+      return;
     }
 
     if (this->_precision >= Precision::Memory) {
       if (may_write_globals) {
         // Forget all memory contents
-        this->_inv.normal().forget_mem();
+        this->_inv.normal().mem_forget_all();
       } else if (may_write_params) {
         // Forget all memory contents pointed by pointer parameters
         for (auto it = call->arg_begin(), et = call->arg_end(); it != et;
@@ -2382,39 +2438,17 @@ public:
           this->init_global_operand(arg);
           this->refine_addresses(ptr);
 
-          if (this->_inv.normal().nullity().is_null(ptr)) {
-            continue; // safe
+          if (this->_inv.normal().nullity_is_null(ptr)) {
+            continue; // Safe
           } else if (ignore_unknown_write &&
-                     this->_inv.normal().pointers().points_to(ptr).is_top()) {
+                     this->_inv.normal().pointer_to_points_to(ptr).is_top()) {
             // Ignore side effect on the memory
             // See CheckKind::IgnoredCallSideEffectOnPointerParameter
             continue;
           } else {
-            this->_inv.normal().forget_reachable_mem(ptr);
+            this->_inv.normal().mem_forget_reachable(ptr);
           }
         }
-      }
-    }
-
-    if (call->has_result()) {
-      // Forget the result
-      const Literal& ret = this->_lit_factory.get(call->result());
-
-      if (ret.is_scalar()) {
-        ikos_assert_msg(ret.scalar().is_var(),
-                        "left hand side is not a variable");
-
-        this->_inv.normal().forget_surface(ret.scalar().var());
-      } else if (ret.is_aggregate()) {
-        ikos_assert_msg(ret.aggregate().is_var(),
-                        "left hand side is not a variable");
-
-        if (this->_precision >= Precision::Memory) {
-          ScalarLit ret_ptr = this->aggregate_pointer(ret.aggregate());
-          this->_inv.normal().forget_reachable_mem(ret_ptr.var());
-        }
-      } else {
-        ikos_unreachable("unexpected left hand side");
       }
     }
 
@@ -2423,19 +2457,29 @@ public:
       this->throw_unknown_exceptions();
     }
 
+    // ASSUMPTION:
+    // The claim about the correctness of the program under analysis can be
+    // made only if all calls to unavailable code are assumed to be correct
+    // and without side-effects. We will assume that the lhs of an external
+    // call site is always initialized. However, in case of a pointer, we do
+    // not assume that a non-null pointer is returned.
     if (call->has_result()) {
-      // Initialize the result
+      // Forget the result
       const Literal& ret = this->_lit_factory.get(call->result());
 
       if (ret.is_scalar()) {
-        // ASSUMPTION:
-        // The claim about the correctness of the program under analysis can be
-        // made only if all calls to unavailable code are assumed to be correct
-        // and without side-effects. We will assume that the lhs of an external
-        // call site is always initialized. However, in case of a pointer, we do
-        // not assume that a non-null pointer is returned.
-        this->_inv.normal().uninitialized().assign_initialized(
-            ret.scalar().var());
+        ikos_assert_msg(ret.scalar().is_var(),
+                        "left hand side is not a variable");
+        this->_inv.normal().scalar_assign_nondet(ret.scalar().var());
+      } else if (ret.is_aggregate()) {
+        ikos_assert_msg(ret.aggregate().is_var(),
+                        "left hand side is not a variable");
+        if (this->_precision >= Precision::Memory) {
+          Variable* ret_ptr = this->aggregate_pointer(ret.aggregate());
+          this->_inv.normal().mem_forget_reachable(ret_ptr);
+        }
+      } else {
+        ikos_unreachable("unexpected left hand side");
       }
     }
   }
@@ -2447,9 +2491,7 @@ private:
 
   /// \brief Execute a call to memcpy(dest, src, len) or memmove(dest, src, len)
   void exec_memcpy_or_memmove(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
-    this->init_global_operand(call->argument(1));
+    this->init_global_operands(call);
 
     // Both src and dest must be already allocated in memory so offsets and
     // sizes for both src and dest are already part of the invariants
@@ -2457,28 +2499,27 @@ private:
     const ScalarLit& src = this->_lit_factory.get_scalar(call->argument(1));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(2));
 
-    if (!this->prepare_mem_access(dest) || !this->prepare_mem_access(src)) {
+    if (!this->prepare_mem_access(src)) {
+      return;
+    }
+    if (!this->prepare_mem_access(dest)) {
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(dest.var()).is_top()) {
       // Ignore memory copy/move, analysis could be unsound.
       // See CheckKind::IgnoredMemoryCopy, CheckKind::IgnoredMemoryMove
     } else if (cast< ar::IntegerConstant >(call->argument(5))->value() == 0) {
       // Non-volatile
-      this->_inv.normal().mem_copy(this->_var_factory,
-                                   dest.var(),
-                                   src.var(),
-                                   size);
+      this->_inv.normal().mem_copy(dest.var(), src.var(), size);
     } else {
       // Volatile
       if (size.is_machine_int()) {
-        this->_inv.normal().forget_reachable_mem(dest.var(),
+        this->_inv.normal().mem_forget_reachable(dest.var(),
                                                  size.machine_int());
       } else if (size.is_machine_int_var()) {
-        IntInterval size_intv =
-            this->_inv.normal().integers().to_interval(size.var());
-        this->_inv.normal().forget_reachable_mem(dest.var(), size_intv.ub());
+        IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+        this->_inv.normal().mem_forget_reachable(dest.var(), size_intv.ub());
       } else {
         ikos_unreachable("unreachable");
       }
@@ -2494,8 +2535,7 @@ private:
 
   /// \brief Execute a call to memset(dest, byte, len)
   void exec_memset(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& dest = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& value = this->_lit_factory.get_scalar(call->argument(1));
@@ -2510,11 +2550,11 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(dest.var()).is_top()) {
       // Ignore memory set, analysis could be unsound.
       // See CheckKind::IgnoredMemorySet
     } else {
-      this->_inv.normal().mem_set(this->_var_factory, dest.var(), value, size);
+      this->_inv.normal().mem_set(dest.var(), value, size);
     }
 
     if (call->has_result()) {
@@ -2537,8 +2577,7 @@ private:
                     "left hand side is not an integer variable");
     ikos_assert_msg(init.is_machine_int(), "operand is not a machine integer");
 
-    this->_inv.normal().integers().counter_init(ret.var(), init.machine_int());
-    this->_inv.normal().uninitialized().assign_initialized(ret.var());
+    this->_inv.normal().counter_init(ret.var(), init.machine_int());
   }
 
   /// \brief Execute a call to ikos.counter.incr
@@ -2554,14 +2593,12 @@ private:
                     "left hand side is not an integer variable");
     ikos_assert_msg(incr.is_machine_int(), "operand is not a machine integer");
 
-    this->_inv.normal().integers().counter_incr(ret.var(), incr.machine_int());
-    this->_inv.normal().uninitialized().assign_initialized(ret.var());
+    this->_inv.normal().counter_incr(ret.var(), incr.machine_int());
   }
 
   /// \brief Execute a call to ikos.assume_mem_size
   void exec_ikos_assume_mem_size(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -2570,7 +2607,11 @@ private:
       return;
     }
 
-    PointsToSet addrs = this->_inv.normal().pointers().points_to(ptr.var());
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
+
+    PointsToSet addrs = this->_inv.normal().pointer_to_points_to(ptr.var());
 
     if (addrs.is_bottom()) {
       return;
@@ -2583,10 +2624,9 @@ private:
       Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
 
       if (size.is_machine_int()) {
-        this->_inv.normal().integers().assign(alloc_size_var,
-                                              size.machine_int());
+        this->_inv.normal().int_assign(alloc_size_var, size.machine_int());
       } else if (size.is_machine_int_var()) {
-        this->_inv.normal().integers().assign(alloc_size_var, size.var());
+        this->_inv.normal().int_assign(alloc_size_var, size.var());
       } else {
         ikos_unreachable("unreachable");
       }
@@ -2595,8 +2635,7 @@ private:
 
   /// \brief Execute a call to ikos.forget_memory
   void exec_ikos_forget_memory(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -2605,15 +2644,14 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore ikos.forget_memory, analysis could be unsound.
       // See CheckKind::UnknownMemoryAccess
     } else if (size.is_machine_int()) {
-      this->_inv.normal().forget_reachable_mem(ptr.var(), size.machine_int());
+      this->_inv.normal().mem_forget_reachable(ptr.var(), size.machine_int());
     } else if (size.is_machine_int_var()) {
-      IntInterval size_intv =
-          this->_inv.normal().integers().to_interval(size.var());
-      this->_inv.normal().forget_reachable_mem(ptr.var(), size_intv.ub());
+      IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+      this->_inv.normal().mem_forget_reachable(ptr.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
     }
@@ -2621,8 +2659,7 @@ private:
 
   /// \brief Execute a call to ikos.abstract_memory
   void exec_ikos_abstract_memory(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -2631,15 +2668,14 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore ikos.abstract_memory, analysis could be unsound.
       // See CheckKind::UnknownMemoryAccess
     } else if (size.is_machine_int()) {
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size.machine_int());
     } else if (size.is_machine_int_var()) {
-      IntInterval size_intv =
-          this->_inv.normal().integers().to_interval(size.var());
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+      IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
     }
@@ -2647,8 +2683,7 @@ private:
 
   /// \brief Execute a call to ikos.watch_memory
   void exec_ikos_watch_memory(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -2661,7 +2696,7 @@ private:
     Variable* watch_mem_ptr =
         this->_var_factory.get_named_shadow(this->void_ptr_type(),
                                             "shadow.watch_mem.ptr");
-    this->_inv.normal().pointers().assign(watch_mem_ptr, ptr.var());
+    this->_inv.normal().pointer_assign(watch_mem_ptr, ptr.var());
 
     // Save the watched size
     Variable* watch_mem_size =
@@ -2669,9 +2704,9 @@ private:
                                                 this->_ctx.bundle),
                                             "shadow.watch_mem.size");
     if (size.is_machine_int()) {
-      this->_inv.normal().integers().assign(watch_mem_size, size.machine_int());
+      this->_inv.normal().int_assign(watch_mem_size, size.machine_int());
     } else if (size.is_machine_int_var()) {
-      this->_inv.normal().integers().assign(watch_mem_size, size.var());
+      this->_inv.normal().int_assign(watch_mem_size, size.var());
     } else {
       ikos_unreachable("unexpected size parameter");
     }
@@ -2700,7 +2735,7 @@ private:
     ikos_assert_msg(lhs.is_pointer_var(),
                     "left hand side is not a pointer variable");
 
-    Nullity null_val = may_return_null ? Nullity::top() : Nullity::non_null();
+    auto nullity = may_return_null ? Nullity::top() : Nullity::non_null();
 
     MemoryLocation* addr =
         this->_mem_factory.get_dyn_alloc(call, this->_call_context);
@@ -2708,16 +2743,14 @@ private:
     if (size_l.is_machine_int_var()) {
       this->allocate_memory(lhs.var(),
                             addr,
-                            null_val,
-                            Uninitialized::initialized(),
+                            nullity,
                             Lifetime::allocated(),
                             init_val,
                             size_l.var());
     } else if (size_l.is_machine_int()) {
       this->allocate_memory(lhs.var(),
                             addr,
-                            null_val,
-                            Uninitialized::initialized(),
+                            nullity,
                             Lifetime::allocated(),
                             init_val,
                             size_l.machine_int());
@@ -2770,9 +2803,12 @@ private:
     this->allocate_memory(lhs.var(),
                           addr,
                           Nullity::top(),
-                          Uninitialized::initialized(),
                           Lifetime::allocated(),
                           MemoryInitialValue::Zero);
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
 
     // Set the alloc size symbolic variable
     Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
@@ -2782,29 +2818,29 @@ private:
         MachineInt alloc_size_int =
             mul(count.machine_int(), size.machine_int(), overflow);
         if (overflow) {
-          this->_inv.set_normal_flow_to_bottom(); // undefined behavior
+          this->_inv.set_normal_flow_to_bottom(); // Undefined behavior
         } else {
-          this->_inv.normal().integers().assign(alloc_size_var, alloc_size_int);
+          this->_inv.normal().int_assign(alloc_size_var, alloc_size_int);
         }
       } else if (size.is_machine_int_var()) {
-        this->_inv.normal().integers().apply(IntBinaryOperator::MulNoWrap,
-                                             alloc_size_var,
-                                             count.machine_int(),
-                                             size.var());
+        this->_inv.normal().int_apply(IntBinaryOperator::MulNoWrap,
+                                      alloc_size_var,
+                                      count.machine_int(),
+                                      size.var());
       } else {
         ikos_unreachable("unexpected size parameter");
       }
     } else if (count.is_machine_int_var()) {
       if (size.is_machine_int()) {
-        this->_inv.normal().integers().apply(IntBinaryOperator::MulNoWrap,
-                                             alloc_size_var,
-                                             count.var(),
-                                             size.machine_int());
+        this->_inv.normal().int_apply(IntBinaryOperator::MulNoWrap,
+                                      alloc_size_var,
+                                      count.var(),
+                                      size.machine_int());
       } else if (size.is_machine_int_var()) {
-        this->_inv.normal().integers().apply(IntBinaryOperator::MulNoWrap,
-                                             alloc_size_var,
-                                             count.var(),
-                                             size.var());
+        this->_inv.normal().int_apply(IntBinaryOperator::MulNoWrap,
+                                      alloc_size_var,
+                                      count.var(),
+                                      size.var());
       } else {
         ikos_unreachable("unexpected size parameter");
       }
@@ -2867,7 +2903,7 @@ private:
   /// extending a region allocated with calloc(3), realloc(3) does not guarantee
   /// that the additional memory is also zero-filled.
   void exec_realloc(ar::CallBase* call) {
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -2884,7 +2920,6 @@ private:
         this->allocate_memory(lhs.var(),
                               addr,
                               Nullity::top(),
-                              Uninitialized::initialized(),
                               Lifetime::allocated(),
                               MemoryInitialValue::Uninitialized,
                               size.var());
@@ -2892,7 +2927,6 @@ private:
         this->allocate_memory(lhs.var(),
                               addr,
                               Nullity::top(),
-                              Uninitialized::initialized(),
                               Lifetime::allocated(),
                               MemoryInitialValue::Uninitialized,
                               size.machine_int());
@@ -2908,12 +2942,9 @@ private:
                       "left hand side is not a pointer variable");
 
       if (ptr.is_pointer_var() &&
-          !this->_inv.normal().nullity().is_null(ptr.var())) {
+          !this->_inv.normal().nullity_is_null(ptr.var())) {
         // This should be the size of `ptr` instead of `size`
-        this->_inv.normal().mem_copy(this->_var_factory,
-                                     lhs.var(),
-                                     ptr.var(),
-                                     size);
+        this->_inv.normal().mem_copy(lhs.var(), ptr.var(), size);
       }
     }
 
@@ -2934,10 +2965,12 @@ private:
   /// The free() function deallocates the memory allocation pointed to by ptr.
   /// If ptr is a NULL pointer, no operation is performed.
   void exec_free(ar::CallBase* call) {
+    this->init_global_operands(call);
+
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
 
     if (ptr.is_null()) {
-      // this is safe, according to C/C++ standards
+      // This is safe, according to C standards
       return;
     }
 
@@ -2947,15 +2980,15 @@ private:
       return;
     }
 
-    if (this->_inv.normal().nullity().is_null(ptr.var())) {
-      // this is safe, according to C/C++ standards
+    if (this->_inv.normal().nullity_is_null(ptr.var())) {
+      // This is safe, according to C standards
       return;
     }
 
     // Reduction between value and pointer analysis
     this->refine_addresses(ptr.var());
 
-    PointsToSet addrs = this->_inv.normal().pointers().points_to(ptr.var());
+    PointsToSet addrs = this->_inv.normal().pointer_to_points_to(ptr.var());
 
     if (addrs.is_bottom()) {
       return;
@@ -2967,7 +3000,7 @@ private:
 
     if (this->_precision >= Precision::Memory) {
       // Forget memory contents
-      this->_inv.normal().forget_reachable_mem(ptr.var());
+      this->_inv.normal().mem_forget_reachable(ptr.var());
     }
 
     // Forget the allocated size and set the new lifetime
@@ -2982,12 +3015,14 @@ private:
         }
       }
 
-      Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-      this->_inv.normal().integers().forget(alloc_size_var);
-      if (addrs.size() == 1) {
-        this->_inv.normal().lifetime().assign_deallocated(addr);
-      } else {
-        this->_inv.normal().lifetime().forget(addr);
+      if (this->_precision >= Precision::Memory) {
+        Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
+        this->_inv.normal().int_forget(alloc_size_var);
+        if (addrs.size() == 1) {
+          this->_inv.normal().lifetime_assign_deallocated(addr);
+        } else {
+          this->_inv.normal().lifetime_forget(addr);
+        }
       }
     }
   }
@@ -3030,21 +3065,15 @@ private:
   void exec_errno_location(ar::CallBase* call) {
     // Forget the current value of errno
     MemoryLocation* addr = this->_mem_factory.get_libc_errno();
-    this->_inv.normal().forget_mem(addr);
+    this->_inv.normal().mem_forget(addr);
 
     // Assign the result
-    if (!call->has_result()) {
-      return;
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->_inv.normal().pointer_assign(lhs.var(), addr, Nullity::non_null());
     }
-
-    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
-    ikos_assert_msg(lhs.is_pointer_var(),
-                    "left hand side is not a pointer variable");
-
-    this->assign_pointer(lhs.var(),
-                         addr,
-                         Nullity::non_null(),
-                         Uninitialized::initialized());
   }
 
   /// \brief Execute a call to libc read
@@ -3060,8 +3089,7 @@ private:
   /// returned, on error it returns -1, setting errno to indicate the type of
   /// error that occurred.
   void exec_read(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(1));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(1));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(2));
@@ -3070,15 +3098,14 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore read, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else if (size.is_machine_int()) {
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size.machine_int());
     } else if (size.is_machine_int_var()) {
-      IntInterval size_intv =
-          this->_inv.normal().integers().to_interval(size.var());
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+      IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
     }
@@ -3087,9 +3114,7 @@ private:
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
       ikos_assert_msg(lhs.is_machine_int_var(),
                       "left hand side is not an integer variable");
-
-      this->_inv.normal().integers().forget(lhs.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+      this->_inv.normal().int_assign_nondet(lhs.var());
     }
   }
 
@@ -3103,8 +3128,7 @@ private:
   /// in the string.  It is the caller's responsibility to ensure that the input
   /// line, if any, is sufficiently short to fit in the string.
   void exec_gets(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
 
@@ -3112,21 +3136,20 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore gets, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else {
-      this->_inv.normal().abstract_reachable_mem(ptr.var());
+      this->_inv.normal().mem_abstract_reachable(ptr.var());
     }
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
       ikos_assert_msg(lhs.is_pointer_var(),
                       "left hand side is not a pointer variable");
-
-      this->_inv.normal().pointers().assign(lhs.var(), ptr.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
-      this->_inv.normal().nullity().forget(lhs.var()); // can return NULL
+      this->_inv.normal().pointer_assign(lhs.var(), ptr.var());
+      this->_inv.normal().nullity_set(lhs.var(),
+                                      Nullity::top()); // Returns null on errors
     }
   }
 
@@ -3141,8 +3164,7 @@ private:
   /// The newline, if any, is retained.  If any characters are read and there is
   /// no error, a `\0' character is appended to end the string.
   void exec_fgets(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -3151,24 +3173,23 @@ private:
       return;
     }
 
-    // size is a ui32, convert it to a size_t
+    // Size is a ui32, convert it to a size_t
     auto size_type = ar::IntegerType::size_type(this->_ctx.bundle);
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore fgets, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else if (size.is_machine_int()) {
       this->_inv.normal()
-          .abstract_reachable_mem(ptr.var(),
+          .mem_abstract_reachable(ptr.var(),
                                   size.machine_int()
                                       .cast(size_type->bit_width(),
                                             ar::Unsigned));
     } else if (size.is_machine_int_var()) {
       IntInterval size_intv = this->_inv.normal()
-                                  .integers()
-                                  .to_interval(size.var())
+                                  .int_to_interval(size.var())
                                   .cast(size_type->bit_width(), ar::Unsigned);
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
     }
@@ -3177,10 +3198,9 @@ private:
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
       ikos_assert_msg(lhs.is_pointer_var(),
                       "left hand side is not a pointer variable");
-
-      this->_inv.normal().pointers().assign(lhs.var(), ptr.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
-      this->_inv.normal().nullity().forget(lhs.var()); // can return NULL
+      this->_inv.normal().pointer_assign(lhs.var(), ptr.var());
+      this->_inv.normal().nullity_set(lhs.var(),
+                                      Nullity::top()); // Returns null on errors
     }
   }
 
@@ -3198,8 +3218,7 @@ private:
   /// The sprintf() and vsprintf() functions effectively assume a size of
   /// INT_MAX + 1.
   void exec_sprintf(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
 
@@ -3207,20 +3226,18 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore sprintf, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else {
-      this->_inv.normal().abstract_reachable_mem(ptr.var());
+      this->_inv.normal().mem_abstract_reachable(ptr.var());
     }
 
     if (call->has_result()) {
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
       ikos_assert_msg(lhs.is_machine_int_var(),
                       "left hand side is not an integer variable");
-
-      this->_inv.normal().integers().forget(lhs.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+      this->_inv.normal().int_assign_nondet(lhs.var());
     }
   }
 
@@ -3235,8 +3252,7 @@ private:
   /// size argument, the string was too short and some of the printed characters
   /// were discarded.  The output is always null-terminated, unless size is 0.
   void exec_snprintf(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
@@ -3245,15 +3261,14 @@ private:
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(ptr.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
       // Ignore snprintf, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else if (size.is_machine_int()) {
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size.machine_int());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size.machine_int());
     } else if (size.is_machine_int_var()) {
-      IntInterval size_intv =
-          this->_inv.normal().integers().to_interval(size.var());
-      this->_inv.normal().abstract_reachable_mem(ptr.var(), size_intv.ub());
+      IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+      this->_inv.normal().mem_abstract_reachable(ptr.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
     }
@@ -3262,9 +3277,7 @@ private:
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
       ikos_assert_msg(lhs.is_machine_int_var(),
                       "left hand side is not an integer variable");
-
-      this->_inv.normal().integers().forget(lhs.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+      this->_inv.normal().int_assign_nondet(lhs.var());
     }
   }
 
@@ -3294,7 +3307,6 @@ private:
     this->allocate_memory(lhs.var(),
                           addr,
                           Nullity::top(),
-                          Uninitialized::initialized(),
                           Lifetime::allocated(),
                           MemoryInitialValue::Unknown);
   }
@@ -3308,8 +3320,7 @@ private:
   /// file or set of functions.  If the stream was being used for output, any
   /// buffered data is written first, using fflush(3).
   void exec_fclose(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
 
@@ -3324,9 +3335,7 @@ private:
       const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
       ikos_assert_msg(lhs.is_machine_int_var(),
                       "left hand side is not an integer variable");
-
-      this->_inv.normal().integers().forget(lhs.var());
-      this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+      this->_inv.normal().int_assign_nondet(lhs.var());
     }
   }
 
@@ -3340,8 +3349,7 @@ private:
   /// The strlen() function returns the number of characters that precede the
   /// terminating NULL character.
   void exec_strlen(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
+    this->init_global_operands(call);
 
     const ScalarLit& str = this->_lit_factory.get_scalar(call->argument(0));
 
@@ -3358,21 +3366,15 @@ private:
                     "left hand side is not an integer variable");
 
     // lhs is in [0, size - 1]
-    this->_inv.normal().integers().forget(lhs.var());
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
+    this->_inv.normal().int_assign_nondet(lhs.var());
 
-    if (this->_inv.is_normal_flow_bottom()) {
-      return;
-    }
-
-    PointsToSet addrs = this->_inv.normal().pointers().points_to(str.var());
+    PointsToSet addrs = this->_inv.normal().pointer_to_points_to(str.var());
 
     if (addrs.is_top()) {
       return;
     }
 
-    AbstractDomain inv = this->_inv;
-    inv.set_to_bottom();
+    boost::optional< AbstractDomain > inv = boost::none;
 
     for (MemoryLocation* addr : addrs) {
       AbstractDomain tmp = this->_inv;
@@ -3382,16 +3384,24 @@ private:
                                   gv->global_var()->type()->pointee()),
                               this->_data_layout.pointers.bit_width,
                               Unsigned);
-        tmp.normal().integers().add(IntPredicate::LT, lhs.var(), alloc_size);
+        tmp.normal().int_add(IntPredicate::LT, lhs.var(), alloc_size);
       } else {
         Variable* size_var = this->_var_factory.get_alloc_size(addr);
-        tmp.normal().integers().add(IntPredicate::LT, lhs.var(), size_var);
+        tmp.normal().int_add(IntPredicate::LT, lhs.var(), size_var);
       }
 
-      inv.join_with(tmp);
+      if (!inv) {
+        inv = std::move(tmp);
+      } else {
+        inv->join_with(tmp);
+      }
     }
 
-    this->_inv = std::move(inv);
+    if (!inv) {
+      this->_inv.set_to_bottom();
+    } else {
+      this->_inv = std::move(*inv);
+    }
   }
 
   /// \brief Execute a call to libc strlen
@@ -3418,13 +3428,11 @@ private:
                     "left hand side is not an integer variable");
 
     if (maxlen.is_machine_int()) {
-      this->_inv.normal().integers().add(IntPredicate::LE,
-                                         lhs.var(),
-                                         maxlen.machine_int());
+      this->_inv.normal().int_add(IntPredicate::LE,
+                                  lhs.var(),
+                                  maxlen.machine_int());
     } else if (maxlen.is_machine_int_var()) {
-      this->_inv.normal().integers().add(IntPredicate::LE,
-                                         lhs.var(),
-                                         maxlen.var());
+      this->_inv.normal().int_add(IntPredicate::LE, lhs.var(), maxlen.var());
     } else {
       ikos_unreachable("unexpected maxlen parameter");
     }
@@ -3440,23 +3448,24 @@ private:
   ///
   /// The strcpy() function returns dst.
   void exec_strcpy(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
-    this->init_global_operand(call->argument(1));
+    this->init_global_operands(call);
 
     const ScalarLit& dest = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& src = this->_lit_factory.get_scalar(call->argument(1));
 
-    if (!this->prepare_mem_access(dest) || !this->prepare_mem_access(src)) {
+    if (!this->prepare_mem_access(dest)) {
+      return;
+    }
+    if (!this->prepare_mem_access(src)) {
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(dest.var()).is_top()) {
       // Ignore strcpy, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else {
       // Do not keep track of the content
-      this->_inv.normal().abstract_reachable_mem(dest.var());
+      this->_inv.normal().mem_abstract_reachable(dest.var());
     }
 
     if (call->has_result()) {
@@ -3478,28 +3487,28 @@ private:
   ///
   /// The strncpy() function returns dst.
   void exec_strncpy(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
-    this->init_global_operand(call->argument(1));
+    this->init_global_operands(call);
 
     const ScalarLit& dest = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& src = this->_lit_factory.get_scalar(call->argument(1));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(2));
 
-    if (!this->prepare_mem_access(dest) || !this->prepare_mem_access(src)) {
+    if (!this->prepare_mem_access(dest)) {
+      return;
+    }
+    if (!this->prepare_mem_access(src)) {
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(dest.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(dest.var()).is_top()) {
       // Ignore strncpy, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else if (size.is_machine_int()) {
-      this->_inv.normal().abstract_reachable_mem(dest.var(),
+      this->_inv.normal().mem_abstract_reachable(dest.var(),
                                                  size.machine_int());
     } else if (size.is_machine_int_var()) {
-      IntInterval size_intv =
-          this->_inv.normal().integers().to_interval(size.var());
-      this->_inv.normal().abstract_reachable_mem(dest.var(), size_intv.ub());
+      IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+      this->_inv.normal().mem_abstract_reachable(dest.var(), size_intv.ub());
     } else {
       ikos_unreachable("unreachable");
     }
@@ -3523,23 +3532,24 @@ private:
   ///
   /// The strcat() function returns the pointer s1.
   void exec_strcat(ar::CallBase* call) {
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
-    this->init_global_operand(call->argument(1));
+    this->init_global_operands(call);
 
     const ScalarLit& s1 = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& s2 = this->_lit_factory.get_scalar(call->argument(1));
 
-    if (!this->prepare_mem_access(s1) || !this->prepare_mem_access(s2)) {
+    if (!this->prepare_mem_access(s1)) {
+      return;
+    }
+    if (!this->prepare_mem_access(s2)) {
       return;
     }
 
-    if (this->_inv.normal().pointers().points_to(s1.var()).is_top()) {
+    if (this->_inv.normal().pointer_to_points_to(s1.var()).is_top()) {
       // Ignore strcat, analysis could be unsound.
       // See CheckKind::IgnoredCallSideEffectOnPointerParameter
     } else {
       // Do not keep track of the content
-      this->_inv.normal().abstract_reachable_mem(s1.var());
+      this->_inv.normal().mem_abstract_reachable(s1.var());
     }
 
     if (call->has_result()) {
@@ -3573,32 +3583,27 @@ private:
   /// The strstr() function locates the first occurrence of the null-terminated
   /// string needle in the null-terminated string haystack.
   void exec_strstr(ar::CallBase* call) {
-    if (!call->has_result()) {
-      return;
-    }
+    this->init_global_operands(call);
 
-    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
     const ScalarLit& haystack =
         this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& needle = this->_lit_factory.get_scalar(call->argument(1));
-    ikos_assert_msg(lhs.is_pointer_var(),
-                    "left hand side is not a pointer variable");
 
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
-    this->init_global_operand(call->argument(1));
-
-    if (!this->prepare_mem_access(haystack) ||
-        !this->prepare_mem_access(needle)) {
+    if (!this->prepare_mem_access(haystack)) {
+      return;
+    }
+    if (!this->prepare_mem_access(needle)) {
       return;
     }
 
-    this->_inv.normal().pointers().assign(lhs.var(), haystack.var());
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
-
-    this->_inv.normal().nullity().set(lhs.var(), Nullity::top());
-    auto offset_var = this->_inv.normal().pointers().offset_var(lhs.var());
-    this->_inv.normal().integers().forget(offset_var);
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->_inv.normal().pointer_assign(lhs.var(), haystack.var());
+      this->_inv.normal().nullity_set(lhs.var(), Nullity::top());
+      this->_inv.normal().pointer_forget_offset(lhs.var());
+    }
   }
 
   /// \brief Execute a call to libc strchr
@@ -3611,28 +3616,22 @@ private:
   /// considered to be part of the string; therefore if c is `\0', the functions
   /// locate the terminating `\0'.
   void exec_strchr(ar::CallBase* call) {
-    if (!call->has_result()) {
-      return;
-    }
+    this->init_global_operands(call);
 
-    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
     const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
-    ikos_assert_msg(lhs.is_pointer_var(),
-                    "left hand side is not a pointer variable");
-
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
 
     if (!this->prepare_mem_access(s)) {
       return;
     }
 
-    this->_inv.normal().pointers().assign(lhs.var(), s.var());
-    this->_inv.normal().uninitialized().assign_initialized(lhs.var());
-
-    this->_inv.normal().nullity().set(lhs.var(), Nullity::top());
-    auto offset_var = this->_inv.normal().pointers().offset_var(lhs.var());
-    this->_inv.normal().integers().forget(offset_var);
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+      this->_inv.normal().pointer_assign(lhs.var(), s.var());
+      this->_inv.normal().nullity_set(lhs.var(), Nullity::top());
+      this->_inv.normal().pointer_forget_offset(lhs.var());
+    }
   }
 
   /// \brief Execute a call to libc strdup
@@ -3644,30 +3643,27 @@ private:
   /// s1, does the copy, and returns a pointer to it.  The pointer may
   /// subsequently be used as an argument to the function free(3).
   void exec_strdup(ar::CallBase* call) {
-    if (!call->has_result()) {
-      return;
-    }
+    this->init_global_operands(call);
 
-    const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
     const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
-    ikos_assert_msg(lhs.is_pointer_var(),
-                    "left hand side is not a pointer variable");
-
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
 
     if (!this->prepare_mem_access(s)) {
       return;
     }
 
-    MemoryLocation* addr =
-        this->_mem_factory.get_dyn_alloc(call, this->_call_context);
-    this->allocate_memory(lhs.var(),
-                          addr,
-                          Nullity::top(),
-                          Uninitialized::initialized(),
-                          Lifetime::allocated(),
-                          MemoryInitialValue::Unknown);
+    if (call->has_result()) {
+      const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
+      ikos_assert_msg(lhs.is_pointer_var(),
+                      "left hand side is not a pointer variable");
+
+      MemoryLocation* addr =
+          this->_mem_factory.get_dyn_alloc(call, this->_call_context);
+      this->allocate_memory(lhs.var(),
+                            addr,
+                            Nullity::top(),
+                            Lifetime::allocated(),
+                            MemoryInitialValue::Unknown);
+    }
   }
 
   /// \brief Execute a call to libc strndup
@@ -3678,43 +3674,44 @@ private:
   /// The strndup() function copies at most n characters from the string s1
   /// always NUL terminating the copied string.
   void exec_strndup(ar::CallBase* call) {
+    this->init_global_operands(call);
+
+    const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
+    const ScalarLit& n = this->_lit_factory.get_scalar(call->argument(1));
+
+    if (!this->prepare_mem_access(s)) {
+      return;
+    }
+
     if (!call->has_result()) {
       return;
     }
 
     const ScalarLit& lhs = this->_lit_factory.get_scalar(call->result());
-    const ScalarLit& s = this->_lit_factory.get_scalar(call->argument(0));
-    const ScalarLit& n = this->_lit_factory.get_scalar(call->argument(1));
     ikos_assert_msg(lhs.is_pointer_var(),
                     "left hand side is not a pointer variable");
-
-    // Initialize lazily global objects
-    this->init_global_operand(call->argument(0));
-
-    if (!this->prepare_mem_access(s)) {
-      return;
-    }
 
     MemoryLocation* addr =
         this->_mem_factory.get_dyn_alloc(call, this->_call_context);
     this->allocate_memory(lhs.var(),
                           addr,
                           Nullity::top(),
-                          Uninitialized::initialized(),
                           Lifetime::allocated(),
                           MemoryInitialValue::Unknown);
+
+    if (this->_precision < Precision::Memory) {
+      return;
+    }
 
     // sizeof(addr) <= n
     Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
 
     if (n.is_machine_int()) {
-      this->_inv.normal().integers().add(IntPredicate::LE,
-                                         alloc_size_var,
-                                         n.machine_int());
+      this->_inv.normal().int_add(IntPredicate::LE,
+                                  alloc_size_var,
+                                  n.machine_int());
     } else if (n.is_machine_int_var()) {
-      this->_inv.normal().integers().add(IntPredicate::LE,
-                                         alloc_size_var,
-                                         n.var());
+      this->_inv.normal().int_add(IntPredicate::LE, alloc_size_var, n.var());
     } else {
       ikos_unreachable("unexpected size operand");
     }
@@ -3805,16 +3802,16 @@ public:
     auto arg_et = call->arg_end();
     for (; param_it != param_et && arg_it != arg_et; ++param_it, ++arg_it) {
       this->init_global_operand(*arg_it);
-      this->assign(this->_lit_factory.get(*param_it),
-                   this->_lit_factory.get(*arg_it));
+      this->implicit_bitcast(this->_lit_factory.get(*param_it),
+                             this->_lit_factory.get(*arg_it));
     }
   }
 
   void match_up(ar::CallBase* call, ar::ReturnValue* ret) override {
     if (ret != nullptr && ret->has_operand() && call->has_result()) {
       this->init_global_operand(ret->operand());
-      this->assign(this->_lit_factory.get(call->result()),
-                   this->_lit_factory.get(ret->operand()));
+      this->implicit_bitcast(this->_lit_factory.get(call->result()),
+                             this->_lit_factory.get(ret->operand()));
     }
 
     if (ret != nullptr && ret->has_operand()) {
@@ -3823,12 +3820,12 @@ public:
 
       if (val.is_scalar()) {
         if (val.scalar().is_var()) {
-          this->_inv.normal().forget_surface(val.scalar().var());
+          this->_inv.normal().scalar_forget(val.scalar().var());
         }
       } else if (val.is_aggregate()) {
         if (val.aggregate().is_var()) {
-          this->_inv.normal().forget_reachable_mem(val.aggregate().var());
-          this->_inv.normal().forget_surface(val.aggregate().var());
+          this->_inv.normal().mem_forget_reachable(val.aggregate().var());
+          this->_inv.normal().scalar_forget(val.aggregate().var());
         }
       } else {
         ikos_unreachable("unreachable");

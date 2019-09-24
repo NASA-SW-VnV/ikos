@@ -56,9 +56,9 @@
 #include <ikos/core/semantic/dumpable.hpp>
 #include <ikos/core/semantic/indexable.hpp>
 #include <ikos/core/semantic/machine_int/variable.hpp>
-#include <ikos/core/semantic/memory/cell.hpp>
-#include <ikos/core/semantic/memory/variable.hpp>
-#include <ikos/core/semantic/pointer/variable.hpp>
+#include <ikos/core/semantic/memory/value/cell_factory.hpp>
+#include <ikos/core/semantic/memory/value/cell_variable.hpp>
+#include <ikos/core/semantic/scalar/variable.hpp>
 #include <ikos/core/semantic/variable.hpp>
 
 #include <ikos/ar/semantic/function.hpp>
@@ -82,12 +82,10 @@ namespace analyzer {
 /// It must be dumpable (see ikos/core/semantic/dumpable.hpp)
 /// It must implement machine_int::VariableTraits,
 ///   see ikos/core/semantic/machine_int/variable.hpp
-/// It must implement pointer::VariableTraits,
-///   see ikos/core/semantic/pointer/variable.hpp
+/// It must implement scalar::VariableTraits,
+///   see ikos/core/semantic/scalar/variable.hpp
 /// It must implement memory::CellVariableTraits,
-///   see ikos/core/semantic/memory/cell.hpp
-/// It must implement memory::VariableTraits,
-///   see ikos/core/semantic/memory/variable.hpp
+///   see ikos/core/semantic/memory/value/cell_variable.hpp
 ///
 /// Variable has a 'kind', which is the type of variable it represents.
 /// The 'kind' is an element of VariableKind.
@@ -598,11 +596,34 @@ struct VariableTraits< analyzer::Variable* > {
 
 } // end namespace machine_int
 
-namespace pointer {
+namespace scalar {
 
-/// \brief Implement pointer::VariableTraits for Variable*
+/// \brief Implement scalar::VariableTraits for Variable*
 template <>
 struct VariableTraits< analyzer::Variable* > {
+  /// \brief Return true if the given variable is a machine integer variable
+  static bool is_int(const analyzer::Variable* v) {
+    return !analyzer::isa< analyzer::CellVariable >(v) &&
+           v->type()->is_integer();
+  }
+
+  /// \brief Return true if the given variable is a floating point variable
+  static bool is_float(const analyzer::Variable* v) {
+    return !analyzer::isa< analyzer::CellVariable >(v) && v->type()->is_float();
+  }
+
+  /// \brief Return true if the given variable is a pointer variable
+  static bool is_pointer(const analyzer::Variable* v) {
+    // Aggregate variables are treated as pointers for the analysis
+    return !analyzer::isa< analyzer::CellVariable >(v) &&
+           (v->type()->is_pointer() || v->type()->is_aggregate());
+  }
+
+  /// \brief Return true if the given variable is a dynamically typed variable
+  static bool is_dynamic(const analyzer::Variable* v) {
+    return analyzer::isa< analyzer::CellVariable >(v);
+  }
+
   /// \brief Return the machine integer offset variable of the given pointer
   static analyzer::Variable* offset_var(const analyzer::Variable* v) {
     ikos_assert_msg(v->offset_var() != nullptr, "variable is not a pointer");
@@ -610,13 +631,18 @@ struct VariableTraits< analyzer::Variable* > {
   }
 };
 
-} // end namespace pointer
+} // end namespace scalar
 
 namespace memory {
 
 /// \brief Implement memory::CellVariableTraits for Variable*
 template <>
 struct CellVariableTraits< analyzer::Variable*, analyzer::MemoryLocation* > {
+  /// \brief Return true if the given variable is a memory cell variable
+  static bool is_cell(const analyzer::Variable* v) {
+    return analyzer::isa< analyzer::CellVariable >(v);
+  }
+
   /// \brief Return the base memory location of the given cell
   static analyzer::MemoryLocation* base(const analyzer::Variable* v) {
     return analyzer::cast< analyzer::CellVariable >(v)->address();
@@ -633,52 +659,18 @@ struct CellVariableTraits< analyzer::Variable*, analyzer::MemoryLocation* > {
   }
 };
 
-/// \brief Implement memory::VariableTraits for Variable*
-template <>
-struct VariableTraits< analyzer::Variable* > {
-  /// \brief Return true if the given variable is a memory cell
-  static bool is_cell(const analyzer::Variable* v) {
-    return analyzer::isa< analyzer::CellVariable >(v);
-  }
-
-  /// \brief Return true if the given variable is an machine integer variable
-  static bool is_int(const analyzer::Variable* v) {
-    ikos_assert(!analyzer::isa< analyzer::CellVariable >(v));
-    return v->type()->is_integer();
-  }
-
-  /// \brief Return true if the given variable is a floating point variable
-  static bool is_float(const analyzer::Variable* v) {
-    ikos_assert(!analyzer::isa< analyzer::CellVariable >(v));
-    return v->type()->is_float();
-  }
-
-  /// \brief Return true if the given variable is a pointer variable
-  static bool is_pointer(const analyzer::Variable* v) {
-    ikos_assert(!analyzer::isa< analyzer::CellVariable >(v));
-    // Note: aggregate variables are treated as pointers for the analysis
-    return v->type()->is_pointer() || v->type()->is_aggregate();
-  }
-};
-
-// Forward declaration of CellFactoryTraits, required by ValueDomain
-template < typename VariableRef,
-           typename MemoryLocationRef,
-           typename VariableFactory >
-struct CellFactoryTraits;
-
 /// \brief Implement memory::CellFactoryTraits for VariableFactory
 template <>
 struct CellFactoryTraits< analyzer::Variable*,
                           analyzer::MemoryLocation*,
-                          analyzer::VariableFactory > {
+                          analyzer::VariableFactory* > {
   /// \brief Get or create the cell with the given base address, offset and size
-  static analyzer::Variable* cell(analyzer::VariableFactory& vfac,
+  static analyzer::Variable* cell(analyzer::VariableFactory* vfac,
                                   analyzer::MemoryLocation* base,
                                   const MachineInt& offset,
                                   const MachineInt& size,
                                   Signedness sign) {
-    return vfac.get_cell(base, offset, size, sign);
+    return vfac->get_cell(base, offset, size, sign);
   }
 };
 

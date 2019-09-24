@@ -71,9 +71,6 @@ private:
   /// \brief Analysis context
   Context& _ctx;
 
-  /// \brief Analyzed function
-  ar::Function* _function;
-
   /// \brief Empty call context
   CallContext* _empty_call_context;
 

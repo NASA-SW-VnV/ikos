@@ -45,12 +45,10 @@
  ******************************************************************************/
 
 #include <ikos/core/domain/exception/exception.hpp>
-#include <ikos/core/domain/lifetime/dummy.hpp>
 #include <ikos/core/domain/machine_int/interval.hpp>
 #include <ikos/core/domain/memory/dummy.hpp>
-#include <ikos/core/domain/nullity/dummy.hpp>
-#include <ikos/core/domain/pointer/dummy.hpp>
-#include <ikos/core/domain/uninitialized/dummy.hpp>
+#include <ikos/core/domain/scalar/machine_int.hpp>
+#include <ikos/core/domain/uninitialized/uninitialized.hpp>
 #include <ikos/core/fixpoint/fwd_fixpoint_iterator.hpp>
 
 #include <ikos/analyzer/analysis/execution_engine/context_insensitive.hpp>
@@ -81,46 +79,30 @@ namespace {
 /// \brief Numerical abstract domain for the intra-procedural pointer analysis
 using MachineIntAbstractDomain = core::machine_int::IntervalDomain< Variable* >;
 
-/// \brief Dummy nullity abstract domain
-using NullityAbstractDomain = core::nullity::DummyDomain< Variable* >;
-
-/// \brief Dummy uninitialized abstract domain
+/// \brief Uninitialized abstract domain for the intra-procedural pointer
+/// analysis
 using UninitializedAbstractDomain =
-    core::uninitialized::DummyDomain< Variable* >;
+    core::uninitialized::UninitializedDomain< Variable* >;
 
-/// \brief Dummy lifetime abstract domain
-using LifetimeAbstractDomain = core::lifetime::DummyDomain< MemoryLocation* >;
-
-/// \brief Pointer abstract domain for the intra-procedural pointer analysis
-using PointerAbstractDomain =
-    core::pointer::DummyDomain< Variable*,
-                                MemoryLocation*,
-                                MachineIntAbstractDomain,
-                                NullityAbstractDomain >;
+/// \brief Scalar abstract domain for the intra-procedural pointer analysis
+using ScalarAbstractDomain =
+    core::scalar::MachineIntDomain< Variable*,
+                                    MemoryLocation*,
+                                    UninitializedAbstractDomain,
+                                    MachineIntAbstractDomain >;
 
 /// \brief Memory abstract domain for the intra-procedural pointer analysis
-using MemoryAbstractDomain =
-    core::memory::DummyDomain< Variable*,
-                               MemoryLocation*,
-                               VariableFactory,
-                               MachineIntAbstractDomain,
-                               NullityAbstractDomain,
-                               PointerAbstractDomain,
-                               UninitializedAbstractDomain,
-                               LifetimeAbstractDomain >;
+using MemoryAbstractDomain = core::memory::
+    DummyDomain< Variable*, MemoryLocation*, ScalarAbstractDomain >;
 
 /// \brief Abstract domain for the intra-procedural pointer analysis
 using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
 
 /// \brief Create the bottom abstract value
 AbstractDomain make_bottom_abstract_value() {
-  auto bottom =
-      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
-                                                     bottom(),
-                                                 NullityAbstractDomain::
-                                                     bottom()),
-                           UninitializedAbstractDomain::bottom(),
-                           LifetimeAbstractDomain::bottom());
+  auto bottom = MemoryAbstractDomain(
+      ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
+                           MachineIntAbstractDomain::bottom()));
   return AbstractDomain(/*normal = */ bottom,
                         /*caught_exceptions = */ bottom,
                         /*propagated_exceptions = */ bottom);
@@ -128,19 +110,12 @@ AbstractDomain make_bottom_abstract_value() {
 
 /// \brief Create the initial abstract value
 AbstractDomain make_initial_abstract_value() {
-  auto top =
-      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
-                                                     top(),
-                                                 NullityAbstractDomain::top()),
-                           UninitializedAbstractDomain::top(),
-                           LifetimeAbstractDomain::top());
-  auto bottom =
-      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
-                                                     bottom(),
-                                                 NullityAbstractDomain::
-                                                     bottom()),
-                           UninitializedAbstractDomain::bottom(),
-                           LifetimeAbstractDomain::bottom());
+  auto top = MemoryAbstractDomain(
+      ScalarAbstractDomain(UninitializedAbstractDomain::top(),
+                           MachineIntAbstractDomain::top()));
+  auto bottom = MemoryAbstractDomain(
+      ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
+                           MachineIntAbstractDomain::bottom()));
   return AbstractDomain(/*normal = */ top,
                         /*caught_exceptions = */ bottom,
                         /*propagated_exceptions = */ bottom);

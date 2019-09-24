@@ -257,18 +257,53 @@ public:
     return boost::apply_visitor(IsType< PointerVarLit >(), this->_lit);
   }
 
-  /// \brief Return true if the literal is a constant
-  bool is_cst() const {
-    return this->is_machine_int() || this->is_floating_point() ||
-           this->is_memory_location() || this->is_null() ||
-           this->is_undefined();
-  }
+private:
+  /// \brief Visitor that returns true if the literal is a constant
+  struct IsConstant : public boost::static_visitor< bool > {
+    bool operator()(const MachineIntLit&) const { return true; }
 
+    bool operator()(const FloatingPointLit&) const { return true; }
+
+    bool operator()(const MemoryLocationLit&) const { return true; }
+
+    bool operator()(const NullLit&) const { return true; }
+
+    bool operator()(const UndefinedLit&) const { return true; }
+
+    bool operator()(const MachineIntVarLit&) const { return false; }
+
+    bool operator()(const FloatingPointVarLit&) const { return false; }
+
+    bool operator()(const PointerVarLit&) const { return false; }
+  };
+
+public:
+  /// \brief Return true if the literal is a constant
+  bool is_cst() const { return boost::apply_visitor(IsConstant(), this->_lit); }
+
+private:
+  /// \brief Visitor that returns true if the literal is a variable
+  struct IsVariable : public boost::static_visitor< bool > {
+    bool operator()(const MachineIntLit&) const { return false; }
+
+    bool operator()(const FloatingPointLit&) const { return false; }
+
+    bool operator()(const MemoryLocationLit&) const { return false; }
+
+    bool operator()(const NullLit&) const { return false; }
+
+    bool operator()(const UndefinedLit&) const { return false; }
+
+    bool operator()(const MachineIntVarLit&) const { return true; }
+
+    bool operator()(const FloatingPointVarLit&) const { return true; }
+
+    bool operator()(const PointerVarLit&) const { return true; }
+  };
+
+public:
   // \brief Return true if the literal is a variable
-  bool is_var() const {
-    return this->is_machine_int_var() || this->is_floating_point_var() ||
-           this->is_pointer_var();
-  }
+  bool is_var() const { return boost::apply_visitor(IsVariable(), this->_lit); }
 
 private:
   /// \brief Visitor that returns the machine integer

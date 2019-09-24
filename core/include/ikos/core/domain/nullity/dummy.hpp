@@ -106,16 +106,14 @@ public:
     this->_is_bottom = (this->_is_bottom && other._is_bottom);
   }
 
-  void widen_with(const DummyDomain& other) override {
-    return this->join_with(other);
-  }
+  void widen_with(const DummyDomain& other) override { this->join_with(other); }
 
   void meet_with(const DummyDomain& other) override {
     this->_is_bottom = (this->_is_bottom || other._is_bottom);
   }
 
   void narrow_with(const DummyDomain& other) override {
-    return this->meet_with(other);
+    this->meet_with(other);
   }
 
   void assign_null(VariableRef) override {}

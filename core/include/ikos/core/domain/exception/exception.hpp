@@ -108,6 +108,9 @@ public:
   /// \brief Destructor
   ~ExceptionDomain() override = default;
 
+  /// \name Implement core abstract domain methods
+  /// @{
+
   bool is_bottom() const override {
     return this->_normal.is_bottom() && this->_caught_exceptions.is_bottom() &&
            this->_propagated_exceptions.is_bottom();
@@ -218,9 +221,9 @@ public:
     return tmp;
   }
 
-  /*
-   * Implement exception::AbstractDomain
-   */
+  /// @}
+  /// \name Implement exception abstract domain methods
+  /// @{
 
   UnderlyingDomain& normal() override { return this->_normal; }
 
@@ -316,6 +319,8 @@ public:
     this->_caught_exceptions.join_with(this->_normal);
     this->_normal.set_to_bottom();
   }
+
+  /// @}
 
   void dump(std::ostream& o) const override {
     o << "(normal=";

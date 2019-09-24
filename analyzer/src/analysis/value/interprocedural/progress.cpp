@@ -284,12 +284,10 @@ void InteractiveProgressLogger::print_frame(const Frame& frame) {
   // Return a string for the given frame
   struct FrameVisitor : public boost::static_visitor< std::string > {
   private:
-    std::ostream& _out;
     const boost::filesystem::path& _wd;
 
   public:
-    FrameVisitor(std::ostream& out, const boost::filesystem::path& wd)
-        : _out(out), _wd(wd) {}
+    explicit FrameVisitor(const boost::filesystem::path& wd) : _wd(wd) {}
 
     std::string operator()(const CallFrame& call) const {
       return call_frame_string(call.call_context, call.function, this->_wd);
@@ -304,7 +302,7 @@ void InteractiveProgressLogger::print_frame(const Frame& frame) {
   };
 
   // Generate a string for the given frame
-  FrameVisitor vis(this->_out, this->_ctx.wd);
+  FrameVisitor vis(this->_ctx.wd);
   std::string line = boost::apply_visitor(vis, frame);
 
   // Truncate, if needed

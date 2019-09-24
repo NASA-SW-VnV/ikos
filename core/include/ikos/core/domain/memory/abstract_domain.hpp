@@ -43,16 +43,9 @@
 
 #pragma once
 
-#include <ikos/core/domain/abstract_domain.hpp>
-#include <ikos/core/domain/lifetime/abstract_domain.hpp>
-#include <ikos/core/domain/machine_int/abstract_domain.hpp>
-#include <ikos/core/domain/nullity/abstract_domain.hpp>
-#include <ikos/core/domain/pointer/abstract_domain.hpp>
-#include <ikos/core/domain/uninitialized/abstract_domain.hpp>
+#include <ikos/core/domain/scalar/abstract_domain.hpp>
 #include <ikos/core/literal.hpp>
-#include <ikos/core/semantic/memory/variable.hpp>
-#include <ikos/core/semantic/memory_location.hpp>
-#include <ikos/core/semantic/variable.hpp>
+#include <ikos/core/value/lifetime.hpp>
 
 namespace ikos {
 namespace core {
@@ -60,179 +53,72 @@ namespace memory {
 
 /// \brief Base class for memory abstract domains
 ///
-/// A memory abstract domain should hold:
-///   * A machine integer abstract domain (embedded in the pointer domain)
-///   * A nullity abstract domain (embedded in the pointer domain)
-///   * A pointer abstract domain
-///   * An uninitialized abstract domain
-///   * A lifetime abstract domain
-template < typename VariableRef,
-           typename MemoryLocationRef,
-           typename VariableFactory,
-           typename MachineIntDomain,
-           typename NullityDomain,
-           typename PointerDomain,
-           typename UninitializedDomain,
-           typename LifetimeDomain,
-           typename Derived >
-class AbstractDomain : public core::AbstractDomain< Derived > {
+/// A memory abstract domain is a scalar abstract domain with memory operations
+template < typename VariableRef, typename MemoryLocationRef, typename Derived >
+class AbstractDomain
+    : public scalar::AbstractDomain< VariableRef, MemoryLocationRef, Derived > {
 public:
-  static_assert(
-      core::IsVariable< VariableRef >::value,
-      "VariableRef does not meet the requirements for variable types");
-  static_assert(memory::IsVariable< VariableRef >::value,
-                "VariableRef must implement memory::VariableTraits");
-  static_assert(core::IsMemoryLocation< MemoryLocationRef >::value,
-                "MemoryLocationRef does not meet the requirements for memory "
-                "location types");
-  static_assert(
-      machine_int::IsAbstractDomain< MachineIntDomain, VariableRef >::value,
-      "MachineIntDomain must implement machine_int::AbstractDomain");
-  static_assert(nullity::IsAbstractDomain< NullityDomain, VariableRef >::value,
-                "NullityDomain must implement nullity::AbstractDomain");
-  static_assert(pointer::IsAbstractDomain< PointerDomain,
-                                           VariableRef,
-                                           MemoryLocationRef,
-                                           MachineIntDomain,
-                                           NullityDomain >::value,
-                "PointerDomain must implement pointer::AbstractDomain");
-  static_assert(
-      uninitialized::IsAbstractDomain< UninitializedDomain,
-                                       VariableRef >::value,
-      "UninitializedDomain must implement uninitialized::AbstractDomain");
-  static_assert(
-      lifetime::IsAbstractDomain< LifetimeDomain, MemoryLocationRef >::value,
-      "LifetimeDomain must implement lifetime::AbstractDomain");
-
-public:
+  using IntInterval = machine_int::Interval;
   using LiteralT = Literal< VariableRef, MemoryLocationRef >;
 
 public:
-  /// \brief Provide access to the underlying machine integer abstract domain
-  virtual MachineIntDomain& integers() = 0;
-
-  /// \brief Provide access to the underlying machine integer abstract domain
-  virtual const MachineIntDomain& integers() const = 0;
-
-  /// \brief Provide access to the underlying nullity abstract domain
-  virtual NullityDomain& nullity() = 0;
-
-  /// \brief Provide access to the underlying nullity abstract domain
-  virtual const NullityDomain& nullity() const = 0;
-
-  /// \brief Provide access to the underlying pointer abstract domain
-  virtual PointerDomain& pointers() = 0;
-
-  /// \brief Provide access to the underlying pointer abstract domain
-  virtual const PointerDomain& pointers() const = 0;
-
-  /// \brief Provide access to the underlying uninitialized abstract domain
-  virtual UninitializedDomain& uninitialized() = 0;
-
-  /// \brief Provide access to the underlying uninitialized abstract domain
-  virtual const UninitializedDomain& uninitialized() const = 0;
-
-  /// \brief Provide access to the underlying lifetime abstract domain
-  virtual LifetimeDomain& lifetime() = 0;
-
-  /// \brief Provide access to the underlying lifetime abstract domain
-  virtual const LifetimeDomain& lifetime() const = 0;
-
-  /// \brief Perform the widening of two abstract values with a threshold
-  virtual void widen_threshold_with(const Derived& other,
-                                    const MachineInt& threshold) = 0;
-
-  /// \brief Perform the widening of two abstract values with a threshold
-  virtual Derived widening_threshold(const Derived& other,
-                                     const MachineInt& threshold) const {
-    Derived tmp(static_cast< const Derived& >(*this));
-    tmp.widen_threshold_with(other, threshold);
-    return tmp;
-  }
-
-  /// \brief Perform the narrowing of two abstract values with a threshold
-  virtual void narrow_threshold_with(const Derived& other,
-                                     const MachineInt& threshold) = 0;
-
-  /// \brief Perform the narrowing of two abstract values with a threshold
-  virtual Derived narrowing_threshold(const Derived& other,
-                                      const MachineInt& threshold) const {
-    Derived tmp(static_cast< const Derived& >(*this));
-    tmp.narrow_threshold_with(other, threshold);
-    return tmp;
-  }
+  /// \name Memory abstract domain methods
+  /// @{
 
   /// \brief Perform the memory write `*p = v`
   ///
-  /// \param vfac The variable factory
   /// \param p The pointer variable
   /// \param v The stored value
   /// \param size The stored size, in bytes (for instance, 4 for a int)
-  virtual void mem_write(VariableFactory& vfac,
-                         VariableRef p,
+  virtual void mem_write(VariableRef p,
                          const LiteralT& v,
                          const MachineInt& size) = 0;
 
   /// \brief Perform the memory read `x = *p`
   ///
-  /// \param vfac The variable factory
   /// \param x The result variable
   /// \param p The pointer variable
   /// \param size The read size, in bytes (for instance, 4 for a int)
-  virtual void mem_read(VariableFactory& vfac,
-                        const LiteralT& x,
+  virtual void mem_read(const LiteralT& x,
                         VariableRef p,
                         const MachineInt& size) = 0;
 
   /// \brief Perform the memory copy `memcpy(dest, src, size)`
   ///
-  /// \param vfac The variable factory
   /// \param dest The destination pointer variable
   /// \param src The source pointer variable
   /// \param size The number of bytes copied, as a literal
   ///
   /// Notes:
-  ///   If dst and src overlap, as the behavior in C is undefined, the memory
-  ///   contents is set to top.
-  virtual void mem_copy(VariableFactory& vfac,
-                        VariableRef dest,
+  ///   If `dst` and `src` overlap, as the behavior in C is undefined, the
+  ///   memory contents is set to top.
+  virtual void mem_copy(VariableRef dest,
                         VariableRef src,
                         const LiteralT& size) = 0;
 
   /// \brief Perform the memory set `memset(dest, value, size)`
   ///
-  /// \param vfac The variable factory
   /// \param dest The destination pointer variable
   /// \param value The byte value, as a literal
   /// \param size The number of written bytes, as a literal
-  virtual void mem_set(VariableFactory& vfac,
-                       VariableRef dest,
+  virtual void mem_set(VariableRef dest,
                        const LiteralT& value,
                        const LiteralT& size) = 0;
 
-  /// \brief Forget the memory surface of variable `x`
-  ///
-  /// Forget only the "surface" part of the underlying domain.
-  /// It does not update the memory.
-  ///
-  /// If `x` is a scalar variable, forget its value.
-  /// If `x` is a pointer variable, forget its base address and offset.
-  virtual void forget_surface(VariableRef x) = 0;
-
   /// \brief Forget all memory contents
-  virtual void forget_mem() = 0;
+  virtual void mem_forget_all() = 0;
 
   /// \brief Forget the memory contents at the given memory location
-  virtual void forget_mem(MemoryLocationRef addr) = 0;
+  virtual void mem_forget(MemoryLocationRef addr) = 0;
 
   /// \brief Forget the memory contents in range
   /// `[addr + offset, addr + offset + size - 1]`
   ///
   /// \param addr The memory location
-  /// \param offset The machine integer variable
+  /// \param offset The offset as a machine integer interval
   /// \param size The size in bytes
-  virtual void forget_mem(MemoryLocationRef addr,
-                          VariableRef offset,
+  virtual void mem_forget(MemoryLocationRef addr,
+                          const IntInterval& offset,
                           const MachineInt& size) = 0;
 
   /// \brief Forget the memory contents in range
@@ -240,11 +126,10 @@ public:
   ///
   /// \param addr The memory location
   /// \param range The byte range as a machine integer interval
-  virtual void forget_mem(MemoryLocationRef addr,
-                          const machine_int::Interval& range) = 0;
+  virtual void mem_forget(MemoryLocationRef addr, const IntInterval& range) = 0;
 
   /// \brief Forget the memory contents accessible through pointer `p`
-  virtual void forget_reachable_mem(VariableRef p) = 0;
+  virtual void mem_forget_reachable(VariableRef p) = 0;
 
   /// \brief Forget the memory contents in range `[p, p + size - 1]`
   ///
@@ -253,14 +138,14 @@ public:
   //
   /// \param p The pointer variable
   /// \param size The size in bytes
-  virtual void forget_reachable_mem(VariableRef p, const MachineInt& size) = 0;
+  virtual void mem_forget_reachable(VariableRef p, const MachineInt& size) = 0;
 
   /// \brief Abstract the memory contents reachable through pointer `p`
   ///
   /// Abstract all memory contents that can be accessible through pointer `p`.
   /// Suppose it contains random bytes, and no valid pointers (unlike
   /// forget_reachable_mem).
-  virtual void abstract_reachable_mem(VariableRef p) = 0;
+  virtual void mem_abstract_reachable(VariableRef p) = 0;
 
   /// \brief Abstract the memory contents in range `[p, p + size - 1]`
   ///
@@ -271,20 +156,51 @@ public:
   ///
   /// \param p The pointer variable
   /// \param size The size in bytes
-  virtual void abstract_reachable_mem(VariableRef p,
+  virtual void mem_abstract_reachable(VariableRef p,
                                       const MachineInt& size) = 0;
 
   /// \brief Set the memory contents accessible through pointer `p` to zero
-  virtual void zero_reachable_mem(VariableRef p) = 0;
+  virtual void mem_zero_reachable(VariableRef p) = 0;
 
   /// \brief Set the memory contents accessible through pointer `p` to
   /// uninitialized
-  virtual void uninitialize_reachable_mem(VariableRef p) = 0;
+  virtual void mem_uninitialize_reachable(VariableRef p) = 0;
 
-  /// \brief Normalize the abstract value
-  virtual void normalize() const = 0;
+  /// @}
+  /// \name Lifetime abstract domain methods
+  /// @{
+
+  /// \brief Assign `m = allocated`
+  virtual void lifetime_assign_allocated(MemoryLocationRef m) = 0;
+
+  /// \brief Assign `m = deallocated`
+  virtual void lifetime_assign_deallocated(MemoryLocationRef m) = 0;
+
+  /// \brief Add the constraint `m == allocated`
+  virtual void lifetime_assert_allocated(MemoryLocationRef m) = 0;
+
+  /// \brief Add the constraint `m == deallocated`
+  virtual void lifetime_assert_deallocated(MemoryLocationRef m) = 0;
+
+  /// \brief Forget the lifetime of a memory location
+  virtual void lifetime_forget(MemoryLocationRef m) = 0;
+
+  /// \brief Set the lifetime of a memory location
+  virtual void lifetime_set(MemoryLocationRef m, Lifetime value) = 0;
+
+  /// \brief Get the lifetime value for the given memory location
+  virtual Lifetime lifetime_to_lifetime(MemoryLocationRef m) const = 0;
+
+  /// @}
 
 }; // end class AbstractDomain
+
+/// \brief Check if a type is a memory abstract domain
+template < typename T, typename VariableRef, typename MemoryLocationRef >
+struct IsAbstractDomain
+    : std::is_base_of<
+          memory::AbstractDomain< VariableRef, MemoryLocationRef, T >,
+          T > {};
 
 } // end namespace memory
 } // end namespace core

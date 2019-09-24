@@ -91,7 +91,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
 
   if (base.is_undefined() ||
       (base.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(base.var()))) {
+       inv.normal().uninit_is_uninitialized(base.var()))) {
     if (auto msg = this->display_pointer_overflow_check(Result::Error, stmt)) {
       *msg << ": undefined base operand\n";
     }
@@ -105,9 +105,8 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
       isa< ar::FunctionPointerConstant >(stmt->pointer())) {
     base_interval = ZInterval(0);
   } else if (isa< ar::InternalVariable >(stmt->pointer())) {
-    Variable* offset_var = inv.normal().pointers().offset_var(base.var());
     base_interval =
-        inv.normal().integers().to_interval(offset_var).to_z_interval();
+        inv.normal().pointer_offset_to_interval(base.var()).to_z_interval();
   } else {
     log::error("unexpected operand to ptrshift");
     return {CheckKind::UnexpectedOperand, Result::Error, {stmt->pointer()}};
@@ -129,7 +128,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
 
     if (offset.is_undefined() ||
         (offset.is_machine_int_var() &&
-         inv.normal().uninitialized().is_uninitialized(offset.var()))) {
+         inv.normal().uninit_is_uninitialized(offset.var()))) {
       if (auto msg =
               this->display_pointer_overflow_check(Result::Error, stmt)) {
         *msg << ": undefined operand\n";
@@ -139,7 +138,7 @@ PointerOverflowChecker::CheckResult PointerOverflowChecker::
       offset_interval = ZInterval(offset.machine_int().to_z_number());
     } else if (offset.is_machine_int_var()) {
       offset_interval =
-          inv.normal().integers().to_interval(offset.var()).to_z_interval();
+          inv.normal().int_to_interval(offset.var()).to_z_interval();
     } else {
       log::error("unexpected operand to ptrshift");
       return {CheckKind::UnexpectedOperand, Result::Error, {term.second}};

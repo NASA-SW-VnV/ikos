@@ -92,7 +92,7 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
 
   if (called.is_undefined() ||
       (called.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+       inv.normal().uninit_is_uninitialized(called.var()))) {
     // Undefined call pointer operand
     if (auto msg = this->display_call_check(Result::Error, call)) {
       *msg << ": undefined call pointer operand\n";
@@ -105,8 +105,8 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
 
   // Check null pointer dereference
 
-  if (called.is_null() || (called.is_pointer_var() &&
-                           inv.normal().nullity().is_null(called.var()))) {
+  if (called.is_null() ||
+      (called.is_pointer_var() && inv.normal().nullity_is_null(called.var()))) {
     // Null call pointer operand
     if (auto msg = this->display_call_check(Result::Error, call)) {
       *msg << ": null call pointer operand\n";
@@ -134,7 +134,7 @@ FunctionCallChecker::CheckResult FunctionCallChecker::check_call(
     callees = {_ctx.mem_factory->get_local(lv)};
   } else if (isa< ar::InternalVariable >(call->called())) {
     // Indirect call through a function pointer
-    callees = inv.normal().pointers().points_to(called.var());
+    callees = inv.normal().pointer_to_points_to(called.var());
   } else {
     log::error("unexpected call pointer operand");
     return {CheckKind::UnexpectedOperand, Result::Error, {call->called()}, {}};

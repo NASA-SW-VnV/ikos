@@ -169,16 +169,16 @@ public:
 
   /// \brief Execute a Call statement
   void exec(ar::Call* s) override {
-    // execute the call base statement
+    // Execute the call base statement
     this->exec(cast< ar::CallBase >(s));
 
-    // exceptions aren't caught, propagate them
+    // Exceptions aren't caught, propagate them
     this->inv().merge_caught_in_propagated_exceptions();
   }
 
   /// \brief Execute an Invoke statement
   void exec(ar::Invoke* s) override {
-    // execute the call base statement
+    // Execute the call base statement
     this->exec(cast< ar::CallBase >(s));
 
     // Exceptions are caught.
@@ -228,27 +228,26 @@ private:
       // Indirect call through a function pointer
       Variable* ptr_var = _ctx.var_factory->get_internal(ptr);
 
-      if (this->inv().normal().uninitialized().is_uninitialized(ptr_var) ||
-          this->inv().normal().nullity().is_null(ptr_var)) {
-        // null/undefined dereference
-        this->inv().set_normal_flow_to_bottom();
-        return;
-      }
+      // Assert `ptr != null`
+      this->inv().normal().nullity_assert_non_null(ptr_var);
 
-      // Reduction between value and pointer analysis: refine the set of
-      // potential callees
+      // Reduction between value and pointer analysis
       const PointerInfo* pointer_info = this->_engine.pointer_info();
       if (pointer_info != nullptr) {
         PointsToSet points_to = pointer_info->get(ptr_var).points_to();
 
         // Pointer analysis and value analysis can be inconsistent
         if (!points_to.is_bottom() && !points_to.is_top()) {
-          this->inv().normal().pointers().refine(ptr_var, points_to);
+          this->inv().normal().pointer_refine(ptr_var, points_to);
         }
       }
 
+      if (this->inv().is_normal_flow_bottom()) {
+        return;
+      }
+
       // Get the callees
-      callees = this->inv().normal().pointers().points_to(ptr_var);
+      callees = this->inv().normal().pointer_to_points_to(ptr_var);
     } else {
       ikos_unreachable("unexpected called operand");
     }
@@ -274,7 +273,7 @@ private:
     //
 
     // By default, propagate the exception states
-    AbstractDomain post(this->inv());
+    AbstractDomain post = this->inv();
     post.set_normal_flow_to_bottom();
 
     // For each callee
@@ -318,7 +317,7 @@ private:
         return;
       }
 
-      NumericalExecutionEngineT engine(this->_engine.fork());
+      NumericalExecutionEngineT engine = this->_engine.fork();
 
       // Do not propagate exceptions from the caller to the callee
       engine.inv().ignore_exceptions();

@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Generic API for variables representing memory cells
+ * \brief Generic API for creating variables representing memory cells
  *
  * Author: Maxime Arthaud
  *
@@ -9,7 +9,7 @@
  *
  * Notices:
  *
- * Copyright (c) 2018-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -50,52 +50,61 @@ namespace ikos {
 namespace core {
 namespace memory {
 
-/// \brief Traits for memory cell variables
+/// \brief Traits for creating cell variables
 ///
-/// A cell is a triple `(b, o, s)` modelling all bytes at address `b`, starting
-/// at offset `o` up to `o + s - 1`.
+/// Requirements:
+///
+/// CellFactoryRef has a noexcept copy constructor
+/// CellFactoryRef has a noexcept move constructor
+/// CellFactoryRef has a noexcept copy assignment operator
+/// CellFactoryRef has a noexcept move assignment operator
 ///
 /// Elements to provide:
 ///
-/// static MemoryLocationRef base(VariableRef)
-///   Return the base memory location of the given cell
-///
-/// static const MachineInt& offset(VariableRef)
-///   Return the offset of the given cell
-///
-/// static const MachineInt& size(VariableRef)
-///   Return the size of the given cell
-template < typename VariableRef, typename MemoryLocationRef >
-struct CellVariableTraits {};
-
-/// \brief Check if a type implements CellVariableTraits
+/// static VariableRef cell(CellFactoryRef factory,
+///                         MemoryLocationRef base,
+///                         const MachineInt& offset,
+///                         const MachineInt& size,
+///                         Signedness sign)
+///   Get or create the cell with the given base address, offset and size
+///   If a new cell is created, it will have the given signedness
 template < typename VariableRef,
            typename MemoryLocationRef,
-           typename CellVariableTrait =
-               CellVariableTraits< VariableRef, MemoryLocationRef >,
-           typename = void >
-struct IsCellVariable : std::false_type {};
+           typename CellFactoryRef >
+struct CellFactoryTraits {};
+
+/// \brief Check if a type implements CellFactoryTraits
+template <
+    typename VariableRef,
+    typename MemoryLocationRef,
+    typename CellFactoryRef,
+    typename CellFactoryTrait =
+        CellFactoryTraits< VariableRef, MemoryLocationRef, CellFactoryRef >,
+    typename = void >
+struct IsCellFactory : std::false_type {};
 
 template < typename VariableRef,
            typename MemoryLocationRef,
-           typename CellVariableTrait >
-struct IsCellVariable<
+           typename CellFactoryRef,
+           typename CellFactoryTrait >
+struct IsCellFactory<
     VariableRef,
     MemoryLocationRef,
-    CellVariableTrait,
-    void_t< std::enable_if_t<
-                std::is_same< MemoryLocationRef,
-                              decltype(CellVariableTrait::base(
-                                  std::declval< VariableRef >())) >::value >,
-            std::enable_if_t<
-                std::is_same< const MachineInt&,
-                              decltype(CellVariableTrait::offset(
-                                  std::declval< VariableRef >())) >::value >,
-            std::enable_if_t<
-                std::is_same< const MachineInt&,
-                              decltype(CellVariableTrait::size(
-                                  std::declval< VariableRef >())) >::value > > >
-    : std::true_type {};
+    CellFactoryRef,
+    CellFactoryTrait,
+    std::enable_if_t< conjunction<
+        std::is_nothrow_copy_constructible< CellFactoryRef >,
+        std::is_nothrow_move_constructible< CellFactoryRef >,
+        std::is_nothrow_copy_assignable< CellFactoryRef >,
+        std::is_nothrow_move_assignable< CellFactoryRef >,
+        std::is_same<
+            VariableRef,
+            decltype(CellFactoryTrait::cell(std::declval< CellFactoryRef >(),
+                                            std::declval< MemoryLocationRef >(),
+                                            std::declval< const MachineInt& >(),
+                                            std::declval< const MachineInt& >(),
+                                            std::declval< Signedness >())) > >::
+                          value > > : std::true_type {};
 
 } // end namespace memory
 } // end namespace core

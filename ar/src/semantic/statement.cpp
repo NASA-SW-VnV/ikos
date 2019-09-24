@@ -86,6 +86,12 @@ Statement* Statement::next_statement() const {
   }
 }
 
+bool Statement::has_undefined_constant_operand() const {
+  return std::any_of(this->_operands.begin(),
+                     this->_operands.end(),
+                     [](Value* op) { return isa< UndefinedConstant >(op); });
+}
+
 void Statement::set_parent(BasicBlock* parent) {
   this->_parent = parent;
 }

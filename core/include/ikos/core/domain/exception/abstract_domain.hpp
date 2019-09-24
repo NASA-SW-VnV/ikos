@@ -43,9 +43,8 @@
 
 #pragma once
 
-#include <type_traits>
-
 #include <ikos/core/domain/abstract_domain.hpp>
+#include <ikos/core/support/mpl.hpp>
 
 namespace ikos {
 namespace core {
@@ -55,6 +54,13 @@ namespace exception {
 template < typename UnderlyingDomain, typename Derived >
 class AbstractDomain : public core::AbstractDomain< Derived > {
 public:
+  static_assert(core::IsAbstractDomain< UnderlyingDomain >::value,
+                "UnderlyingDomain must implement core::AbstractDomain");
+
+public:
+  /// \brief Underlying abstract domain
+  using UnderlyingDomainT = UnderlyingDomain;
+
   /// \brief Create the top abstract value
   AbstractDomain() = default;
 
@@ -146,6 +152,16 @@ public:
   virtual void resume_exception() = 0;
 
 }; // end class AbstractDomain
+
+/// \brief Check if a type is an exception abstract domain
+template < typename T, typename = void >
+struct IsAbstractDomain : std::false_type {};
+
+template < typename T >
+struct IsAbstractDomain< T, void_t< typename T::UnderlyingDomainT > >
+    : std::is_base_of<
+          exception::AbstractDomain< typename T::UnderlyingDomainT, T >,
+          T > {};
 
 } // end namespace exception
 } // end namespace core

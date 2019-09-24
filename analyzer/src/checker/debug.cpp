@@ -242,24 +242,25 @@ void DebugChecker::exec_print_values(ar::IntrinsicCall* call,
       const ScalarLit& v = this->_lit_factory.get_scalar(*it);
 
       if (v.is_machine_int_var()) {
-        print_interval(msg, repr, inv.normal().integers().to_interval(v.var()));
+        print_interval(msg, repr, inv.normal().int_to_interval(v.var()));
       } else if (v.is_floating_point_var()) {
         // ignored for now
       } else if (v.is_pointer_var()) {
-        print_points_to(msg, repr, inv.normal().pointers().points_to(v.var()));
+        print_points_to(msg, repr, inv.normal().pointer_to_points_to(v.var()));
 
-        Variable* offset_var = inv.normal().pointers().offset_var(v.var());
         print_interval(msg,
                        "offset of " + repr,
-                       inv.normal().integers().to_interval(offset_var));
+                       inv.normal().pointer_offset_to_interval(v.var()));
 
-        print_nullity(msg, repr, inv.normal().nullity().get(v.var()));
+        print_nullity(msg, repr, inv.normal().nullity_to_nullity(v.var()));
       } else {
         msg << "\tArgument " << repr << " is not a variable\n";
         continue;
       }
 
-      print_uninitialized(msg, repr, inv.normal().uninitialized().get(v.var()));
+      print_uninitialized(msg,
+                          repr,
+                          inv.normal().uninit_to_uninitialized(v.var()));
     }
   }
 }

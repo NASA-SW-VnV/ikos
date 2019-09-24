@@ -107,16 +107,14 @@ public:
     this->_is_bottom = (this->_is_bottom && other._is_bottom);
   }
 
-  void widen_with(const DummyDomain& other) override {
-    return this->join_with(other);
-  }
+  void widen_with(const DummyDomain& other) override { this->join_with(other); }
 
   void meet_with(const DummyDomain& other) override {
     this->_is_bottom = (this->_is_bottom || other._is_bottom);
   }
 
   void narrow_with(const DummyDomain& other) override {
-    return this->meet_with(other);
+    this->meet_with(other);
   }
 
   void assign_initialized(VariableRef) override {}
@@ -126,8 +124,6 @@ public:
   void assign(VariableRef, VariableRef) override {}
 
   void assert_initialized(VariableRef) override {}
-
-  void assert_uninitialized(VariableRef) override {}
 
   bool is_initialized(VariableRef) const override {
     ikos_assert_msg(!this->_is_bottom,

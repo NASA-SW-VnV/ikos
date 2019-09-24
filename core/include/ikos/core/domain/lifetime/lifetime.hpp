@@ -134,43 +134,43 @@ public:
     this->_inv.narrow_with(other._inv);
   }
 
-  void assign_allocated(MemoryLocationRef x) override {
-    this->_inv.set(x, Lifetime::allocated());
+  void assign_allocated(MemoryLocationRef m) override {
+    this->_inv.set(m, Lifetime::allocated());
   }
 
-  void assign_deallocated(MemoryLocationRef x) override {
-    this->_inv.set(x, Lifetime::deallocated());
+  void assign_deallocated(MemoryLocationRef m) override {
+    this->_inv.set(m, Lifetime::deallocated());
   }
 
-  void assert_allocated(MemoryLocationRef x) override {
-    this->_inv.refine(x, Lifetime::allocated());
+  void assert_allocated(MemoryLocationRef m) override {
+    this->_inv.refine(m, Lifetime::allocated());
   }
 
-  void assert_deallocated(MemoryLocationRef x) override {
-    this->_inv.refine(x, Lifetime::deallocated());
+  void assert_deallocated(MemoryLocationRef m) override {
+    this->_inv.refine(m, Lifetime::deallocated());
   }
 
-  bool is_allocated(MemoryLocationRef x) const override {
+  bool is_allocated(MemoryLocationRef m) const override {
     ikos_assert_msg(!this->is_bottom(),
                     "trying to call is_allocated() on bottom");
-    return this->_inv.get(x).is_allocated();
+    return this->_inv.get(m).is_allocated();
   }
 
-  bool is_deallocated(MemoryLocationRef x) const override {
+  bool is_deallocated(MemoryLocationRef m) const override {
     ikos_assert_msg(!this->is_bottom(),
                     "trying to call is_deallocated() on bottom");
-    return this->_inv.get(x).is_deallocated();
+    return this->_inv.get(m).is_deallocated();
   }
 
-  void set(MemoryLocationRef x, const Lifetime& value) override {
-    this->_inv.set(x, value);
+  void set(MemoryLocationRef m, const Lifetime& value) override {
+    this->_inv.set(m, value);
   }
 
-  void forget(MemoryLocationRef x) override { this->_inv.forget(x); }
+  void forget(MemoryLocationRef m) override { this->_inv.forget(m); }
 
   void normalize() const override {}
 
-  Lifetime get(MemoryLocationRef x) const override { return this->_inv.get(x); }
+  Lifetime get(MemoryLocationRef m) const override { return this->_inv.get(m); }
 
   void dump(std::ostream& o) const override { return this->_inv.dump(o); }
 

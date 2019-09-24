@@ -91,7 +91,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
 
   if (cond.is_undefined() ||
       (cond.is_machine_int_var() &&
-       inv.normal().uninitialized().is_uninitialized(cond.var()))) {
+       inv.normal().uninit_is_uninitialized(cond.var()))) {
     // Undefined operand
     if (auto msg = this->display_assert_check(Result::Error, call)) {
       *msg << ": undefined operand\n";
@@ -103,7 +103,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
   if (cond.is_machine_int()) {
     flag = IntInterval(cond.machine_int());
   } else if (cond.is_machine_int_var()) {
-    flag = inv.normal().integers().to_interval(cond.var());
+    flag = inv.normal().int_to_interval(cond.var());
   } else {
     log::error("unexpected argument to __ikos_assert()");
     return {CheckKind::UnexpectedOperand, Result::Error};
@@ -117,7 +117,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
       *msg << ": ∀x ∈ " << cond << ", x == 0\n";
     }
     return {CheckKind::Assert, Result::Error};
-  } else if (flag.contains(MachineInt(0, 32, Unsigned))) {
+  } else if (flag.contains(MachineInt::zero(32, Unsigned))) {
     // The condition may be 0
     if (auto msg = this->display_assert_check(Result::Warning, call)) {
       *msg << ": (∃x ∈ " << cond << ", x == 0) and (∃x ∈ " << cond

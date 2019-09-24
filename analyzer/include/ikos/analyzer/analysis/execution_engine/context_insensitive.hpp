@@ -98,16 +98,16 @@ public:
 
   /// \brief Execute a Call statement
   void exec(ar::Call* s) override {
-    // execute the call statement
+    // Execute the call statement
     this->exec(cast< ar::CallBase >(s));
 
-    // exceptions aren't caught, propagate them
+    // Exceptions aren't caught, propagate them
     this->_engine.inv().merge_caught_in_propagated_exceptions();
   }
 
   /// \brief Execute an Invoke statement
   void exec(ar::Invoke* s) override {
-    // execute the call base statement
+    // Execute the call base statement
     this->exec(cast< ar::CallBase >(s));
 
     // Exceptions are caught.

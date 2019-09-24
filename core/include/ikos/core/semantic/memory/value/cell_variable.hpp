@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Generic API for variables with types
+ * \brief Generic API for variables representing memory cells
  *
  * Author: Maxime Arthaud
  *
@@ -43,55 +43,64 @@
 
 #pragma once
 
+#include <ikos/core/number/machine_int.hpp>
 #include <ikos/core/support/mpl.hpp>
 
 namespace ikos {
 namespace core {
 namespace memory {
 
-/// \brief Traits for variables with types
+/// \brief Traits for memory cell variables
+///
+/// A cell is a triple `(b, o, s)` modelling all bytes at address `b`, starting
+/// at offset `o` up to `o + s - 1`.
 ///
 /// Elements to provide:
 ///
 /// static bool is_cell(VariableRef)
-///   Return true if the given variable is a memory cell
+///   Return true if the given variable is a memory cell variable
 ///
-/// static bool is_int(VariableRef)
-///   Return true if the given variable is an machine integer variable
+/// static MemoryLocationRef base(VariableRef)
+///   Return the base memory location of the given cell
 ///
-/// static bool is_float(VariableRef)
-///   Return true if the given variable is a floating point variable
+/// static const MachineInt& offset(VariableRef)
+///   Return the offset of the given cell
 ///
-/// static bool is_pointer(VariableRef)
-///   Return true if the given variable is a pointer variable
-template < typename VariableRef >
-struct VariableTraits {};
+/// static const MachineInt& size(VariableRef)
+///   Return the size of the given cell
+template < typename VariableRef, typename MemoryLocationRef >
+struct CellVariableTraits {};
 
-/// \brief Check if a type implements VariableTraits
+/// \brief Check if a type implements CellVariableTraits
 template < typename VariableRef,
-           typename VariableTrait = VariableTraits< VariableRef >,
+           typename MemoryLocationRef,
+           typename CellVariableTrait =
+               CellVariableTraits< VariableRef, MemoryLocationRef >,
            typename = void >
-struct IsVariable : std::false_type {};
+struct IsCellVariable : std::false_type {};
 
-template < typename VariableRef, typename VariableTrait >
-struct IsVariable<
+template < typename VariableRef,
+           typename MemoryLocationRef,
+           typename CellVariableTrait >
+struct IsCellVariable<
     VariableRef,
-    VariableTrait,
+    MemoryLocationRef,
+    CellVariableTrait,
     void_t< std::enable_if_t<
                 std::is_same< bool,
-                              decltype(VariableTrait::is_cell(
+                              decltype(CellVariableTrait::is_cell(
                                   std::declval< VariableRef >())) >::value >,
             std::enable_if_t<
-                std::is_same< bool,
-                              decltype(VariableTrait::is_int(
+                std::is_same< MemoryLocationRef,
+                              decltype(CellVariableTrait::base(
                                   std::declval< VariableRef >())) >::value >,
             std::enable_if_t<
-                std::is_same< bool,
-                              decltype(VariableTrait::is_float(
+                std::is_same< const MachineInt&,
+                              decltype(CellVariableTrait::offset(
                                   std::declval< VariableRef >())) >::value >,
             std::enable_if_t<
-                std::is_same< bool,
-                              decltype(VariableTrait::is_pointer(
+                std::is_same< const MachineInt&,
+                              decltype(CellVariableTrait::size(
                                   std::declval< VariableRef >())) >::value > > >
     : std::true_type {};
 

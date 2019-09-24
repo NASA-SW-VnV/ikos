@@ -390,10 +390,9 @@ private:
                                                  ->get_absolute_zero(),
                                              MachineIntInterval(offset)));
           } else if (rhs.is_machine_int_var()) {
-            auto offset_intv = this->_inv.normal()
-                                   .integers()
-                                   .to_interval(rhs.var())
-                                   .cast(bit_width, Unsigned);
+            auto offset_intv =
+                this->_inv.normal().int_to_interval(rhs.var()).cast(bit_width,
+                                                                    Unsigned);
             AssignCst::create(lhs.var(),
                               AddrOp::create(_ctx.mem_factory
                                                  ->get_absolute_zero(),
@@ -480,7 +479,7 @@ private:
       }
 
       MachineIntInterval offset_intv =
-          this->_inv.normal().integers().to_interval(offset_expr);
+          this->_inv.normal().int_to_interval(offset_expr);
       if (base.is_null()) {
         this->_csts.add(
             AssignCst::create(lhs.var(),

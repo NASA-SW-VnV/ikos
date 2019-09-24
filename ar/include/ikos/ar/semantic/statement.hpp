@@ -191,6 +191,9 @@ public:
     return this->_operands[i];
   }
 
+  /// \brief Return true if one operand is ar::UndefinedConstant
+  bool has_undefined_constant_operand() const;
+
   /// \brief Dump the statement for debugging purpose
   virtual void dump(std::ostream&) const = 0;
 

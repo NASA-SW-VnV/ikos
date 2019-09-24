@@ -132,8 +132,9 @@ if ((NOT LLVM_ENABLE_RTTI) AND (NOT WIN32))
   message(WARNING "LLVM was built without run-time type information (RTTI)")
 endif()
 
-set(LLVM_REQUIRES_RTTI TRUE)
+set(LLVM_ENABLE_WARNINGS TRUE)
 set(LLVM_REQUIRES_EH TRUE)
+set(LLVM_REQUIRES_RTTI TRUE)
 
 include(HandleLLVMOptions)
 include(AddLLVM)

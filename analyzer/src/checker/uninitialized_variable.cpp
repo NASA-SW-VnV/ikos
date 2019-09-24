@@ -61,32 +61,45 @@ const char* UninitializedVariableChecker::description() const {
 void UninitializedVariableChecker::check(ar::Statement* stmt,
                                          const value::AbstractDomain& inv,
                                          CallContext* call_context) {
-  if (isa< ar::Assignment >(stmt)) {
-    // Assignments propagate the undefinedness
-    // No checks
-    return;
-  }
-
   if (inv.is_normal_flow_bottom()) {
     // Statement is unreachable
     // No checks
     return;
   }
 
+  if (isa< ar::Assignment >(stmt)) {
+    // Assignment propagate the undefinedness
+    // No checks
+    return;
+  }
+
+  if (auto insert = dyn_cast< ar::InsertElement >(stmt)) {
+    // InsertElement accepts undefined aggregate operands
+    this->check_initialized(stmt, insert->offset(), inv, call_context);
+    this->check_initialized(stmt, insert->element(), inv, call_context);
+    return;
+  }
+
   // Check each operand
   for (auto it = stmt->op_begin(), et = stmt->op_end(); it != et; ++it) {
-    ar::Value* operand = *it;
+    this->check_initialized(stmt, *it, inv, call_context);
+  }
+}
 
-    if (auto result = this->check_initialized(operand, inv)) {
-      this->display_initialized_check(*result, stmt, operand);
-      this->display_invariant(*result, stmt, inv);
-      this->_checks.insert(CheckKind::UninitializedVariable,
-                           CheckerName::UninitializedVariable,
-                           *result,
-                           stmt,
-                           call_context,
-                           std::array< ar::Value*, 1 >{{operand}});
-    }
+void UninitializedVariableChecker::check_initialized(
+    ar::Statement* stmt,
+    ar::Value* operand,
+    const value::AbstractDomain& inv,
+    CallContext* call_context) {
+  if (auto result = this->check_initialized(operand, inv)) {
+    this->display_initialized_check(*result, stmt, operand);
+    this->display_invariant(*result, stmt, inv);
+    this->_checks.insert(CheckKind::UninitializedVariable,
+                         CheckerName::UninitializedVariable,
+                         *result,
+                         stmt,
+                         call_context,
+                         std::array< ar::Value*, 1 >{{operand}});
   }
 }
 
@@ -118,11 +131,11 @@ boost::optional< Result > UninitializedVariableChecker::check_initialized(
     return Result::Ok;
   } else if (auto iv = dyn_cast< ar::InternalVariable >(operand)) {
     Variable* var = _ctx.var_factory->get_internal(iv);
-    core::Uninitialized uninit_val = inv.normal().uninitialized().get(var);
+    core::Uninitialized uninit = inv.normal().uninit_to_uninitialized(var);
 
-    if (uninit_val.is_uninitialized()) {
+    if (uninit.is_uninitialized()) {
       return Result::Error;
-    } else if (uninit_val.is_initialized()) {
+    } else if (uninit.is_initialized()) {
       return Result::Ok;
     } else {
       return Result::Warning;

@@ -94,7 +94,7 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
 
   if (called.is_undefined() ||
       (called.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+       inv.normal().uninit_is_uninitialized(called.var()))) {
     // Undefined call pointer operand
     if (auto msg = this->display_double_free_check(Result::Error, call)) {
       *msg << ": undefined call pointer operand\n";
@@ -107,8 +107,8 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
 
   // Check null pointer dereference
 
-  if (called.is_null() || (called.is_pointer_var() &&
-                           inv.normal().nullity().is_null(called.var()))) {
+  if (called.is_null() ||
+      (called.is_pointer_var() && inv.normal().nullity_is_null(called.var()))) {
     // Null call pointer operand
     if (auto msg = this->display_double_free_check(Result::Error, call)) {
       *msg << ": null call pointer operand\n";
@@ -136,7 +136,7 @@ std::vector< DoubleFreeChecker::CheckResult > DoubleFreeChecker::check_call(
     callees = {_ctx.mem_factory->get_local(lv)};
   } else if (isa< ar::InternalVariable >(call->called())) {
     // Indirect call through a function pointer
-    callees = inv.normal().pointers().points_to(called.var());
+    callees = inv.normal().pointer_to_points_to(called.var());
   } else {
     log::error("unexpected call pointer operand");
     return {
@@ -224,9 +224,8 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
 
   const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
 
-  if (ptr.is_undefined() ||
-      (ptr.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
+  if (ptr.is_undefined() || (ptr.is_pointer_var() &&
+                             inv.normal().uninit_is_uninitialized(ptr.var()))) {
     if (auto msg = this->display_double_free_check(Result::Error, call)) {
       *msg << ": undefined operand\n";
     }
@@ -234,14 +233,14 @@ DoubleFreeChecker::CheckResult DoubleFreeChecker::check_double_free(
   }
 
   if (ptr.is_null() ||
-      (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
+      (ptr.is_pointer_var() && inv.normal().nullity_is_null(ptr.var()))) {
     if (auto msg = this->display_double_free_check(Result::Ok, call)) {
       *msg << ": safe call to free with NULL value\n";
     }
     return {CheckKind::Free, Result::Ok, {pointer}, {}};
   }
 
-  PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
+  PointsToSet addrs = inv.normal().pointer_to_points_to(ptr.var());
 
   if (addrs.is_empty()) {
     if (auto msg = this->display_double_free_check(Result::Error, call)) {
@@ -297,7 +296,7 @@ Result DoubleFreeChecker::check_memory_location_free(
     const value::AbstractDomain& inv,
     MemoryLocation* addr) {
   if (isa< DynAllocMemoryLocation >(addr)) {
-    auto lifetime = inv.normal().lifetime().get(addr);
+    auto lifetime = inv.normal().lifetime_to_lifetime(addr);
 
     if (lifetime.is_deallocated()) {
       // This is a double free
@@ -356,4 +355,4 @@ llvm::Optional< LogMessage > DoubleFreeChecker::display_double_free_check(
 }
 
 } // end namespace analyzer
-} // namespace ikos
+} // end namespace ikos

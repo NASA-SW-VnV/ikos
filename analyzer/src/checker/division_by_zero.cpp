@@ -93,9 +93,8 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
 
   const ScalarLit& lit = this->_lit_factory.get_scalar(stmt->right());
 
-  if (lit.is_undefined() ||
-      (lit.is_machine_int_var() &&
-       inv.normal().uninitialized().is_uninitialized(lit.var()))) {
+  if (lit.is_undefined() || (lit.is_machine_int_var() &&
+                             inv.normal().uninit_is_uninitialized(lit.var()))) {
     // Undefined operand
     if (auto msg = this->display_division_check(Result::Error, stmt)) {
       *msg << ": undefined operand\n";
@@ -107,7 +106,7 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
   if (lit.is_machine_int()) {
     divisor = IntInterval(lit.machine_int());
   } else if (lit.is_machine_int_var()) {
-    divisor = inv.normal().integers().to_interval(lit.var());
+    divisor = inv.normal().int_to_interval(lit.var());
   } else {
     log::error("unexpected operand to binary operation");
     return {CheckKind::UnexpectedOperand, Result::Error, {}};
@@ -122,7 +121,7 @@ DivisionByZeroChecker::CheckResult DivisionByZeroChecker::check_division(
     }
     return {CheckKind::DivisionByZero, Result::Error, {}};
   } else if (divisor.contains(
-                 MachineInt(0, divisor.bit_width(), divisor.sign()))) {
+                 MachineInt::zero(divisor.bit_width(), divisor.sign()))) {
     // The second operand may be 0
     if (auto msg = this->display_division_check(Result::Warning, stmt)) {
       *msg << ": ∃d ∈ divisor, d == 0\n";

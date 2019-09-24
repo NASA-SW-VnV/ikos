@@ -97,7 +97,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
 
   if (left_ptr.is_undefined() ||
       (left_ptr.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(left_ptr.var()))) {
+       inv.normal().uninit_is_uninitialized(left_ptr.var()))) {
     if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
       *msg << ": undefined left operand\n";
     }
@@ -107,7 +107,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
             {}};
   } else if (right_ptr.is_undefined() ||
              (right_ptr.is_pointer_var() &&
-              inv.normal().uninitialized().is_uninitialized(right_ptr.var()))) {
+              inv.normal().uninit_is_uninitialized(right_ptr.var()))) {
     if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
       *msg << ": undefined right operand\n";
     }
@@ -120,7 +120,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   // Check for null operands
 
   if (left_ptr.is_null() || (left_ptr.is_pointer_var() &&
-                             inv.normal().nullity().is_null(left_ptr.var()))) {
+                             inv.normal().nullity_is_null(left_ptr.var()))) {
     if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
       *msg << ": null left operand\n";
     }
@@ -130,7 +130,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
             {}};
   } else if (right_ptr.is_null() ||
              (right_ptr.is_pointer_var() &&
-              inv.normal().nullity().is_null(right_ptr.var()))) {
+              inv.normal().nullity_is_null(right_ptr.var()))) {
     if (auto msg = this->display_pointer_compare_check(Result::Error, stmt)) {
       *msg << ": null right operand\n";
     }
@@ -154,7 +154,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
   } else if (auto cst = dyn_cast< ar::FunctionPointerConstant >(stmt->left())) {
     left_addrs = {_ctx.mem_factory->get_function(cst->function())};
   } else {
-    left_addrs = inv.normal().pointers().points_to(left_ptr.var());
+    left_addrs = inv.normal().pointer_to_points_to(left_ptr.var());
   }
 
   auto right_addrs = PointsToSet::bottom();
@@ -164,7 +164,7 @@ PointerCompareChecker::CheckResult PointerCompareChecker::check_pointer_compare(
                  dyn_cast< ar::FunctionPointerConstant >(stmt->right())) {
     right_addrs = {_ctx.mem_factory->get_function(cst->function())};
   } else {
-    right_addrs = inv.normal().pointers().points_to(right_ptr.var());
+    right_addrs = inv.normal().pointer_to_points_to(right_ptr.var());
   }
 
   if (left_addrs.is_empty()) {
@@ -243,4 +243,4 @@ llvm::Optional< LogMessage > PointerCompareChecker::
 }
 
 } // end namespace analyzer
-} // namespace ikos
+} // end namespace ikos

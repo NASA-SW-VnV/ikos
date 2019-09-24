@@ -47,29 +47,31 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
-AbstractDomain make_bottom_abstract_value() {
+AbstractDomain make_bottom_abstract_value(Context& ctx) {
   auto bottom = MemoryAbstractDomain(
-      PointerAbstractDomain(make_bottom_machine_int_abstract_value(),
-                            NullityAbstractDomain::bottom()),
-      UninitializedAbstractDomain::bottom(),
+      ctx.var_factory,
+      ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
+                           make_bottom_machine_int_abstract_value(),
+                           NullityAbstractDomain::bottom()),
       LifetimeAbstractDomain::bottom());
   return AbstractDomain(/*normal = */ bottom,
                         /*caught_exceptions = */ bottom,
                         /*propagated_exceptions = */ bottom);
 }
 
-AbstractDomain make_initial_abstract_value(
-    MachineIntDomainOption machine_int_domain) {
+AbstractDomain make_initial_abstract_value(Context& ctx) {
   auto top = MemoryAbstractDomain(
-      PointerAbstractDomain(make_top_machine_int_abstract_value(
-                                machine_int_domain),
-                            NullityAbstractDomain::top()),
-      UninitializedAbstractDomain::top(),
+      ctx.var_factory,
+      ScalarAbstractDomain(UninitializedAbstractDomain::top(),
+                           make_top_machine_int_abstract_value(
+                               ctx.opts.machine_int_domain),
+                           NullityAbstractDomain::top()),
       LifetimeAbstractDomain::top());
   auto bottom = MemoryAbstractDomain(
-      PointerAbstractDomain(make_bottom_machine_int_abstract_value(),
-                            NullityAbstractDomain::bottom()),
-      UninitializedAbstractDomain::bottom(),
+      ctx.var_factory,
+      ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
+                           make_bottom_machine_int_abstract_value(),
+                           NullityAbstractDomain::bottom()),
       LifetimeAbstractDomain::bottom());
   return AbstractDomain(/*normal = */ top,
                         /*caught_exceptions = */ bottom,

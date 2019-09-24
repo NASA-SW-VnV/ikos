@@ -48,9 +48,10 @@
 #include <ikos/core/domain/lifetime/lifetime.hpp>
 #include <ikos/core/domain/memory/value.hpp>
 #include <ikos/core/domain/nullity/nullity.hpp>
-#include <ikos/core/domain/pointer/pointer.hpp>
+#include <ikos/core/domain/scalar/composite.hpp>
 #include <ikos/core/domain/uninitialized/uninitialized.hpp>
 
+#include <ikos/analyzer/analysis/context.hpp>
 #include <ikos/analyzer/analysis/memory_location.hpp>
 #include <ikos/analyzer/analysis/variable.hpp>
 
@@ -58,19 +59,20 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
-/// \brief Nullity abstract domain for the value analysis
-using NullityAbstractDomain = core::nullity::NullityDomain< Variable* >;
-
-/// \brief Pointer abstract domain for the value analysis
-using PointerAbstractDomain =
-    core::pointer::PointerDomain< Variable*,
-                                  MemoryLocation*,
-                                  MachineIntAbstractDomain,
-                                  NullityAbstractDomain >;
-
 /// \brief Uninitialized abstract domain for the value analysis
 using UninitializedAbstractDomain =
     core::uninitialized::UninitializedDomain< Variable* >;
+
+/// \brief Nullity abstract domain for the value analysis
+using NullityAbstractDomain = core::nullity::NullityDomain< Variable* >;
+
+/// \brief Scalar abstract domain for the value analysis
+using ScalarAbstractDomain =
+    core::scalar::CompositeDomain< Variable*,
+                                   MemoryLocation*,
+                                   UninitializedAbstractDomain,
+                                   MachineIntAbstractDomain,
+                                   NullityAbstractDomain >;
 
 /// \brief Lifetime abstract domain for the value analysis
 using LifetimeAbstractDomain =
@@ -80,22 +82,18 @@ using LifetimeAbstractDomain =
 using MemoryAbstractDomain =
     core::memory::ValueDomain< Variable*,
                                MemoryLocation*,
-                               VariableFactory,
-                               MachineIntAbstractDomain,
-                               NullityAbstractDomain,
-                               PointerAbstractDomain,
-                               UninitializedAbstractDomain,
+                               VariableFactory*,
+                               ScalarAbstractDomain,
                                LifetimeAbstractDomain >;
 
 /// \brief Abstract domain for the value analysis
 using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
 
 /// \brief Create the bottom abstract value
-AbstractDomain make_bottom_abstract_value();
+AbstractDomain make_bottom_abstract_value(Context& ctx);
 
 /// \brief Create the initial abstract value with the given machine int domain
-AbstractDomain make_initial_abstract_value(
-    MachineIntDomainOption machine_int_domain);
+AbstractDomain make_initial_abstract_value(Context& ctx);
 
 } // end namespace value
 } // end namespace analyzer

@@ -799,9 +799,7 @@ bool TypeVerifier::is_valid_call(ar::CallBase* call, ar::FunctionType* fun_ty) {
   if (fun_ty->return_type()->is_void() && call->has_result()) {
     return false;
   } else if (!fun_ty->return_type()->is_void() && call->has_result() &&
-             call->result()->type() != fun_ty->return_type() &&
-             !TypeVerifier::is_implicit_bitcast(call->result()->type(),
-                                                fun_ty->return_type())) {
+             call->result()->type() != fun_ty->return_type()) {
     return false;
   }
 

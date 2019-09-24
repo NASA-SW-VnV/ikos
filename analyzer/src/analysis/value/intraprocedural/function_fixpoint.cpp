@@ -53,9 +53,8 @@ namespace value {
 namespace intraprocedural {
 
 FunctionFixpoint::FunctionFixpoint(Context& ctx, ar::Function* function)
-    : FwdFixpointIterator(function->body(), make_bottom_abstract_value()),
+    : FwdFixpointIterator(function->body(), make_bottom_abstract_value(ctx)),
       _ctx(ctx),
-      _function(function),
       _empty_call_context(ctx.call_context_factory->get_empty()),
       _fixpoint_parameters(ctx.fixpoint_parameters->get(function)) {}
 

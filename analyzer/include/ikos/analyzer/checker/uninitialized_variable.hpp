@@ -68,7 +68,13 @@ public:
              CallContext* call_context) override;
 
 private:
-  /// \brief Check an operand
+  /// \brief Check an operand and save the result
+  void check_initialized(ar::Statement* stmt,
+                         ar::Value* operand,
+                         const value::AbstractDomain& inv,
+                         CallContext* call_context);
+
+  /// \brief Check an operand and return a result
   boost::optional< Result > check_initialized(ar::Value* operand,
                                               const value::AbstractDomain& inv);
 

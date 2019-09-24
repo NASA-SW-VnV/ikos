@@ -108,13 +108,11 @@ public:
     this->_is_bottom = (this->_is_bottom && other._is_bottom);
   }
 
-  void widen_with(const DummyDomain& other) override {
-    return this->join_with(other);
-  }
+  void widen_with(const DummyDomain& other) override { this->join_with(other); }
 
   void widen_threshold_with(const DummyDomain& other,
                             const MachineInt& /*threshold*/) override {
-    return this->join_with(other);
+    this->join_with(other);
   }
 
   void meet_with(const DummyDomain& other) override {
@@ -122,12 +120,12 @@ public:
   }
 
   void narrow_with(const DummyDomain& other) override {
-    return this->meet_with(other);
+    this->meet_with(other);
   }
 
   void narrow_threshold_with(const DummyDomain& other,
                              const MachineInt& /*threshold*/) override {
-    return this->meet_with(other);
+    this->meet_with(other);
   }
 
   void assign(VariableRef, const MachineInt&) override {}

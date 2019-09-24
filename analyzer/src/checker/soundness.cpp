@@ -112,7 +112,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
 
   if (called.is_undefined() ||
       (called.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(called.var()))) {
+       inv.normal().uninit_is_uninitialized(called.var()))) {
     // Undefined call pointer operand
     if (auto msg = this->display_soundness_check(Result::Error, call)) {
       *msg << ": undefined call pointer operand\n";
@@ -125,8 +125,8 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
 
   // Check null pointer dereference
 
-  if (called.is_null() || (called.is_pointer_var() &&
-                           inv.normal().nullity().is_null(called.var()))) {
+  if (called.is_null() ||
+      (called.is_pointer_var() && inv.normal().nullity_is_null(called.var()))) {
     // Null call pointer operand
     if (auto msg = this->display_soundness_check(Result::Error, call)) {
       *msg << ": null call pointer operand\n";
@@ -154,7 +154,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::check_call(
     callees = {_ctx.mem_factory->get_local(lv)};
   } else if (isa< ar::InternalVariable >(call->called())) {
     // Indirect call through a function pointer
-    callees = inv.normal().pointers().points_to(called.var());
+    callees = inv.normal().pointer_to_points_to(called.var());
   } else {
     log::error("unexpected call pointer operand");
     return {
@@ -528,9 +528,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
   const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
 
   // Check uninitialized
-  if (ptr.is_undefined() ||
-      (ptr.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
+  if (ptr.is_undefined() || (ptr.is_pointer_var() &&
+                             inv.normal().uninit_is_uninitialized(ptr.var()))) {
     // Undefined pointer operand
     if (auto msg = this->display_soundness_check(Result::Error, stmt)) {
       *msg << ": undefined pointer operand\n";
@@ -540,7 +539,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
 
   // Check null pointer dereference
   if (ptr.is_null() ||
-      (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
+      (ptr.is_pointer_var() && inv.normal().nullity_is_null(ptr.var()))) {
     // Null pointer operand
     if (auto msg = this->display_soundness_check(Result::Error, stmt)) {
       *msg << ": null pointer dereference\n";
@@ -561,7 +560,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::
   }
 
   // Points-to set of the pointer
-  PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
+  PointsToSet addrs = inv.normal().pointer_to_points_to(ptr.var());
 
   if (addrs.is_empty()) {
     // Pointer is invalid
@@ -607,7 +606,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
     // Check uninitialized argument
     if (ptr.is_undefined() ||
         (ptr.is_pointer_var() &&
-         inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
+         inv.normal().uninit_is_uninitialized(ptr.var()))) {
       // Undefined pointer argument
       if (auto msg = this->display_soundness_check(Result::Error, call)) {
         *msg << ": undefined pointer argument\n";
@@ -617,7 +616,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
 
     // Check null pointer argument
     if (ptr.is_null() ||
-        (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
+        (ptr.is_pointer_var() && inv.normal().nullity_is_null(ptr.var()))) {
       // This is sound
       continue;
     }
@@ -636,7 +635,7 @@ std::vector< SoundnessChecker::CheckResult > SoundnessChecker::
     }
 
     // Points-to set of the pointer
-    PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
+    PointsToSet addrs = inv.normal().pointer_to_points_to(ptr.var());
 
     if (addrs.is_empty()) {
       // Pointer is invalid
@@ -678,9 +677,8 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
   const ScalarLit& ptr = this->_lit_factory.get_scalar(pointer);
 
   // Check uninitialized
-  if (ptr.is_undefined() ||
-      (ptr.is_pointer_var() &&
-       inv.normal().uninitialized().is_uninitialized(ptr.var()))) {
+  if (ptr.is_undefined() || (ptr.is_pointer_var() &&
+                             inv.normal().uninit_is_uninitialized(ptr.var()))) {
     // Undefined pointer operand
     if (auto msg = this->display_soundness_check(Result::Error, call)) {
       *msg << ": undefined pointer operand\n";
@@ -690,7 +688,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
 
   // Check null pointer dereference
   if (ptr.is_null() ||
-      (ptr.is_pointer_var() && inv.normal().nullity().is_null(ptr.var()))) {
+      (ptr.is_pointer_var() && inv.normal().nullity_is_null(ptr.var()))) {
     // Null pointer argument, safe
     if (auto msg = this->display_soundness_check(Result::Ok, call)) {
       *msg << ": safe call to free with NULL value\n";
@@ -711,7 +709,7 @@ boost::optional< SoundnessChecker::CheckResult > SoundnessChecker::check_free(
   }
 
   // Points-to set of the pointer
-  PointsToSet addrs = inv.normal().pointers().points_to(ptr.var());
+  PointsToSet addrs = inv.normal().pointer_to_points_to(ptr.var());
 
   if (addrs.is_top()) {
     // Ignored memory deallocation because points-to set is top

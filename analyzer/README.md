@@ -258,7 +258,6 @@ The list of available checks are:
 By default, all the checks are enabled except:
 
 * **unaligned pointer analysis**, because it needs a congruence domain to generate meaningful results. See [Numerical abstract domains](#numerical-abstract-domains).
-* **uninitialized variable analysis**, because it currently generates a lot of false positives.
 * **unsigned integer overflow analysis**, because it is not an undefined behavior according to the C standard.
 * **pointer overflow analysis**, because it is redundant with the buffer overflow analysis.
 * **memory watcher**, because it is slow.

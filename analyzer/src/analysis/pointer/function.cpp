@@ -45,12 +45,8 @@
  ******************************************************************************/
 
 #include <ikos/core/domain/exception/exception.hpp>
-#include <ikos/core/domain/lifetime/dummy.hpp>
-#include <ikos/core/domain/machine_int/dummy.hpp>
 #include <ikos/core/domain/memory/dummy.hpp>
-#include <ikos/core/domain/nullity/dummy.hpp>
-#include <ikos/core/domain/pointer/dummy.hpp>
-#include <ikos/core/domain/uninitialized/dummy.hpp>
+#include <ikos/core/domain/scalar/dummy.hpp>
 
 #include <ikos/analyzer/analysis/pointer/constraint.hpp>
 #include <ikos/analyzer/analysis/pointer/function.hpp>
@@ -69,36 +65,13 @@ FunctionPointerAnalysis::~FunctionPointerAnalysis() = default;
 
 namespace {
 
-/// \brief Dummy machine integer abstract domain
-using MachineIntAbstractDomain = core::machine_int::DummyDomain< Variable* >;
-
-/// \brief Dummy nullity abstract domain
-using NullityAbstractDomain = core::nullity::DummyDomain< Variable* >;
-
-/// \brief Dummy uninitialized abstract domain
-using UninitializedAbstractDomain =
-    core::uninitialized::DummyDomain< Variable* >;
-
-/// \brief Dummy lifetime abstract domain
-using LifetimeAbstractDomain = core::lifetime::DummyDomain< MemoryLocation* >;
-
-/// \brief Dummy pointer abstract domain
-using PointerAbstractDomain =
-    core::pointer::DummyDomain< Variable*,
-                                MemoryLocation*,
-                                MachineIntAbstractDomain,
-                                NullityAbstractDomain >;
+/// \brief Dummy scalar abstract domain
+using ScalarAbstractDomain =
+    core::scalar::DummyDomain< Variable*, MemoryLocation* >;
 
 /// \brief Dummy memory abstract domain
-using MemoryAbstractDomain =
-    core::memory::DummyDomain< Variable*,
-                               MemoryLocation*,
-                               VariableFactory,
-                               MachineIntAbstractDomain,
-                               NullityAbstractDomain,
-                               PointerAbstractDomain,
-                               UninitializedAbstractDomain,
-                               LifetimeAbstractDomain >;
+using MemoryAbstractDomain = core::memory::
+    DummyDomain< Variable*, MemoryLocation*, ScalarAbstractDomain >;
 
 /// \brief Dummy abstract domain for the function pointer analysis
 ///
@@ -107,12 +80,7 @@ using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
 
 /// \brief Create the top abstract value
 AbstractDomain make_top_abstract_value() {
-  auto top =
-      MemoryAbstractDomain(PointerAbstractDomain(MachineIntAbstractDomain::
-                                                     top(),
-                                                 NullityAbstractDomain::top()),
-                           UninitializedAbstractDomain::top(),
-                           LifetimeAbstractDomain::top());
+  auto top = MemoryAbstractDomain(ScalarAbstractDomain::top());
   return AbstractDomain(/*normal = */ top,
                         /*caught_exceptions = */ top,
                         /*propagated_exceptions = */ top);
@@ -131,8 +99,8 @@ public:
 
   /// \brief Analyze the given statement and update the invariant
   AbstractDomainT analyze_statement(ar::Statement* /*stmt*/,
-                                    AbstractDomainT inv) const {
-    return inv;
+                                    const AbstractDomainT& /*inv*/) const {
+    return make_top_abstract_value();
   }
 };
 
