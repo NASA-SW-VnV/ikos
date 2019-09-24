@@ -39,7 +39,7 @@ When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABL
 ```
 $ cmake \
     -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
-    -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm/bin/llvm-config" \
+    -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm@8/bin/llvm-config" \
     ..
 ```
 
