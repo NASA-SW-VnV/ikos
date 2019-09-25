@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  * \file
- * \brief Generic API for abstract domains keeping track of the memory location
+ * \brief Generic API for abstract domains keeping track of memory location
  * lifetimes
  *
  * Author: Thomas Bailleux

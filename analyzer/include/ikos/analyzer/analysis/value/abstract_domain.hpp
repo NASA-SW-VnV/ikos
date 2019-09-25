@@ -45,11 +45,11 @@
 
 #include <ikos/analyzer/analysis/value/machine_int_domain.hpp>
 #include <ikos/core/domain/exception/exception.hpp>
-#include <ikos/core/domain/lifetime/lifetime.hpp>
+#include <ikos/core/domain/lifetime/separate_domain.hpp>
 #include <ikos/core/domain/memory/value.hpp>
-#include <ikos/core/domain/nullity/nullity.hpp>
+#include <ikos/core/domain/nullity/separate_domain.hpp>
 #include <ikos/core/domain/scalar/composite.hpp>
-#include <ikos/core/domain/uninitialized/uninitialized.hpp>
+#include <ikos/core/domain/uninitialized/separate_domain.hpp>
 
 #include <ikos/analyzer/analysis/context.hpp>
 #include <ikos/analyzer/analysis/memory_location.hpp>
@@ -61,10 +61,10 @@ namespace value {
 
 /// \brief Uninitialized abstract domain for the value analysis
 using UninitializedAbstractDomain =
-    core::uninitialized::UninitializedDomain< Variable* >;
+    core::uninitialized::SeparateDomain< Variable* >;
 
 /// \brief Nullity abstract domain for the value analysis
-using NullityAbstractDomain = core::nullity::NullityDomain< Variable* >;
+using NullityAbstractDomain = core::nullity::SeparateDomain< Variable* >;
 
 /// \brief Scalar abstract domain for the value analysis
 using ScalarAbstractDomain =
@@ -76,7 +76,7 @@ using ScalarAbstractDomain =
 
 /// \brief Lifetime abstract domain for the value analysis
 using LifetimeAbstractDomain =
-    core::lifetime::LifetimeDomain< MemoryLocation* >;
+    core::lifetime::SeparateDomain< MemoryLocation* >;
 
 /// \brief Memory abstract domain for the value analysis
 using MemoryAbstractDomain =

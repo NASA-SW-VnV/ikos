@@ -46,14 +46,14 @@
 #include <boost/test/output_test_stream.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <ikos/core/domain/uninitialized/uninitialized.hpp>
+#include <ikos/core/domain/uninitialized/separate_domain.hpp>
 #include <ikos/core/example/variable_factory.hpp>
 
 using VariableFactory = ikos::core::example::VariableFactory;
 using Variable = ikos::core::example::VariableFactory::VariableRef;
 using Uninitialized = ikos::core::Uninitialized;
 using UninitializedDomain =
-    ikos::core::uninitialized::UninitializedDomain< Variable >;
+    ikos::core::uninitialized::SeparateDomain< Variable >;
 
 BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   VariableFactory vfac;

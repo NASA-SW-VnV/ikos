@@ -48,7 +48,7 @@
 #include <ikos/core/domain/machine_int/interval.hpp>
 #include <ikos/core/domain/memory/dummy.hpp>
 #include <ikos/core/domain/scalar/machine_int.hpp>
-#include <ikos/core/domain/uninitialized/uninitialized.hpp>
+#include <ikos/core/domain/uninitialized/separate_domain.hpp>
 #include <ikos/core/fixpoint/fwd_fixpoint_iterator.hpp>
 
 #include <ikos/analyzer/analysis/execution_engine/context_insensitive.hpp>
@@ -82,7 +82,7 @@ using MachineIntAbstractDomain = core::machine_int::IntervalDomain< Variable* >;
 /// \brief Uninitialized abstract domain for the intra-procedural pointer
 /// analysis
 using UninitializedAbstractDomain =
-    core::uninitialized::UninitializedDomain< Variable* >;
+    core::uninitialized::SeparateDomain< Variable* >;
 
 /// \brief Scalar abstract domain for the intra-procedural pointer analysis
 using ScalarAbstractDomain =

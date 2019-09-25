@@ -1,8 +1,8 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implementation of an abstract domain keeping track of (un)initialized
- * variables
+ * \brief Implementation of an abstract domain keeping track of null variables
+ * using a separate domain.
  *
  * Author: Maxime Arthaud
  *
@@ -44,23 +44,23 @@
 
 #pragma once
 
+#include <ikos/core/domain/nullity/abstract_domain.hpp>
 #include <ikos/core/domain/separate_domain.hpp>
-#include <ikos/core/domain/uninitialized/abstract_domain.hpp>
 
 namespace ikos {
 namespace core {
-namespace uninitialized {
+namespace nullity {
 
-/// \brief Uninitialized abstract domain
+/// \brief Nullity abstract domain
 ///
-/// Implementation of the uninitialized abstract domain interface using
-/// SeparateDomain
+/// Implementation of the nullity abstract domain interface using a separate
+/// domain.
 template < typename VariableRef >
-class UninitializedDomain final
-    : public uninitialized::
-          AbstractDomain< VariableRef, UninitializedDomain< VariableRef > > {
+class SeparateDomain final
+    : public nullity::AbstractDomain< VariableRef,
+                                      SeparateDomain< VariableRef > > {
 private:
-  using SeparateDomainT = SeparateDomain< VariableRef, Uninitialized >;
+  using SeparateDomainT = core::SeparateDomain< VariableRef, Nullity >;
 
 public:
   using Iterator = typename SeparateDomainT::Iterator;
@@ -70,38 +70,36 @@ private:
 
 private:
   /// \brief Private constructor
-  explicit UninitializedDomain(SeparateDomainT inv) : _inv(std::move(inv)) {}
+  explicit SeparateDomain(SeparateDomainT inv) : _inv(std::move(inv)) {}
 
 public:
   /// \brief Create the top abstract value
-  static UninitializedDomain top() {
-    return UninitializedDomain(SeparateDomainT::top());
-  }
+  static SeparateDomain top() { return SeparateDomain(SeparateDomainT::top()); }
 
   /// \brief Create the bottom abstract value
-  static UninitializedDomain bottom() {
-    return UninitializedDomain(SeparateDomainT::bottom());
+  static SeparateDomain bottom() {
+    return SeparateDomain(SeparateDomainT::bottom());
   }
 
   /// \brief Copy constructor
-  UninitializedDomain(const UninitializedDomain&) noexcept = default;
+  SeparateDomain(const SeparateDomain&) noexcept = default;
 
   /// \brief Move constructor
-  UninitializedDomain(UninitializedDomain&&) noexcept = default;
+  SeparateDomain(SeparateDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  UninitializedDomain& operator=(const UninitializedDomain&) noexcept = default;
+  SeparateDomain& operator=(const SeparateDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  UninitializedDomain& operator=(UninitializedDomain&&) noexcept = default;
+  SeparateDomain& operator=(SeparateDomain&&) noexcept = default;
 
   /// \brief Destructor
-  ~UninitializedDomain() override = default;
+  ~SeparateDomain() override = default;
 
-  /// \brief Begin iterator over the pairs (variable, uninitialized)
+  /// \brief Begin iterator over the pairs (variable, nullity)
   Iterator begin() const { return this->_inv.begin(); }
 
-  /// \brief End iterator over the pairs (variable, uninitialized)
+  /// \brief End iterator over the pairs (variable, nullity)
   Iterator end() const { return this->_inv.end(); }
 
   bool is_bottom() const override { return this->_inv.is_bottom(); }
@@ -112,63 +110,106 @@ public:
 
   void set_to_top() override { this->_inv.set_to_top(); }
 
-  bool leq(const UninitializedDomain& other) const override {
+  bool leq(const SeparateDomain& other) const override {
     return this->_inv.leq(other._inv);
   }
 
-  bool equals(const UninitializedDomain& other) const override {
+  bool equals(const SeparateDomain& other) const override {
     return this->_inv.equals(other._inv);
   }
 
-  void join_with(const UninitializedDomain& other) override {
+  void join_with(const SeparateDomain& other) override {
     this->_inv.join_with(other._inv);
   }
 
-  void widen_with(const UninitializedDomain& other) override {
+  void widen_with(const SeparateDomain& other) override {
     this->_inv.widen_with(other._inv);
   }
 
-  void meet_with(const UninitializedDomain& other) override {
+  void meet_with(const SeparateDomain& other) override {
     this->_inv.meet_with(other._inv);
   }
 
-  void narrow_with(const UninitializedDomain& other) override {
+  void narrow_with(const SeparateDomain& other) override {
     this->_inv.narrow_with(other._inv);
   }
 
-  void assign_initialized(VariableRef x) override {
-    this->_inv.set(x, Uninitialized::initialized());
+  void assign_null(VariableRef x) override {
+    this->_inv.set(x, Nullity::null());
   }
 
-  void assign_uninitialized(VariableRef x) override {
-    this->_inv.set(x, Uninitialized::uninitialized());
+  void assign_non_null(VariableRef x) override {
+    this->_inv.set(x, Nullity::non_null());
   }
 
   void assign(VariableRef x, VariableRef y) override {
     this->_inv.set(x, this->_inv.get(y));
   }
 
-  void assert_initialized(VariableRef x) override {
-    this->_inv.refine(x, Uninitialized::initialized());
+  void assert_null(VariableRef x) override {
+    this->_inv.refine(x, Nullity::null());
   }
 
-  bool is_initialized(VariableRef x) const override {
+  void assert_non_null(VariableRef x) override {
+    this->_inv.refine(x, Nullity::non_null());
+  }
+
+  void add(Predicate pred, VariableRef x, VariableRef y) override {
+    if (this->is_bottom()) {
+      return;
+    }
+
+    Nullity xn = this->_inv.get(x);
+    Nullity yn = this->_inv.get(y);
+
+    switch (pred) {
+      case Predicate::EQ: {
+        // x == y
+        Nullity z = xn.meet(yn);
+        this->_inv.set(x, z);
+        this->_inv.set(y, z);
+      } break;
+      case Predicate::NE: {
+        // x != y
+        if (xn.is_null() && yn.is_null()) {
+          this->_inv.set_to_bottom();
+        } else if (xn.is_top() && yn.is_null()) {
+          this->_inv.set(x, Nullity::non_null());
+        } else if (xn.is_null() && yn.is_top()) {
+          this->_inv.set(y, Nullity::non_null());
+        }
+      } break;
+      case Predicate::GT: {
+        this->add(Predicate::NE, x, y);
+      } break;
+      case Predicate::GE: {
+        // nothing we can do.
+      } break;
+      case Predicate::LT: {
+        this->add(Predicate::NE, x, y);
+      } break;
+      case Predicate::LE: {
+        // nothing we can do.
+      } break;
+    }
+  }
+
+  bool is_null(VariableRef x) const override {
+    ikos_assert_msg(!this->is_bottom(), "trying to call is_null() on bottom");
+    return this->_inv.get(x).is_null();
+  }
+
+  bool is_non_null(VariableRef x) const override {
     ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_initialized() on bottom");
-    return this->_inv.get(x).is_initialized();
+                    "trying to call is_non_null() on bottom");
+    return this->_inv.get(x).is_non_null();
   }
 
-  bool is_uninitialized(VariableRef x) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_uninitialized() on bottom");
-    return this->_inv.get(x).is_uninitialized();
-  }
-
-  void set(VariableRef x, const Uninitialized& value) override {
+  void set(VariableRef x, const Nullity& value) override {
     this->_inv.set(x, value);
   }
 
-  void refine(VariableRef x, const Uninitialized& value) override {
+  void refine(VariableRef x, const Nullity& value) override {
     this->_inv.refine(x, value);
   }
 
@@ -176,14 +217,14 @@ public:
 
   void normalize() const override {}
 
-  Uninitialized get(VariableRef x) const override { return this->_inv.get(x); }
+  Nullity get(VariableRef x) const override { return this->_inv.get(x); }
 
   void dump(std::ostream& o) const override { return this->_inv.dump(o); }
 
-  static std::string name() { return "uninitialized domain"; }
+  static std::string name() { return "nullity domain"; }
 
-}; // end class UninitializedDomain
+}; // end class SeparateDomain
 
-} // end namespace uninitialized
+} // end namespace nullity
 } // end namespace core
 } // end namespace ikos

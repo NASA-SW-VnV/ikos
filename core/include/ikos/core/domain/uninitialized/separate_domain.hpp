@@ -1,10 +1,10 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implementation of an abstract domain keeping track of memory location
- * lifetimes.
+ * \brief Implementation of an abstract domain keeping track of (un)initialized
+ * variables using a separate domain
  *
- * Author: Thomas Bailleux
+ * Author: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
@@ -44,23 +44,23 @@
 
 #pragma once
 
-#include <ikos/core/domain/lifetime/abstract_domain.hpp>
 #include <ikos/core/domain/separate_domain.hpp>
+#include <ikos/core/domain/uninitialized/abstract_domain.hpp>
 
 namespace ikos {
 namespace core {
-namespace lifetime {
+namespace uninitialized {
 
-/// \brief Lifetime abstract domain
+/// \brief Uninitialized abstract domain
 ///
-/// Implementation of the lifetime abstract domain interface using
-/// SeparateDomain
-template < typename MemoryLocationRef >
-class LifetimeDomain final
-    : public lifetime::AbstractDomain< MemoryLocationRef,
-                                       LifetimeDomain< MemoryLocationRef > > {
+/// Implementation of the uninitialized abstract domain interface using
+/// a separate domain.
+template < typename VariableRef >
+class SeparateDomain final
+    : public uninitialized::AbstractDomain< VariableRef,
+                                            SeparateDomain< VariableRef > > {
 private:
-  using SeparateDomainT = SeparateDomain< MemoryLocationRef, Lifetime >;
+  using SeparateDomainT = core::SeparateDomain< VariableRef, Uninitialized >;
 
 public:
   using Iterator = typename SeparateDomainT::Iterator;
@@ -70,36 +70,36 @@ private:
 
 private:
   /// \brief Private constructor
-  explicit LifetimeDomain(SeparateDomainT inv) : _inv(std::move(inv)) {}
+  explicit SeparateDomain(SeparateDomainT inv) : _inv(std::move(inv)) {}
 
 public:
   /// \brief Create the top abstract value
-  static LifetimeDomain top() { return LifetimeDomain(SeparateDomainT::top()); }
+  static SeparateDomain top() { return SeparateDomain(SeparateDomainT::top()); }
 
   /// \brief Create the bottom abstract value
-  static LifetimeDomain bottom() {
-    return LifetimeDomain(SeparateDomainT::bottom());
+  static SeparateDomain bottom() {
+    return SeparateDomain(SeparateDomainT::bottom());
   }
 
   /// \brief Copy constructor
-  LifetimeDomain(const LifetimeDomain&) noexcept = default;
+  SeparateDomain(const SeparateDomain&) noexcept = default;
 
   /// \brief Move constructor
-  LifetimeDomain(LifetimeDomain&&) noexcept = default;
+  SeparateDomain(SeparateDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
-  LifetimeDomain& operator=(const LifetimeDomain&) noexcept = default;
+  SeparateDomain& operator=(const SeparateDomain&) noexcept = default;
 
   /// \brief Move assignment operator
-  LifetimeDomain& operator=(LifetimeDomain&&) noexcept = default;
+  SeparateDomain& operator=(SeparateDomain&&) noexcept = default;
 
   /// \brief Destructor
-  ~LifetimeDomain() override = default;
+  ~SeparateDomain() override = default;
 
-  /// \brief Begin iterator over the pairs (memory location, lifetime)
+  /// \brief Begin iterator over the pairs (variable, uninitialized)
   Iterator begin() const { return this->_inv.begin(); }
 
-  /// \brief End iterator over the pairs (memory location, lifetime)
+  /// \brief End iterator over the pairs (variable, uninitialized)
   Iterator end() const { return this->_inv.end(); }
 
   bool is_bottom() const override { return this->_inv.is_bottom(); }
@@ -110,74 +110,78 @@ public:
 
   void set_to_top() override { this->_inv.set_to_top(); }
 
-  bool leq(const LifetimeDomain& other) const override {
+  bool leq(const SeparateDomain& other) const override {
     return this->_inv.leq(other._inv);
   }
 
-  bool equals(const LifetimeDomain& other) const override {
+  bool equals(const SeparateDomain& other) const override {
     return this->_inv.equals(other._inv);
   }
 
-  void join_with(const LifetimeDomain& other) override {
+  void join_with(const SeparateDomain& other) override {
     this->_inv.join_with(other._inv);
   }
 
-  void widen_with(const LifetimeDomain& other) override {
+  void widen_with(const SeparateDomain& other) override {
     this->_inv.widen_with(other._inv);
   }
 
-  void meet_with(const LifetimeDomain& other) override {
+  void meet_with(const SeparateDomain& other) override {
     this->_inv.meet_with(other._inv);
   }
 
-  void narrow_with(const LifetimeDomain& other) override {
+  void narrow_with(const SeparateDomain& other) override {
     this->_inv.narrow_with(other._inv);
   }
 
-  void assign_allocated(MemoryLocationRef m) override {
-    this->_inv.set(m, Lifetime::allocated());
+  void assign_initialized(VariableRef x) override {
+    this->_inv.set(x, Uninitialized::initialized());
   }
 
-  void assign_deallocated(MemoryLocationRef m) override {
-    this->_inv.set(m, Lifetime::deallocated());
+  void assign_uninitialized(VariableRef x) override {
+    this->_inv.set(x, Uninitialized::uninitialized());
   }
 
-  void assert_allocated(MemoryLocationRef m) override {
-    this->_inv.refine(m, Lifetime::allocated());
+  void assign(VariableRef x, VariableRef y) override {
+    this->_inv.set(x, this->_inv.get(y));
   }
 
-  void assert_deallocated(MemoryLocationRef m) override {
-    this->_inv.refine(m, Lifetime::deallocated());
+  void assert_initialized(VariableRef x) override {
+    this->_inv.refine(x, Uninitialized::initialized());
   }
 
-  bool is_allocated(MemoryLocationRef m) const override {
+  bool is_initialized(VariableRef x) const override {
     ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_allocated() on bottom");
-    return this->_inv.get(m).is_allocated();
+                    "trying to call is_initialized() on bottom");
+    return this->_inv.get(x).is_initialized();
   }
 
-  bool is_deallocated(MemoryLocationRef m) const override {
+  bool is_uninitialized(VariableRef x) const override {
     ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_deallocated() on bottom");
-    return this->_inv.get(m).is_deallocated();
+                    "trying to call is_uninitialized() on bottom");
+    return this->_inv.get(x).is_uninitialized();
   }
 
-  void set(MemoryLocationRef m, const Lifetime& value) override {
-    this->_inv.set(m, value);
+  void set(VariableRef x, const Uninitialized& value) override {
+    this->_inv.set(x, value);
   }
 
-  void forget(MemoryLocationRef m) override { this->_inv.forget(m); }
+  void refine(VariableRef x, const Uninitialized& value) override {
+    this->_inv.refine(x, value);
+  }
+
+  void forget(VariableRef x) override { this->_inv.forget(x); }
 
   void normalize() const override {}
 
-  Lifetime get(MemoryLocationRef m) const override { return this->_inv.get(m); }
+  Uninitialized get(VariableRef x) const override { return this->_inv.get(x); }
 
   void dump(std::ostream& o) const override { return this->_inv.dump(o); }
 
-  static std::string name() { return "lifetime domain"; }
+  static std::string name() { return "uninitialized domain"; }
 
-}; // end class LifetimeDomain
+}; // end class SeparateDomain
 
-} // end namespace lifetime
+} // end namespace uninitialized
 } // end namespace core
 } // end namespace ikos

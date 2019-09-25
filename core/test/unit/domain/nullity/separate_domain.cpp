@@ -46,13 +46,13 @@
 #include <boost/test/output_test_stream.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <ikos/core/domain/nullity/nullity.hpp>
+#include <ikos/core/domain/nullity/separate_domain.hpp>
 #include <ikos/core/example/variable_factory.hpp>
 
 using VariableFactory = ikos::core::example::VariableFactory;
 using Variable = ikos::core::example::VariableFactory::VariableRef;
 using Nullity = ikos::core::Nullity;
-using NullityDomain = ikos::core::nullity::NullityDomain< Variable >;
+using NullityDomain = ikos::core::nullity::SeparateDomain< Variable >;
 
 BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
   VariableFactory vfac;
