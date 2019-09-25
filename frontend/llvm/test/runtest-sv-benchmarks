@@ -48,7 +48,7 @@ opt_level="basic"
 ikos_import="ikos-import"
 ikos_import_opts="-format=no"
 cc="clang"
-cflags="-c -emit-llvm -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone -I. -Imodel"
+cflags="-c -emit-llvm -D_FORTIFY_SOURCE=0 -D__IKOS__ -g -O0 -Xclang -disable-O0-optnone -I. -Imodel"
 
 # Parse arguments
 while [[ ! -z $1 ]]

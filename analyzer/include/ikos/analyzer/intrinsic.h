@@ -46,6 +46,8 @@
 
 #pragma once
 
+#if defined(__IKOS__)
+
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -69,7 +71,7 @@ extern void __ikos_assert(int condition) IKOS_NOEXCEPT;
 /// \macro __ikos_assume
 ///
 /// Assume that the given condition always holds.
-#define __ikos_assume(c) if (!(c)) { __builtin_unreachable(); }
+#define __ikos_assume(condition) if (!(condition)) { __builtin_unreachable(); }
 
 // clang-format on
 
@@ -141,4 +143,32 @@ extern void __ikos_print_values(const char* desc, ...) IKOS_NOEXCEPT;
 
 #ifdef __cplusplus
 }
+#endif
+
+#else // __IKOS__
+
+#define __ikos_assert(condition)
+
+#define __ikos_assume(condition)
+
+#define __ikos_nondet_int() ((int)0)
+
+#define __ikos_nondet_uint() ((unsigned)0)
+
+#define __ikos_check_mem_access(ptr, size)
+
+#define __ikos_check_string_access(str)
+
+#define __ikos_assume_mem_size(ptr, size)
+
+#define __ikos_forget_mem(ptr, size)
+
+#define __ikos_abstract_mem(ptr, size)
+
+#define __ikos_watch_mem(ptr, size)
+
+#define __ikos_print_invariant()
+
+#define __ikos_print_values(...)
+
 #endif

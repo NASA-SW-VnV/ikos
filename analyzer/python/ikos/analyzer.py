@@ -641,6 +641,8 @@ def clang_ikos_flags():
         # disable source code fortification
         '-U_FORTIFY_SOURCE',
         '-D_FORTIFY_SOURCE=0',
+        # flag for intrinsic.h
+        '-D__IKOS__',
         # compile in debug mode
         '-g',
         # disable optimizations

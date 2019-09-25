@@ -527,7 +527,7 @@ To solve this issue, you will need to create an alternative build file that comp
 In the alternative build file:
 * Locate the build rules that generate intermediate object files (`.o`).
 * In these rules, add the flag `-save-temps=obj` to the cross-compiler commands. This will generate a preprocessed file `.i` in addition to the `.o`.
-* At the end of these rules, add a command to compile the preprocessed file `.i` to LLVM bitcode `.bc` using: `clang -c -emit-llvm -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone <file.i> -o <file.bc>`.
+* At the end of these rules, add a command to compile the preprocessed file `.i` to LLVM bitcode `.bc` using: `clang -c -emit-llvm -D_FORTIFY_SOURCE=0 -D__IKOS__ -g -O0 -Xclang -disable-O0-optnone <file.i> -o <file.bc>`.
 * Locate the build rules that link the intermediate object files into binaries or shared libraries.
 * At the end of these rules, link the LLVM bitcodes `.bc` together using `llvm-link`.
 
@@ -535,7 +535,7 @@ For instance, in `Makefile.llvm`:
 ```
 %.o: %.c
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) -save-temps=obj $< -o $@
-	clang -c -emit-llvm -D_FORTIFY_SOURCE=0 -g -O0 -Xclang -disable-O0-optnone $(subst .o,.i,$@) -o $(subst .o,.bc,$@)
+	clang -c -emit-llvm -D_FORTIFY_SOURCE=0 -D__IKOS__ -g -O0 -Xclang -disable-O0-optnone $(subst .o,.i,$@) -o $(subst .o,.bc,$@)
 
 program: a.o b.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) a.o b.o -o $@
