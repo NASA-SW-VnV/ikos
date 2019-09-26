@@ -62,7 +62,7 @@ void GlobalVarInitializerFixpoint::run(AbstractDomain inv) {
   NumericalExecutionEngineT exec_engine(std::move(inv),
                                         _ctx,
                                         this->_empty_call_context,
-                                        /* precision = */ _ctx.opts.precision,
+                                        ExecutionEngine::UpdateAllocSizeVar,
                                         /* liveness = */ _ctx.liveness,
                                         /* pointer_info = */ _ctx.pointer ==
                                                 nullptr
@@ -84,7 +84,7 @@ AbstractDomain GlobalVarInitializerFixpoint::analyze_node(ar::BasicBlock* bb,
   NumericalExecutionEngineT exec_engine(std::move(pre),
                                         _ctx,
                                         this->_empty_call_context,
-                                        /* precision = */ _ctx.opts.precision,
+                                        ExecutionEngine::UpdateAllocSizeVar,
                                         /* liveness = */ _ctx.liveness,
                                         /* pointer_info = */ _ctx.pointer ==
                                                 nullptr
@@ -105,7 +105,7 @@ AbstractDomain GlobalVarInitializerFixpoint::analyze_edge(ar::BasicBlock* src,
   NumericalExecutionEngineT exec_engine(std::move(pre),
                                         _ctx,
                                         this->_empty_call_context,
-                                        /* precision = */ _ctx.opts.precision,
+                                        ExecutionEngine::UpdateAllocSizeVar,
                                         /* liveness = */ _ctx.liveness,
                                         /* pointer_info = */ _ctx.pointer ==
                                                 nullptr

@@ -78,25 +78,6 @@ namespace analyzer {
 /// The exception abstract domain must provide an underlying abstract domain
 /// that must implement the memory abstract domain interface to handle scalar
 /// variables and memory operations.
-///
-/// It can reason about registers (Precision::Register), pointers
-/// (Precision::Pointer) and memory contents (Precision::Memory).
-///
-/// Levels of precision:
-///
-/// 1) If level of precision is Precision::Register then only integer variables
-/// are modelled using a numerical abstraction.
-///
-/// 2) If the level of precision is Precision::Pointer then both integer and
-/// pointer variables are modelled. If a variable is a pointer we model
-/// its address, offset and size. The offset and size are modelled by a
-/// numerical abstraction while the address is modelled by a symbolic
-/// abstraction. This symbolic abstraction consists of a set of points-to
-/// relationships that keeps track of all possible memory objects (i.e., &'s and
-/// mallocs) to which the pointer may point to.
-///
-/// 3) If the level of precision is Precision::Memory then same level than
-/// Precision::Pointer plus memory contents.
 template < typename AbstractDomain >
 class NumericalExecutionEngine final : public ExecutionEngine {
 public:
@@ -147,8 +128,8 @@ private:
   /// \brief Call context
   CallContext* _call_context;
 
-  /// \brief Precision level of the analysis (Register, Pointer or Memory)
-  Precision _precision;
+  /// \brief Execution engine options
+  ExecutionEngineOptions _opts;
 
   /// \brief Optional liveness information
   const LivenessAnalysis* _liveness;
@@ -162,13 +143,13 @@ public:
   /// \param inv Initial invariant
   /// \param ctx Analysis context
   /// \param call_context Calling context
-  /// \param precision Precision level
+  /// \param opts Execution engine options
   /// \param liveness Liveness analysis, or null
   /// \param pointer_info Pointer information, or null
   NumericalExecutionEngine(AbstractDomain inv,
                            Context& ctx,
                            CallContext* call_context,
-                           Precision precision,
+                           ExecutionEngineOptions opts,
                            const LivenessAnalysis* liveness = nullptr,
                            const PointerInfo* pointer_info = nullptr)
       : _inv(std::move(inv)),
@@ -178,7 +159,7 @@ public:
         _lit_factory(*ctx.lit_factory),
         _data_layout(ctx.bundle->data_layout()),
         _call_context(call_context),
-        _precision(precision),
+        _opts(opts),
         _liveness(liveness),
         _pointer_info(pointer_info) {}
 
@@ -249,16 +230,8 @@ public:
                        Nullity nullity,
                        Lifetime lifetime,
                        MemoryInitialValue init_val) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     // Update pointer
     this->_inv.normal().pointer_assign(ptr, addr, nullity);
-
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
 
     // Update memory location lifetime
     this->_inv.normal().lifetime_set(addr, lifetime);
@@ -285,13 +258,11 @@ public:
     // Update pointer, lifetime and initial value for the memory location
     this->allocate_memory(ptr, addr, nullity, lifetime, init_val);
 
-    if (this->_precision < Precision::Memory) {
-      return;
+    if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
+      // Update allocation size var
+      Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
+      this->_inv.normal().int_assign(alloc_size_var, alloc_size);
     }
-
-    // Update allocated size var
-    Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-    this->_inv.normal().int_assign(alloc_size_var, alloc_size);
   }
 
   /// \brief Allocate a new memory object `addr` of size `alloc_size` (in bytes)
@@ -304,14 +275,12 @@ public:
     // Update pointer, lifetime and initial value for the memory location
     this->allocate_memory(ptr, addr, nullity, lifetime, init_val);
 
-    if (this->_precision < Precision::Memory) {
-      return;
+    if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
+      // Update allocation size var
+      Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
+      this->_inv.normal().uninit_assert_initialized(alloc_size);
+      this->_inv.normal().int_assign(alloc_size_var, alloc_size);
     }
-
-    // Update allocated size var
-    Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-    this->_inv.normal().uninit_assert_initialized(alloc_size);
-    this->_inv.normal().int_assign(alloc_size_var, alloc_size);
   }
 
 private:
@@ -325,10 +294,6 @@ private:
   /// initial invariant, so it is necessary to initialize them on the fly when
   /// we need them.
   void init_global_operand(ar::Value* value) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     if (auto gv = dyn_cast< ar::GlobalVariable >(value)) {
       this->_inv.normal().pointer_assign(this->_var_factory.get_global(gv),
                                          this->_mem_factory.get_global(gv),
@@ -394,10 +359,6 @@ private:
   /// If so, check if the offset interval contains zero, and update the nullity
   /// domain accordingly.
   void normalize_absolute_zero_nullity(Variable* p) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     auto nullity = this->_inv.normal().nullity_to_nullity(p);
     if (nullity.is_bottom() || nullity.is_top()) {
       return;
@@ -433,9 +394,6 @@ private:
   /// \brief Refine the addresses of `ptr` using information from an external
   /// pointer analysis
   void refine_addresses(Variable* ptr) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
     if (!this->_pointer_info) {
       return;
     }
@@ -447,9 +405,6 @@ private:
   /// \brief Refine the addresses and offset of `ptr` using information from an
   /// external pointer analysis
   void refine_addresses_offset(Variable* ptr) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
     if (!this->_pointer_info) {
       return;
     }
@@ -569,9 +524,6 @@ private:
       FloatingPointAssign v(lhs.var(), this->_inv);
       rhs.apply_visitor(v);
     } else if (lhs.is_pointer_var()) {
-      if (this->_precision < Precision::Pointer) {
-        return; // Ignore pointers
-      }
       PointerAssign v(lhs.var(), this->_inv);
       rhs.apply_visitor(v);
     } else {
@@ -717,9 +669,6 @@ private:
       FloatingPointImplicitBitcast v(lhs.var(), this->_inv);
       rhs.apply_visitor(v);
     } else if (lhs.is_pointer_var()) {
-      if (this->_precision < Precision::Pointer) {
-        return; // Ignore pointers
-      }
       PointerImplicitBitcast v(lhs.var(), this->_inv);
       rhs.apply_visitor(v);
     } else {
@@ -771,10 +720,6 @@ private:
 
   /// \brief Write an aggregate in the memory
   void mem_write_aggregate(Variable* ptr, const AggregateLit& aggregate) {
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
     if (aggregate.size().is_zero()) {
       return; // Nothing to do
     } else if (aggregate.is_cst()) {
@@ -828,10 +773,6 @@ private:
   void assign(const AggregateLit& lhs, const AggregateLit& rhs) {
     ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
     Variable* ptr = this->init_aggregate_memory(lhs);
     this->mem_write_aggregate(ptr, rhs);
   }
@@ -883,10 +824,6 @@ public:
   /// \brief Deallocate the memory for the given local variables
   void deallocate_local_variables(ar::Function::LocalVariableIterator begin,
                                   ar::Function::LocalVariableIterator end) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     for (auto it = begin; it != end; ++it) {
       LocalVariable* var = this->_var_factory.get_local(*it);
       MemoryLocation* addr = this->_mem_factory.get_local(*it);
@@ -896,23 +833,23 @@ public:
       this->_inv.caught_exceptions().pointer_forget(var);
       this->_inv.propagated_exceptions().pointer_forget(var);
 
-      if (this->_precision >= Precision::Memory) {
-        // Forget the memory content
-        this->_inv.normal().mem_forget(addr);
-        this->_inv.caught_exceptions().mem_forget(addr);
-        this->_inv.propagated_exceptions().mem_forget(addr);
+      // Forget the memory content
+      this->_inv.normal().mem_forget(addr);
+      this->_inv.caught_exceptions().mem_forget(addr);
+      this->_inv.propagated_exceptions().mem_forget(addr);
 
-        // Forget the allocated size
+      // Set the memory location lifetime to deallocated
+      this->_inv.normal().lifetime_assign_deallocated(addr);
+      this->_inv.caught_exceptions().lifetime_assign_deallocated(addr);
+      this->_inv.propagated_exceptions().lifetime_assign_deallocated(addr);
+
+      if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
+        // Forget the allocation size variable
         AllocSizeVariable* alloc_size_var =
             this->_var_factory.get_alloc_size(addr);
         this->_inv.normal().int_forget(alloc_size_var);
         this->_inv.caught_exceptions().int_forget(alloc_size_var);
         this->_inv.propagated_exceptions().int_forget(alloc_size_var);
-
-        // Set the memory location lifetime to deallocated
-        this->_inv.normal().lifetime_assign_deallocated(addr);
-        this->_inv.caught_exceptions().lifetime_assign_deallocated(addr);
-        this->_inv.propagated_exceptions().lifetime_assign_deallocated(addr);
       }
     }
   }
@@ -960,15 +897,13 @@ public:
       }
 
       // Special case for aggregate internal variables: Clean-up the memory
-      if (this->_precision >= Precision::Memory) {
-        if (auto iv = dyn_cast< InternalVariable >(var)) {
-          ar::InternalVariable* ar_iv = iv->internal_var();
-          if (ar_iv->type()->is_aggregate()) {
-            MemoryLocation* addr = this->_mem_factory.get_aggregate(ar_iv);
-            this->_inv.normal().mem_forget(addr);
-            this->_inv.caught_exceptions().mem_forget(addr);
-            this->_inv.propagated_exceptions().mem_forget(addr);
-          }
+      if (auto iv = dyn_cast< InternalVariable >(var)) {
+        ar::InternalVariable* ar_iv = iv->internal_var();
+        if (ar_iv->type()->is_aggregate()) {
+          MemoryLocation* addr = this->_mem_factory.get_aggregate(ar_iv);
+          this->_inv.normal().mem_forget(addr);
+          this->_inv.caught_exceptions().mem_forget(addr);
+          this->_inv.propagated_exceptions().mem_forget(addr);
         }
       }
 
@@ -1138,10 +1073,6 @@ private:
 
   /// \brief Execute a conversion from integer to pointer
   void exec_int_to_ptr_conv(const ScalarLit& lhs, const ScalarLit& rhs) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     if (rhs.is_machine_int()) {
       MachineInt addr = rhs.machine_int();
 
@@ -1222,10 +1153,6 @@ private:
                     const AggregateLit& lhs,
                     const Literal& rhs) {
     ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
-
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
 
     if (rhs.is_scalar()) {
       Variable* ptr = this->init_aggregate_memory(lhs);
@@ -1409,10 +1336,6 @@ private:
     const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
     ikos_assert_msg(lhs.is_var(), "left hand side is not a variable");
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
     // Ignore the semantic while being sound
     Variable* ptr = this->init_aggregate_memory(lhs);
     this->_inv.normal().mem_forget_reachable(ptr);
@@ -1540,9 +1463,7 @@ private:
   void exec_ptr_comparison(PointerPredicate pred,
                            const ScalarLit& left,
                            const ScalarLit& right) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    } else if (left.is_null()) {
+    if (left.is_null()) {
       if (right.is_null()) {
         // Compare `null pred null`
         if (pred == PointerPredicate::NE || pred == PointerPredicate::GT ||
@@ -1609,10 +1530,6 @@ public:
       return;
     }
 
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
     const ScalarLit& array_size =
         this->_lit_factory.get_scalar(s->array_size());
@@ -1627,32 +1544,30 @@ public:
                           Lifetime::allocated(),
                           MemoryInitialValue::Uninitialized);
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
-    // Set the alloc size symbolic variable
-    Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-    MachineInt element_size(this->_data_layout.alloc_size_in_bytes(
-                                s->allocated_type()),
-                            this->_data_layout.pointers.bit_width,
-                            Unsigned);
-    if (array_size.is_machine_int()) {
-      bool overflow;
-      MachineInt alloc_size_int =
-          mul(array_size.machine_int(), element_size, overflow);
-      if (overflow) {
-        this->_inv.set_normal_flow_to_bottom(); // undefined behavior
+    if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
+      // Set the allocation size variable
+      Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
+      auto element_size = MachineInt(this->_data_layout.alloc_size_in_bytes(
+                                         s->allocated_type()),
+                                     this->_data_layout.pointers.bit_width,
+                                     Unsigned);
+      if (array_size.is_machine_int()) {
+        bool overflow;
+        MachineInt alloc_size_int =
+            mul(array_size.machine_int(), element_size, overflow);
+        if (overflow) {
+          this->_inv.set_normal_flow_to_bottom(); // undefined behavior
+        } else {
+          this->_inv.normal().int_assign(alloc_size_var, alloc_size_int);
+        }
+      } else if (array_size.is_machine_int_var()) {
+        this->_inv.normal().int_apply(IntBinaryOperator::MulNoWrap,
+                                      alloc_size_var,
+                                      array_size.var(),
+                                      element_size);
       } else {
-        this->_inv.normal().int_assign(alloc_size_var, alloc_size_int);
+        ikos_unreachable("unexpected array size parameter");
       }
-    } else if (array_size.is_machine_int_var()) {
-      this->_inv.normal().int_apply(IntBinaryOperator::MulNoWrap,
-                                    alloc_size_var,
-                                    array_size.var(),
-                                    element_size);
-    } else {
-      ikos_unreachable("unexpected array size parameter");
     }
   }
 
@@ -1660,10 +1575,6 @@ public:
   void exec(ar::PointerShift* s) override {
     if (s->has_undefined_constant_operand()) {
       this->_inv.set_normal_flow_to_bottom();
-      return;
-    }
-
-    if (this->_precision < Precision::Pointer) {
       return;
     }
 
@@ -1818,10 +1729,6 @@ public:
       return;
     }
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
     this->init_global_operands(s);
 
     const Literal& lhs = this->_lit_factory.get(s->result());
@@ -1879,10 +1786,6 @@ public:
       return;
     }
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
-
     this->init_global_operands(s);
 
     const AggregateLit& lhs = this->_lit_factory.get_aggregate(s->result());
@@ -1931,10 +1834,6 @@ public:
   void exec(ar::ShuffleVector* s) override {
     if (s->has_undefined_constant_operand()) {
       this->_inv.set_normal_flow_to_bottom();
-      return;
-    }
-
-    if (this->_precision < Precision::Memory) {
       return;
     }
 
@@ -2417,37 +2316,34 @@ public:
       return;
     }
 
-    if (this->_precision >= Precision::Memory) {
-      if (may_write_globals) {
-        // Forget all memory contents
-        this->_inv.normal().mem_forget_all();
-      } else if (may_write_params) {
-        // Forget all memory contents pointed by pointer parameters
-        for (auto it = call->arg_begin(), et = call->arg_end(); it != et;
-             ++it) {
-          ar::Value* arg = *it;
+    if (may_write_globals) {
+      // Forget all memory contents
+      this->_inv.normal().mem_forget_all();
+    } else if (may_write_params) {
+      // Forget all memory contents pointed by pointer parameters
+      for (auto it = call->arg_begin(), et = call->arg_end(); it != et; ++it) {
+        ar::Value* arg = *it;
 
-          if (!isa< ar::InternalVariable >(arg) ||
-              !isa< ar::PointerType >(arg->type())) {
-            continue;
-          }
+        if (!isa< ar::InternalVariable >(arg) ||
+            !isa< ar::PointerType >(arg->type())) {
+          continue;
+        }
 
-          auto iv = cast< ar::InternalVariable >(arg);
-          Variable* ptr = this->_var_factory.get_internal(iv);
+        auto iv = cast< ar::InternalVariable >(arg);
+        Variable* ptr = this->_var_factory.get_internal(iv);
 
-          this->init_global_operand(arg);
-          this->refine_addresses(ptr);
+        this->init_global_operand(arg);
+        this->refine_addresses(ptr);
 
-          if (this->_inv.normal().nullity_is_null(ptr)) {
-            continue; // Safe
-          } else if (ignore_unknown_write &&
-                     this->_inv.normal().pointer_to_points_to(ptr).is_top()) {
-            // Ignore side effect on the memory
-            // See CheckKind::IgnoredCallSideEffectOnPointerParameter
-            continue;
-          } else {
-            this->_inv.normal().mem_forget_reachable(ptr);
-          }
+        if (this->_inv.normal().nullity_is_null(ptr)) {
+          continue; // Safe
+        } else if (ignore_unknown_write &&
+                   this->_inv.normal().pointer_to_points_to(ptr).is_top()) {
+          // Ignore side effect on the memory
+          // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+          continue;
+        } else {
+          this->_inv.normal().mem_forget_reachable(ptr);
         }
       }
     }
@@ -2474,10 +2370,8 @@ public:
       } else if (ret.is_aggregate()) {
         ikos_assert_msg(ret.aggregate().is_var(),
                         "left hand side is not a variable");
-        if (this->_precision >= Precision::Memory) {
-          Variable* ret_ptr = this->aggregate_pointer(ret.aggregate());
-          this->_inv.normal().mem_forget_reachable(ret_ptr);
-        }
+        Variable* ret_ptr = this->aggregate_pointer(ret.aggregate());
+        this->_inv.normal().mem_forget_reachable(ret_ptr);
       } else {
         ikos_unreachable("unexpected left hand side");
       }
@@ -2607,7 +2501,7 @@ private:
       return;
     }
 
-    if (this->_precision < Precision::Memory) {
+    if (!this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
       return;
     }
 
@@ -2722,10 +2616,6 @@ private:
       this->throw_unknown_exceptions();
     }
 
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     if (!call->has_result()) {
       return;
     }
@@ -2783,10 +2673,6 @@ private:
   /// objects that are size bytes of memory each and returns a pointer to the
   /// allocated memory. The allocated memory is filled with bytes of value zero.
   void exec_calloc(ar::CallBase* call) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     if (!call->has_result()) {
       return;
     }
@@ -2806,11 +2692,11 @@ private:
                           Lifetime::allocated(),
                           MemoryInitialValue::Zero);
 
-    if (this->_precision < Precision::Memory) {
+    if (!this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
       return;
     }
 
-    // Set the alloc size symbolic variable
+    // Set the allocation size variable
     Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
     if (count.is_machine_int()) {
       if (size.is_machine_int()) {
@@ -2976,10 +2862,6 @@ private:
 
     ikos_assert_msg(ptr.is_pointer_var(), "unexpected parameter");
 
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     if (this->_inv.normal().nullity_is_null(ptr.var())) {
       // This is safe, according to C standards
       return;
@@ -2998,12 +2880,10 @@ private:
       return;
     }
 
-    if (this->_precision >= Precision::Memory) {
-      // Forget memory contents
-      this->_inv.normal().mem_forget_reachable(ptr.var());
-    }
+    // Forget memory contents
+    this->_inv.normal().mem_forget_reachable(ptr.var());
 
-    // Forget the allocated size and set the new lifetime
+    // Forget the allocation size and set the new lifetime
     for (auto addr : addrs) {
       if (!isa< DynAllocMemoryLocation >(addr)) {
         if (addrs.size() == 1) {
@@ -3015,14 +2895,15 @@ private:
         }
       }
 
-      if (this->_precision >= Precision::Memory) {
+      if (addrs.size() == 1) {
+        this->_inv.normal().lifetime_assign_deallocated(addr);
+      } else {
+        this->_inv.normal().lifetime_forget(addr);
+      }
+
+      if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
         Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
         this->_inv.normal().int_forget(alloc_size_var);
-        if (addrs.size() == 1) {
-          this->_inv.normal().lifetime_assign_deallocated(addr);
-        } else {
-          this->_inv.normal().lifetime_forget(addr);
-        }
       }
     }
   }
@@ -3289,10 +3170,6 @@ private:
   /// The fopen() function opens the file whose name is the string pointed to by
   /// path and associates a stream with it.
   void exec_fopen(ar::CallBase* call) {
-    if (this->_precision < Precision::Pointer) {
-      return;
-    }
-
     if (!call->has_result()) {
       return;
     }
@@ -3380,10 +3257,10 @@ private:
       AbstractDomain tmp = this->_inv;
 
       if (auto gv = dyn_cast< GlobalMemoryLocation >(addr)) {
-        MachineInt alloc_size(this->_data_layout.store_size_in_bytes(
-                                  gv->global_var()->type()->pointee()),
-                              this->_data_layout.pointers.bit_width,
-                              Unsigned);
+        auto alloc_size = MachineInt(this->_data_layout.store_size_in_bytes(
+                                         gv->global_var()->type()->pointee()),
+                                     this->_data_layout.pointers.bit_width,
+                                     Unsigned);
         tmp.normal().int_add(IntPredicate::LT, lhs.var(), alloc_size);
       } else {
         Variable* size_var = this->_var_factory.get_alloc_size(addr);
@@ -3699,21 +3576,19 @@ private:
                           Lifetime::allocated(),
                           MemoryInitialValue::Unknown);
 
-    if (this->_precision < Precision::Memory) {
-      return;
-    }
+    if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
+      // sizeof(addr) <= n
+      Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
 
-    // sizeof(addr) <= n
-    Variable* alloc_size_var = this->_var_factory.get_alloc_size(addr);
-
-    if (n.is_machine_int()) {
-      this->_inv.normal().int_add(IntPredicate::LE,
-                                  alloc_size_var,
-                                  n.machine_int());
-    } else if (n.is_machine_int_var()) {
-      this->_inv.normal().int_add(IntPredicate::LE, alloc_size_var, n.var());
-    } else {
-      ikos_unreachable("unexpected size operand");
+      if (n.is_machine_int()) {
+        this->_inv.normal().int_add(IntPredicate::LE,
+                                    alloc_size_var,
+                                    n.machine_int());
+      } else if (n.is_machine_int_var()) {
+        this->_inv.normal().int_add(IntPredicate::LE, alloc_size_var, n.var());
+      } else {
+        ikos_unreachable("unexpected size operand");
+      }
     }
   }
 

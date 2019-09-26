@@ -155,14 +155,6 @@ def parse_arguments(argv):
                           help='Disable the cache of fixpoints',
                           action='store_true',
                           default=False)
-    analysis.add_argument('--prec',
-                          dest='precision_level',
-                          metavar='',
-                          help=args.help('Precision level:',
-                                         args.precision_levels,
-                                         args.default_precision_level),
-                          choices=args.choices(args.precision_levels),
-                          default=args.default_precision_level)
     analysis.add_argument('--proc',
                           dest='procedural',
                           metavar='',
@@ -752,7 +744,6 @@ def ikos_analyzer(db_path, pp_path, opt):
             '-d=%s' % opt.domain,
             '-entry-points=%s' % ','.join(opt.entry_points),
             '-globals-init=%s' % opt.globals_init,
-            '-prec=%s' % opt.precision_level,
             '-proc=%s' % opt.procedural,
             '-widening-strategy=%s' % opt.widening_strategy,
             '-widening-delay=%d' % opt.widening_delay,

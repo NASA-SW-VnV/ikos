@@ -204,33 +204,6 @@ inline const char* narrowing_strategy_str(
   }
 }
 
-/// \brief Represents the precision of an analysis
-enum class Precision {
-  /// \brief Only track values in "registers", ie. ar::InternalVariable
-  Register = 0,
-
-  /// \brief Register + track pointer base addresses and offsets
-  Pointer = 1,
-
-  /// \brief Pointer + track memory
-  Memory = 2,
-};
-
-/// \brief Return a string representing a precision
-inline const char* precision_str(Precision p) {
-  switch (p) {
-    case Precision::Register:
-      return "reg";
-    case Precision::Pointer:
-      return "ptr";
-    case Precision::Memory:
-      return "mem";
-    default: {
-      ikos_unreachable("unreachable");
-    }
-  }
-}
-
 /// \brief Return a string representing the hardware addresses
 inline std::string hardware_addresses_str(const HardwareAddresses& hwa) {
   JsonList json_intervals;
@@ -352,9 +325,6 @@ public:
 
   /// \brief Wether we should save fixpoints on called functions or not
   bool use_fixpoint_cache;
-
-  /// \brief Precision of the analysis
-  Precision precision;
 
   /// \brief Policy of initialization for global variables
   GlobalsInitPolicy globals_init_policy;

@@ -249,7 +249,7 @@ public:
         exec_engine(std::move(pre),
                     _ctx,
                     this->_empty_call_context,
-                    /* precision = */ Precision::Register,
+                    ExecutionEngine::NoOption,
                     /* liveness = */ _ctx.liveness,
                     /* pointer_info = */ &_function_pointer.results());
     ContextInsensitiveCallExecutionEngine< AbstractDomainT > call_exec_engine(
@@ -270,7 +270,7 @@ public:
         exec_engine(std::move(pre),
                     _ctx,
                     this->_empty_call_context,
-                    /* precision = */ Precision::Register,
+                    ExecutionEngine::NoOption,
                     /* liveness = */ _ctx.liveness,
                     /* pointer_info = */ &_function_pointer.results());
     exec_engine.exec_edge(src, dest);
@@ -291,7 +291,7 @@ public:
         exec_engine(this->pre(bb),
                     _ctx,
                     this->_empty_call_context,
-                    /* precision = */ Precision::Register,
+                    ExecutionEngine::NoOption,
                     /* liveness = */ _ctx.liveness,
                     /* pointer_info = */ &_function_pointer.results());
     exec_engine.exec_enter(bb);
@@ -305,7 +305,7 @@ public:
         exec_engine(std::move(pre),
                     _ctx,
                     this->_empty_call_context,
-                    /* precision = */ Precision::Register,
+                    ExecutionEngine::NoOption,
                     /* liveness = */ _ctx.liveness,
                     /* pointer_info = */ &_function_pointer.results());
     ContextInsensitiveCallExecutionEngine< AbstractDomainT > call_exec_engine(

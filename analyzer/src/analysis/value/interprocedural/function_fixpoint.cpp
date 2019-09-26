@@ -63,7 +63,7 @@ FunctionFixpoint::FunctionFixpoint(
       _exec_engine(make_bottom_abstract_value(ctx),
                    ctx,
                    this->_call_context,
-                   /* precision = */ ctx.opts.precision,
+                   ExecutionEngine::UpdateAllocSizeVar,
                    /* liveness = */ ctx.liveness,
                    /* pointer_info = */ ctx.pointer == nullptr
                        ? nullptr
@@ -90,7 +90,7 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
       _exec_engine(make_bottom_abstract_value(ctx),
                    ctx,
                    this->_call_context,
-                   /* precision = */ ctx.opts.precision,
+                   ExecutionEngine::UpdateAllocSizeVar,
                    /* liveness = */ ctx.liveness,
                    /* pointer_info = */ ctx.pointer == nullptr
                        ? nullptr

@@ -146,7 +146,7 @@ AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
       exec_engine(std::move(pre),
                   _ctx,
                   this->_empty_call_context,
-                  /* precision = */ _ctx.opts.precision,
+                  ExecutionEngine::UpdateAllocSizeVar,
                   /* liveness = */ _ctx.liveness,
                   /* pointer_info = */ _ctx.pointer == nullptr
                       ? nullptr
@@ -168,7 +168,7 @@ AbstractDomain FunctionFixpoint::analyze_edge(ar::BasicBlock* src,
       exec_engine(std::move(pre),
                   _ctx,
                   this->_empty_call_context,
-                  /* precision = */ _ctx.opts.precision,
+                  ExecutionEngine::UpdateAllocSizeVar,
                   /* liveness = */ _ctx.liveness,
                   /* pointer_info = */ _ctx.pointer == nullptr
                       ? nullptr
@@ -190,7 +190,7 @@ void FunctionFixpoint::run_checks(
         exec_engine(this->pre(bb),
                     _ctx,
                     this->_empty_call_context,
-                    /* precision = */ _ctx.opts.precision,
+                    ExecutionEngine::UpdateAllocSizeVar,
                     /* liveness = */ _ctx.liveness,
                     /* pointer_info = */ _ctx.pointer == nullptr
                         ? nullptr

@@ -21,7 +21,6 @@ Table of contents
   - [Entry points](#entry-points)
   - [Optimization level](#optimization-level)
   - [Inter-procedural vs Intra-procedural](#inter-procedural-vs-intra-procedural)
-  - [Degree of precision](#degree-of-precision)
   - [Fixpoint engine parameters](#fixpoint-engine-parameters)
   - [Hardware addresses](#hardware-addresses)
   - [Other analysis options](#other-analysis-options)
@@ -354,16 +353,6 @@ Available levels are:
 An **inter-procedural** analysis analyzes a function considering its call stack while an **intra-procedural** analysis ignores it. The former produces more precise results than the latter but it is often much more expensive.
 
 By default, IKOS performs an inter-procedural analysis. Use `--proc=intra` to perform an intra-procedural analysis.
-
-### Degree of precision
-
-Each analysis can be executed using one of the following levels of precision, presented from the coarsest (and cheapest) to the most precise (and most expensive):
-
-* **reg**: models only integers.
-* **ptr**: models integers and pointers.
-* **mem**: models integers, pointers and memory contents.
-
-By default, IKOS uses the precision `mem`. Provide `--prec {reg,ptr,mem}` if you want to use another level of precision.
 
 ### Fixpoint engine parameters
 

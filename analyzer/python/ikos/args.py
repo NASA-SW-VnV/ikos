@@ -254,14 +254,6 @@ globals_init_policies = (
 
 default_globals_init_policy = 'skip-big-arrays'
 
-precision_levels = (
-    ('reg', 'Only track immediate values'),
-    ('ptr', 'Track immediate values and pointers'),
-    ('mem', 'Track immediate values, pointers and memory'),
-)
-
-default_precision_level = 'mem'
-
 proceduralities = (
     ('inter', 'Interprocedural analysis'),
     ('intra', 'Intraprocedural analysis'),

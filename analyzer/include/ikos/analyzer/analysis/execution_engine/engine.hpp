@@ -48,6 +48,7 @@
 #include <ikos/ar/semantic/statement_visitor.hpp>
 
 #include <ikos/analyzer/json/json.hpp>
+#include <ikos/analyzer/support/flags.hpp>
 
 namespace ikos {
 namespace analyzer {
@@ -62,11 +63,31 @@ namespace analyzer {
 /// intra-procedural, etc).
 class ExecutionEngine {
 public:
-  /// \brief Default constructors and assignment operators
+  /// \brief Execution engine options
+  enum ExecutionEngineOption : unsigned {
+    NoOption = 0x0,
+
+    /// \brief Update the allocation size variable
+    UpdateAllocSizeVar = 0x1,
+  };
+
+  /// \brief Execution engine options
+  using ExecutionEngineOptions = Flags< ExecutionEngineOption >;
+
+public:
+  /// \brief Constructor
   ExecutionEngine() noexcept = default;
+
+  /// \brief Copy constructor
   ExecutionEngine(const ExecutionEngine&) noexcept = default;
+
+  /// \brief Move constructor
   ExecutionEngine(ExecutionEngine&&) noexcept = default;
+
+  /// \brief Copy assignment operator
   ExecutionEngine& operator=(const ExecutionEngine&) noexcept = default;
+
+  /// \brief Move assignment operator
   ExecutionEngine& operator=(ExecutionEngine&&) noexcept = default;
 
   /// \brief Destructor
@@ -168,11 +189,19 @@ public:
 /// intra-procedural, etc).
 class CallExecutionEngine {
 public:
-  /// \brief Default constructors and assignment operators
+  /// \brief Constructor
   CallExecutionEngine() noexcept = default;
+
+  /// \brief Copy constructor
   CallExecutionEngine(const CallExecutionEngine&) noexcept = default;
+
+  /// \brief Move constructor
   CallExecutionEngine(CallExecutionEngine&&) noexcept = default;
+
+  /// \brief Copy assignment operator
   CallExecutionEngine& operator=(const CallExecutionEngine&) noexcept = default;
+
+  /// \brief Move assignment operator
   CallExecutionEngine& operator=(CallExecutionEngine&&) noexcept = default;
 
   /// \brief Destructor

@@ -421,22 +421,6 @@ static llvm::cl::opt< bool > NoFixpointCache(
     llvm::cl::desc("Disable the cache of fixpoints"),
     llvm::cl::cat(AnalysisCategory));
 
-static llvm::cl::opt< analyzer::Precision > Precision(
-    "prec",
-    llvm::cl::desc("Precision level:"),
-    llvm::cl::values(
-        clEnumValN(analyzer::Precision::Register,
-                   precision_str(analyzer::Precision::Register),
-                   "Only track immediate values"),
-        clEnumValN(analyzer::Precision::Pointer,
-                   precision_str(analyzer::Precision::Pointer),
-                   "Track immediate values and pointers"),
-        clEnumValN(analyzer::Precision::Memory,
-                   precision_str(analyzer::Precision::Memory),
-                   "Track immediate values, pointers and memory (default)")),
-    llvm::cl::init(analyzer::Precision::Memory),
-    llvm::cl::cat(AnalysisCategory));
-
 static llvm::cl::opt< analyzer::GlobalsInitPolicy > GlobalsInitPolicy(
     "globals-init",
     llvm::cl::desc("Policy of initialization for global variables"),
@@ -799,7 +783,6 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .use_pointer = !NoPointer,
       .use_widening_hints = !NoWideningHints,
       .use_fixpoint_cache = !NoFixpointCache,
-      .precision = Precision,
       .globals_init_policy = GlobalsInitPolicy,
       .progress = Progress,
       .display_invariants = DisplayInvariants,

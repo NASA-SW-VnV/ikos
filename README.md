@@ -199,7 +199,6 @@ Further information:
   - [Entry points](analyzer/README.md#entry-points)
   - [Optimization level](analyzer/README.md#optimization-level)
   - [Inter-procedural vs Intra-procedural](analyzer/README.md#inter-procedural-vs-intra-procedural)
-  - [Degree of precision](analyzer/README.md#degree-of-precision)
   - [Fixpoint engine parameters](analyzer/README.md#fixpoint-engine-parameters)
   - [Hardware addresses](analyzer/README.md#hardware-addresses)
   - [Other analysis options](analyzer/README.md#other-analysis-options)
