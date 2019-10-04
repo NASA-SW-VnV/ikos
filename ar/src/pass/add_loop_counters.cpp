@@ -3,11 +3,10 @@
  * \file
  * \brief Implementation of AddLoopCountersPass
  *
- * Add a loop counter within every loop.
+ * This pass adds a hidden loop counter variable within each loop, using the
+ * `ikos.counter.init` and `ikos.counter.incr` intrinsic functions.
  *
- * This pass adds an initialization statement that sets the counter to zero in
- * all basic blocks before a loop, and then adds a statement that increments
- * the counter by one within that loop.
+ * This can be used by the gauge abstract domain to infer loop invariants.
  *
  * Authors: Maxime Arthaud
  *
@@ -140,7 +139,9 @@ public:
         if (std::find(blocks.begin(), blocks.end(), pred) == blocks.end()) {
           // predecessor is not in the cycle
           has_incoming_edge = true;
-          pred->push_back(Call::create(var, counter_init, {zero}));
+          pred->push_back(Call::create(/* result = */ var,
+                                       /* function = */ counter_init,
+                                       /* arguments = */ {zero}));
         }
       }
 
@@ -164,7 +165,9 @@ public:
          ++it) {
       BasicBlock* pred = *it;
       if (std::find(blocks.begin(), blocks.end(), pred) != blocks.end()) {
-        pred->push_back(Call::create(var, counter_incr, {var, one}));
+        pred->push_back(Call::create(/* result = */ var,
+                                     /* function = */ counter_incr,
+                                     /* arguments = */ {var, one}));
       }
     }
   }

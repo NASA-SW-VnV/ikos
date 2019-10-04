@@ -1882,6 +1882,12 @@ public:
       return;
     }
 
+    if (id == ar::Intrinsic::IkosPartitioningVarSi32) {
+      // Unlike most functions, it propagates uninitialized variables
+      this->exec_ikos_partitioning_var(call);
+      return;
+    }
+
     // Check for uninitialized variables
     for (auto it = call->op_begin(), et = call->op_end(); it != et; ++it) {
       ar::Value* op = *it;
@@ -1979,6 +1985,15 @@ public:
       } break;
       case ar::Intrinsic::IkosWatchMemory: {
         this->exec_ikos_watch_memory(call);
+      } break;
+      case ar::Intrinsic::IkosPartitioningVarSi32: {
+        this->exec_ikos_partitioning_var(call);
+      } break;
+      case ar::Intrinsic::IkosPartitioningJoin: {
+        this->exec_ikos_partitioning_join(call);
+      } break;
+      case ar::Intrinsic::IkosPartitioningDisable: {
+        this->exec_ikos_partitioning_disable(call);
       } break;
       case ar::Intrinsic::IkosPrintInvariant:
       case ar::Intrinsic::IkosPrintValues: {
@@ -2604,6 +2619,25 @@ private:
     } else {
       ikos_unreachable("unexpected size parameter");
     }
+  }
+
+  /// \brief Execute a call to ikos.partitioning.var.si32
+  void exec_ikos_partitioning_var(ar::CallBase* call) {
+    const ScalarLit& arg = this->_lit_factory.get_scalar(call->argument(0));
+
+    if (arg.is_var()) {
+      this->_inv.normal().partitioning_set_variable(arg.var());
+    }
+  }
+
+  /// \brief Execute a call to ikos.partitioning.join
+  void exec_ikos_partitioning_join(ar::CallBase*) {
+    this->_inv.normal().partitioning_join();
+  }
+
+  /// \brief Execute a call to ikos.partitioning.disable
+  void exec_ikos_partitioning_disable(ar::CallBase*) {
+    this->_inv.normal().partitioning_disable();
   }
 
   /// \brief Execute a dynamic allocation
@@ -3683,28 +3717,39 @@ public:
   }
 
   void match_up(ar::CallBase* call, ar::ReturnValue* ret) override {
-    if (ret != nullptr && ret->has_operand() && call->has_result()) {
-      this->init_global_operand(ret->operand());
-      this->implicit_bitcast(this->_lit_factory.get(call->result()),
-                             this->_lit_factory.get(ret->operand()));
+    if (ret == nullptr || !ret->has_operand()) {
+      // No return value
+      return;
     }
 
-    if (ret != nullptr && ret->has_operand()) {
-      // Clean-up the invariant
-      const Literal& val = this->_lit_factory.get(ret->operand());
+    const Literal& return_value = this->_lit_factory.get(ret->operand());
 
-      if (val.is_scalar()) {
-        if (val.scalar().is_var()) {
-          this->_inv.normal().scalar_forget(val.scalar().var());
+    if (call->has_result()) {
+      // Assign the result variable
+      const Literal& result = this->_lit_factory.get(call->result());
+      this->init_global_operand(ret->operand());
+      this->implicit_bitcast(result, return_value);
+
+      if (return_value.is_var()) {
+        // If the current partitioning is based on the return variable,
+        // we automatically update it to the result variable.
+        auto partitioning_var = this->_inv.normal().partitioning_variable();
+        if (partitioning_var && *partitioning_var == return_value.var()) {
+          this->_inv.normal().partitioning_set_variable(result.var());
         }
-      } else if (val.is_aggregate()) {
-        if (val.aggregate().is_var()) {
-          this->_inv.normal().mem_forget_reachable(val.aggregate().var());
-          this->_inv.normal().scalar_forget(val.aggregate().var());
-        }
-      } else {
-        ikos_unreachable("unreachable");
       }
+    }
+
+    // Clean-up the invariant
+    if (!return_value.is_var()) {
+      return;
+    } else if (return_value.is_scalar()) {
+      this->_inv.normal().scalar_forget(return_value.var());
+    } else if (return_value.is_aggregate()) {
+      this->_inv.normal().mem_forget_reachable(return_value.var());
+      this->_inv.normal().scalar_forget(return_value.var());
+    } else {
+      ikos_unreachable("unreachable");
     }
   }
 

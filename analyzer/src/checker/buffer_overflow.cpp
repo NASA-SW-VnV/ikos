@@ -306,6 +306,9 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                      inv)};
     }
     case ar::Intrinsic::IkosWatchMemory:
+    case ar::Intrinsic::IkosPartitioningVarSi32:
+    case ar::Intrinsic::IkosPartitioningJoin:
+    case ar::Intrinsic::IkosPartitioningDisable:
     case ar::Intrinsic::IkosPrintInvariant:
     case ar::Intrinsic::IkosPrintValues: {
       return {};
@@ -1389,7 +1392,7 @@ boost::optional< MachineInt > BufferOverflowChecker::is_array_access(
     return boost::none;
   }
 
-  return element_size;
+  return std::move(element_size);
 }
 
 llvm::Optional< LogMessage > BufferOverflowChecker::display_mem_access_check(

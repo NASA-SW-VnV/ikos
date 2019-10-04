@@ -50,9 +50,10 @@ namespace ar {
 
 /// \brief Add Loop Counters pass
 ///
-/// This pass adds an initialization statement that sets the counter to zero in
-/// all basic blocks before a loop, and then adds a statement that increments
-/// the counter by one within that loop.
+/// This pass adds a hidden loop counter variable within each loop, using the
+/// `ikos.counter.init` and `ikos.counter.incr` intrinsic functions.
+///
+/// This can be used by the gauge abstract domain to infer loop invariants.
 class AddLoopCountersPass final : public CodePass {
 public:
   /// \brief Default constructor

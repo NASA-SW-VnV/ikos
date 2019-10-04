@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <ikos/core/domain/scalar/abstract_domain.hpp>
 #include <ikos/core/literal.hpp>
 #include <ikos/core/value/lifetime.hpp>
@@ -190,6 +192,22 @@ public:
 
   /// \brief Get the lifetime value for the given memory location
   virtual Lifetime lifetime_to_lifetime(MemoryLocationRef m) const = 0;
+
+  /// @}
+  /// \name Partitioning abstract domain methods
+  /// @{
+
+  /// \brief Partition the abstract value according to the given variable
+  virtual void partitioning_set_variable(VariableRef x) = 0;
+
+  /// \brief Return the current partitioning variable, or boost::none
+  virtual boost::optional< VariableRef > partitioning_variable() const = 0;
+
+  /// \brief Join the current partitions
+  virtual void partitioning_join() = 0;
+
+  /// \brief Disable the current partitioning
+  virtual void partitioning_disable() = 0;
 
   /// @}
 

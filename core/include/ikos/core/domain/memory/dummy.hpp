@@ -729,6 +729,20 @@ public:
   }
 
   /// @}
+  /// \name Partitioning abstract domain methods
+  /// @{
+
+  void partitioning_set_variable(VariableRef) override {}
+
+  boost::optional< VariableRef > partitioning_variable() const override {
+    return boost::none;
+  }
+
+  void partitioning_join() override {}
+
+  void partitioning_disable() override {}
+
+  /// @}
 
   void normalize() const override { this->_scalar.normalize(); }
 

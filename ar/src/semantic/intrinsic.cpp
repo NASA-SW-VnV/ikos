@@ -192,6 +192,16 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(void_ptr_ty); // ptr
       params.push_back(size_ty);     // size
     } break;
+    case IkosPartitioningVarSi32: {
+      ret_ty = void_ty;          // ret
+      params.push_back(si32_ty); // x
+    } break;
+    case IkosPartitioningJoin: {
+      ret_ty = void_ty; // ret
+    } break;
+    case IkosPartitioningDisable: {
+      ret_ty = void_ty; // ret
+    } break;
     case IkosPrintInvariant: {
       ret_ty = void_ty; // ret
     } break;
@@ -564,6 +574,12 @@ const char* Intrinsic::short_name(ID id) {
       return "ikos.abstract_memory";
     case IkosWatchMemory:
       return "ikos.watch_memory";
+    case IkosPartitioningVarSi32:
+      return "ikos.partitioning.var.si32";
+    case IkosPartitioningJoin:
+      return "ikos.partitioning.join";
+    case IkosPartitioningDisable:
+      return "ikos.partitioning.disable";
     case IkosPrintInvariant:
       return "ikos.print_invariant";
     case IkosPrintValues:

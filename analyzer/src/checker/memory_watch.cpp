@@ -237,6 +237,9 @@ void MemoryWatchChecker::check_intrinsic_call(
       this->check_mem_write(call, call->argument(0), call->argument(1), inv);
     } break;
     case ar::Intrinsic::IkosWatchMemory:
+    case ar::Intrinsic::IkosPartitioningVarSi32:
+    case ar::Intrinsic::IkosPartitioningJoin:
+    case ar::Intrinsic::IkosPartitioningDisable:
     case ar::Intrinsic::IkosPrintInvariant:
     case ar::Intrinsic::IkosPrintValues: {
     } break;

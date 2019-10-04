@@ -127,6 +127,15 @@ extern void __ikos_watch_mem(const void* ptr, size_t size) IKOS_NOEXCEPT;
 /// The debugger (ikos -a dbg) will print the current invariant.
 extern void __ikos_print_invariant(void) IKOS_NOEXCEPT;
 
+/// \brief Partition the invariant according to the given integer variable
+extern void __ikos_partitioning_var_int(int) IKOS_NOEXCEPT;
+
+/// \brief Join the current partitions
+extern void __ikos_partitioning_join(void) IKOS_NOEXCEPT;
+
+/// \brief Disable the current partitioning
+extern void __ikos_partitioning_disable(void) IKOS_NOEXCEPT;
+
 /// \brief Print the information on the given values at the function call
 ///
 /// The debugger (ikos -a dbg) will print the information on the
@@ -166,6 +175,12 @@ extern void __ikos_print_values(const char* desc, ...) IKOS_NOEXCEPT;
 #define __ikos_abstract_mem(ptr, size)
 
 #define __ikos_watch_mem(ptr, size)
+
+#define __ikos_partitioning_var_int(x)
+
+#define __ikos_partitioning_join()
+
+#define __ikos_partitioning_disable()
 
 #define __ikos_print_invariant()
 

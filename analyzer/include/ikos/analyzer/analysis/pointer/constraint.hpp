@@ -703,6 +703,9 @@ private:
         case ar::Intrinsic::IkosForgetMemory:
         case ar::Intrinsic::IkosAbstractMemory:
         case ar::Intrinsic::IkosWatchMemory:
+        case ar::Intrinsic::IkosPartitioningVarSi32:
+        case ar::Intrinsic::IkosPartitioningJoin:
+        case ar::Intrinsic::IkosPartitioningDisable:
         case ar::Intrinsic::IkosPrintInvariant:
         case ar::Intrinsic::IkosPrintValues:
           break; // do nothing

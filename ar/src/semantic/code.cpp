@@ -81,18 +81,19 @@ void BasicBlock::push_back(std::unique_ptr< Statement > stmt) {
   this->_statements.emplace_back(std::move(stmt));
 }
 
-void BasicBlock::insert_before(StatementIterator it,
-                               std::unique_ptr< Statement > stmt) {
+BasicBlock::StatementIterator BasicBlock::insert_before(
+    StatementIterator it, std::unique_ptr< Statement > stmt) {
   stmt->set_parent(this);
-  this->_statements.insert(it.base(), std::move(stmt));
+  auto new_it = this->_statements.insert(it.base(), std::move(stmt));
+  return boost::make_transform_iterator(new_it, SeqExposeRawPtr< Statement >());
 }
 
-void BasicBlock::insert_after(StatementIterator it,
-                              std::unique_ptr< Statement > stmt) {
+BasicBlock::StatementIterator BasicBlock::insert_after(
+    StatementIterator it, std::unique_ptr< Statement > stmt) {
   ikos_assert(it != this->end());
-  ++it;
   stmt->set_parent(this);
-  this->_statements.insert(it.base(), std::move(stmt));
+  auto new_it = this->_statements.insert(std::next(it).base(), std::move(stmt));
+  return boost::make_transform_iterator(new_it, SeqExposeRawPtr< Statement >());
 }
 
 std::unique_ptr< Statement > BasicBlock::replace(
@@ -114,10 +115,11 @@ std::unique_ptr< Statement > BasicBlock::replace(
   return old;
 }
 
-void BasicBlock::remove(StatementIterator it) {
+BasicBlock::StatementIterator BasicBlock::remove(StatementIterator it) {
   ikos_assert(it != this->end());
   (*it.base())->set_parent(nullptr);
-  this->_statements.erase(it.base());
+  auto new_it = this->_statements.erase(it.base());
+  return boost::make_transform_iterator(new_it, SeqExposeRawPtr< Statement >());
 }
 
 std::unique_ptr< Statement > BasicBlock::pop_back() {

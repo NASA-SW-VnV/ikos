@@ -77,6 +77,15 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
           ar::Intrinsic::IkosAbstractMemory);
     } else if (name == "__ikos_watch_mem") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosWatchMemory);
+    } else if (name == "__ikos_partitioning_var_int") {
+      return this->_bundle->intrinsic_function(
+          ar::Intrinsic::IkosPartitioningVarSi32);
+    } else if (name == "__ikos_partitioning_join") {
+      return this->_bundle->intrinsic_function(
+          ar::Intrinsic::IkosPartitioningJoin);
+    } else if (name == "__ikos_partitioning_disable") {
+      return this->_bundle->intrinsic_function(
+          ar::Intrinsic::IkosPartitioningDisable);
     } else if (name == "__ikos_print_invariant") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosPrintInvariant);

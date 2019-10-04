@@ -188,23 +188,32 @@ public:
   /// \brief Insert a statement before `it`
   ///
   /// Statement iterators are invalidated.
-  void insert_before(StatementIterator it, std::unique_ptr< Statement > stmt);
+  ///
+  /// Returns an iterator on the inserted statement.
+  StatementIterator insert_before(StatementIterator it,
+                                  std::unique_ptr< Statement > stmt);
 
   /// \brief Insert a statement after `it`
   ///
   /// Statement iterators are invalidated.
-  void insert_after(StatementIterator it, std::unique_ptr< Statement > stmt);
+  ///
+  /// Returns an iterator on the inserted statement.
+  StatementIterator insert_after(StatementIterator it,
+                                 std::unique_ptr< Statement > stmt);
 
   /// \brief Replace the statement at `it`
   ///
-  /// Return the previous statement
+  /// Returns the previous statement
   std::unique_ptr< Statement > replace(StatementIterator it,
                                        std::unique_ptr< Statement > stmt);
 
   /// \brief Remove the statement at `it`
   ///
   /// Statement iterators at or after `it` are invalidated.
-  void remove(StatementIterator it);
+  ///
+  /// Returns an iterator on the statement following the removed statement. If
+  /// `it` refers to the last element, it returns the end iterator.
+  StatementIterator remove(StatementIterator it);
 
   /// \brief Remove the last statement and return it
   ///

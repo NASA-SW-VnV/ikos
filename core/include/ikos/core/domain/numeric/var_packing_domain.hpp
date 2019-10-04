@@ -696,7 +696,7 @@ private:
     }
   }
 
-  /// \brief Apply a binary operation using a union semantic (join, widening)
+  /// \brief Binary operation with a union semantic (join, widening)
   template < typename BinaryOperator >
   VarPackingDomain union_binary_op(VarPackingDomain other,
                                    const BinaryOperator& op) const {
@@ -767,7 +767,7 @@ private:
     return result;
   }
 
-  /// \brief Binary operation using an intersection semantic (meet, narrowing)
+  /// \brief Binary operation with an intersection semantic (meet, narrowing)
   template < typename BinaryOperator >
   VarPackingDomain meet_binary_op(const VarPackingDomain& other,
                                   BinaryOperator op) const {

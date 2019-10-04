@@ -150,7 +150,7 @@ public:
       if (overflow) {
         return boost::none;
       }
-      return value;
+      return std::move(value);
     } else {
       return boost::none;
     }

@@ -257,6 +257,9 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     case ar::Intrinsic::IkosWatchMemory: {
       return {this->check_null(call, call->argument(0), inv)};
     }
+    case ar::Intrinsic::IkosPartitioningVarSi32:
+    case ar::Intrinsic::IkosPartitioningJoin:
+    case ar::Intrinsic::IkosPartitioningDisable:
     case ar::Intrinsic::IkosPrintInvariant:
     case ar::Intrinsic::IkosPrintValues: {
       return {};
