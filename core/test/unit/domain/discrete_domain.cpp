@@ -105,8 +105,6 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
 
   auto inv = DiscreteDomain::top();
   BOOST_CHECK(inv.is_top());
@@ -125,8 +123,6 @@ BOOST_AUTO_TEST_CASE(leq) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(DiscreteDomain::bottom().leq(DiscreteDomain::top()));
   BOOST_CHECK(DiscreteDomain::bottom().leq(DiscreteDomain::bottom()));
@@ -156,8 +152,6 @@ BOOST_AUTO_TEST_CASE(equals) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(!DiscreteDomain::bottom().equals(DiscreteDomain::top()));
   BOOST_CHECK(DiscreteDomain::bottom().equals(DiscreteDomain::bottom()));
@@ -187,7 +181,6 @@ BOOST_AUTO_TEST_CASE(join) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((DiscreteDomain::bottom().join(DiscreteDomain::top()) ==
                DiscreteDomain::top()));
@@ -220,7 +213,6 @@ BOOST_AUTO_TEST_CASE(meet) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((DiscreteDomain::bottom().meet(DiscreteDomain::top()) ==
                DiscreteDomain::bottom()));
@@ -260,7 +252,6 @@ BOOST_AUTO_TEST_CASE(difference) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((DiscreteDomain::bottom().difference(DiscreteDomain::top()) ==
                DiscreteDomain::bottom()));
@@ -300,8 +291,6 @@ BOOST_AUTO_TEST_CASE(add) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = DiscreteDomain::top();
   BOOST_CHECK(inv.is_top());
@@ -319,8 +308,6 @@ BOOST_AUTO_TEST_CASE(remove_) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = DiscreteDomain::top();
   BOOST_CHECK(inv.is_top());

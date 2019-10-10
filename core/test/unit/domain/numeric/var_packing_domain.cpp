@@ -94,8 +94,6 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
 
   auto inv = VarPackingDomain::top();
   BOOST_CHECK(inv.is_top());
@@ -117,7 +115,6 @@ BOOST_AUTO_TEST_CASE(leq) {
   Variable z(vfac.get("z"));
   Variable a(vfac.get("a"));
   Variable b(vfac.get("b"));
-  Variable c(vfac.get("c"));
 
   BOOST_CHECK(VarPackingDomain::bottom().leq(VarPackingDomain::top()));
   BOOST_CHECK(VarPackingDomain::bottom().leq(VarPackingDomain::bottom()));
@@ -211,8 +208,6 @@ BOOST_AUTO_TEST_CASE(equals) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(!VarPackingDomain::bottom().equals(VarPackingDomain::top()));
   BOOST_CHECK(VarPackingDomain::bottom().equals(VarPackingDomain::bottom()));
@@ -248,7 +243,6 @@ BOOST_AUTO_TEST_CASE(join) {
   Variable z(vfac.get("z"));
   Variable a(vfac.get("a"));
   Variable b(vfac.get("b"));
-  Variable c(vfac.get("c"));
 
   BOOST_CHECK((VarPackingDomain::bottom().join(VarPackingDomain::top()) ==
                VarPackingDomain::top()));
@@ -359,9 +353,6 @@ BOOST_AUTO_TEST_CASE(join) {
 BOOST_AUTO_TEST_CASE(widening) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((VarPackingDomain::bottom().widening(VarPackingDomain::top()) ==
                VarPackingDomain::top()));
@@ -393,9 +384,6 @@ BOOST_AUTO_TEST_CASE(widening) {
 BOOST_AUTO_TEST_CASE(widening_threshold) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(
       (VarPackingDomain::bottom().widening_threshold(VarPackingDomain::top(),
@@ -447,9 +435,6 @@ BOOST_AUTO_TEST_CASE(widening_threshold) {
 BOOST_AUTO_TEST_CASE(narrowing_threshold) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(
       (VarPackingDomain::bottom().narrowing_threshold(VarPackingDomain::top(),
@@ -508,7 +493,6 @@ BOOST_AUTO_TEST_CASE(meet) {
   Variable z(vfac.get("z"));
   Variable a(vfac.get("a"));
   Variable b(vfac.get("b"));
-  Variable c(vfac.get("c"));
 
   BOOST_CHECK((VarPackingDomain::bottom().meet(VarPackingDomain::top()) ==
                VarPackingDomain::bottom()));
@@ -609,9 +593,6 @@ BOOST_AUTO_TEST_CASE(meet) {
 BOOST_AUTO_TEST_CASE(narrowing) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((VarPackingDomain::bottom().narrowing(VarPackingDomain::top()) ==
                VarPackingDomain::bottom()));
@@ -644,7 +625,6 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   VarPackingDomain inv1 = VarPackingDomain::top();
   VarPackingDomain inv2 = VarPackingDomain::top();
@@ -681,7 +661,6 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = VarPackingDomain::top();
   auto inv2 = VarPackingDomain::top();
@@ -796,7 +775,6 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.add(VariableExpr(x) >= 1);
@@ -843,9 +821,6 @@ BOOST_AUTO_TEST_CASE(add) {
 BOOST_AUTO_TEST_CASE(set) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -872,9 +847,6 @@ BOOST_AUTO_TEST_CASE(set) {
 BOOST_AUTO_TEST_CASE(refine) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
@@ -908,8 +880,6 @@ BOOST_AUTO_TEST_CASE(forget) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -934,8 +904,6 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -950,8 +918,6 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -966,8 +932,6 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = VarPackingDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));

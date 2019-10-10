@@ -108,8 +108,6 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   VariableFactory vfac;
-  Variable x(vfac.get("x", 32, Signed));
-  Variable y(vfac.get("y", 32, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -144,7 +142,6 @@ BOOST_AUTO_TEST_CASE(leq) {
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
   Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   BOOST_CHECK(PolymorphicDomain(IntervalDomain::bottom())
                   .leq(PolymorphicDomain(IntervalDomain::top())));
@@ -241,8 +238,6 @@ BOOST_AUTO_TEST_CASE(equals) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   BOOST_CHECK(!PolymorphicDomain(IntervalDomain::bottom())
                    .equals(PolymorphicDomain(IntervalDomain::top())));
@@ -303,8 +298,6 @@ BOOST_AUTO_TEST_CASE(join) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   BOOST_CHECK((PolymorphicDomain(IntervalDomain::bottom())
                    .join(PolymorphicDomain(IntervalDomain::top())) ==
@@ -378,8 +371,6 @@ BOOST_AUTO_TEST_CASE(widening) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   BOOST_CHECK((PolymorphicDomain(IntervalDomain::bottom())
                    .widening(PolymorphicDomain(IntervalDomain::top())) ==
@@ -446,8 +437,6 @@ BOOST_AUTO_TEST_CASE(meet) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   BOOST_CHECK((PolymorphicDomain(IntervalDomain::bottom())
                    .meet(PolymorphicDomain(IntervalDomain::top())) ==
@@ -514,9 +503,6 @@ BOOST_AUTO_TEST_CASE(meet) {
 BOOST_AUTO_TEST_CASE(narrowing) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
-  Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   BOOST_CHECK((PolymorphicDomain(IntervalDomain::bottom())
                    .narrowing(PolymorphicDomain(IntervalDomain::top())) ==
@@ -579,7 +565,6 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
   Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   {
     auto inv1 = PolymorphicDomain(IntervalDomain::top());
@@ -677,7 +662,6 @@ BOOST_AUTO_TEST_CASE(binary_apply) {
   Variable x(vfac.get("x", 8, Signed));
   Variable y(vfac.get("y", 8, Signed));
   Variable z(vfac.get("z", 8, Signed));
-  Variable w(vfac.get("w", 8, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -703,8 +687,6 @@ BOOST_AUTO_TEST_CASE(add_var) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -769,8 +751,6 @@ BOOST_AUTO_TEST_CASE(add_int) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -812,9 +792,6 @@ BOOST_AUTO_TEST_CASE(add_int) {
 BOOST_AUTO_TEST_CASE(set) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
-  Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -839,9 +816,6 @@ BOOST_AUTO_TEST_CASE(set) {
 BOOST_AUTO_TEST_CASE(refine) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
-  Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -867,8 +841,6 @@ BOOST_AUTO_TEST_CASE(forget) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   {
     auto inv = PolymorphicDomain(IntervalDomain::top());
@@ -910,8 +882,6 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   auto inv = PolymorphicDomain(IntervalDomain::top());
   inv.set(x, Interval(Int(1, 32, Signed), Int(2, 32, Signed)));
@@ -933,8 +903,6 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x", 32, Signed));
   Variable y(vfac.get("y", 32, Signed));
-  Variable z(vfac.get("z", 32, Signed));
-  Variable w(vfac.get("w", 32, Signed));
 
   auto inv = PolymorphicDomain(CongruenceDomain::top());
   inv.set(x, Congruence(Int(6, 32, Signed), Int(1, 32, Signed)));

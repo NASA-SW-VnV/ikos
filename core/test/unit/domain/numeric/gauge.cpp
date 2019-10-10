@@ -99,7 +99,6 @@ static bool init_unit_test() {
 
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
@@ -407,9 +406,6 @@ static void test_gauge_semilattice_forget(GaugeSemiLattice x,
 BOOST_AUTO_TEST_CASE(gauge_semilattice_forget) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_gauge_semilattice_forget(GaugeSemiLattice::top(),
                                 x,
@@ -436,7 +432,6 @@ static void test_gauge_semilattice_counter_incr(GaugeSemiLattice x,
 BOOST_AUTO_TEST_CASE(gauge_semilattice_counter_incr) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
@@ -514,8 +509,6 @@ static void test_gauge_semilattice_counter_forget(GaugeSemiLattice x,
 
 BOOST_AUTO_TEST_CASE(gauge_semilattice_counter_forget) {
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
@@ -555,9 +548,6 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_counter_forget) {
 BOOST_AUTO_TEST_CASE(gauge_semilattice_get) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_gauge_semilattice_get(GaugeSemiLattice::top(), x, Gauge::top());
   test_gauge_semilattice_get(GaugeSemiLattice::bottom(), x, Gauge::bottom());
@@ -581,10 +571,7 @@ BOOST_AUTO_TEST_CASE(gauge_semilattice_get) {
 
 BOOST_AUTO_TEST_CASE(gauge_domain_constructors) {
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_gauge_domain(GaugeDomain::bottom(), true, false);
   test_gauge_domain(GaugeDomain::top(), false, true);
@@ -690,9 +677,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_assign) {
 BOOST_AUTO_TEST_CASE(gauge_domain_widening) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -754,9 +739,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening) {
 BOOST_AUTO_TEST_CASE(gauge_domain_widening_narrowing_threshold) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -790,9 +773,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_widening_narrowing_threshold) {
 BOOST_AUTO_TEST_CASE(gauge_domain_add) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -849,9 +830,7 @@ BOOST_AUTO_TEST_CASE(gauge_domain_add) {
 BOOST_AUTO_TEST_CASE(gauge_domain_forget) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -892,9 +871,6 @@ BOOST_AUTO_TEST_CASE(gauge_domain_forget) {
 BOOST_AUTO_TEST_CASE(gauge_domain_set) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeDomain::top();
   d1.assign(x, 0);
@@ -1095,9 +1071,6 @@ BOOST_AUTO_TEST_CASE(gauge_domain_apply_var_var_num) {
   Variable w(vfac.get("w"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
-  Variable zero(vfac.get("zero"));
-  Variable one(vfac.get("one"));
-  Variable two(vfac.get("two"));
 
   auto d1 = GaugeDomain::top();
   d1.counter_init(i, ZNumber(0));

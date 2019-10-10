@@ -133,8 +133,6 @@ BOOST_AUTO_TEST_CASE(test_4) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = Octagon::top();
   inv1.assign(x, 0);
@@ -155,8 +153,6 @@ BOOST_AUTO_TEST_CASE(test_5) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = Octagon::top();
   inv1.add(VariableExpr(y) >= 1);

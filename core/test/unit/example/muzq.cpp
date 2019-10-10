@@ -362,9 +362,6 @@ BOOST_AUTO_TEST_CASE(test5) {
   Variable i1(vfac.get("i1"));
   Variable i2(vfac.get("i2"));
   Variable n(vfac.get("n"));
-  Variable a(vfac.get("A"));
-  Variable tmp1(vfac.get("tmp1"));
-  Variable tmp2(vfac.get("tmp2"));
 
   entry->add_successor(bb1);
   bb1->add_successor(bb1_t);

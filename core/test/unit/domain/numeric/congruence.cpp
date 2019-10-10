@@ -110,8 +110,6 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
 
   auto inv = CongruenceDomain::top();
   BOOST_CHECK(inv.is_top());
@@ -131,7 +129,6 @@ BOOST_AUTO_TEST_CASE(leq) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(CongruenceDomain::bottom().leq(CongruenceDomain::top()));
   BOOST_CHECK(CongruenceDomain::bottom().leq(CongruenceDomain::bottom()));
@@ -182,8 +179,6 @@ BOOST_AUTO_TEST_CASE(equals) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(!CongruenceDomain::bottom().equals(CongruenceDomain::top()));
   BOOST_CHECK(CongruenceDomain::bottom().equals(CongruenceDomain::bottom()));
@@ -216,8 +211,6 @@ BOOST_AUTO_TEST_CASE(join) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((CongruenceDomain::bottom().join(CongruenceDomain::top()) ==
                CongruenceDomain::top()));
@@ -254,8 +247,6 @@ BOOST_AUTO_TEST_CASE(widening) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((CongruenceDomain::bottom().widening(CongruenceDomain::top()) ==
                CongruenceDomain::top()));
@@ -294,8 +285,6 @@ BOOST_AUTO_TEST_CASE(meet) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((CongruenceDomain::bottom().meet(CongruenceDomain::top()) ==
                CongruenceDomain::bottom()));
@@ -337,8 +326,6 @@ BOOST_AUTO_TEST_CASE(narrowing) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((CongruenceDomain::bottom().narrowing(CongruenceDomain::top()) ==
                CongruenceDomain::bottom()));
@@ -381,7 +368,6 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = CongruenceDomain::top();
   auto inv2 = CongruenceDomain::top();
@@ -410,7 +396,6 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = CongruenceDomain::top();
   auto inv2 = CongruenceDomain::top();
@@ -522,7 +507,6 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.add(VariableExpr(x) == 1);
@@ -536,9 +520,6 @@ BOOST_AUTO_TEST_CASE(add) {
 BOOST_AUTO_TEST_CASE(set) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -574,9 +555,6 @@ BOOST_AUTO_TEST_CASE(set) {
 BOOST_AUTO_TEST_CASE(refine) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.refine(x, Congruence(ZNumber(3), ZNumber(1)));
@@ -588,8 +566,6 @@ BOOST_AUTO_TEST_CASE(forget) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.set(x, Congruence(ZNumber(2), ZNumber(1)));
@@ -609,8 +585,6 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.set(x, Congruence(1));
@@ -624,8 +598,6 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.set(x, Congruence(ZNumber(3), ZNumber(0)));
@@ -640,8 +612,6 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = CongruenceDomain::top();
   inv.set(x, Congruence(ZNumber(3), ZNumber(0)));

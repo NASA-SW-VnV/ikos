@@ -108,8 +108,6 @@ BOOST_AUTO_TEST_CASE(iterators) {
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
 
   auto inv = IntervalDomain::top();
   BOOST_CHECK(inv.is_top());
@@ -129,7 +127,6 @@ BOOST_AUTO_TEST_CASE(leq) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(IntervalDomain::bottom().leq(IntervalDomain::top()));
   BOOST_CHECK(IntervalDomain::bottom().leq(IntervalDomain::bottom()));
@@ -180,8 +177,6 @@ BOOST_AUTO_TEST_CASE(equals) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(!IntervalDomain::bottom().equals(IntervalDomain::top()));
   BOOST_CHECK(IntervalDomain::bottom().equals(IntervalDomain::bottom()));
@@ -214,8 +209,6 @@ BOOST_AUTO_TEST_CASE(join) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((IntervalDomain::bottom().join(IntervalDomain::top()) ==
                IntervalDomain::top()));
@@ -251,9 +244,6 @@ BOOST_AUTO_TEST_CASE(join) {
 BOOST_AUTO_TEST_CASE(widening) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((IntervalDomain::bottom().widening(IntervalDomain::top()) ==
                IntervalDomain::top()));
@@ -284,8 +274,6 @@ BOOST_AUTO_TEST_CASE(meet) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((IntervalDomain::bottom().meet(IntervalDomain::top()) ==
                IntervalDomain::bottom()));
@@ -326,9 +314,6 @@ BOOST_AUTO_TEST_CASE(meet) {
 BOOST_AUTO_TEST_CASE(narrowing) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((IntervalDomain::bottom().narrowing(IntervalDomain::top()) ==
                IntervalDomain::bottom()));
@@ -361,7 +346,6 @@ BOOST_AUTO_TEST_CASE(assign) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = IntervalDomain::top();
   auto inv2 = IntervalDomain::top();
@@ -390,7 +374,6 @@ BOOST_AUTO_TEST_CASE(apply) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv1 = IntervalDomain::top();
   auto inv2 = IntervalDomain::top();
@@ -502,7 +485,6 @@ BOOST_AUTO_TEST_CASE(add) {
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
   Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.add(VariableExpr(x) >= 1);
@@ -546,9 +528,6 @@ BOOST_AUTO_TEST_CASE(add) {
 BOOST_AUTO_TEST_CASE(set) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -575,9 +554,6 @@ BOOST_AUTO_TEST_CASE(set) {
 BOOST_AUTO_TEST_CASE(refine) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.refine(x, Interval(Bound(1), Bound(2)));
@@ -611,8 +587,6 @@ BOOST_AUTO_TEST_CASE(forget) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -632,8 +606,6 @@ BOOST_AUTO_TEST_CASE(to_interval) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -648,8 +620,6 @@ BOOST_AUTO_TEST_CASE(to_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));
@@ -664,8 +634,6 @@ BOOST_AUTO_TEST_CASE(to_interval_congruence) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   auto inv = IntervalDomain::top();
   inv.set(x, Interval(Bound(1), Bound(2)));

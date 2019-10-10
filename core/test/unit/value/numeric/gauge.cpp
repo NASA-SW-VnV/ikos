@@ -233,7 +233,6 @@ BOOST_AUTO_TEST_CASE(gauge_bound_neg) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_bound_neg(GaugeBound::plus_infinity(),
                        GaugeBound::minus_infinity());
@@ -252,7 +251,6 @@ BOOST_AUTO_TEST_CASE(gauge_bound_mul) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_bound_mul(GaugeBound::plus_infinity(),
                        2,
@@ -456,8 +454,6 @@ BOOST_AUTO_TEST_CASE(gauge_bound_max) {
 BOOST_AUTO_TEST_CASE(gauge_constructors) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge(Gauge::top(), false, true, false, 0);
   test_gauge(Gauge::bottom(), true, false, false, 0);
@@ -486,8 +482,6 @@ BOOST_AUTO_TEST_CASE(gauge_constructors) {
 BOOST_AUTO_TEST_CASE(gauge_interval) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_interval(Gauge::top(),
                       boost::optional< ZInterval >(ZInterval::top()));
@@ -512,7 +506,6 @@ BOOST_AUTO_TEST_CASE(gauge_leq) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_le(Gauge::top(), Gauge::bottom(), false);
   test_gauge_le(Gauge::top(), Gauge::top(), true);
@@ -577,7 +570,6 @@ BOOST_AUTO_TEST_CASE(gauge_equals) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_eq(Gauge::top(), Gauge::bottom(), false);
   test_gauge_eq(Gauge::top(), Gauge::top(), true);
@@ -642,7 +634,6 @@ BOOST_AUTO_TEST_CASE(gauge_join) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_join(Gauge::top(), Gauge::bottom(), Gauge::top());
   test_gauge_join(Gauge::top(), Gauge::top(), Gauge::top());
@@ -716,7 +707,6 @@ BOOST_AUTO_TEST_CASE(gauge_meet) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_meet(Gauge::top(), Gauge::bottom(), Gauge::bottom());
   test_gauge_meet(Gauge::top(), Gauge::top(), Gauge::top());
@@ -805,8 +795,6 @@ BOOST_AUTO_TEST_CASE(gauge_meet) {
 BOOST_AUTO_TEST_CASE(gauge_neg) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_neg(Gauge::top(), Gauge::top());
   test_gauge_neg(Gauge::bottom(), Gauge::bottom());
@@ -828,7 +816,6 @@ BOOST_AUTO_TEST_CASE(gauge_add) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_add(Gauge::top(), Gauge::bottom(), Gauge::bottom());
   test_gauge_add(Gauge::top(), Gauge::top(), Gauge::top());
@@ -902,7 +889,6 @@ BOOST_AUTO_TEST_CASE(gauge_sub) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_sub(Gauge::top(), Gauge::bottom(), Gauge::bottom());
   test_gauge_sub(Gauge::top(), Gauge::top(), Gauge::top());
@@ -975,8 +961,6 @@ BOOST_AUTO_TEST_CASE(gauge_sub) {
 BOOST_AUTO_TEST_CASE(gauge_mul_cst) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_mul_cst(Gauge::top(), 0, Gauge(0));
   test_gauge_mul_cst(Gauge::top(), 1, Gauge::top());
@@ -1029,7 +1013,6 @@ BOOST_AUTO_TEST_CASE(gauge_mul_intv) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_mul_intv(Gauge::top(), ZInterval::top(), Gauge::top());
   test_gauge_mul_intv(Gauge::top(), ZInterval::bottom(), Gauge::bottom());
@@ -1418,7 +1401,6 @@ BOOST_AUTO_TEST_CASE(gauge_forget) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_forget(Gauge::top(), x, Gauge::top());
   test_gauge_forget(Gauge::bottom(), x, Gauge::bottom());
@@ -1445,7 +1427,6 @@ BOOST_AUTO_TEST_CASE(gauge_coalesce) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
 
   test_gauge_coalesce(Gauge::top(),
                       x,
@@ -1528,9 +1509,6 @@ BOOST_AUTO_TEST_CASE(gauge_coalesce) {
 
 BOOST_AUTO_TEST_CASE(gauge_counter_incr) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
@@ -1602,9 +1580,6 @@ BOOST_AUTO_TEST_CASE(gauge_counter_incr) {
 
 BOOST_AUTO_TEST_CASE(gauge_widening_interpol) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
 
@@ -1932,11 +1907,7 @@ BOOST_AUTO_TEST_CASE(gauge_widening_interpol) {
 
 BOOST_AUTO_TEST_CASE(gauge_widening_interval) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_gauge_widening_interval(Gauge::top(), Gauge::bottom(), Gauge::top());
   test_gauge_widening_interval(Gauge::top(), Gauge::top(), Gauge::top());
@@ -2044,11 +2015,7 @@ BOOST_AUTO_TEST_CASE(gauge_widening_interval) {
 
 BOOST_AUTO_TEST_CASE(gauge_widening_interval_threshold) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_gauge_widening_interval_threshold(Gauge::top(),
                                          Gauge::bottom(),
@@ -2201,11 +2168,7 @@ BOOST_AUTO_TEST_CASE(gauge_widening_interval_threshold) {
 
 BOOST_AUTO_TEST_CASE(gauge_narrowing_interval_threshold) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_gauge_narrowing_interval_threshold(Gauge::top(),
                                           Gauge::bottom(),

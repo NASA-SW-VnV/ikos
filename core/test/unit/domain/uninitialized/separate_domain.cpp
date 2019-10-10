@@ -80,8 +80,6 @@ BOOST_AUTO_TEST_CASE(is_top_and_bottom) {
 
 BOOST_AUTO_TEST_CASE(set_to_top_and_bottom) {
   VariableFactory vfac;
-  Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
 
   auto inv = UninitializedDomain::top();
   BOOST_CHECK(inv.is_top());
@@ -100,8 +98,6 @@ BOOST_AUTO_TEST_CASE(leq) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK(UninitializedDomain::bottom().leq(UninitializedDomain::top()));
   BOOST_CHECK(UninitializedDomain::bottom().leq(UninitializedDomain::bottom()));
@@ -132,9 +128,6 @@ BOOST_AUTO_TEST_CASE(leq) {
 BOOST_AUTO_TEST_CASE(join) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((UninitializedDomain::bottom().join(UninitializedDomain::top()) ==
                UninitializedDomain::top()));
@@ -165,9 +158,6 @@ BOOST_AUTO_TEST_CASE(join) {
 BOOST_AUTO_TEST_CASE(meet) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable w(vfac.get("w"));
 
   BOOST_CHECK((UninitializedDomain::bottom().meet(UninitializedDomain::top()) ==
                UninitializedDomain::bottom()));

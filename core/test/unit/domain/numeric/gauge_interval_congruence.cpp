@@ -73,10 +73,7 @@ using GaugeIntervalCongruenceDomain =
 BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_constructors) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
-  Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   test_domain(GaugeIntervalCongruenceDomain::bottom(), true, false);
   test_domain(GaugeIntervalCongruenceDomain::top(), false, true);
@@ -185,9 +182,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_widening) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -238,9 +233,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_add) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -298,9 +291,7 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_forget) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
   Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.counter_init(i, ZNumber(0));
@@ -342,9 +333,6 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_set) {
   VariableFactory vfac;
   Variable x(vfac.get("x"));
   Variable y(vfac.get("y"));
-  Variable z(vfac.get("z"));
-  Variable i(vfac.get("i"));
-  Variable k(vfac.get("k"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.assign(x, 0);
@@ -508,9 +496,6 @@ BOOST_AUTO_TEST_CASE(gauge_interval_congruence_domain_apply_var_var_num) {
   Variable w(vfac.get("w"));
   Variable i(vfac.get("i"));
   Variable k(vfac.get("k"));
-  Variable zero(vfac.get("zero"));
-  Variable one(vfac.get("one"));
-  Variable two(vfac.get("two"));
 
   auto d1 = GaugeIntervalCongruenceDomain::top();
   d1.counter_init(i, ZNumber(0));
