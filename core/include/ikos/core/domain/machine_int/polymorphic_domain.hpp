@@ -528,19 +528,10 @@ private:
   }; // end class PolymorphicDerived
 
 private:
-  /// \brief Pointer on the polymorphic base class, or nullptr (for bottom)
+  /// \brief Pointer on the polymorphic base class
   std::unique_ptr< PolymorphicBase > _ptr;
 
-private:
-  struct BottomTag {};
-
-  /// \brief Create the bottom abstract value
-  explicit PolymorphicDomain(BottomTag) : _ptr(nullptr) {}
-
 public:
-  /// \brief Create the bottom abstract value
-  static PolymorphicDomain bottom() { return PolymorphicDomain(BottomTag{}); }
-
   /// \brief Create a polymorphic domain with the given abstract value
   template < typename RuntimeDomain >
   explicit PolymorphicDomain(RuntimeDomain inv)
@@ -550,18 +541,14 @@ public:
 
   /// \brief Copy constructor
   PolymorphicDomain(const PolymorphicDomain& other)
-      : _ptr((other._ptr != nullptr) ? other._ptr->clone() : nullptr) {}
+      : _ptr(other._ptr->clone()) {}
 
   /// \brief Move constructor
   PolymorphicDomain(PolymorphicDomain&&) noexcept = default;
 
   /// \brief Copy assignment operator
   PolymorphicDomain& operator=(const PolymorphicDomain& other) {
-    if (other._ptr != nullptr) {
-      this->_ptr = other._ptr->clone();
-    } else {
-      this->_ptr = nullptr;
-    }
+    this->_ptr = other._ptr->clone();
     return *this;
   }
 
@@ -571,356 +558,182 @@ public:
   /// \brief Destructor
   ~PolymorphicDomain() override = default;
 
-  bool is_bottom() const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->is_bottom();
-    } else {
-      return true;
-    }
-  }
+  bool is_bottom() const override { return this->_ptr->is_bottom(); }
 
-  bool is_top() const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->is_top();
-    } else {
-      return false;
-    }
-  }
+  bool is_top() const override { return this->_ptr->is_top(); }
 
-  void set_to_bottom() override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->set_to_bottom();
-    } else {
-      // no-op
-    }
-  }
+  void set_to_bottom() override { this->_ptr->set_to_bottom(); }
 
-  void set_to_top() override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->set_to_top();
-    } else {
-      ikos_unreachable("cannot set bottom to top for PolymorphicDomain");
-    }
-  }
+  void set_to_top() override { this->_ptr->set_to_top(); }
 
   bool leq(const PolymorphicDomain& other) const override {
-    if (this->_ptr == nullptr) {
-      return true;
-    } else if (other._ptr == nullptr) {
-      return this->_ptr->is_bottom();
-    } else {
-      return this->_ptr->leq(*other._ptr);
-    }
+    return this->_ptr->leq(*other._ptr);
   }
 
   bool equals(const PolymorphicDomain& other) const override {
-    if (this->_ptr == nullptr) {
-      return other.is_bottom();
-    } else if (other._ptr == nullptr) {
-      return this->is_bottom();
-    } else {
-      return this->_ptr->equals(*other._ptr);
-    }
+    return this->_ptr->equals(*other._ptr);
   }
 
   void join_with(const PolymorphicDomain& other) override {
-    if (other._ptr == nullptr) {
-      return;
-    } else if (this->_ptr == nullptr) {
-      this->operator=(other);
-    } else {
-      this->_ptr->join_with(*other._ptr);
-    }
+    this->_ptr->join_with(*other._ptr);
   }
 
   void join_loop_with(const PolymorphicDomain& other) override {
-    if (other._ptr == nullptr) {
-      return;
-    } else if (this->_ptr == nullptr) {
-      this->operator=(other);
-    } else {
-      this->_ptr->join_loop_with(*other._ptr);
-    }
+    this->_ptr->join_loop_with(*other._ptr);
   }
 
   void join_iter_with(const PolymorphicDomain& other) override {
-    if (other._ptr == nullptr) {
-      return;
-    } else if (this->_ptr == nullptr) {
-      this->operator=(other);
-    } else {
-      this->_ptr->join_iter_with(*other._ptr);
-    }
+    this->_ptr->join_iter_with(*other._ptr);
   }
 
   void widen_with(const PolymorphicDomain& other) override {
-    if (other._ptr == nullptr) {
-      return;
-    } else if (this->_ptr == nullptr) {
-      this->operator=(other);
-    } else {
-      this->_ptr->widen_with(*other._ptr);
-    }
+    this->_ptr->widen_with(*other._ptr);
   }
 
   void widen_threshold_with(const PolymorphicDomain& other,
                             const MachineInt& threshold) override {
-    if (other._ptr == nullptr) {
-      return;
-    } else if (this->_ptr == nullptr) {
-      this->operator=(other);
-    } else {
-      this->_ptr->widen_threshold_with(*other._ptr, threshold);
-    }
+    this->_ptr->widen_threshold_with(*other._ptr, threshold);
   }
 
   void meet_with(const PolymorphicDomain& other) override {
-    if (this->_ptr == nullptr) {
-      return;
-    } else if (other._ptr == nullptr) {
-      this->_ptr->set_to_bottom();
-    } else {
-      this->_ptr->meet_with(*other._ptr);
-    }
+    this->_ptr->meet_with(*other._ptr);
   }
 
   void narrow_with(const PolymorphicDomain& other) override {
-    if (this->_ptr == nullptr) {
-      return;
-    } else if (other._ptr == nullptr) {
-      this->_ptr->set_to_bottom();
-    } else {
-      this->_ptr->narrow_with(*other._ptr);
-    }
+    this->_ptr->narrow_with(*other._ptr);
   }
 
   void narrow_threshold_with(const PolymorphicDomain& other,
                              const MachineInt& threshold) override {
-    if (this->_ptr == nullptr) {
-      return;
-    } else if (other._ptr == nullptr) {
-      this->_ptr->set_to_bottom();
-    } else {
-      this->_ptr->narrow_threshold_with(*other._ptr, threshold);
-    }
+    this->_ptr->narrow_threshold_with(*other._ptr, threshold);
   }
 
   /// \name Machine integer abstract domain methods
   /// @{
 
   void assign(VariableRef x, const MachineInt& n) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->assign(x, n);
-    }
+    this->_ptr->assign(x, n);
   }
 
   void assign(VariableRef x, VariableRef y) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->assign(x, y);
-    }
+    this->_ptr->assign(x, y);
   }
 
   void assign(VariableRef x, const LinearExpressionT& e) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->assign(x, e);
-    }
+    this->_ptr->assign(x, e);
   }
 
   void apply(UnaryOperator op, VariableRef x, VariableRef y) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->apply(op, x, y);
-    }
+    this->_ptr->apply(op, x, y);
   }
 
   void apply(BinaryOperator op,
              VariableRef x,
              VariableRef y,
              VariableRef z) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->apply(op, x, y, z);
-    }
+    this->_ptr->apply(op, x, y, z);
   }
 
   void apply(BinaryOperator op,
              VariableRef x,
              VariableRef y,
              const MachineInt& z) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->apply(op, x, y, z);
-    }
+    this->_ptr->apply(op, x, y, z);
   }
 
   void apply(BinaryOperator op,
              VariableRef x,
              const MachineInt& y,
              VariableRef z) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->apply(op, x, y, z);
-    }
+    this->_ptr->apply(op, x, y, z);
   }
 
   void add(Predicate pred, VariableRef x, VariableRef y) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->add(pred, x, y);
-    }
+    this->_ptr->add(pred, x, y);
   }
 
   void add(Predicate pred, VariableRef x, const MachineInt& y) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->add(pred, x, y);
-    }
+    this->_ptr->add(pred, x, y);
   }
 
   void add(Predicate pred, const MachineInt& x, VariableRef y) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->add(pred, x, y);
-    }
+    this->_ptr->add(pred, x, y);
   }
 
   void set(VariableRef x, const Interval& value) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->set(x, value);
-    }
+    this->_ptr->set(x, value);
   }
 
   void set(VariableRef x, const Congruence& value) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->set(x, value);
-    }
+    this->_ptr->set(x, value);
   }
 
   void set(VariableRef x, const IntervalCongruence& value) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->set(x, value);
-    }
+    this->_ptr->set(x, value);
   }
 
   void refine(VariableRef x, const Interval& value) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->refine(x, value);
-    }
+    this->_ptr->refine(x, value);
   }
 
   void refine(VariableRef x, const Congruence& value) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->refine(x, value);
-    }
+    this->_ptr->refine(x, value);
   }
 
   void refine(VariableRef x, const IntervalCongruence& value) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->refine(x, value);
-    }
+    this->_ptr->refine(x, value);
   }
 
-  void forget(VariableRef x) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->forget(x);
-    }
-  }
+  void forget(VariableRef x) override { this->_ptr->forget(x); }
 
-  void normalize() const override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->normalize();
-    }
-  }
+  void normalize() const override { this->_ptr->normalize(); }
 
   Interval to_interval(VariableRef x) const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->to_interval(x);
-    } else {
-      return Interval::bottom(VariableTrait::bit_width(x),
-                              VariableTrait::sign(x));
-    }
+    return this->_ptr->to_interval(x);
   }
 
   Interval to_interval(const LinearExpressionT& e) const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->to_interval(e);
-    } else {
-      return Interval::bottom(e.constant().bit_width(), e.constant().sign());
-    }
+    return this->_ptr->to_interval(e);
   }
 
   Congruence to_congruence(VariableRef x) const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->to_congruence(x);
-    } else {
-      return Congruence::bottom(VariableTrait::bit_width(x),
-                                VariableTrait::sign(x));
-    }
+    return this->_ptr->to_congruence(x);
   }
 
   Congruence to_congruence(const LinearExpressionT& e) const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->to_congruence(e);
-    } else {
-      return Congruence::bottom(e.constant().bit_width(), e.constant().sign());
-    }
+    return this->_ptr->to_congruence(e);
   }
 
   IntervalCongruence to_interval_congruence(VariableRef x) const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->to_interval_congruence(x);
-    } else {
-      return IntervalCongruence::bottom(VariableTrait::bit_width(x),
-                                        VariableTrait::sign(x));
-    }
+    return this->_ptr->to_interval_congruence(x);
   }
 
   IntervalCongruence to_interval_congruence(
       const LinearExpressionT& e) const override {
-    if (this->_ptr != nullptr) {
-      return this->_ptr->to_interval_congruence(e);
-    } else {
-      return IntervalCongruence::bottom(e.constant().bit_width(),
-                                        e.constant().sign());
-    }
+    return this->_ptr->to_interval_congruence(e);
   }
 
   /// @}
   /// \name Non-negative loop counter abstract domain methods
   /// @{
 
-  void counter_mark(VariableRef x) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->counter_mark(x);
-    }
-  }
+  void counter_mark(VariableRef x) override { this->_ptr->counter_mark(x); }
 
-  void counter_unmark(VariableRef x) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->counter_unmark(x);
-    }
-  }
+  void counter_unmark(VariableRef x) override { this->_ptr->counter_unmark(x); }
 
   void counter_init(VariableRef x, const MachineInt& c) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->counter_init(x, c);
-    }
+    this->_ptr->counter_init(x, c);
   }
 
   void counter_incr(VariableRef x, const MachineInt& k) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->counter_incr(x, k);
-    }
+    this->_ptr->counter_incr(x, k);
   }
 
-  void counter_forget(VariableRef x) override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->counter_forget(x);
-    }
-  }
+  void counter_forget(VariableRef x) override { this->_ptr->counter_forget(x); }
 
   /// @}
 
-  void dump(std::ostream& o) const override {
-    if (this->_ptr != nullptr) {
-      this->_ptr->dump(o);
-    } else {
-      o << "⊥";
-    }
-  }
+  void dump(std::ostream& o) const override { this->_ptr->dump(o); }
 
   static std::string name() { return "polymorphic domain"; }
 

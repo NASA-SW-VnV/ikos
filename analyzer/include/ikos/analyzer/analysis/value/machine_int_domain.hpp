@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Machine integer abstract domain used by the analyses
+ * \brief Machine integer abstract domain used by the value analysis
  *
  * Author: Maxime Arthaud
  *
@@ -60,88 +60,86 @@ using MachineIntAbstractDomain =
 /// @{
 
 MachineIntAbstractDomain make_top_machine_int_interval();
+MachineIntAbstractDomain make_bottom_machine_int_interval();
+
 MachineIntAbstractDomain make_top_machine_int_congruence();
+MachineIntAbstractDomain make_bottom_machine_int_congruence();
+
 MachineIntAbstractDomain make_top_machine_int_interval_congruence();
+MachineIntAbstractDomain make_bottom_machine_int_interval_congruence();
+
 MachineIntAbstractDomain make_top_machine_int_dbm();
+MachineIntAbstractDomain make_bottom_machine_int_dbm();
+
 MachineIntAbstractDomain make_top_machine_int_var_pack_dbm();
+MachineIntAbstractDomain make_bottom_machine_int_var_pack_dbm();
+
 MachineIntAbstractDomain make_top_machine_int_var_pack_dbm_congruence();
+MachineIntAbstractDomain make_bottom_machine_int_var_pack_dbm_congruence();
+
 MachineIntAbstractDomain make_top_machine_int_gauge();
+MachineIntAbstractDomain make_bottom_machine_int_gauge();
+
 MachineIntAbstractDomain make_top_machine_int_gauge_interval_congruence();
+MachineIntAbstractDomain make_bottom_machine_int_gauge_interval_congruence();
+
 MachineIntAbstractDomain make_top_machine_int_apron_interval();
+MachineIntAbstractDomain make_bottom_machine_int_apron_interval();
+
 MachineIntAbstractDomain make_top_machine_int_apron_octagon();
+MachineIntAbstractDomain make_bottom_machine_int_apron_octagon();
+
 MachineIntAbstractDomain make_top_machine_int_apron_polka_polyhedra();
+MachineIntAbstractDomain make_bottom_machine_int_apron_polka_polyhedra();
+
 MachineIntAbstractDomain make_top_machine_int_apron_polka_linear_equalities();
+MachineIntAbstractDomain
+make_bottom_machine_int_apron_polka_linear_equalities();
+
 MachineIntAbstractDomain make_top_machine_int_apron_ppl_polyhedra();
+MachineIntAbstractDomain make_bottom_machine_int_apron_ppl_polyhedra();
+
 MachineIntAbstractDomain make_top_machine_int_apron_ppl_linear_congruences();
+MachineIntAbstractDomain make_bottom_machine_int_apron_ppl_linear_congruences();
+
 MachineIntAbstractDomain make_top_machine_int_apron_pkgrid_polyhedra_lin_cong();
+MachineIntAbstractDomain
+make_bottom_machine_int_apron_pkgrid_polyhedra_lin_cong();
+
 MachineIntAbstractDomain make_top_machine_int_var_pack_apron_octagon();
+MachineIntAbstractDomain make_bottom_machine_int_var_pack_apron_octagon();
+
 MachineIntAbstractDomain make_top_machine_int_var_pack_apron_polka_polyhedra();
 MachineIntAbstractDomain
+make_bottom_machine_int_var_pack_apron_polka_polyhedra();
+
+MachineIntAbstractDomain
 make_top_machine_int_var_pack_apron_polka_linear_equalities();
+MachineIntAbstractDomain
+make_bottom_machine_int_var_pack_apron_polka_linear_equalities();
+
 MachineIntAbstractDomain make_top_machine_int_var_pack_apron_ppl_polyhedra();
+MachineIntAbstractDomain make_bottom_machine_int_var_pack_apron_ppl_polyhedra();
+
 MachineIntAbstractDomain
 make_top_machine_int_var_pack_apron_ppl_linear_congruences();
 MachineIntAbstractDomain
+make_bottom_machine_int_var_pack_apron_ppl_linear_congruences();
+
+MachineIntAbstractDomain
 make_top_machine_int_var_pack_apron_pkgrid_polyhedra_lin_cong();
+MachineIntAbstractDomain
+make_bottom_machine_int_var_pack_apron_pkgrid_polyhedra_lin_cong();
 
 /// @}
 
-/// \brief Create the bottom machine integer abstract value
-inline MachineIntAbstractDomain make_bottom_machine_int_abstract_value() {
-  return MachineIntAbstractDomain::bottom();
-}
-
 /// \brief Create the top machine integer abstract value of the given choice
-inline MachineIntAbstractDomain make_top_machine_int_abstract_value(
-    MachineIntDomainOption d) {
-  switch (d) {
-    case MachineIntDomainOption::Interval:
-      return make_top_machine_int_interval();
-    case MachineIntDomainOption::Congruence:
-      return make_top_machine_int_congruence();
-    case MachineIntDomainOption::IntervalCongruence:
-      return make_top_machine_int_interval_congruence();
-    case MachineIntDomainOption::DBM:
-      return make_top_machine_int_dbm();
-    case MachineIntDomainOption::VarPackDBM:
-      return make_top_machine_int_var_pack_dbm();
-    case MachineIntDomainOption::VarPackDBMCongruence:
-      return make_top_machine_int_var_pack_dbm_congruence();
-    case MachineIntDomainOption::Gauge:
-      return make_top_machine_int_gauge();
-    case MachineIntDomainOption::GaugeIntervalCongruence:
-      return make_top_machine_int_gauge_interval_congruence();
-    case MachineIntDomainOption::ApronInterval:
-      return make_top_machine_int_apron_interval();
-    case MachineIntDomainOption::ApronOctagon:
-      return make_top_machine_int_apron_octagon();
-    case MachineIntDomainOption::ApronPolkaPolyhedra:
-      return make_top_machine_int_apron_polka_polyhedra();
-    case MachineIntDomainOption::ApronPolkaLinearEqualities:
-      return make_top_machine_int_apron_polka_linear_equalities();
-    case MachineIntDomainOption::ApronPplPolyhedra:
-      return make_top_machine_int_apron_ppl_polyhedra();
-    case MachineIntDomainOption::ApronPplLinearCongruences:
-      return make_top_machine_int_apron_ppl_linear_congruences();
-    case MachineIntDomainOption::ApronPkgridPolyhedraLinearCongruences:
-      return make_top_machine_int_apron_pkgrid_polyhedra_lin_cong();
-    case MachineIntDomainOption::VarPackApronOctagon:
-      return make_top_machine_int_var_pack_apron_octagon();
-    case MachineIntDomainOption::VarPackApronPolkaPolyhedra:
-      return make_top_machine_int_var_pack_apron_polka_polyhedra();
-    case MachineIntDomainOption::VarPackApronPolkaLinearEqualities:
-      return make_top_machine_int_var_pack_apron_polka_linear_equalities();
-    case MachineIntDomainOption::VarPackApronPplPolyhedra:
-      return make_top_machine_int_var_pack_apron_ppl_polyhedra();
-    case MachineIntDomainOption::VarPackApronPplLinearCongruences:
-      return make_top_machine_int_var_pack_apron_ppl_linear_congruences();
-    case MachineIntDomainOption::VarPackApronPkgridPolyhedraLinearCongruences:
-      return make_top_machine_int_var_pack_apron_pkgrid_polyhedra_lin_cong();
-    default: {
-      ikos_unreachable("unreachable");
-    }
-  }
-}
+MachineIntAbstractDomain make_top_machine_int_abstract_value(
+    MachineIntDomainOption domain);
+
+/// \brief Create the bottom machine integer abstract value of the given choice
+MachineIntAbstractDomain make_bottom_machine_int_abstract_value(
+    MachineIntDomainOption domain);
 
 } // end namespace value
 } // end namespace analyzer

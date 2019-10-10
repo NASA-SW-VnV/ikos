@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implement make_top_machine_int_congruence
+ * \brief Implement make_(top|bottom)_machine_int_congruence
  *
  * Author: Maxime Arthaud
  *
@@ -49,9 +49,19 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
+namespace {
+
+using RuntimeMachineIntDomain =
+    core::machine_int::CongruenceDomain< Variable* >;
+
+} // end anonymous namespace
+
 MachineIntAbstractDomain make_top_machine_int_congruence() {
-  return MachineIntAbstractDomain(
-      core::machine_int::CongruenceDomain< Variable* >::top());
+  return MachineIntAbstractDomain(RuntimeMachineIntDomain::top());
+}
+
+MachineIntAbstractDomain make_bottom_machine_int_congruence() {
+  return MachineIntAbstractDomain(RuntimeMachineIntDomain::bottom());
 }
 
 } // end namespace value

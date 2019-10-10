@@ -51,7 +51,8 @@ AbstractDomain make_bottom_abstract_value(Context& ctx) {
   auto bottom = MemoryAbstractDomain(
       ctx.var_factory,
       ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
-                           make_bottom_machine_int_abstract_value(),
+                           make_bottom_machine_int_abstract_value(
+                               ctx.opts.machine_int_domain),
                            NullityAbstractDomain::bottom()),
       LifetimeAbstractDomain::bottom());
   return AbstractDomain(/*normal = */ bottom,
@@ -70,7 +71,8 @@ AbstractDomain make_initial_abstract_value(Context& ctx) {
   auto bottom = MemoryAbstractDomain(
       ctx.var_factory,
       ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
-                           make_bottom_machine_int_abstract_value(),
+                           make_bottom_machine_int_abstract_value(
+                               ctx.opts.machine_int_domain),
                            NullityAbstractDomain::bottom()),
       LifetimeAbstractDomain::bottom());
   return AbstractDomain(/*normal = */ top,

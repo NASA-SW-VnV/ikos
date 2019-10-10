@@ -1,7 +1,8 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implement make_top_machine_int_var_pack_apron_polka_linear_equalities
+ * \brief Implement
+ * make_(top|bottom)_machine_int_var_pack_apron_polka_linear_equalities
  *
  * Author: Maxime Arthaud
  *
@@ -54,18 +55,36 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
+#ifdef HAS_APRON
+namespace {
+
+using RuntimeNumericDomain = core::numeric::VarPackingDomain<
+    ZNumber,
+    Variable*,
+    core::numeric::ApronDomain< core::numeric::apron::PolkaLinearEqualities,
+                                ZNumber,
+                                Variable* > >;
+using RuntimeMachineIntDomain =
+    core::machine_int::NumericDomainAdapter< Variable*, RuntimeNumericDomain >;
+
+} // end anonymous namespace
+#endif
+
 MachineIntAbstractDomain
 make_top_machine_int_var_pack_apron_polka_linear_equalities() {
 #ifdef HAS_APRON
-  using NumericDomain = core::numeric::VarPackingDomain<
-      ZNumber,
-      Variable*,
-      core::numeric::ApronDomain< core::numeric::apron::PolkaLinearEqualities,
-                                  ZNumber,
-                                  Variable* > >;
   return MachineIntAbstractDomain(
-      core::machine_int::NumericDomainAdapter< Variable*, NumericDomain >(
-          NumericDomain::top()));
+      RuntimeMachineIntDomain(RuntimeNumericDomain::top()));
+#else
+  throw LogicError("ikos was compiled without apron support");
+#endif
+}
+
+MachineIntAbstractDomain
+make_bottom_machine_int_var_pack_apron_polka_linear_equalities() {
+#ifdef HAS_APRON
+  return MachineIntAbstractDomain(
+      RuntimeMachineIntDomain(RuntimeNumericDomain::bottom()));
 #else
   throw LogicError("ikos was compiled without apron support");
 #endif

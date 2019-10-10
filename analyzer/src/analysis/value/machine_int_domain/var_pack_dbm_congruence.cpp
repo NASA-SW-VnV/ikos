@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implement make_top_machine_int_var_pack_dbm_congruence
+ * \brief Implement make_(top|bottom)_machine_int_var_pack_dbm_congruence
  *
  * Author: Maxime Arthaud
  *
@@ -50,12 +50,23 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
+namespace {
+
+using RuntimeNumericDomain =
+    core::numeric::VarPackingDBMCongruence< ZNumber, Variable* >;
+using RuntimeMachineIntDomain =
+    core::machine_int::NumericDomainAdapter< Variable*, RuntimeNumericDomain >;
+
+} // end anonymous namespace
+
 MachineIntAbstractDomain make_top_machine_int_var_pack_dbm_congruence() {
-  using NumericDomain =
-      core::numeric::VarPackingDBMCongruence< ZNumber, Variable* >;
   return MachineIntAbstractDomain(
-      core::machine_int::NumericDomainAdapter< Variable*, NumericDomain >(
-          NumericDomain::top()));
+      RuntimeMachineIntDomain(RuntimeNumericDomain::top()));
+}
+
+MachineIntAbstractDomain make_bottom_machine_int_var_pack_dbm_congruence() {
+  return MachineIntAbstractDomain(
+      RuntimeMachineIntDomain(RuntimeNumericDomain::bottom()));
 }
 
 } // end namespace value

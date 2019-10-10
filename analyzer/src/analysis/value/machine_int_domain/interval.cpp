@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implement make_top_machine_int_interval
+ * \brief Implement make_(top|bottom)_machine_int_interval
  *
  * Author: Maxime Arthaud
  *
@@ -49,9 +49,18 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
+namespace {
+
+using RuntimeMachineIntDomain = core::machine_int::IntervalDomain< Variable* >;
+
+} // end anonymous namespace
+
 MachineIntAbstractDomain make_top_machine_int_interval() {
-  return MachineIntAbstractDomain(
-      core::machine_int::IntervalDomain< Variable* >::top());
+  return MachineIntAbstractDomain(RuntimeMachineIntDomain::top());
+}
+
+MachineIntAbstractDomain make_bottom_machine_int_interval() {
+  return MachineIntAbstractDomain(RuntimeMachineIntDomain::bottom());
 }
 
 } // end namespace value

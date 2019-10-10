@@ -201,6 +201,7 @@ add_executable(ikos-analyzer
   src/analysis/value/interprocedural/progress.cpp
   src/analysis/value/intraprocedural/function_fixpoint.cpp
   src/analysis/value/intraprocedural/intraprocedural.cpp
+  src/analysis/value/machine_int_domain.cpp
   src/analysis/value/machine_int_domain/apron_interval.cpp
   src/analysis/value/machine_int_domain/apron_octagon.cpp
   src/analysis/value/machine_int_domain/apron_pkgrid_polyhedra_lin_cong.cpp

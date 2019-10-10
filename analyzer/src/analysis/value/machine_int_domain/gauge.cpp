@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Implement make_top_machine_int_gauge
+ * \brief Implement make_(top|bottom)_machine_int_gauge
  *
  * Author: Maxime Arthaud
  *
@@ -50,11 +50,22 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 
+namespace {
+
+using RuntimeNumericDomain = core::numeric::GaugeDomain< ZNumber, Variable* >;
+using RuntimeMachineIntDomain =
+    core::machine_int::NumericDomainAdapter< Variable*, RuntimeNumericDomain >;
+
+} // end anonymous namespace
+
 MachineIntAbstractDomain make_top_machine_int_gauge() {
-  using NumericDomain = core::numeric::GaugeDomain< ZNumber, Variable* >;
   return MachineIntAbstractDomain(
-      core::machine_int::NumericDomainAdapter< Variable*, NumericDomain >(
-          NumericDomain::top()));
+      RuntimeMachineIntDomain(RuntimeNumericDomain::top()));
+}
+
+MachineIntAbstractDomain make_bottom_machine_int_gauge() {
+  return MachineIntAbstractDomain(
+      RuntimeMachineIntDomain(RuntimeNumericDomain::bottom()));
 }
 
 } // end namespace value
