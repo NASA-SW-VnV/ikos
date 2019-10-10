@@ -1,5 +1,6 @@
 include(AddFlagUtils)
 add_compiler_flag(OPTIONAL "WNO_DISABLED_MACRO_EXPANSION" "-Wno-disabled-macro-expansion")
+add_compiler_flag(OPTIONAL "WNO_UNUSED_VARIABLE" "-Wno-unused-variable")
 add_compiler_flag(OPTIONAL "WNO_USED_BUT_MARKED_UNUSED" "-Wno-used-but-marked-unused")
 add_compiler_flag(OPTIONAL "WNO_REDUNDANT_MOVE" "-Wno-redundant-move")
 

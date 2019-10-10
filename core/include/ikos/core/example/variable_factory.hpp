@@ -51,6 +51,7 @@
 #include <ikos/core/semantic/dumpable.hpp>
 #include <ikos/core/semantic/indexable.hpp>
 #include <ikos/core/semantic/variable.hpp>
+#include <ikos/core/support/assert.hpp>
 
 namespace ikos {
 namespace core {
@@ -78,19 +79,24 @@ public:
     Index _id;
 
   private:
-    struct PrivateTag {};
+    /// \brief Private constructor
+    Variable(std::string name, Index id) : _name(std::move(name)), _id(id) {}
 
   public:
-    /// \brief Private constructor
-    Variable(std::string name, Index id, PrivateTag)
-        : _name(std::move(name)), _id(id) {}
-
-    /// \brief No default constructor, copy constructors, etc.
+    /// \brief Default constructor
     Variable() = delete;
+
+    /// \brief Copy constructor
     Variable(const Variable&) = delete;
-    Variable(Variable&&) = delete;
+
+    /// \brief Move constructor
+    Variable(Variable&&) = default;
+
+    /// \brief Copy assignment operator
     Variable& operator=(const Variable&) = delete;
-    Variable& operator=(Variable&&) = delete;
+
+    /// \brief Move assignment operator
+    Variable& operator=(Variable&&) = default;
 
     /// \brief Destructor
     ~Variable() = default;
@@ -104,10 +110,10 @@ public:
   }; // end class Variable
 
 public:
-  using VariableRef = std::shared_ptr< const Variable >;
+  using VariableRef = const Variable*;
 
 private:
-  using Map = std::unordered_map< std::string, VariableRef >;
+  using Map = std::unordered_map< std::string, Variable >;
 
 private:
   Index _next_id = 1;
@@ -120,10 +126,16 @@ public:
   /// \brief Create a variable factory, starting with the given index
   explicit VariableFactory(Index start_id) : _next_id(start_id) {}
 
-  /// \brief No copy constructor, copy assignment operator, etc.
+  /// \brief Copy constructor
   VariableFactory(const VariableFactory&) = delete;
+
+  /// \brief Move constructor
   VariableFactory(VariableFactory&&) = delete;
+
+  /// \brief Copy assignment operator
   VariableFactory& operator=(const VariableFactory&) = delete;
+
+  /// \brief Move assignment operator
   VariableFactory& operator=(VariableFactory&&) = delete;
 
   /// \brief Destructor
@@ -131,15 +143,15 @@ public:
 
   /// \brief Get the variable reference for the given name
   VariableRef get(const std::string& name) {
+    // This is sound because references are kept valid when using
+    // std::unorderde_map::emplace()
     auto it = this->_map.find(name);
     if (it != this->_map.end()) {
-      return it->second;
+      return &(it->second);
     } else {
-      auto var = std::make_shared< const Variable >(name,
-                                                    this->_next_id++,
-                                                    Variable::PrivateTag{});
-      this->_map.emplace(name, var);
-      return var;
+      auto res = this->_map.emplace(name, Variable(name, this->_next_id++));
+      ikos_assert(res.second);
+      return &(res.first->second);
     }
   }
 
@@ -147,7 +159,7 @@ public:
 
 /// \brief Write a variable on a stream
 inline std::ostream& operator<<(std::ostream& o,
-                                const VariableFactory::VariableRef& var) {
+                                VariableFactory::VariableRef var) {
   o << var->name();
   return o;
 }
@@ -162,7 +174,7 @@ namespace core {
 /// \brief Implement IndexableTraits for example::VariableFactory::VariableRef
 template <>
 struct IndexableTraits< example::VariableFactory::VariableRef > {
-  static Index index(const example::VariableFactory::VariableRef& var) {
+  static Index index(example::VariableFactory::VariableRef var) {
     return var->index();
   }
 };
@@ -170,8 +182,7 @@ struct IndexableTraits< example::VariableFactory::VariableRef > {
 /// \brief Implement DumpableTraits for example::VariableFactory::VariableRef
 template <>
 struct DumpableTraits< example::VariableFactory::VariableRef > {
-  static void dump(std::ostream& o,
-                   const example::VariableFactory::VariableRef& var) {
+  static void dump(std::ostream& o, example::VariableFactory::VariableRef var) {
     o << var->name();
   }
 };
