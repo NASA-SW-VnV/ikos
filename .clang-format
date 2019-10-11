@@ -13,4 +13,5 @@ BinPackArguments: false
 PenaltyBreakBeforeFirstCallParameter: 5000
 PenaltyReturnTypeOnItsOwnLine: 500
 SpacesBeforeTrailingComments: 1
+IncludeBlocks: Preserve
 ---

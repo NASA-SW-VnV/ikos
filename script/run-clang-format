@@ -49,7 +49,7 @@ import sys
 
 
 # Expected clang-format version
-CLANG_FORMAT_VERSION = '8.0.0'
+CLANG_FORMAT_VERSION = '9.0.0'
 
 # Extensions to format
 SOURCE_EXTENSIONS = ('.c', '.cpp', '.h', '.hpp')
