@@ -74,14 +74,14 @@ public:
 
   private:
     std::string _name;
+    Index _id;
     unsigned _bit_width;
     Signedness _sign;
-    Index _id;
 
   private:
     /// \brief Private constructor
-    Variable(std::string name, unsigned bit_width, Signedness sign, Index id)
-        : _name(std::move(name)), _bit_width(bit_width), _sign(sign), _id(id) {}
+    Variable(std::string name, Index id, unsigned bit_width, Signedness sign)
+        : _name(std::move(name)), _id(id), _bit_width(bit_width), _sign(sign) {}
 
   public:
     /// \brief Default constructor
@@ -105,14 +105,14 @@ public:
     /// \brief Return the name of the variable
     const std::string& name() const { return this->_name; }
 
+    /// \brief Return the unique index of the variable
+    Index index() const { return this->_id; }
+
     /// \brief Return the bit-width of the variable
     unsigned bit_width() const { return this->_bit_width; }
 
     /// \brief Return the sign of the variable
     Signedness sign() const { return this->_sign; }
-
-    /// \brief Return the unique index of the variable
-    Index index() const { return this->_id; }
 
   }; // end class Variable
 
@@ -148,19 +148,19 @@ public:
   /// \brief Destructor
   ~VariableFactory() = default;
 
-  /// \brief Get the variable reference for the given string, bit-width and sign
+  /// \brief Get or create a variable with the given name, bit width and sign
   VariableRef get(const std::string& name,
                   unsigned bit_width,
                   Signedness sign) {
     // This is sound because references are kept valid when using
-    // std::unorderde_map::emplace()
+    // std::unordered_map::emplace()
     auto it = this->_map.find(name);
     if (it != this->_map.end()) {
       return &(it->second);
     } else {
       auto res =
           this->_map.emplace(name,
-                             Variable(name, bit_width, sign, this->_next_id++));
+                             Variable(name, this->_next_id++, bit_width, sign));
       ikos_assert(res.second);
       return &(res.first->second);
     }

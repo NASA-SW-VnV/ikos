@@ -1,17 +1,15 @@
 /*******************************************************************************
  *
  * \file
- * \brief Example of variable management
+ * \brief Example of memory location management
  *
- * Author: Arnaud J. Venet
- *
- * Contributors: Maxime Arthaud
+ * Author: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
- * Copyright (c) 2011-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -50,29 +48,26 @@
 
 #include <ikos/core/semantic/dumpable.hpp>
 #include <ikos/core/semantic/indexable.hpp>
-#include <ikos/core/semantic/variable.hpp>
+#include <ikos/core/semantic/memory_location.hpp>
 #include <ikos/core/support/assert.hpp>
 
 namespace ikos {
 namespace core {
 namespace example {
 
-/// \brief Simple variable factory based on strings
+/// \brief Simple memory location factory based on strings
 ///
-/// This is an example of a variable factory.
+/// This is an example of a memory location factory.
 ///
-/// Variables provided by this factory have a name and an index.
+/// Memory locations provided by this factory have a name and an index.
 ///
-/// This factory can be used for any numerical abstract domain (namespace
-/// `numeric`), the nullity domain, the uninitialized domain, etc.
-///
-/// For a factory to use with a machine integer abstract domain (namespace
-/// `machine_int`), see `ikos/core/example/machine_int/variable_factory.hpp`
-class VariableFactory {
+/// This factory can be used for any scalar abstract domain, memory abstract
+/// domain, lifetime abstract domain, etc.
+class MemoryFactory {
 public:
-  class Variable {
+  class MemoryLocation {
   public:
-    friend class VariableFactory;
+    friend class MemoryFactory;
 
   private:
     std::string _name;
@@ -80,87 +75,89 @@ public:
 
   private:
     /// \brief Private constructor
-    Variable(std::string name, Index id) : _name(std::move(name)), _id(id) {}
+    MemoryLocation(std::string name, Index id)
+        : _name(std::move(name)), _id(id) {}
 
   public:
     /// \brief Default constructor
-    Variable() = delete;
+    MemoryLocation() = delete;
 
     /// \brief Copy constructor
-    Variable(const Variable&) = delete;
+    MemoryLocation(const MemoryLocation&) = delete;
 
     /// \brief Move constructor
-    Variable(Variable&&) = default;
+    MemoryLocation(MemoryLocation&&) = default;
 
     /// \brief Copy assignment operator
-    Variable& operator=(const Variable&) = delete;
+    MemoryLocation& operator=(const MemoryLocation&) = delete;
 
     /// \brief Move assignment operator
-    Variable& operator=(Variable&&) = default;
+    MemoryLocation& operator=(MemoryLocation&&) = default;
 
     /// \brief Destructor
-    ~Variable() = default;
+    ~MemoryLocation() = default;
 
-    /// \brief Return the name of the variable
+    /// \brief Return the name of the memory location
     const std::string& name() const { return this->_name; }
 
-    /// \brief Return the unique index of the variable
+    /// \brief Return the unique index of the memory location
     Index index() const { return this->_id; }
 
-  }; // end class Variable
+  }; // end class MemoryLocation
 
 public:
-  using VariableRef = const Variable*;
+  using MemoryLocationRef = const MemoryLocation*;
 
 private:
-  using Map = std::unordered_map< std::string, Variable >;
+  using Map = std::unordered_map< std::string, MemoryLocation >;
 
 private:
   Index _next_id = 1;
   Map _map;
 
 public:
-  /// \brief Create a variable factory
-  VariableFactory() = default;
+  /// \brief Create a memory factory
+  MemoryFactory() = default;
 
-  /// \brief Create a variable factory, starting with the given index
-  explicit VariableFactory(Index start_id) : _next_id(start_id) {}
+  /// \brief Create a memory factory, starting with the given index
+  explicit MemoryFactory(Index start_id) : _next_id(start_id) {}
 
   /// \brief Copy constructor
-  VariableFactory(const VariableFactory&) = delete;
+  MemoryFactory(const MemoryFactory&) = delete;
 
   /// \brief Move constructor
-  VariableFactory(VariableFactory&&) = delete;
+  MemoryFactory(MemoryFactory&&) = delete;
 
   /// \brief Copy assignment operator
-  VariableFactory& operator=(const VariableFactory&) = delete;
+  MemoryFactory& operator=(const MemoryFactory&) = delete;
 
   /// \brief Move assignment operator
-  VariableFactory& operator=(VariableFactory&&) = delete;
+  MemoryFactory& operator=(MemoryFactory&&) = delete;
 
   /// \brief Destructor
-  ~VariableFactory() = default;
+  ~MemoryFactory() = default;
 
-  /// \brief Get or create a variable with the given name
-  VariableRef get(const std::string& name) {
+  /// \brief Get or create a memory location with the given name
+  MemoryLocationRef get(const std::string& name) {
     // This is sound because references are kept valid when using
     // std::unordered_map::emplace()
     auto it = this->_map.find(name);
     if (it != this->_map.end()) {
       return &(it->second);
     } else {
-      auto res = this->_map.emplace(name, Variable(name, this->_next_id++));
+      auto res =
+          this->_map.emplace(name, MemoryLocation(name, this->_next_id++));
       ikos_assert(res.second);
       return &(res.first->second);
     }
   }
 
-}; // end class VariableFactory
+}; // end class MemoryFactory
 
-/// \brief Write a variable on a stream
+/// \brief Write a memory location on a stream
 inline std::ostream& operator<<(std::ostream& o,
-                                VariableFactory::VariableRef var) {
-  o << var->name();
+                                MemoryFactory::MemoryLocationRef m) {
+  o << m->name();
   return o;
 }
 
@@ -171,19 +168,22 @@ inline std::ostream& operator<<(std::ostream& o,
 namespace ikos {
 namespace core {
 
-/// \brief Implement IndexableTraits for example::VariableFactory::VariableRef
+/// \brief Implement IndexableTraits for
+/// example::MemoryFactory::MemoryLocationRef
 template <>
-struct IndexableTraits< example::VariableFactory::VariableRef > {
-  static Index index(example::VariableFactory::VariableRef var) {
-    return var->index();
+struct IndexableTraits< example::MemoryFactory::MemoryLocationRef > {
+  static Index index(example::MemoryFactory::MemoryLocationRef m) {
+    return m->index();
   }
 };
 
-/// \brief Implement DumpableTraits for example::VariableFactory::VariableRef
+/// \brief Implement DumpableTraits for
+/// example::MemoryFactory::MemoryLocationRef
 template <>
-struct DumpableTraits< example::VariableFactory::VariableRef > {
-  static void dump(std::ostream& o, example::VariableFactory::VariableRef var) {
-    o << var->name();
+struct DumpableTraits< example::MemoryFactory::MemoryLocationRef > {
+  static void dump(std::ostream& o,
+                   example::MemoryFactory::MemoryLocationRef m) {
+    o << m->name();
   }
 };
 

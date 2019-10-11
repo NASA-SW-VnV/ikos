@@ -114,9 +114,11 @@ private:
   // * _partitions.size() >= 1
   // * ∀i, !_partitions[i].interval.is_bottom()
   // * ∀i, _partitions[i].interval.ub() < _partitions[i + 1].interval.lb()
-  // * (_variable == boost::none) => (_partitions.size() == 1)
-  // * (_variable == boost::none) => (_partitions[0].interval.is_top())
-  // * (_variable != boost::none) => ∀i, partition = _partitions[i],
+  // * _variable == boost::none =>
+  //     _partitions.size() == 1 &&
+  //     _partitions[0].interval == IntInterval::top(1, Signed)
+  // * _variable != boost::none =>
+  //     ∀i, partition = _partitions[i],
   //     partition.memory.int_to_interval(_variable).leq(partition.interval)
   //
   // After normalization:
@@ -277,7 +279,7 @@ public:
 
     this->partitioning_join();
     this->_variable = boost::none;
-    this->_partitions[0].interval.set_to_top();
+    this->_partitions[0].interval = IntInterval::top(1, Signed);
   }
 
   /// @}
