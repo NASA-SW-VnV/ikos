@@ -141,16 +141,16 @@ public:
               offset_var};
     }
 
-    /// \brief Default constructor
+    /// \brief No default constructor
     Variable() = delete;
 
-    /// \brief Copy constructor
+    /// \brief No copy constructor
     Variable(const Variable&) = delete;
 
     /// \brief Move constructor
     Variable(Variable&&) = default;
 
-    /// \brief Copy assignment operator
+    /// \brief No copy assignment operator
     Variable& operator=(const Variable&) = delete;
 
     /// \brief Move assignment operator
@@ -208,16 +208,16 @@ public:
   /// \brief Create a variable factory, starting with the given index
   explicit VariableFactory(Index start_id) : _next_id(start_id) {}
 
-  /// \brief Copy constructor
+  /// \brief No copy constructor
   VariableFactory(const VariableFactory&) = delete;
 
-  /// \brief Move constructor
+  /// \brief No move constructor
   VariableFactory(VariableFactory&&) = delete;
 
-  /// \brief Copy assignment operator
+  /// \brief No copy assignment operator
   VariableFactory& operator=(const VariableFactory&) = delete;
 
-  /// \brief Move assignment operator
+  /// \brief No move assignment operator
   VariableFactory& operator=(VariableFactory&&) = delete;
 
   /// \brief Destructor

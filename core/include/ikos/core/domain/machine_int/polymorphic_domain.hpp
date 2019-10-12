@@ -99,6 +99,9 @@ private:
     /// \brief Clone the abstract value
     virtual std::unique_ptr< PolymorphicBase > clone() const = 0;
 
+    /// \name Core abstract domain methods
+    /// @{
+
     /// \brief Check if the abstract value is bottom
     virtual bool is_bottom() const = 0;
 
@@ -143,6 +146,10 @@ private:
     /// \brief Perform the narrowing of two abstract values with a threshold
     virtual void narrow_threshold_with(const PolymorphicBase& other,
                                        const MachineInt& threshold) = 0;
+
+    /// @}
+    /// \name Machine integer abstract domain methods
+    /// @{
 
     /// \brief Assign `x = n`
     virtual void assign(VariableRef x, const MachineInt& n) = 0;
@@ -226,6 +233,10 @@ private:
     virtual IntervalCongruence to_interval_congruence(
         const LinearExpressionT& e) const = 0;
 
+    /// @}
+    /// \name Non-negative loop counter abstract domain methods
+    /// @{
+
     /// \brief Mark the variable `x` as a non-negative loop counter
     virtual void counter_mark(VariableRef x) = 0;
 
@@ -241,6 +252,8 @@ private:
 
     /// \brief Forget a non-negative loop counter
     virtual void counter_forget(VariableRef x) = 0;
+
+    /// @}
 
     /// \brief Dump the abstract value, for debugging purpose
     virtual void dump(std::ostream&) const = 0;
@@ -265,21 +278,19 @@ private:
     /// \brief Create an abstract value
     explicit PolymorphicDerived(RuntimeDomain inv) : _inv(std::move(inv)) {}
 
-    /// \brief Clone the abstract value
     std::unique_ptr< PolymorphicBase > clone() const override {
       return std::make_unique< PolymorphicDerivedT >(this->_inv);
     }
 
-    /// \brief Check if the abstract value is bottom
+    /// \name Core abstract domain methods
+    /// @{
+
     bool is_bottom() const override { return this->_inv.is_bottom(); }
 
-    /// \brief Check if the abstract value is top
     bool is_top() const override { return this->_inv.is_top(); }
 
-    /// \brief Set the abstract value to bottom
     void set_to_bottom() override { this->_inv.set_to_bottom(); }
 
-    /// \brief Set the abstract value to top
     void set_to_top() override { this->_inv.set_to_top(); }
 
     /// \brief Check if the parameter has the same runtime domain
@@ -294,50 +305,42 @@ private:
       ikos_ignore(other);
     }
 
-    /// \brief Partial order comparison
     bool leq(const PolymorphicBase& other) const override {
       this->assert_compatible(other);
       return this->_inv.leq(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Equality comparison
     bool equals(const PolymorphicBase& other) const override {
       this->assert_compatible(other);
       return this->_inv.equals(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform the union of two abstract values
     void join_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.join_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform a union on a loop head
     void join_loop_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.join_loop_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform a union on two consecutive iterations of a fix-point
-    /// algorithm
     void join_iter_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.join_iter_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform the widening of two abstract values
     void widen_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.widen_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform the widening of two abstract values with a threshold
     void widen_threshold_with(const PolymorphicBase& other,
                               const MachineInt& threshold) override {
       this->assert_compatible(other);
@@ -347,21 +350,18 @@ private:
                                       threshold);
     }
 
-    /// \brief Perform the intersection of two abstract values
     void meet_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.meet_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform the narrowing of two abstract values
     void narrow_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.narrow_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
-    /// \brief Perform the narrowing of two abstract values with a threshold
     void narrow_threshold_with(const PolymorphicBase& other,
                                const MachineInt& threshold) override {
       this->assert_compatible(other);
@@ -372,27 +372,26 @@ private:
                                  threshold);
     }
 
-    /// \brief Assign `x = n`
+    /// @}
+    /// \name Machine integer abstract domain methods
+    /// @{
+
     void assign(VariableRef x, const MachineInt& n) override {
       this->_inv.assign(x, n);
     }
 
-    /// \brief Assign `x = y`
     void assign(VariableRef x, VariableRef y) override {
       this->_inv.assign(x, y);
     }
 
-    /// \brief Assign `x = e`
     void assign(VariableRef x, const LinearExpressionT& e) override {
       this->_inv.assign(x, e);
     }
 
-    /// \brief Apply `x = op y`
     void apply(UnaryOperator op, VariableRef x, VariableRef y) override {
       this->_inv.apply(op, x, y);
     }
 
-    /// \brief Apply `x = y op z`
     void apply(BinaryOperator op,
                VariableRef x,
                VariableRef y,
@@ -400,7 +399,6 @@ private:
       this->_inv.apply(op, x, y, z);
     }
 
-    /// \brief Apply `x = y op z`
     void apply(BinaryOperator op,
                VariableRef x,
                VariableRef y,
@@ -408,7 +406,6 @@ private:
       this->_inv.apply(op, x, y, z);
     }
 
-    /// \brief Apply `x = y op z`
     void apply(BinaryOperator op,
                VariableRef x,
                const MachineInt& y,
@@ -416,113 +413,95 @@ private:
       this->_inv.apply(op, x, y, z);
     }
 
-    // \brief Add the constraint `x pred y`
     void add(Predicate pred, VariableRef x, VariableRef y) override {
       this->_inv.add(pred, x, y);
     }
 
-    // \brief Add the constraint `x pred y`
     void add(Predicate pred, VariableRef x, const MachineInt& y) override {
       this->_inv.add(pred, x, y);
     }
 
-    // \brief Add the constraint `x pred y`
     void add(Predicate pred, const MachineInt& x, VariableRef y) override {
       this->_inv.add(pred, x, y);
     }
 
-    /// \brief Set the interval value of a variable
     void set(VariableRef x, const Interval& value) override {
       this->_inv.set(x, value);
     }
 
-    /// \brief Set the congruence value of a variable
     void set(VariableRef x, const Congruence& value) override {
       this->_inv.set(x, value);
     }
 
-    /// \brief Set the interval-congruence value of a variable
     void set(VariableRef x, const IntervalCongruence& value) override {
       this->_inv.set(x, value);
     }
 
-    /// \brief Refine the value of a variable with an interval
     void refine(VariableRef x, const Interval& value) override {
       this->_inv.refine(x, value);
     }
 
-    /// \brief Refine the value of a variable with a congruence
     void refine(VariableRef x, const Congruence& value) override {
       this->_inv.refine(x, value);
     }
 
-    /// \brief Refine the value of a variable with an interval-congruence
     void refine(VariableRef x, const IntervalCongruence& value) override {
       this->_inv.refine(x, value);
     }
 
-    /// \brief Forget a variable
     void forget(VariableRef x) override { this->_inv.forget(x); }
 
-    /// \brief Normalize the abstract value
     void normalize() const override { this->_inv.normalize(); }
 
-    /// \brief Projection to an interval
     Interval to_interval(VariableRef x) const override {
       return this->_inv.to_interval(x);
     }
 
-    /// \brief Projection to an interval
     Interval to_interval(const LinearExpressionT& e) const override {
       return this->_inv.to_interval(e);
     }
 
-    /// \brief Projection to a congruence
     Congruence to_congruence(VariableRef x) const override {
       return this->_inv.to_congruence(x);
     }
 
-    /// \brief Projection to a congruence
     Congruence to_congruence(const LinearExpressionT& e) const override {
       return this->_inv.to_congruence(e);
     }
 
-    /// \brief Projection to an interval-congruence
     IntervalCongruence to_interval_congruence(VariableRef x) const override {
       return this->_inv.to_interval_congruence(x);
     }
 
-    /// \brief Projection to an interval-congruence
     IntervalCongruence to_interval_congruence(
         const LinearExpressionT& e) const override {
       return this->_inv.to_interval_congruence(e);
     }
 
-    /// \brief Mark the variable `x` as a non-negative loop counter
+    /// @}
+    /// \name Non-negative loop counter abstract domain methods
+    /// @{
+
     void counter_mark(VariableRef x) override { this->_inv.counter_mark(x); }
 
-    /// \brief Mark the variable `x` as a normal variable, without losing
-    /// information
     void counter_unmark(VariableRef x) override {
       this->_inv.counter_unmark(x);
     }
 
-    /// \brief Initialize a non-negative loop counter: `x = c`
     void counter_init(VariableRef x, const MachineInt& c) override {
       this->_inv.counter_init(x, c);
     }
 
-    /// \brief Increment a non-negative loop counter counter: `x += k`
     void counter_incr(VariableRef x, const MachineInt& k) override {
       this->_inv.counter_incr(x, k);
     }
 
-    /// \brief Forget a non-negative loop counter
     void counter_forget(VariableRef x) override {
       this->_inv.counter_forget(x);
     }
 
-    /// \brief Dump the abstract value, for debugging purpose
+    /// @}
+
     void dump(std::ostream& o) const override { this->_inv.dump(o); }
 
   }; // end class PolymorphicDerived
@@ -557,6 +536,9 @@ public:
 
   /// \brief Destructor
   ~PolymorphicDomain() override = default;
+
+  /// \name Core abstract domain methods
+  /// @{
 
   bool is_bottom() const override { return this->_ptr->is_bottom(); }
 
@@ -608,6 +590,7 @@ public:
     this->_ptr->narrow_threshold_with(*other._ptr, threshold);
   }
 
+  /// @}
   /// \name Machine integer abstract domain methods
   /// @{
 

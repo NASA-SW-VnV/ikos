@@ -1090,6 +1090,7 @@ public:
     ikos_assert_msg(!this->is_bottom(),
                     "trying to call dynamic_is_null() on bottom");
 
+    ikos_ignore(x);
     return false;
   }
 

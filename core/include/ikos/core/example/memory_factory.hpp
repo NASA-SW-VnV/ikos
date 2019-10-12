@@ -79,16 +79,16 @@ public:
         : _name(std::move(name)), _id(id) {}
 
   public:
-    /// \brief Default constructor
+    /// \brief No default constructor
     MemoryLocation() = delete;
 
-    /// \brief Copy constructor
+    /// \brief No copy constructor
     MemoryLocation(const MemoryLocation&) = delete;
 
     /// \brief Move constructor
     MemoryLocation(MemoryLocation&&) = default;
 
-    /// \brief Copy assignment operator
+    /// \brief No copy assignment operator
     MemoryLocation& operator=(const MemoryLocation&) = delete;
 
     /// \brief Move assignment operator
@@ -122,16 +122,16 @@ public:
   /// \brief Create a memory factory, starting with the given index
   explicit MemoryFactory(Index start_id) : _next_id(start_id) {}
 
-  /// \brief Copy constructor
+  /// \brief No copy constructor
   MemoryFactory(const MemoryFactory&) = delete;
 
-  /// \brief Move constructor
+  /// \brief No move constructor
   MemoryFactory(MemoryFactory&&) = delete;
 
-  /// \brief Copy assignment operator
+  /// \brief No copy assignment operator
   MemoryFactory& operator=(const MemoryFactory&) = delete;
 
-  /// \brief Move assignment operator
+  /// \brief No move assignment operator
   MemoryFactory& operator=(MemoryFactory&&) = delete;
 
   /// \brief Destructor
