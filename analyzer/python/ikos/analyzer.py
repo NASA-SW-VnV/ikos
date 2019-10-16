@@ -206,6 +206,14 @@ def parse_arguments(argv):
                           help='Perform a fixed number of narrowing'
                                ' iterations',
                           type=args.Integer(min=0))
+    analysis.add_argument('--partitioning',
+                          dest='partitioning',
+                          metavar='',
+                          help=args.help('Partitioning strategy:',
+                                         args.partitioning_strategies,
+                                         args.default_partitioning_strategy),
+                          choices=args.choices(args.partitioning_strategies),
+                          default=args.default_partitioning_strategy)
     analysis.add_argument('--hardware-addresses',
                           dest='hardware_addresses',
                           metavar='',
@@ -778,6 +786,8 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-widening-hints')
     if opt.no_fixpoint_cache:
         cmd.append('-no-fixpoint-cache')
+    if opt.partitioning != 'no':
+        cmd.append('-enable-partitioning-domain')
     if opt.hardware_addresses:
         cmd.append('-hardware-addresses=%s' % ','.join(opt.hardware_addresses))
     if opt.hardware_addresses_file:
@@ -805,6 +815,8 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-simplify-upcast-comparison')
     if 'gauge' in opt.domain:
         cmd.append('-add-loop-counters')
+    if opt.partitioning == 'return':
+        cmd.append('-add-partitioning-variables')
 
     # debug options
     cmd += ['-display-checks=%s' % opt.display_checks,

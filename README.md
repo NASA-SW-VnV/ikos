@@ -200,6 +200,7 @@ Further information:
   - [Optimization level](analyzer/README.md#optimization-level)
   - [Inter-procedural vs Intra-procedural](analyzer/README.md#inter-procedural-vs-intra-procedural)
   - [Fixpoint engine parameters](analyzer/README.md#fixpoint-engine-parameters)
+  - [Partitioning](analyzer/README.md#partitioning)
   - [Hardware addresses](analyzer/README.md#hardware-addresses)
   - [Other analysis options](analyzer/README.md#other-analysis-options)
 * [Report Options](analyzer/README.md#report-options)

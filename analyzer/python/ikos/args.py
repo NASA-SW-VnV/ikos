@@ -282,6 +282,14 @@ default_widening_period = 1
 
 meet_iterations_if_no_narrowing = 2
 
+partitioning_strategies = (
+    ('return', 'Partition the states on function return values'),
+    ('manual', 'Partition the states manually'),
+    ('no', 'Disable partitioning'),
+)
+
+default_partitioning_strategy = 'no'
+
 # Preprocessing options choices
 
 opt_levels = (

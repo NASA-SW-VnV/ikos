@@ -41,43 +41,104 @@
  *
  ******************************************************************************/
 
+#include <ikos/core/domain/lifetime/separate_domain.hpp>
+#include <ikos/core/domain/memory/partitioning.hpp>
+#include <ikos/core/domain/memory/value.hpp>
+#include <ikos/core/domain/nullity/separate_domain.hpp>
+#include <ikos/core/domain/scalar/composite.hpp>
+#include <ikos/core/domain/uninitialized/separate_domain.hpp>
+
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
+#include <ikos/analyzer/analysis/value/machine_int_domain.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
 
-AbstractDomain make_bottom_abstract_value(Context& ctx) {
-  auto bottom = MemoryAbstractDomain(
+namespace {
+
+/// \brief Uninitialized abstract domain
+using UninitializedAbstractDomain =
+    core::uninitialized::SeparateDomain< Variable* >;
+
+/// \brief Nullity abstract domain
+using NullityAbstractDomain = core::nullity::SeparateDomain< Variable* >;
+
+/// \brief Scalar abstract domain
+using ScalarAbstractDomain =
+    core::scalar::CompositeDomain< Variable*,
+                                   MemoryLocation*,
+                                   UninitializedAbstractDomain,
+                                   MachineIntAbstractDomain,
+                                   NullityAbstractDomain >;
+
+/// \brief Lifetime abstract domain
+using LifetimeAbstractDomain =
+    core::lifetime::SeparateDomain< MemoryLocation* >;
+
+/// \brief Value abstract domain
+using ValueAbstractDomain = core::memory::ValueDomain< Variable*,
+                                                       MemoryLocation*,
+                                                       VariableFactory*,
+                                                       ScalarAbstractDomain,
+                                                       LifetimeAbstractDomain >;
+
+/// \brief Partitioning abstract domain
+using PartitioningAbstractDomain = core::memory::
+    PartitioningDomain< Variable*, MemoryLocation*, ValueAbstractDomain >;
+
+/// \brief Create the bottom memory abstract value
+MemoryAbstractDomain make_bottom_memory_abstract_value(Context& ctx) {
+  auto inv = ValueAbstractDomain(
       ctx.var_factory,
       ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
                            make_bottom_machine_int_abstract_value(
                                ctx.opts.machine_int_domain),
                            NullityAbstractDomain::bottom()),
       LifetimeAbstractDomain::bottom());
-  return AbstractDomain(/*normal = */ bottom,
-                        /*caught_exceptions = */ bottom,
-                        /*propagated_exceptions = */ bottom);
+
+  if (ctx.opts.use_partitioning_domain) {
+    return MemoryAbstractDomain(PartitioningAbstractDomain(inv));
+  } else {
+    return MemoryAbstractDomain(inv);
+  }
 }
 
-AbstractDomain make_initial_abstract_value(Context& ctx) {
-  auto top = MemoryAbstractDomain(
+/// \brief Create the top memory abstract value
+MemoryAbstractDomain make_top_memory_abstract_value(Context& ctx) {
+  auto inv = ValueAbstractDomain(
       ctx.var_factory,
       ScalarAbstractDomain(UninitializedAbstractDomain::top(),
                            make_top_machine_int_abstract_value(
                                ctx.opts.machine_int_domain),
                            NullityAbstractDomain::top()),
       LifetimeAbstractDomain::top());
-  auto bottom = MemoryAbstractDomain(
-      ctx.var_factory,
-      ScalarAbstractDomain(UninitializedAbstractDomain::bottom(),
-                           make_bottom_machine_int_abstract_value(
-                               ctx.opts.machine_int_domain),
-                           NullityAbstractDomain::bottom()),
-      LifetimeAbstractDomain::bottom());
-  return AbstractDomain(/*normal = */ top,
-                        /*caught_exceptions = */ bottom,
-                        /*propagated_exceptions = */ bottom);
+
+  if (ctx.opts.use_partitioning_domain) {
+    return MemoryAbstractDomain(PartitioningAbstractDomain(inv));
+  } else {
+    return MemoryAbstractDomain(inv);
+  }
+}
+
+} // end anonymous namespace
+
+AbstractDomain make_bottom_abstract_value(Context& ctx) {
+  return AbstractDomain(/* normal = */
+                        make_bottom_memory_abstract_value(ctx),
+                        /* caught_exceptions = */
+                        make_bottom_memory_abstract_value(ctx),
+                        /* propagated_exceptions = */
+                        make_bottom_memory_abstract_value(ctx));
+}
+
+AbstractDomain make_initial_abstract_value(Context& ctx) {
+  return AbstractDomain(/* normal = */
+                        make_top_memory_abstract_value(ctx),
+                        /* caught_exceptions = */
+                        make_bottom_memory_abstract_value(ctx),
+                        /* propagated_exceptions = */
+                        make_bottom_memory_abstract_value(ctx));
 }
 
 } // end namespace value

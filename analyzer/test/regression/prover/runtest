@@ -190,4 +190,8 @@ if __name__ == '__main__':
                             (27, 'warning'),
                             (28, 'warning'),
                             (29, 'ok', 'warning')]))
+    t.add(Test('test-27.c', 'test-27.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('test-27.c', 'test-27.c (partitioning=return)', 'prover', 'safe',
+               options=['-add-partitioning-variables',
+                        '-enable-partitioning-domain']))
     t.run()

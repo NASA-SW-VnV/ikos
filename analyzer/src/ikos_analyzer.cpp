@@ -62,6 +62,7 @@
 #include <ikos/ar/format/formatter.hpp>
 #include <ikos/ar/format/text.hpp>
 #include <ikos/ar/pass/add_loop_counters.hpp>
+#include <ikos/ar/pass/add_partitioning_variables.hpp>
 #include <ikos/ar/pass/name_values.hpp>
 #include <ikos/ar/pass/simplify_cfg.hpp>
 #include <ikos/ar/pass/simplify_upcast_comparison.hpp>
@@ -421,6 +422,11 @@ static llvm::cl::opt< bool > NoFixpointCache(
     llvm::cl::desc("Disable the cache of fixpoints"),
     llvm::cl::cat(AnalysisCategory));
 
+static llvm::cl::opt< bool > EnablePartitioningDomain(
+    "enable-partitioning-domain",
+    llvm::cl::desc("Enable the partitioning abstract domain"),
+    llvm::cl::cat(AnalysisCategory));
+
 static llvm::cl::opt< analyzer::GlobalsInitPolicy > GlobalsInitPolicy(
     "globals-init",
     llvm::cl::desc("Policy of initialization for global variables"),
@@ -510,6 +516,11 @@ static llvm::cl::opt< bool > NoSimplifyCFG(
 static llvm::cl::opt< bool > AddLoopCounters(
     "add-loop-counters",
     llvm::cl::desc("Add a loop counter in each cycle"),
+    llvm::cl::cat(PassCategory));
+
+static llvm::cl::opt< bool > AddPartitioningVariables(
+    "add-partitioning-variables",
+    llvm::cl::desc("Add partitioning variable annotations on return variables"),
     llvm::cl::cat(PassCategory));
 
 static llvm::cl::opt< bool > NameValues(
@@ -783,6 +794,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .use_pointer = !NoPointer,
       .use_widening_hints = !NoWideningHints,
       .use_fixpoint_cache = !NoFixpointCache,
+      .use_partitioning_domain = EnablePartitioningDomain,
       .globals_init_policy = GlobalsInitPolicy,
       .progress = Progress,
       .display_invariants = DisplayInvariants,
@@ -949,6 +961,14 @@ int main(int argc, char** argv) {
       analyzer::ScopeTimerDatabase t(output_db.times,
                                      "ikos-analyzer.add-loop-counters");
       ar::AddLoopCountersPass().run(bundle);
+    }
+
+    // Add partitioning variable annotations, for the Partitioning domain
+    if (AddPartitioningVariables) {
+      analyzer::log::debug("Running add-partitioning-variables pass on AR");
+      analyzer::ScopeTimerDatabase
+          t(output_db.times, "ikos-analyzer.add-partitioning-variables");
+      ar::AddPartitioningVariablesPass().run(bundle);
     }
 
     // Simplify upcast comparison loop

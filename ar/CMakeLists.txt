@@ -127,6 +127,7 @@ add_library(ikos-ar
   src/format/namer.cpp
   src/format/text.cpp
   src/pass/add_loop_counters.cpp
+  src/pass/add_partitioning_variables.cpp
   src/pass/name_values.cpp
   src/pass/pass.cpp
   src/pass/simplify_cfg.cpp

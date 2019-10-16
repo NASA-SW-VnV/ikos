@@ -194,6 +194,7 @@ private:
     // Start from the end for efficiency.
     for (auto it = this->_partitions.end(); it != this->_partitions.begin();) {
       --it;
+      it->memory.normalize();
       IntInterval interval = it->memory.int_to_interval(*this->_variable);
 
       if (interval.is_bottom()) {

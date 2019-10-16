@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Abstract domain for the value analysis
+ * \brief Add Partitioning Variables pass
  *
  * Author: Maxime Arthaud
  *
@@ -9,7 +9,7 @@
  *
  * Notices:
  *
- * Copyright (c) 2011-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -43,30 +43,39 @@
 
 #pragma once
 
-#include <ikos/core/domain/exception/exception.hpp>
-#include <ikos/core/domain/memory/polymorphic_domain.hpp>
-
-#include <ikos/analyzer/analysis/context.hpp>
-#include <ikos/analyzer/analysis/memory_location.hpp>
-#include <ikos/analyzer/analysis/variable.hpp>
+#include <ikos/ar/pass/pass.hpp>
 
 namespace ikos {
-namespace analyzer {
-namespace value {
+namespace ar {
 
-/// \brief Memory abstract domain for the value analysis
-using MemoryAbstractDomain =
-    core::memory::PolymorphicDomain< Variable*, MemoryLocation* >;
+/// \brief Add Partitioning Variables pass
+///
+/// This pass adds annotations to functions that return an error code. It
+/// detects integer variables containing the error code and adds calls to the
+/// `ikos.partitioning.var.*` intrinsic functions.
+class AddPartitioningVariablesPass final : public Pass {
+public:
+  /// \brief Default constructor
+  AddPartitioningVariablesPass() = default;
 
-/// \brief Abstract domain for the value analysis
-using AbstractDomain = core::exception::ExceptionDomain< MemoryAbstractDomain >;
+  /// \brief Get the pass name
+  const char* name() const override;
 
-/// \brief Create the bottom abstract value
-AbstractDomain make_bottom_abstract_value(Context& ctx);
+  /// \brief Get the pass description
+  const char* description() const override;
 
-/// \brief Create the initial abstract value
-AbstractDomain make_initial_abstract_value(Context& ctx);
+  /// \brief Run the pass on the given Bundle
+  ///
+  /// Returns true if the bundle has been updated
+  bool run(Bundle*) override;
 
-} // end namespace value
-} // end namespace analyzer
+private:
+  /// \brief Run the pass on the given function
+  ///
+  /// Returns true if the function has been updated
+  bool run_on_function(Function*);
+
+}; // end class AddPartitioningVariablesPass
+
+} // end namespace ar
 } // end namespace ikos

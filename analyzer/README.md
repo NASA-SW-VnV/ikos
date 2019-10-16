@@ -22,6 +22,7 @@ Table of contents
   - [Optimization level](#optimization-level)
   - [Inter-procedural vs Intra-procedural](#inter-procedural-vs-intra-procedural)
   - [Fixpoint engine parameters](#fixpoint-engine-parameters)
+  - [Partitioning](#partitioning)
   - [Hardware addresses](#hardware-addresses)
   - [Other analysis options](#other-analysis-options)
 * [Report Options](#report-options)
@@ -378,6 +379,36 @@ The narrowing strategy can be set using `--narrowing-strategy=`:
 You can specify a fixed number of narrowing iterations to perform using `--narrowing-iterations`.
 
 You can specify the widening delay for a given function using `--widening-delay-functions`. For instance, `--widening-delay-functions="main:10, f:32"`.
+
+### Partitioning
+
+The analyzer can use abstract domain partitioning based on integer variables using the `--partitioning` option.
+
+Using `--partitioning=return`, the analyzer will split the states at the end of a function according to the function return codes.
+
+This can be used to improve the precision of the analysis on the following code pattern:
+```c
+int init() {
+    int status = xxx();
+    if (status < 0) {
+      return -1; // Error in xxx
+    }
+
+    status = yyy();
+    if (status < 0) {
+      return -2; // Error in yyy
+    }
+
+    zzz();
+
+    return 0; // Success
+}
+```
+Instead of performing the abstract union and lose precision, the analyzer will keep 3 invariants for each outcome of the `init` function.
+
+Using `--partitioning=manual`, the analyzer will split the states according to the values of a given integer variable, set with `__ikos_partitioning_var_int(x)`.
+
+By default, partitioning is disabled.
 
 ### Hardware addresses
 

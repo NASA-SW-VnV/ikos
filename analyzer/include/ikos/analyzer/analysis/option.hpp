@@ -326,6 +326,9 @@ public:
   /// \brief Wether we should save fixpoints on called functions or not
   bool use_fixpoint_cache;
 
+  /// \brief Wether we should use the partitioning abstract domain or not
+  bool use_partitioning_domain;
+
   /// \brief Policy of initialization for global variables
   GlobalsInitPolicy globals_init_policy;
 
