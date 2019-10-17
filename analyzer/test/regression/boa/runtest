@@ -284,4 +284,8 @@ if __name__ == '__main__':
                options=['--widening-delay-functions=f2:100'],
                line_checks=[(6, 'ok', 'warning'),
                             (15, 'ok')]))
+    t.add(Test('test-69.c', 'test-69.c', 'boa', 'safe', expected='unsafe'))
+    t.add(Test('test-69.c', 'test-69.c (partitioning=return)', 'boa', 'safe',
+               options=['-add-partitioning-variables',
+                        '-enable-partitioning-domain']))
     t.run()
