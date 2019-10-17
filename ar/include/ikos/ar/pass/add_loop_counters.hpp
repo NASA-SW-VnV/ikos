@@ -65,6 +65,11 @@ public:
   /// \brief Get the pass description
   const char* description() const override;
 
+  /// \brief Run the pass on the given Bundle
+  ///
+  /// Returns true if the bundle has been updated
+  bool run(Bundle*) override;
+
 private:
   /// \brief Run the pass on the given Code
   ///

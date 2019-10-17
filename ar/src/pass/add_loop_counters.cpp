@@ -64,6 +64,14 @@ const char* AddLoopCountersPass::description() const {
   return "Add loop counters";
 }
 
+bool AddLoopCountersPass::run(Bundle* bundle) {
+  // Create the counter intrinsic functions before iterating on codes
+  bundle->intrinsic_function(Intrinsic::IkosCounterInit);
+  bundle->intrinsic_function(Intrinsic::IkosCounterIncr);
+
+  return CodePass::run(bundle);
+}
+
 namespace {
 
 /// \brief Iterate over the components in the control flow graph

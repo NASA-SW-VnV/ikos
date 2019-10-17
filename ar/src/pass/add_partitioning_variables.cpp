@@ -64,6 +64,9 @@ const char* AddPartitioningVariablesPass::description() const {
 }
 
 bool AddPartitioningVariablesPass::run(Bundle* bundle) {
+  // Create the partitioning intrinsic function before iterating on the bundle
+  bundle->intrinsic_function(Intrinsic::IkosPartitioningVarSi32);
+
   bool change = false;
 
   for (auto it = bundle->function_begin(), et = bundle->function_end();
