@@ -171,6 +171,8 @@ bool compare(Predicate pred, const T& lhs, const T& rhs) {
       return lhs < rhs;
     case Predicate::LE:
       return lhs <= rhs;
+    default:
+      ikos_unreachable("unreachable");
   }
 }
 

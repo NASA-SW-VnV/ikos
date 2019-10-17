@@ -122,10 +122,10 @@ void MemoryWatchChecker::check_call(ar::CallBase* call,
     // Call to assembly
     this->check_unknown_extern_call(call, inv);
     return;
-  } else if (auto gv = dyn_cast< ar::GlobalVariable >(call->called())) {
+  } else if (isa< ar::GlobalVariable >(call->called())) {
     // Call to global variable: error
     return;
-  } else if (auto lv = dyn_cast< ar::LocalVariable >(call->called())) {
+  } else if (isa< ar::LocalVariable >(call->called())) {
     // Call to local variable: error
     return;
   } else if (isa< ar::InternalVariable >(call->called())) {
