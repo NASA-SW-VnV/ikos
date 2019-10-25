@@ -288,4 +288,5 @@ if __name__ == '__main__':
     t.add(Test('test-69.c', 'test-69.c (partitioning=return)', 'boa', 'safe',
                options=['-add-partitioning-variables',
                         '-enable-partitioning-domain']))
+    t.add(Test('test-70.c', 'test-70.c', 'boa', 'safe'))
     t.run()

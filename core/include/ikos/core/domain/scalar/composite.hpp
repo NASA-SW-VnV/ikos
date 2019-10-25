@@ -833,7 +833,10 @@ public:
     this->_uninitialized.assign_initialized(p);
     this->_nullity.assign_null(p);
     this->_points_to_map.set(p, PointsToSetT::empty());
-    this->_integer.forget(ScalarVariableTrait::offset_var(p));
+    VariableRef offset = ScalarVariableTrait::offset_var(p);
+    this->_integer.assign(offset,
+                          MachineInt::zero(IntVariableTrait::bit_width(offset),
+                                           IntVariableTrait::sign(offset)));
   }
 
   void pointer_assign_undef(VariableRef p) override {
@@ -1341,7 +1344,10 @@ public:
     this->_integer.forget(x);
     this->_nullity.assign_null(x);
     this->_points_to_map.set(x, PointsToSetT::empty());
-    this->_integer.forget(ScalarVariableTrait::offset_var(x));
+    VariableRef offset = ScalarVariableTrait::offset_var(x);
+    this->_integer.assign(offset,
+                          MachineInt::zero(IntVariableTrait::bit_width(offset),
+                                           IntVariableTrait::sign(offset)));
   }
 
   void dynamic_write_pointer(VariableRef x,
