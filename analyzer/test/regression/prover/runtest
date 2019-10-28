@@ -194,4 +194,12 @@ if __name__ == '__main__':
     t.add(Test('test-27.c', 'test-27.c (partitioning=return)', 'prover', 'safe',
                options=['-add-partitioning-variables',
                         '-enable-partitioning-domain']))
+    t.add(Test('test-28.c', 'test-28.c', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('test-28.c', 'test-28.c (partitioning=return)', 'prover', 'safe',
+               options=['-add-partitioning-variables',
+                        '-enable-partitioning-domain']))
+    t.add(Test('test-29.cpp', 'test-29.cpp', 'prover', 'safe', expected='unsafe'))
+    t.add(Test('test-29.cpp', 'test-29.cpp (partitioning=return)', 'prover', 'safe',
+               options=['-add-partitioning-variables',
+                        '-enable-partitioning-domain']))
     t.run()

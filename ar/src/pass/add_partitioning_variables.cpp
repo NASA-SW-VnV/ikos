@@ -90,6 +90,7 @@ struct BasicBlockVarPair {
 
 bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
   if (fun->is_declaration()) {
+    // Function has no implementation
     return false;
   }
 
@@ -108,14 +109,44 @@ bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
   }
 
   BasicBlock* exit_block = body->exit_block();
+  BasicBlock* return_block = nullptr;
   if (exit_block->empty()) {
-    // Exit block is empty
+    // Exit block is empty, check the predecessors
+    for (auto it = exit_block->predecessor_begin(),
+              et = exit_block->predecessor_end();
+         it != et;
+         ++it) {
+      BasicBlock* bb = *it;
+
+      if (bb->empty()) {
+        // Predecessor is empty
+        return false;
+      }
+
+      if (isa< Unreachable >(bb->back())) {
+        // Predecessor with an unreachable statement, ignore
+        continue;
+      }
+
+      if (return_block != nullptr) {
+        // Multiple return blocks
+        return false;
+      }
+
+      return_block = bb;
+    }
+  } else {
+    return_block = exit_block;
+  }
+
+  if (return_block == nullptr) {
+    // Function has no return block
     return false;
   }
 
-  auto return_stmt = dyn_cast< ReturnValue >(exit_block->back());
+  auto return_stmt = dyn_cast< ReturnValue >(return_block->back());
   if (return_stmt == nullptr) {
-    // Exit block does not end with a return
+    // Return block does not end with a return
     return false;
   }
 
@@ -131,7 +162,7 @@ bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
   }
 
   // Check if the return variable is defined in multiple basic blocks
-  BasicBlock* bb = exit_block;
+  BasicBlock* bb = return_block;
   InternalVariable* var = return_var;
 
   while (bb != nullptr) {
@@ -172,7 +203,7 @@ bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
 
   // List of predecessors that define the return variable
   std::vector< BasicBlockVarPair > preds = {
-      BasicBlockVarPair{exit_block, return_var}};
+      BasicBlockVarPair{return_block, return_var}};
 
   // List of basic blocks already seen
   std::unordered_set< BasicBlock* > seen;
