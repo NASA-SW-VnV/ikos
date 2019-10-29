@@ -224,8 +224,7 @@ void MemoryWatchChecker::check_intrinsic_call(
     // <ikos/analyzer/intrinsic.h>
     case ar::Intrinsic::IkosAssert:
     case ar::Intrinsic::IkosAssume:
-    case ar::Intrinsic::IkosNonDetSi32:
-    case ar::Intrinsic::IkosNonDetUi32:
+    case ar::Intrinsic::IkosNonDet:
     case ar::Intrinsic::IkosCounterInit:
     case ar::Intrinsic::IkosCounterIncr:
     case ar::Intrinsic::IkosCheckMemAccess:
@@ -237,7 +236,7 @@ void MemoryWatchChecker::check_intrinsic_call(
       this->check_mem_write(call, call->argument(0), call->argument(1), inv);
     } break;
     case ar::Intrinsic::IkosWatchMemory:
-    case ar::Intrinsic::IkosPartitioningVarSi32:
+    case ar::Intrinsic::IkosPartitioningVar:
     case ar::Intrinsic::IkosPartitioningJoin:
     case ar::Intrinsic::IkosPartitioningDisable:
     case ar::Intrinsic::IkosPrintInvariant:

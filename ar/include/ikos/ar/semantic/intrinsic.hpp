@@ -50,6 +50,7 @@ namespace ar {
 
 // forward declaration
 class Bundle;
+class Type;
 class FunctionType;
 
 /// \brief Helper for intrinsics
@@ -75,8 +76,7 @@ public:
     // <ikos/analyzer/intrinsic.h>
     IkosAssert,
     IkosAssume,
-    IkosNonDetSi32,
-    IkosNonDetUi32,
+    IkosNonDet,
     IkosCounterInit,
     IkosCounterIncr,
     IkosCheckMemAccess,
@@ -85,7 +85,7 @@ public:
     IkosForgetMemory,
     IkosAbstractMemory,
     IkosWatchMemory,
-    IkosPartitioningVarSi32,
+    IkosPartitioningVar,
     IkosPartitioningJoin,
     IkosPartitioningDisable,
     IkosPrintInvariant,
@@ -170,11 +170,20 @@ public:
   /// \brief Get the type of an intrinsic function
   static FunctionType* type(Bundle*, ID);
 
-  /// \brief Get the short name of the given intrinsic
-  static const char* short_name(ID);
+  /// \brief Get the type of an intrinsic function with a type parameter
+  static FunctionType* type(Bundle*, ID, Type*);
+
+  /// \brief Get the short name of an intrinsic function
+  static std::string short_name(ID);
+
+  /// \brief Get the short name of an intrinsic function with a type parameter
+  static std::string short_name(ID, Type*);
 
   /// \brief Get the long name of the given intrinsic, ie. short name + prefix
   static std::string long_name(ID);
+
+  /// \brief Get the long name of the given intrinsic with a type parameter
+  static std::string long_name(ID, Type*);
 
 }; // end class Intrinsic
 

@@ -1882,7 +1882,7 @@ public:
       return;
     }
 
-    if (id == ar::Intrinsic::IkosPartitioningVarSi32) {
+    if (id == ar::Intrinsic::IkosPartitioningVar) {
       // Unlike most functions, it propagates uninitialized variables
       this->exec_ikos_partitioning_var(call);
       return;
@@ -1952,8 +1952,7 @@ public:
       // <ikos/analyzer/intrinsic.h>
       case ar::Intrinsic::IkosAssert:
       case ar::Intrinsic::IkosAssume:
-      case ar::Intrinsic::IkosNonDetSi32:
-      case ar::Intrinsic::IkosNonDetUi32: {
+      case ar::Intrinsic::IkosNonDet: {
         this->exec_unknown_call(call,
                                 /* may_write_params = */ false,
                                 /* ignore_unknown_write = */ false,
@@ -1986,7 +1985,7 @@ public:
       case ar::Intrinsic::IkosWatchMemory: {
         this->exec_ikos_watch_memory(call);
       } break;
-      case ar::Intrinsic::IkosPartitioningVarSi32: {
+      case ar::Intrinsic::IkosPartitioningVar: {
         this->exec_ikos_partitioning_var(call);
       } break;
       case ar::Intrinsic::IkosPartitioningJoin: {

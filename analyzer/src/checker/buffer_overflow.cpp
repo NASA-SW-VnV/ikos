@@ -275,8 +275,7 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
     // <ikos/analyzer/intrinsic.h>
     case ar::Intrinsic::IkosAssert:
     case ar::Intrinsic::IkosAssume:
-    case ar::Intrinsic::IkosNonDetSi32:
-    case ar::Intrinsic::IkosNonDetUi32:
+    case ar::Intrinsic::IkosNonDet:
     case ar::Intrinsic::IkosCounterInit:
     case ar::Intrinsic::IkosCounterIncr: {
       return {};
@@ -306,7 +305,7 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                      inv)};
     }
     case ar::Intrinsic::IkosWatchMemory:
-    case ar::Intrinsic::IkosPartitioningVarSi32:
+    case ar::Intrinsic::IkosPartitioningVar:
     case ar::Intrinsic::IkosPartitioningJoin:
     case ar::Intrinsic::IkosPartitioningDisable:
     case ar::Intrinsic::IkosPrintInvariant:

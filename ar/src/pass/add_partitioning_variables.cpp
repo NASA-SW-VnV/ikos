@@ -65,7 +65,8 @@ const char* AddPartitioningVariablesPass::description() const {
 
 bool AddPartitioningVariablesPass::run(Bundle* bundle) {
   // Create the partitioning intrinsic function before iterating on the bundle
-  bundle->intrinsic_function(Intrinsic::IkosPartitioningVarSi32);
+  bundle->intrinsic_function(Intrinsic::IkosPartitioningVar,
+                             IntegerType::si32(bundle->context()));
 
   bool change = false;
 
@@ -199,7 +200,8 @@ bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
 
   // Function to mark a variable as a partitioning variable
   Function* partitioning_var_fun =
-      bundle->intrinsic_function(Intrinsic::IkosPartitioningVarSi32);
+      bundle->intrinsic_function(Intrinsic::IkosPartitioningVar,
+                                 IntegerType::si32(ctx));
 
   // List of predecessors that define the return variable
   std::vector< BasicBlockVarPair > preds = {

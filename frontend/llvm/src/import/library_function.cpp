@@ -58,9 +58,13 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
     } else if (name == "__ikos_assume") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosAssume);
     } else if (name == "__ikos_nondet_int") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::IkosNonDetSi32);
+      return this->_bundle->intrinsic_function(ar::Intrinsic::IkosNonDet,
+                                               ar::IntegerType::si32(
+                                                   this->_context));
     } else if (name == "__ikos_nondet_uint") {
-      return this->_bundle->intrinsic_function(ar::Intrinsic::IkosNonDetUi32);
+      return this->_bundle->intrinsic_function(ar::Intrinsic::IkosNonDet,
+                                               ar::IntegerType::ui32(
+                                                   this->_context));
     } else if (name == "__ikos_check_mem_access") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosCheckMemAccess);
@@ -78,8 +82,9 @@ ar::Function* LibraryFunctionImporter::function(llvm::StringRef name) {
     } else if (name == "__ikos_watch_mem") {
       return this->_bundle->intrinsic_function(ar::Intrinsic::IkosWatchMemory);
     } else if (name == "__ikos_partitioning_var_int") {
-      return this->_bundle->intrinsic_function(
-          ar::Intrinsic::IkosPartitioningVarSi32);
+      return this->_bundle
+          ->intrinsic_function(ar::Intrinsic::IkosPartitioningVar,
+                               ar::IntegerType::si32(this->_context));
     } else if (name == "__ikos_partitioning_join") {
       return this->_bundle->intrinsic_function(
           ar::Intrinsic::IkosPartitioningJoin);

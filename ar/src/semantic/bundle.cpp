@@ -85,6 +85,18 @@ Function* Bundle::intrinsic_function(Intrinsic::ID id) {
   return Function::create(this, type, name, /*is_definition = */ false, id);
 }
 
+Function* Bundle::intrinsic_function(Intrinsic::ID id, Type* template_ty) {
+  std::string name = Intrinsic::long_name(id, template_ty);
+
+  Function* fun = this->_functions.find(name);
+  if (fun != nullptr) {
+    return fun;
+  }
+
+  ar::FunctionType* type = Intrinsic::type(this, id, template_ty);
+  return Function::create(this, type, name, /*is_definition = */ false, id);
+}
+
 bool Bundle::is_name_available(const std::string& name) const {
   return !this->_globals.contains(name) && !this->_functions.contains(name);
 }

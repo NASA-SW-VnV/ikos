@@ -693,8 +693,7 @@ private:
         // <ikos/analyzer/intrinsic.h>
         case ar::Intrinsic::IkosAssert:
         case ar::Intrinsic::IkosAssume:
-        case ar::Intrinsic::IkosNonDetSi32:
-        case ar::Intrinsic::IkosNonDetUi32:
+        case ar::Intrinsic::IkosNonDet:
         case ar::Intrinsic::IkosCounterInit:
         case ar::Intrinsic::IkosCounterIncr:
         case ar::Intrinsic::IkosCheckMemAccess:
@@ -703,7 +702,7 @@ private:
         case ar::Intrinsic::IkosForgetMemory:
         case ar::Intrinsic::IkosAbstractMemory:
         case ar::Intrinsic::IkosWatchMemory:
-        case ar::Intrinsic::IkosPartitioningVarSi32:
+        case ar::Intrinsic::IkosPartitioningVar:
         case ar::Intrinsic::IkosPartitioningJoin:
         case ar::Intrinsic::IkosPartitioningDisable:
         case ar::Intrinsic::IkosPrintInvariant:

@@ -151,10 +151,16 @@ public:
   /// \brief Return the number of functions
   std::size_t num_functions() const { return this->_functions.size(); }
 
-  /// \brief Get or create the intrinsic function with the given ID
+  /// \brief Get or create the intrinsic function with the given id
   ///
   /// Function iterators are invalidated.
   Function* intrinsic_function(Intrinsic::ID id);
+
+  /// \brief Get or create the intrinsic function with the given id and type
+  /// parameter
+  ///
+  /// Function iterators are invalidated.
+  Function* intrinsic_function(Intrinsic::ID id, Type* template_ty);
 
   /// \brief Get the function with the given name, or nullptr
   Function* function_or_null(const std::string& name) const {

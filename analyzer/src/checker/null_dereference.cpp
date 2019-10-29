@@ -243,8 +243,7 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     // <ikos/analyzer/intrinsic.h>
     case ar::Intrinsic::IkosAssert:
     case ar::Intrinsic::IkosAssume:
-    case ar::Intrinsic::IkosNonDetSi32:
-    case ar::Intrinsic::IkosNonDetUi32:
+    case ar::Intrinsic::IkosNonDet:
     case ar::Intrinsic::IkosCounterInit:
     case ar::Intrinsic::IkosCounterIncr: {
       return {};
@@ -257,7 +256,7 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
     case ar::Intrinsic::IkosWatchMemory: {
       return {this->check_null(call, call->argument(0), inv)};
     }
-    case ar::Intrinsic::IkosPartitioningVarSi32:
+    case ar::Intrinsic::IkosPartitioningVar:
     case ar::Intrinsic::IkosPartitioningJoin:
     case ar::Intrinsic::IkosPartitioningDisable:
     case ar::Intrinsic::IkosPrintInvariant:

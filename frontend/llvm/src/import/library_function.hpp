@@ -57,6 +57,9 @@ namespace import {
 /// \brief Helper class to find known library functions
 class LibraryFunctionImporter {
 private:
+  // AR context
+  ar::Context& _context;
+
   // AR bundle
   ar::Bundle* _bundle;
 
@@ -72,7 +75,8 @@ private:
 public:
   /// \brief Public constructor
   explicit LibraryFunctionImporter(ImportContext& ctx)
-      : _bundle(ctx.bundle),
+      : _context(ctx.ar_context),
+        _bundle(ctx.bundle),
         _enable_ikos(ctx.opts.test(Importer::EnableLibIkos)),
         _enable_libc(ctx.opts.test(Importer::EnableLibc)),
         _enable_libcpp(ctx.opts.test(Importer::EnableLibcpp)) {}

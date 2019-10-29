@@ -44,12 +44,17 @@
 #include <ikos/ar/semantic/bundle.hpp>
 #include <ikos/ar/semantic/intrinsic.hpp>
 #include <ikos/ar/semantic/type.hpp>
+#include <ikos/ar/semantic/type_visitor.hpp>
 #include <ikos/ar/support/assert.hpp>
 
 namespace ikos {
 namespace ar {
 
 FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
+  return type(bundle, id, /* template_ty = */ nullptr);
+}
+
+FunctionType* Intrinsic::type(Bundle* bundle, ID id, Type* template_ty) {
   ikos_assert(id != NotIntrinsic);
 
   // Helpers
@@ -148,11 +153,9 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       ret_ty = void_ty;          // ret
       params.push_back(ui32_ty); // condition
     } break;
-    case IkosNonDetSi32: {
-      ret_ty = si32_ty; // ret
-    } break;
-    case IkosNonDetUi32: {
-      ret_ty = ui32_ty; // ret
+    case IkosNonDet: {
+      ikos_assert(template_ty != nullptr);
+      ret_ty = template_ty; // ret
     } break;
     case IkosCounterInit: {
       ret_ty = size_ty;          // ret
@@ -192,9 +195,10 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
       params.push_back(void_ptr_ty); // ptr
       params.push_back(size_ty);     // size
     } break;
-    case IkosPartitioningVarSi32: {
-      ret_ty = void_ty;          // ret
-      params.push_back(si32_ty); // x
+    case IkosPartitioningVar: {
+      ikos_assert(template_ty != nullptr);
+      ret_ty = void_ty;              // ret
+      params.push_back(template_ty); // x
     } break;
     case IkosPartitioningJoin: {
       ret_ty = void_ty; // ret
@@ -519,7 +523,75 @@ FunctionType* Intrinsic::type(Bundle* bundle, ID id) {
   return FunctionType::get(ctx, ret_ty, params, var_arg);
 }
 
-const char* Intrinsic::short_name(ID id) {
+std::string Intrinsic::short_name(ID id) {
+  return short_name(id, /* template_ty = */ nullptr);
+}
+
+/// \brief Return the short name for a template type parameter
+static std::string template_type_name(Type* ty) {
+  ikos_assert(ty != nullptr);
+
+  struct TypeVisitor {
+    using ResultType = std::string;
+
+    std::string operator()(VoidType*) const { return "void"; }
+
+    std::string operator()(IntegerType* t) const {
+      if (t->is_unsigned()) {
+        return "ui" + std::to_string(t->bit_width());
+      } else {
+        return "si" + std::to_string(t->bit_width());
+      }
+    }
+
+    std::string operator()(FloatType* t) const {
+      switch (t->float_semantic()) {
+        case Half:
+          return "half";
+        case Float:
+          return "float";
+        case Double:
+          return "double";
+        case X86_FP80:
+          return "x86_fp80";
+        case FP128:
+          return "fp128";
+        case PPC_FP128:
+          return "ppc_fp128";
+        default:
+          ikos_unreachable("unknown float semantic");
+      }
+    }
+
+    std::string operator()(PointerType* t) const {
+      return template_type_name(t->pointee()) + "*";
+    }
+
+    std::string operator()(StructType*) const {
+      ikos_unreachable("unreachable");
+    }
+
+    std::string operator()(ArrayType*) const {
+      ikos_unreachable("unreachable");
+    }
+
+    std::string operator()(VectorType*) const {
+      ikos_unreachable("unreachable");
+    }
+
+    std::string operator()(OpaqueType*) const {
+      ikos_unreachable("unreachable");
+    }
+
+    std::string operator()(FunctionType*) const {
+      ikos_unreachable("unreachable");
+    }
+  };
+
+  return apply_visitor(TypeVisitor{}, ty);
+}
+
+std::string Intrinsic::short_name(ID id, Type* template_ty) {
   ikos_assert(id != NotIntrinsic);
 
   switch (id) {
@@ -554,10 +626,8 @@ const char* Intrinsic::short_name(ID id) {
       return "ikos.assert";
     case IkosAssume:
       return "ikos.assume";
-    case IkosNonDetSi32:
-      return "ikos.nondet.si32";
-    case IkosNonDetUi32:
-      return "ikos.nondet.ui32";
+    case IkosNonDet:
+      return "ikos.nondet." + template_type_name(template_ty);
     case IkosCounterInit:
       return "ikos.counter.init";
     case IkosCounterIncr:
@@ -574,8 +644,8 @@ const char* Intrinsic::short_name(ID id) {
       return "ikos.abstract_memory";
     case IkosWatchMemory:
       return "ikos.watch_memory";
-    case IkosPartitioningVarSi32:
-      return "ikos.partitioning.var.si32";
+    case IkosPartitioningVar:
+      return "ikos.partitioning.var." + template_type_name(template_ty);
     case IkosPartitioningJoin:
       return "ikos.partitioning.join";
     case IkosPartitioningDisable:
@@ -718,9 +788,11 @@ const char* Intrinsic::short_name(ID id) {
 }
 
 std::string Intrinsic::long_name(ID id) {
-  std::string s(Prefix);
-  s += short_name(id);
-  return s;
+  return Prefix + short_name(id);
+}
+
+std::string Intrinsic::long_name(ID id, Type* template_ty) {
+  return Prefix + short_name(id, template_ty);
 }
 
 } // end namespace ar
