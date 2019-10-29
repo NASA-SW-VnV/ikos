@@ -55,6 +55,9 @@
 namespace ikos {
 namespace ar {
 
+/// \brief Bit-width of integer types used for partitioning
+constexpr static const std::array< unsigned, 4 > bit_widths = {1, 8, 32, 64};
+
 const char* AddPartitioningVariablesPass::name() const {
   return "add-partitioning-variables";
 }
@@ -64,9 +67,17 @@ const char* AddPartitioningVariablesPass::description() const {
 }
 
 bool AddPartitioningVariablesPass::run(Bundle* bundle) {
-  // Create the partitioning intrinsic function before iterating on the bundle
-  bundle->intrinsic_function(Intrinsic::IkosPartitioningVar,
-                             IntegerType::si32(bundle->context()));
+  // Create the partitioning intrinsic functions before iterating on the bundle
+  for (unsigned bit_width : bit_widths) {
+    bundle->intrinsic_function(Intrinsic::IkosPartitioningVar,
+                               IntegerType::get(bundle->context(),
+                                                bit_width,
+                                                Signed));
+    bundle->intrinsic_function(Intrinsic::IkosPartitioningVar,
+                               IntegerType::get(bundle->context(),
+                                                bit_width,
+                                                Unsigned));
+  }
 
   bool change = false;
 
@@ -96,10 +107,17 @@ bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
   }
 
   Bundle* bundle = fun->bundle();
-  Context& ctx = bundle->context();
 
-  if (fun->type()->return_type() != IntegerType::si32(ctx)) {
-    // Return type is not si32
+  auto return_type = dyn_cast< IntegerType >(fun->type()->return_type());
+  if (return_type == nullptr) {
+    // Return type is not an integer
+    return false;
+  }
+
+  if (std::find(bit_widths.begin(),
+                bit_widths.end(),
+                return_type->bit_width()) == bit_widths.end()) {
+    // Return type bit width is not supported
     return false;
   }
 
@@ -200,8 +218,7 @@ bool AddPartitioningVariablesPass::run_on_function(Function* fun) {
 
   // Function to mark a variable as a partitioning variable
   Function* partitioning_var_fun =
-      bundle->intrinsic_function(Intrinsic::IkosPartitioningVar,
-                                 IntegerType::si32(ctx));
+      bundle->intrinsic_function(Intrinsic::IkosPartitioningVar, return_type);
 
   // List of predecessors that define the return variable
   std::vector< BasicBlockVarPair > preds = {
