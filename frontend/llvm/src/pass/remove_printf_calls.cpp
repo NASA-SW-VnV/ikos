@@ -64,7 +64,9 @@ struct RemovePrintfCallsPass final : public FunctionPass {
 
   RemovePrintfCallsPass() : FunctionPass(ID) {}
 
-  void getAnalysisUsage(AnalysisUsage& /*AU*/) const override {}
+  void getAnalysisUsage(AnalysisUsage&) const override {
+    // All analyses are invalidated
+  }
 
   bool runOnFunction(Function& f) override {
     SmallVector< CallInst*, 8 > to_erase;

@@ -55,7 +55,9 @@ struct RemoveUnreachableBlocksPass final : public FunctionPass {
 
   RemoveUnreachableBlocksPass() : FunctionPass(ID) {}
 
-  void getAnalysisUsage(AnalysisUsage& /*AU*/) const override {}
+  void getAnalysisUsage(AnalysisUsage&) const override {
+    // All analyses are invalidated
+  }
 
   bool runOnFunction(Function& F) override {
     return removeUnreachableBlocks(F);

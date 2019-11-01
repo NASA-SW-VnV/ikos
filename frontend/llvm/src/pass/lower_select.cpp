@@ -67,7 +67,9 @@ struct LowerSelectPass final : public FunctionPass {
 
   LowerSelectPass() : FunctionPass(ID) {}
 
-  void getAnalysisUsage(AnalysisUsage& /*AU*/) const override {}
+  void getAnalysisUsage(AnalysisUsage&) const override {
+    // All analyses are invalidated
+  }
 
   bool runOnFunction(Function& f) override {
     SmallVector< SelectInst*, 8 > worklist;

@@ -73,8 +73,8 @@ struct LowerCstExprPass final : public FunctionPass {
 
   LowerCstExprPass() : FunctionPass(ID) {}
 
-  void getAnalysisUsage(AnalysisUsage& AU) const override {
-    AU.setPreservesAll();
+  void getAnalysisUsage(AnalysisUsage&) const override {
+    // All analyses are invalidated
   }
 
   bool runOnFunction(Function& F) override {

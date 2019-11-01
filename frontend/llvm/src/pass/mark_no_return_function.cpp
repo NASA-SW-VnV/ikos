@@ -64,7 +64,6 @@ struct MarkNoReturnFunctionPass final : public ModulePass {
   MarkNoReturnFunctionPass() : ModulePass(ID) {}
 
   void getAnalysisUsage(AnalysisUsage& AU) const override {
-    AU.setPreservesAll();
     AU.addRequired< UnifyFunctionExitNodes >();
   }
 
