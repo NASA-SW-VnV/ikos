@@ -6,7 +6,8 @@ addons:
   apt:
     update: true
     sources:
-    - llvm-toolchain-xenial-9
+    - sourceline: "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main"
+      key_url: "https://apt.llvm.org/llvm-snapshot.gpg.key"
     packages:
     - gcc
     - g++
