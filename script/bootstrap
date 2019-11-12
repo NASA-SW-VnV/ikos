@@ -96,8 +96,8 @@ boost_install_version="1.70.0"
 python2_required_version="2.7.3"
 python3_required_version="3.3"
 python_install_version="2.7.16"
-llvm_required_version="8"
-llvm_install_version="8.0.1"
+llvm_required_version="9"
+llvm_install_version="9.0.0"
 
 # Default parameters
 install_dir=""
@@ -2192,13 +2192,13 @@ if (( ! found_llvm )); then
     else
         progress "Installing ${cgreen}llvm $llvm_install_version"
 
-        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/llvm-$llvm_install_version.src.tar.xz" \
+        download_extract "https://releases.llvm.org/$llvm_install_version/llvm-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version"
-        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
+        download_extract "https://releases.llvm.org/$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/tools/clang"
-        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/clang-tools-extra-$llvm_install_version.src.tar.xz" \
+        download_extract "https://releases.llvm.org/$llvm_install_version/clang-tools-extra-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/tools/clang/tools/extra"
-        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
+        download_extract "https://releases.llvm.org/$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version/projects/compiler-rt"
 
         cd "$build_dir/llvm-$llvm_install_version"

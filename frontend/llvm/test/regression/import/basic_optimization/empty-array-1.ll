@@ -1,12 +1,12 @@
 ; ModuleID = 'empty-array-1.pp.bc'
 source_filename = "empty-array-1.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.anon = type { [0 x i8], i32*, double }
 
@@ -24,7 +24,7 @@ target triple = "x86_64-apple-macosx10.13.0"
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "d", scope: !2, file: !3, line: 5, type: !6, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
+!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
 !3 = !DIFile(filename: "empty-array-1.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !4 = !{}
 !5 = !{!0}
@@ -44,4 +44,4 @@ target triple = "x86_64-apple-macosx10.13.0"
 !19 = !{i32 2, !"Debug Info Version", i32 3}
 !20 = !{i32 1, !"wchar_size", i32 4}
 !21 = !{i32 7, !"PIC Level", i32 2}
-!22 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!22 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}

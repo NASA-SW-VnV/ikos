@@ -1,12 +1,12 @@
 ; ModuleID = 'local-array-2.pp.bc'
 source_filename = "local-array-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 @.str = private unnamed_addr constant [34 x i8] c"This is string.h library function\00", align 1
 ; CHECK: define [34 x si8]* @.str, align 1, init {
@@ -42,13 +42,13 @@ define i8* @foo(i8*, i32) #0 !dbg !8 {
   store i32 0, i32* %5, align 4, !dbg !20
   br label %6, !dbg !22
 
-; <label>:6:                                      ; preds = %15, %2
+6:                                                ; preds = %15, %2
   %7 = load i32, i32* %5, align 4, !dbg !23
   %8 = load i32, i32* %4, align 4, !dbg !25
   %9 = icmp slt i32 %7, %8, !dbg !26
   br i1 %9, label %10, label %18, !dbg !27
 
-; <label>:10:                                     ; preds = %6
+10:                                               ; preds = %6
   %11 = load i8*, i8** %3, align 8, !dbg !28
   %12 = load i32, i32* %5, align 4, !dbg !29
   %13 = sext i32 %12 to i64, !dbg !28
@@ -56,13 +56,13 @@ define i8* @foo(i8*, i32) #0 !dbg !8 {
   store i8 65, i8* %14, align 1, !dbg !30
   br label %15, !dbg !28
 
-; <label>:15:                                     ; preds = %10
+15:                                               ; preds = %10
   %16 = load i32, i32* %5, align 4, !dbg !31
   %17 = add nsw i32 %16, 1, !dbg !31
   store i32 %17, i32* %5, align 4, !dbg !31
   br label %6, !dbg !32, !llvm.loop !33
 
-; <label>:18:                                     ; preds = %6
+18:                                               ; preds = %6
   %19 = load i8*, i8** %3, align 8, !dbg !35
   ret i8* %19, !dbg !36
 }
@@ -109,23 +109,23 @@ define i32 @main() #0 !dbg !37 {
   %5 = alloca i8*, align 8
   store i32 0, i32* %1, align 4
   call void @llvm.dbg.declare(metadata [50 x i8]* %2, metadata !40, metadata !DIExpression()), !dbg !44
-  %6 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !45
-  %7 = getelementptr inbounds [34 x i8], [34 x i8]* @.str, i32 0, i32 0, !dbg !46
+  %6 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i64 0, i64 0, !dbg !45
+  %7 = getelementptr inbounds [34 x i8], [34 x i8]* @.str, i64 0, i64 0, !dbg !46
   %8 = call i8* @strcpy(i8* %6, i8* %7), !dbg !46
-  %9 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !47
+  %9 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i64 0, i64 0, !dbg !47
   %10 = call i32 @puts(i8* %9), !dbg !48
-  %11 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !49
+  %11 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i64 0, i64 0, !dbg !49
   call void @llvm.memset.p0i8.i64(i8* align 16 %11, i8 36, i64 50, i1 false), !dbg !49
   call void @llvm.dbg.declare(metadata i8** %3, metadata !50, metadata !DIExpression()), !dbg !51
-  %12 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i32 0, i32 0, !dbg !52
+  %12 = getelementptr inbounds [50 x i8], [50 x i8]* %2, i64 0, i64 0, !dbg !52
   %13 = call i8* @foo(i8* %12, i32 10), !dbg !53
   store i8* %13, i8** %3, align 8, !dbg !51
   call void @llvm.dbg.declare(metadata [10 x i8]* %4, metadata !54, metadata !DIExpression()), !dbg !58
-  %14 = getelementptr inbounds [10 x i8], [10 x i8]* %4, i32 0, i32 0, !dbg !59
+  %14 = getelementptr inbounds [10 x i8], [10 x i8]* %4, i64 0, i64 0, !dbg !59
   %15 = load i8*, i8** %3, align 8, !dbg !60
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %14, i8* align 1 %15, i64 10, i1 false), !dbg !59
   call void @llvm.dbg.declare(metadata i8** %5, metadata !61, metadata !DIExpression()), !dbg !62
-  %16 = getelementptr inbounds [10 x i8], [10 x i8]* %4, i32 0, i32 0, !dbg !63
+  %16 = getelementptr inbounds [10 x i8], [10 x i8]* %4, i64 0, i64 0, !dbg !63
   %17 = call i8* @foo(i8* %16, i32 10), !dbg !64
   store i8* %17, i8** %5, align 8, !dbg !62
   %18 = load i8*, i8** %5, align 8, !dbg !65
@@ -162,23 +162,23 @@ define i32 @main() #0 !dbg !37 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { argmemonly nounwind }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "local-array-2.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "foo", scope: !1, file: !1, line: 4, type: !9, scopeLine: 4, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !13}

@@ -59,9 +59,9 @@ namespace std {
 template <>
 struct iterator_traits< llvm::DITypeRefArray::iterator > {
   using difference_type = std::ptrdiff_t;
-  using value_type = llvm::DITypeRef;
+  using value_type = llvm::DIType*;
   using pointer = void;
-  using reference = llvm::DITypeRef;
+  using reference = llvm::DIType*;
   using iterator_category = std::input_iterator_tag;
 };
 
@@ -1336,7 +1336,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
   bool var_arg = fun_type->isVarArg();
 
   // Return type
-  llvm::DIType* di_ret_type = di_params[0].resolve();
+  llvm::DIType* di_ret_type = di_params[0];
   llvm::Type* ret_type = fun_type->getReturnType();
   ar::Type* ar_ret_type = nullptr;
 
@@ -1386,7 +1386,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
     check_match(di_param_it != di_param_et,
                 "llvm DISubroutineType and llvm function type have a different "
                 "number of parameters [1]");
-    llvm::DIType* di_param_type = (*di_param_it).resolve();
+    llvm::DIType* di_param_type = *di_param_it;
     di_param_type = remove_di_qualifiers(di_param_type);
     check_import(di_param_type != nullptr,
                  "unexpected null pointer in parameters of llvm "
@@ -1470,8 +1470,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
   check_match(di_param_it == di_param_et ||
                   std::all_of(di_param_it,
                               di_param_et,
-                              [](llvm::DITypeRef di_param) {
-                                return di_param.resolve() == nullptr;
+                              [](llvm::DIType* di_param) {
+                                return di_param == nullptr;
                               }),
               "llvm DISubroutineType and llvm function type have a different "
               "number of parameters [3]");

@@ -9,16 +9,16 @@ ARG build_type=Release
 # boost 1.65.1
 # python 2.7.15
 # sqlite 3.22.0
-# llvm 8.0.1
-# clang 8.0.1
+# llvm 9.0.1
+# clang 9.0.1
 # gcc 7.4.0
 
 # Upgrade
 RUN apt-get update
 RUN apt-get upgrade -y
 
-# Add ppa for llvm 8.0
-RUN echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main" >> /etc/apt/sources.list
+# Add ppa for llvm 9.0
+RUN echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main" >> /etc/apt/sources.list
 
 # Add llvm repository key
 RUN apt-get install -y wget gnupg
@@ -30,7 +30,7 @@ RUN apt-get update
 # Install all dependencies
 RUN apt-get install -y gcc g++ cmake libgmp-dev libboost-dev \
         libboost-filesystem-dev libboost-test-dev python python-pygments \
-        libsqlite3-dev libz-dev libedit-dev llvm-8 llvm-8-dev llvm-8-tools clang-8
+        libsqlite3-dev libz-dev libedit-dev llvm-9 llvm-9-dev llvm-9-tools clang-9
 
 # Add ikos source code
 ADD . /root/ikos
@@ -42,7 +42,7 @@ ENV MAKEFLAGS "-j$njobs"
 RUN cmake \
         -DCMAKE_INSTALL_PREFIX="/opt/ikos" \
         -DCMAKE_BUILD_TYPE="$build_type" \
-        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" \
+        -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-9/bin/llvm-config" \
         ..
 RUN make
 RUN make install

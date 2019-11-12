@@ -1,12 +1,12 @@
 ; ModuleID = 'var-args.pp.bc'
 source_filename = "var-args.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.__va_list_tag = type { i32, i32, i8*, i8* }
 
@@ -22,101 +22,101 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   %2 = alloca [1 x %struct.__va_list_tag], align 16
   %3 = alloca [1 x %struct.__va_list_tag], align 16
   call void @llvm.dbg.value(metadata i32 %0, metadata !15, metadata !DIExpression()), !dbg !16
-  call void @llvm.dbg.value(metadata i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0), metadata !17, metadata !DIExpression()), !dbg !20
-  call void @llvm.dbg.value(metadata i32 0, metadata !21, metadata !DIExpression()), !dbg !22
-  call void @llvm.dbg.value(metadata i32 %0, metadata !23, metadata !DIExpression()), !dbg !24
-  call void @llvm.dbg.declare(metadata [1 x %struct.__va_list_tag]* %2, metadata !25, metadata !DIExpression()), !dbg !42
-  call void @llvm.dbg.declare(metadata [1 x %struct.__va_list_tag]* %3, metadata !43, metadata !DIExpression()), !dbg !44
-  %4 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i32 0, i32 0, !dbg !45
-  %5 = bitcast %struct.__va_list_tag* %4 to i8*, !dbg !45
-  call void @llvm.va_start(i8* %5), !dbg !45
-  %6 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %3, i32 0, i32 0, !dbg !46
-  %7 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i32 0, i32 0, !dbg !46
-  %8 = bitcast %struct.__va_list_tag* %6 to i8*, !dbg !46
-  %9 = bitcast %struct.__va_list_tag* %7 to i8*, !dbg !46
-  call void @llvm.va_copy(i8* %8, i8* %9), !dbg !46
-  br label %10, !dbg !47
+  call void @llvm.dbg.value(metadata i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i64 0, i64 0), metadata !17, metadata !DIExpression()), !dbg !16
+  call void @llvm.dbg.value(metadata i32 0, metadata !20, metadata !DIExpression()), !dbg !16
+  call void @llvm.dbg.value(metadata i32 %0, metadata !21, metadata !DIExpression()), !dbg !16
+  call void @llvm.dbg.declare(metadata [1 x %struct.__va_list_tag]* %2, metadata !22, metadata !DIExpression()), !dbg !39
+  call void @llvm.dbg.declare(metadata [1 x %struct.__va_list_tag]* %3, metadata !40, metadata !DIExpression()), !dbg !41
+  %4 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i64 0, i64 0, !dbg !42
+  %5 = bitcast %struct.__va_list_tag* %4 to i8*, !dbg !42
+  call void @llvm.va_start(i8* %5), !dbg !42
+  %6 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %3, i64 0, i64 0, !dbg !43
+  %7 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i64 0, i64 0, !dbg !43
+  %8 = bitcast %struct.__va_list_tag* %6 to i8*, !dbg !43
+  %9 = bitcast %struct.__va_list_tag* %7 to i8*, !dbg !43
+  call void @llvm.va_copy(i8* %8, i8* %9), !dbg !43
+  br label %10, !dbg !44
 
-; <label>:10:                                     ; preds = %28, %1
-  %.01 = phi i32 [ 0, %1 ], [ %31, %28 ], !dbg !48
-  %.0 = phi i32 [ %0, %1 ], [ %30, %28 ], !dbg !48
-  call void @llvm.dbg.value(metadata i32 %.0, metadata !23, metadata !DIExpression()), !dbg !24
-  call void @llvm.dbg.value(metadata i32 %.01, metadata !21, metadata !DIExpression()), !dbg !22
-  %11 = icmp ne i32 %.0, 0, !dbg !49
-  br i1 %11, label %12, label %32, !dbg !47
+10:                                               ; preds = %28, %1
+  %.01 = phi i32 [ 0, %1 ], [ %31, %28 ], !dbg !16
+  %.0 = phi i32 [ %0, %1 ], [ %30, %28 ], !dbg !16
+  call void @llvm.dbg.value(metadata i32 %.0, metadata !21, metadata !DIExpression()), !dbg !16
+  call void @llvm.dbg.value(metadata i32 %.01, metadata !20, metadata !DIExpression()), !dbg !16
+  %11 = icmp ne i32 %.0, 0, !dbg !45
+  br i1 %11, label %12, label %32, !dbg !44
 
-; <label>:12:                                     ; preds = %10
-  %13 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %3, i32 0, i32 0, !dbg !50
-  %14 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %13, i32 0, i32 0, !dbg !50
-  %15 = load i32, i32* %14, align 16, !dbg !50
-  %16 = icmp ule i32 %15, 40, !dbg !50
-  br i1 %16, label %17, label %23, !dbg !50
+12:                                               ; preds = %10
+  %13 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %3, i64 0, i64 0, !dbg !46
+  %14 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %13, i32 0, i32 0, !dbg !46
+  %15 = load i32, i32* %14, align 16, !dbg !46
+  %16 = icmp ule i32 %15, 40, !dbg !46
+  br i1 %16, label %17, label %23, !dbg !46
 
-; <label>:17:                                     ; preds = %12
-  %18 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %13, i32 0, i32 3, !dbg !50
-  %19 = load i8*, i8** %18, align 16, !dbg !50
-  %20 = getelementptr i8, i8* %19, i32 %15, !dbg !50
-  %21 = bitcast i8* %20 to i32*, !dbg !50
-  %22 = add i32 %15, 8, !dbg !50
-  store i32 %22, i32* %14, align 16, !dbg !50
-  br label %28, !dbg !50
+17:                                               ; preds = %12
+  %18 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %13, i32 0, i32 3, !dbg !46
+  %19 = load i8*, i8** %18, align 16, !dbg !46
+  %20 = getelementptr i8, i8* %19, i32 %15, !dbg !46
+  %21 = bitcast i8* %20 to i32*, !dbg !46
+  %22 = add i32 %15, 8, !dbg !46
+  store i32 %22, i32* %14, align 16, !dbg !46
+  br label %28, !dbg !46
 
-; <label>:23:                                     ; preds = %12
-  %24 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %13, i32 0, i32 2, !dbg !50
-  %25 = load i8*, i8** %24, align 8, !dbg !50
-  %26 = bitcast i8* %25 to i32*, !dbg !50
-  %27 = getelementptr i8, i8* %25, i32 8, !dbg !50
-  store i8* %27, i8** %24, align 8, !dbg !50
-  br label %28, !dbg !50
+23:                                               ; preds = %12
+  %24 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %13, i32 0, i32 2, !dbg !46
+  %25 = load i8*, i8** %24, align 8, !dbg !46
+  %26 = bitcast i8* %25 to i32*, !dbg !46
+  %27 = getelementptr i8, i8* %25, i32 8, !dbg !46
+  store i8* %27, i8** %24, align 8, !dbg !46
+  br label %28, !dbg !46
 
-; <label>:28:                                     ; preds = %23, %17
-  %29 = phi i32* [ %21, %17 ], [ %26, %23 ], !dbg !50
-  %30 = load i32, i32* %29, align 4, !dbg !50
-  call void @llvm.dbg.value(metadata i32 %30, metadata !23, metadata !DIExpression()), !dbg !24
-  %31 = add nsw i32 %.01, 1, !dbg !52
-  call void @llvm.dbg.value(metadata i32 %31, metadata !21, metadata !DIExpression()), !dbg !22
-  br label %10, !dbg !47, !llvm.loop !53
+28:                                               ; preds = %23, %17
+  %29 = phi i32* [ %21, %17 ], [ %26, %23 ], !dbg !46
+  %30 = load i32, i32* %29, align 4, !dbg !46
+  call void @llvm.dbg.value(metadata i32 %30, metadata !21, metadata !DIExpression()), !dbg !16
+  %31 = add nsw i32 %.01, 1, !dbg !48
+  call void @llvm.dbg.value(metadata i32 %31, metadata !20, metadata !DIExpression()), !dbg !16
+  br label %10, !dbg !44, !llvm.loop !49
 
-; <label>:32:                                     ; preds = %10
-  %33 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %3, i32 0, i32 0, !dbg !55
-  %34 = bitcast %struct.__va_list_tag* %33 to i8*, !dbg !55
-  call void @llvm.va_end(i8* %34), !dbg !55
-  %35 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i32 0, i32 0, !dbg !56
-  %36 = call i64 @strlen(i8* %35), !dbg !56
-  %37 = sext i32 %.01 to i64, !dbg !57
-  %38 = mul i64 %36, %37, !dbg !58
-  %39 = add i64 %38, 1, !dbg !59
-  %40 = call i8* @malloc(i64 %39) #5, !dbg !60
-  call void @llvm.dbg.value(metadata i8* %40, metadata !61, metadata !DIExpression()), !dbg !62
-  %41 = getelementptr inbounds i8, i8* %40, i64 0, !dbg !63
-  store i8 0, i8* %41, align 1, !dbg !64
-  br label %42, !dbg !65
+32:                                               ; preds = %10
+  %33 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %3, i64 0, i64 0, !dbg !51
+  %34 = bitcast %struct.__va_list_tag* %33 to i8*, !dbg !51
+  call void @llvm.va_end(i8* %34), !dbg !51
+  %35 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i64 0, i64 0, !dbg !52
+  %36 = call i64 @strlen(i8* %35), !dbg !52
+  %37 = sext i32 %.01 to i64, !dbg !53
+  %38 = mul i64 %36, %37, !dbg !54
+  %39 = add i64 %38, 1, !dbg !55
+  %40 = call i8* @malloc(i64 %39) #5, !dbg !56
+  call void @llvm.dbg.value(metadata i8* %40, metadata !57, metadata !DIExpression()), !dbg !16
+  %41 = getelementptr inbounds i8, i8* %40, i64 0, !dbg !58
+  store i8 0, i8* %41, align 1, !dbg !59
+  br label %42, !dbg !60
 
-; <label>:42:                                     ; preds = %47, %32
-  %.1 = phi i32 [ %.01, %32 ], [ %48, %47 ], !dbg !48
-  call void @llvm.dbg.value(metadata i32 %.1, metadata !21, metadata !DIExpression()), !dbg !22
-  %43 = icmp sgt i32 %.1, 0, !dbg !66
-  br i1 %43, label %44, label %49, !dbg !69
+42:                                               ; preds = %47, %32
+  %.1 = phi i32 [ %.01, %32 ], [ %48, %47 ], !dbg !16
+  call void @llvm.dbg.value(metadata i32 %.1, metadata !20, metadata !DIExpression()), !dbg !16
+  %43 = icmp sgt i32 %.1, 0, !dbg !61
+  br i1 %43, label %44, label %49, !dbg !64
 
-; <label>:44:                                     ; preds = %42
-  %45 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i32 0, i32 0, !dbg !70
-  %46 = call i8* @strcat(i8* %40, i8* %45), !dbg !70
-  br label %47, !dbg !72
+44:                                               ; preds = %42
+  %45 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i64 0, i64 0, !dbg !65
+  %46 = call i8* @strcat(i8* %40, i8* %45), !dbg !65
+  br label %47, !dbg !67
 
-; <label>:47:                                     ; preds = %44
-  %48 = add nsw i32 %.1, -1, !dbg !73
-  call void @llvm.dbg.value(metadata i32 %48, metadata !21, metadata !DIExpression()), !dbg !22
-  br label %42, !dbg !74, !llvm.loop !75
+47:                                               ; preds = %44
+  %48 = add nsw i32 %.1, -1, !dbg !68
+  call void @llvm.dbg.value(metadata i32 %48, metadata !20, metadata !DIExpression()), !dbg !16
+  br label %42, !dbg !69, !llvm.loop !70
 
-; <label>:49:                                     ; preds = %42
-  %50 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i32 0, i32 0, !dbg !77
-  %51 = call i32 (i8*, ...) @printf(i8* %50, i32 %0), !dbg !77
-  %52 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i32 0, i32 0, !dbg !78
-  %53 = call i32 @vprintf(i8* %40, %struct.__va_list_tag* %52), !dbg !79
-  %54 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i32 0, i32 0, !dbg !80
-  %55 = bitcast %struct.__va_list_tag* %54 to i8*, !dbg !80
-  call void @llvm.va_end(i8* %55), !dbg !80
-  ret void, !dbg !81
+49:                                               ; preds = %42
+  %50 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i64 0, i64 0, !dbg !72
+  %51 = call i32 (i8*, ...) @printf(i8* %50, i32 %0), !dbg !72
+  %52 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i64 0, i64 0, !dbg !73
+  %53 = call i32 @vprintf(i8* %40, %struct.__va_list_tag* %52), !dbg !74
+  %54 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %2, i64 0, i64 0, !dbg !75
+  %55 = bitcast %struct.__va_list_tag* %54 to i8*, !dbg !75
+  call void @llvm.va_end(i8* %55), !dbg !75
+  ret void, !dbg !76
 }
 ; CHECK: define void @PrintInts(si32 %1, ...) {
 ; CHECK: #1 !entry successors={#2} {
@@ -232,9 +232,9 @@ declare void @llvm.va_start(i8*) #2
 ; CHECK: declare void @ar.va_start(si8*)
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define i32 @main() #0 !dbg !82 {
-  call void (i32, ...) @PrintInts(i32 10, i32 20, i32 30, i32 40, i32 50, i32 0), !dbg !85
-  ret i32 0, !dbg !86
+define i32 @main() #0 !dbg !77 {
+  call void (i32, ...) @PrintInts(i32 10, i32 20, i32 30, i32 40, i32 50, i32 0), !dbg !80
+  ret i32 0, !dbg !81
 }
 ; CHECK: define si32 @main() {
 ; CHECK: #1 !entry !exit {
@@ -252,18 +252,18 @@ declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { nounwind }
-attributes #3 = { allocsize(0) "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { allocsize(0) "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #5 = { allocsize(0) }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!6, !7, !8, !9}
 !llvm.ident = !{!10}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3, nameTableKind: GNU)
 !1 = !DIFile(filename: "var-args.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/basic_optimization")
 !2 = !{}
 !3 = !{!4}
@@ -273,80 +273,75 @@ attributes #5 = { allocsize(0) }
 !7 = !{i32 2, !"Debug Info Version", i32 3}
 !8 = !{i32 1, !"wchar_size", i32 4}
 !9 = !{i32 7, !"PIC Level", i32 2}
-!10 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!10 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !11 = distinct !DISubprogram(name: "PrintInts", scope: !1, file: !1, line: 8, type: !12, scopeLine: 8, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !12 = !DISubroutineType(types: !13)
 !13 = !{null, !14, null}
 !14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !15 = !DILocalVariable(name: "first", arg: 1, scope: !11, file: !1, line: 8, type: !14)
-!16 = !DILocation(line: 8, column: 20, scope: !11)
+!16 = !DILocation(line: 0, scope: !11)
 !17 = !DILocalVariable(name: "format", scope: !11, file: !1, line: 10, type: !18)
 !18 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !19, size: 64)
 !19 = !DIDerivedType(tag: DW_TAG_const_type, baseType: !5)
-!20 = !DILocation(line: 10, column: 15, scope: !11)
-!21 = !DILocalVariable(name: "count", scope: !11, file: !1, line: 11, type: !14)
-!22 = !DILocation(line: 11, column: 7, scope: !11)
-!23 = !DILocalVariable(name: "val", scope: !11, file: !1, line: 12, type: !14)
-!24 = !DILocation(line: 12, column: 7, scope: !11)
-!25 = !DILocalVariable(name: "vl", scope: !11, file: !1, line: 13, type: !26)
-!26 = !DIDerivedType(tag: DW_TAG_typedef, name: "va_list", file: !27, line: 32, baseType: !28)
-!27 = !DIFile(filename: "/usr/include/sys/_types/_va_list.h", directory: "")
-!28 = !DIDerivedType(tag: DW_TAG_typedef, name: "__darwin_va_list", file: !29, line: 98, baseType: !30)
-!29 = !DIFile(filename: "/usr/include/i386/_types.h", directory: "")
-!30 = !DIDerivedType(tag: DW_TAG_typedef, name: "__builtin_va_list", file: !1, line: 13, baseType: !31)
-!31 = !DICompositeType(tag: DW_TAG_array_type, baseType: !32, size: 192, elements: !40)
-!32 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__va_list_tag", file: !1, line: 13, size: 192, elements: !33)
-!33 = !{!34, !36, !37, !39}
-!34 = !DIDerivedType(tag: DW_TAG_member, name: "gp_offset", scope: !32, file: !1, line: 13, baseType: !35, size: 32)
-!35 = !DIBasicType(name: "unsigned int", size: 32, encoding: DW_ATE_unsigned)
-!36 = !DIDerivedType(tag: DW_TAG_member, name: "fp_offset", scope: !32, file: !1, line: 13, baseType: !35, size: 32, offset: 32)
-!37 = !DIDerivedType(tag: DW_TAG_member, name: "overflow_arg_area", scope: !32, file: !1, line: 13, baseType: !38, size: 64, offset: 64)
-!38 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: null, size: 64)
-!39 = !DIDerivedType(tag: DW_TAG_member, name: "reg_save_area", scope: !32, file: !1, line: 13, baseType: !38, size: 64, offset: 128)
-!40 = !{!41}
-!41 = !DISubrange(count: 1)
-!42 = !DILocation(line: 13, column: 11, scope: !11)
-!43 = !DILocalVariable(name: "vl_count", scope: !11, file: !1, line: 13, type: !26)
-!44 = !DILocation(line: 13, column: 15, scope: !11)
-!45 = !DILocation(line: 14, column: 3, scope: !11)
-!46 = !DILocation(line: 17, column: 3, scope: !11)
-!47 = !DILocation(line: 18, column: 3, scope: !11)
-!48 = !DILocation(line: 0, scope: !11)
-!49 = !DILocation(line: 18, column: 14, scope: !11)
-!50 = !DILocation(line: 19, column: 11, scope: !51)
-!51 = distinct !DILexicalBlock(scope: !11, file: !1, line: 18, column: 20)
-!52 = !DILocation(line: 20, column: 5, scope: !51)
-!53 = distinct !{!53, !47, !54}
-!54 = !DILocation(line: 21, column: 3, scope: !11)
-!55 = !DILocation(line: 22, column: 3, scope: !11)
-!56 = !DILocation(line: 25, column: 26, scope: !11)
-!57 = !DILocation(line: 25, column: 43, scope: !11)
-!58 = !DILocation(line: 25, column: 41, scope: !11)
-!59 = !DILocation(line: 25, column: 49, scope: !11)
-!60 = !DILocation(line: 25, column: 19, scope: !11)
-!61 = !DILocalVariable(name: "buffer", scope: !11, file: !1, line: 9, type: !4)
-!62 = !DILocation(line: 9, column: 9, scope: !11)
-!63 = !DILocation(line: 26, column: 3, scope: !11)
-!64 = !DILocation(line: 26, column: 13, scope: !11)
-!65 = !DILocation(line: 29, column: 3, scope: !11)
-!66 = !DILocation(line: 29, column: 16, scope: !67)
-!67 = distinct !DILexicalBlock(scope: !68, file: !1, line: 29, column: 3)
-!68 = distinct !DILexicalBlock(scope: !11, file: !1, line: 29, column: 3)
-!69 = !DILocation(line: 29, column: 3, scope: !68)
-!70 = !DILocation(line: 30, column: 5, scope: !71)
-!71 = distinct !DILexicalBlock(scope: !67, file: !1, line: 29, column: 30)
-!72 = !DILocation(line: 31, column: 3, scope: !71)
-!73 = !DILocation(line: 29, column: 21, scope: !67)
-!74 = !DILocation(line: 29, column: 3, scope: !67)
-!75 = distinct !{!75, !69, !76}
-!76 = !DILocation(line: 31, column: 3, scope: !68)
-!77 = !DILocation(line: 34, column: 3, scope: !11)
-!78 = !DILocation(line: 35, column: 19, scope: !11)
-!79 = !DILocation(line: 35, column: 3, scope: !11)
-!80 = !DILocation(line: 37, column: 3, scope: !11)
-!81 = !DILocation(line: 38, column: 1, scope: !11)
-!82 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 40, type: !83, scopeLine: 40, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
-!83 = !DISubroutineType(types: !84)
-!84 = !{!14}
-!85 = !DILocation(line: 41, column: 3, scope: !82)
-!86 = !DILocation(line: 42, column: 3, scope: !82)
+!20 = !DILocalVariable(name: "count", scope: !11, file: !1, line: 11, type: !14)
+!21 = !DILocalVariable(name: "val", scope: !11, file: !1, line: 12, type: !14)
+!22 = !DILocalVariable(name: "vl", scope: !11, file: !1, line: 13, type: !23)
+!23 = !DIDerivedType(tag: DW_TAG_typedef, name: "va_list", file: !24, line: 32, baseType: !25)
+!24 = !DIFile(filename: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/_types/_va_list.h", directory: "")
+!25 = !DIDerivedType(tag: DW_TAG_typedef, name: "__darwin_va_list", file: !26, line: 98, baseType: !27)
+!26 = !DIFile(filename: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/i386/_types.h", directory: "")
+!27 = !DIDerivedType(tag: DW_TAG_typedef, name: "__builtin_va_list", file: !1, line: 13, baseType: !28)
+!28 = !DICompositeType(tag: DW_TAG_array_type, baseType: !29, size: 192, elements: !37)
+!29 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__va_list_tag", file: !1, line: 13, size: 192, elements: !30)
+!30 = !{!31, !33, !34, !36}
+!31 = !DIDerivedType(tag: DW_TAG_member, name: "gp_offset", scope: !29, file: !1, line: 13, baseType: !32, size: 32)
+!32 = !DIBasicType(name: "unsigned int", size: 32, encoding: DW_ATE_unsigned)
+!33 = !DIDerivedType(tag: DW_TAG_member, name: "fp_offset", scope: !29, file: !1, line: 13, baseType: !32, size: 32, offset: 32)
+!34 = !DIDerivedType(tag: DW_TAG_member, name: "overflow_arg_area", scope: !29, file: !1, line: 13, baseType: !35, size: 64, offset: 64)
+!35 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: null, size: 64)
+!36 = !DIDerivedType(tag: DW_TAG_member, name: "reg_save_area", scope: !29, file: !1, line: 13, baseType: !35, size: 64, offset: 128)
+!37 = !{!38}
+!38 = !DISubrange(count: 1)
+!39 = !DILocation(line: 13, column: 11, scope: !11)
+!40 = !DILocalVariable(name: "vl_count", scope: !11, file: !1, line: 13, type: !23)
+!41 = !DILocation(line: 13, column: 15, scope: !11)
+!42 = !DILocation(line: 14, column: 3, scope: !11)
+!43 = !DILocation(line: 17, column: 3, scope: !11)
+!44 = !DILocation(line: 18, column: 3, scope: !11)
+!45 = !DILocation(line: 18, column: 14, scope: !11)
+!46 = !DILocation(line: 19, column: 11, scope: !47)
+!47 = distinct !DILexicalBlock(scope: !11, file: !1, line: 18, column: 20)
+!48 = !DILocation(line: 20, column: 5, scope: !47)
+!49 = distinct !{!49, !44, !50}
+!50 = !DILocation(line: 21, column: 3, scope: !11)
+!51 = !DILocation(line: 22, column: 3, scope: !11)
+!52 = !DILocation(line: 25, column: 26, scope: !11)
+!53 = !DILocation(line: 25, column: 43, scope: !11)
+!54 = !DILocation(line: 25, column: 41, scope: !11)
+!55 = !DILocation(line: 25, column: 49, scope: !11)
+!56 = !DILocation(line: 25, column: 19, scope: !11)
+!57 = !DILocalVariable(name: "buffer", scope: !11, file: !1, line: 9, type: !4)
+!58 = !DILocation(line: 26, column: 3, scope: !11)
+!59 = !DILocation(line: 26, column: 13, scope: !11)
+!60 = !DILocation(line: 29, column: 3, scope: !11)
+!61 = !DILocation(line: 29, column: 16, scope: !62)
+!62 = distinct !DILexicalBlock(scope: !63, file: !1, line: 29, column: 3)
+!63 = distinct !DILexicalBlock(scope: !11, file: !1, line: 29, column: 3)
+!64 = !DILocation(line: 29, column: 3, scope: !63)
+!65 = !DILocation(line: 30, column: 5, scope: !66)
+!66 = distinct !DILexicalBlock(scope: !62, file: !1, line: 29, column: 30)
+!67 = !DILocation(line: 31, column: 3, scope: !66)
+!68 = !DILocation(line: 29, column: 21, scope: !62)
+!69 = !DILocation(line: 29, column: 3, scope: !62)
+!70 = distinct !{!70, !64, !71}
+!71 = !DILocation(line: 31, column: 3, scope: !63)
+!72 = !DILocation(line: 34, column: 3, scope: !11)
+!73 = !DILocation(line: 35, column: 19, scope: !11)
+!74 = !DILocation(line: 35, column: 3, scope: !11)
+!75 = !DILocation(line: 37, column: 3, scope: !11)
+!76 = !DILocation(line: 38, column: 1, scope: !11)
+!77 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 40, type: !78, scopeLine: 40, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
+!78 = !DISubroutineType(types: !79)
+!79 = !{!14}
+!80 = !DILocation(line: 41, column: 3, scope: !77)
+!81 = !DILocation(line: 42, column: 3, scope: !77)

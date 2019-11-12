@@ -1,12 +1,12 @@
 ; ModuleID = 'gv-init.pp.bc'
 source_filename = "gv-init.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 @a = common global [100 x [100 x i32]] zeroinitializer, align 16, !dbg !9
 ; CHECK: define [100 x [100 x si32]]* @a, align 16, init {
@@ -57,26 +57,26 @@ define i32 @main(i32, i8**) #0 !dbg !24 {
   store i32 0, i32* %7, align 4, !dbg !37
   br label %8, !dbg !38
 
-; <label>:8:                                      ; preds = %50, %2
+8:                                                ; preds = %50, %2
   %9 = load i32, i32* %6, align 4, !dbg !39
   %10 = icmp slt i32 %9, 100, !dbg !42
   br i1 %10, label %11, label %53, !dbg !43
 
-; <label>:11:                                     ; preds = %8
+11:                                               ; preds = %8
   br label %12, !dbg !44
 
-; <label>:12:                                     ; preds = %46, %11
+12:                                               ; preds = %46, %11
   %13 = load i32, i32* %7, align 4, !dbg !45
   %14 = icmp slt i32 %13, 100, !dbg !48
   br i1 %14, label %15, label %49, !dbg !49
 
-; <label>:15:                                     ; preds = %12
+15:                                               ; preds = %12
   %16 = load i32, i32* %6, align 4, !dbg !50
   %17 = srem i32 %16, 2, !dbg !52
   %18 = icmp eq i32 %17, 0, !dbg !53
   br i1 %18, label %19, label %32, !dbg !54
 
-; <label>:19:                                     ; preds = %15
+19:                                               ; preds = %15
   %20 = getelementptr inbounds [2 x i32], [2 x i32]* @b, i64 0, i64 0, !dbg !55
   %21 = load i32, i32* %20, align 4, !dbg !55
   %22 = load i32, i32* @c, align 4, !dbg !56
@@ -92,7 +92,7 @@ define i32 @main(i32, i8**) #0 !dbg !24 {
   store i32 %25, i32* %31, align 4, !dbg !63
   br label %45, !dbg !61
 
-; <label>:32:                                     ; preds = %15
+32:                                               ; preds = %15
   %33 = getelementptr inbounds [2 x i32], [2 x i32]* @b, i64 0, i64 1, !dbg !64
   %34 = load i32, i32* %33, align 4, !dbg !64
   %35 = load i32, i32* @d, align 4, !dbg !65
@@ -108,25 +108,25 @@ define i32 @main(i32, i8**) #0 !dbg !24 {
   store i32 %38, i32* %44, align 4, !dbg !72
   br label %45
 
-; <label>:45:                                     ; preds = %32, %19
+45:                                               ; preds = %32, %19
   br label %46, !dbg !73
 
-; <label>:46:                                     ; preds = %45
+46:                                               ; preds = %45
   %47 = load i32, i32* %7, align 4, !dbg !74
   %48 = add nsw i32 %47, 1, !dbg !74
   store i32 %48, i32* %7, align 4, !dbg !74
   br label %12, !dbg !75, !llvm.loop !76
 
-; <label>:49:                                     ; preds = %12
+49:                                               ; preds = %12
   br label %50, !dbg !77
 
-; <label>:50:                                     ; preds = %49
+50:                                               ; preds = %49
   %51 = load i32, i32* %6, align 4, !dbg !78
   %52 = add nsw i32 %51, 1, !dbg !78
   store i32 %52, i32* %6, align 4, !dbg !78
   br label %8, !dbg !79, !llvm.loop !80
 
-; <label>:53:                                     ; preds = %8
+53:                                               ; preds = %8
   ret i32 0, !dbg !82
 }
 ; CHECK: define si32 @main(si32 %1, si8** %2) {
@@ -208,7 +208,7 @@ define i32 @main(i32, i8**) #0 !dbg !24 {
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
 
 !llvm.dbg.cu = !{!2}
@@ -217,7 +217,7 @@ attributes #1 = { nounwind readnone speculatable }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "b", scope: !2, file: !3, line: 2, type: !16, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
+!2 = distinct !DICompileUnit(language: DW_LANG_C99, file: !3, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
 !3 = !DIFile(filename: "gv-init.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !4 = !{}
 !5 = !{!0, !6, !9, !14}
@@ -238,7 +238,7 @@ attributes #1 = { nounwind readnone speculatable }
 !20 = !{i32 2, !"Debug Info Version", i32 3}
 !21 = !{i32 1, !"wchar_size", i32 4}
 !22 = !{i32 7, !"PIC Level", i32 2}
-!23 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!23 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !24 = distinct !DISubprogram(name: "main", scope: !3, file: !3, line: 7, type: !25, scopeLine: 7, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !4)
 !25 = !DISubroutineType(types: !26)
 !26 = !{!8, !8, !27}

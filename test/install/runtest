@@ -150,7 +150,7 @@ fi
 if [[ $cmd = "all" ]]; then
     # List of dockerfiles to try
     # Note that it does not include Red Hat Enterprise Linux because it needs a license
-    args=("debian-8" "debian-9" "debian-10" \
+    args=("debian-9" "debian-10" \
           "ubuntu-16.04" "ubuntu-18.04" "ubuntu-19.04" \
           "archlinux" \
           "centos-6" "centos-7" \

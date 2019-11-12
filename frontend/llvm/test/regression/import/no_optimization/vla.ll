@@ -1,12 +1,12 @@
 ; ModuleID = 'vla.pp.bc'
 source_filename = "vla.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 @.str = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 ; CHECK: define [3 x si8]* @.str, align 1, init {
@@ -46,13 +46,13 @@ define void @foo(i32) #0 !dbg !8 {
   store i32 0, i32* %5, align 4, !dbg !26
   br label %10, !dbg !28
 
-; <label>:10:                                     ; preds = %21, %1
+10:                                               ; preds = %21, %1
   %11 = load i32, i32* %5, align 4, !dbg !29
   %12 = load i32, i32* %2, align 4, !dbg !31
   %13 = icmp slt i32 %11, %12, !dbg !32
   br i1 %13, label %14, label %24, !dbg !33
 
-; <label>:14:                                     ; preds = %10
+14:                                               ; preds = %10
   %15 = load i32, i32* %5, align 4, !dbg !34
   %16 = load i32, i32* %5, align 4, !dbg !36
   %17 = mul nsw i32 %15, %16, !dbg !37
@@ -62,13 +62,13 @@ define void @foo(i32) #0 !dbg !8 {
   store i32 %17, i32* %20, align 4, !dbg !40
   br label %21, !dbg !41
 
-; <label>:21:                                     ; preds = %14
+21:                                               ; preds = %14
   %22 = load i32, i32* %5, align 4, !dbg !42
   %23 = add nsw i32 %22, 1, !dbg !42
   store i32 %23, i32* %5, align 4, !dbg !42
   br label %10, !dbg !43, !llvm.loop !44
 
-; <label>:24:                                     ; preds = %10
+24:                                               ; preds = %10
   %25 = load i32, i32* %2, align 4, !dbg !46
   %26 = load i32, i32* %2, align 4, !dbg !47
   %27 = mul nsw i32 %25, %26, !dbg !48
@@ -143,7 +143,7 @@ define i32 @main(i32, i8**) #0 !dbg !53 {
   store i8** %1, i8*** %5, align 8
   call void @llvm.dbg.declare(metadata i8*** %5, metadata !61, metadata !DIExpression()), !dbg !62
   call void @llvm.dbg.declare(metadata i32* %6, metadata !63, metadata !DIExpression()), !dbg !64
-  %7 = getelementptr inbounds [3 x i8], [3 x i8]* @.str, i32 0, i32 0, !dbg !65
+  %7 = getelementptr inbounds [3 x i8], [3 x i8]* @.str, i64 0, i64 0, !dbg !65
   %8 = call i32 (i8*, ...) @scanf(i8* %7, i32* %6), !dbg !65
   %9 = load i32, i32* %6, align 4, !dbg !66
   call void @foo(i32 %9), !dbg !67
@@ -166,23 +166,23 @@ define i32 @main(i32, i8**) #0 !dbg !53 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { nounwind }
-attributes #3 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "vla.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "foo", scope: !1, file: !1, line: 2, type: !9, scopeLine: 2, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{null, !11}

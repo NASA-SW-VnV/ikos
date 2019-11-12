@@ -1,12 +1,12 @@
 ; ModuleID = 'noexcept.pp.bc'
 source_filename = "noexcept.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 declare i32 @_Z1fv() #1
 ; CHECK: declare si32 @_Z1fv()
@@ -16,10 +16,10 @@ define i32 @_Z1gv() #0 personality i8* bitcast (i32 (...)* @__gxx_personality_v0
   %1 = invoke i32 @_Z1fv()
           to label %2 unwind label %3, !dbg !12
 
-; <label>:2:                                      ; preds = %0
+2:                                                ; preds = %0
   ret i32 %1, !dbg !13
 
-; <label>:3:                                      ; preds = %0
+3:                                                ; preds = %0
   %4 = landingpad { i8*, i32 }
           catch i8* null, !dbg !12
   %5 = extractvalue { i8*, i32 } %4, 0, !dbg !12
@@ -66,8 +66,8 @@ declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 ; CHECK: declare si8* @ar.libcpp.begincatch(si8*)
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #2 = { noinline noreturn nounwind }
 attributes #3 = { noreturn nounwind }
 attributes #4 = { nounwind }
@@ -76,14 +76,14 @@ attributes #4 = { nounwind }
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "noexcept.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "g", linkageName: "_Z1gv", scope: !1, file: !1, line: 3, type: !9, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}

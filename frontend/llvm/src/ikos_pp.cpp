@@ -175,6 +175,7 @@ int main(int argc, char** argv) {
   llvm::initializeDwarfEHPreparePass(registry);
   llvm::initializeSafeStackLegacyPassPass(registry);
   llvm::initializeSjLjEHPreparePass(registry);
+  llvm::initializeStackProtectorPass(registry);
   llvm::initializePreISelIntrinsicLoweringLegacyPassPass(registry);
   llvm::initializeGlobalMergePass(registry);
   llvm::initializeIndirectBrExpandPassPass(registry);
@@ -186,6 +187,7 @@ int main(int argc, char** argv) {
   llvm::initializeExpandReductionsPass(registry);
   llvm::initializeWasmEHPreparePass(registry);
   llvm::initializeWriteBitcodePassPass(registry);
+  llvm::initializeHardwareLoopsPass(registry);
   ikos_pp::initialize_ikos_passes(registry);
 
   /*

@@ -1,12 +1,12 @@
 ; ModuleID = 'file-intrinsics.pp.bc'
 source_filename = "file-intrinsics.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.__sFILE = type { i8*, i32, i32, i16, i16, %struct.__sbuf, i32, i8*, i32 (i8*)*, i32 (i8*, i8*, i32)*, i64 (i8*, i64, i32)*, i32 (i8*, i8*, i32)*, %struct.__sbuf, %struct.__sFILEX*, i32, [3 x i8], [1 x i8], %struct.__sbuf, i32, i64 }
 %struct.__sFILEX = type opaque
@@ -75,12 +75,12 @@ define i32 @main() local_unnamed_addr #0 !dbg !8 {
   %8 = call i32 @fgetc(%struct.__sFILE* %5) #3, !dbg !85
   %9 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.2, i64 0, i64 0, !dbg !86
   %10 = call i32 @"\01_fputs"(i8* %9, %struct.__sFILE* %5) #3, !dbg !86
-  call void @llvm.dbg.value(metadata i32* %2, metadata !87, metadata !DIExpression(DW_OP_deref)), !dbg !88
-  %11 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i64 0, i64 0, !dbg !89
-  %12 = call i32 (%struct.__sFILE*, i8*, ...) @fscanf(%struct.__sFILE* %5, i8* %11, i32* nonnull %2) #3, !dbg !89
-  %13 = call i32 @fflush(%struct.__sFILE* %5) #3, !dbg !90
-  %14 = call i32 @fclose(%struct.__sFILE* %5) #3, !dbg !91
-  ret i32 0, !dbg !92
+  call void @llvm.dbg.value(metadata i32* %2, metadata !87, metadata !DIExpression(DW_OP_deref)), !dbg !77
+  %11 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i64 0, i64 0, !dbg !88
+  %12 = call i32 (%struct.__sFILE*, i8*, ...) @fscanf(%struct.__sFILE* %5, i8* %11, i32* nonnull %2) #3, !dbg !88
+  %13 = call i32 @fflush(%struct.__sFILE* %5) #3, !dbg !89
+  %14 = call i32 @fclose(%struct.__sFILE* %5) #3, !dbg !90
+  ret i32 0, !dbg !91
 }
 ; CHECK: define si32 @main() {
 ; CHECK: #1 !entry !exit {
@@ -115,23 +115,23 @@ declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "file-intrinsics.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/aggressive_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 3, type: !9, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}
@@ -140,7 +140,7 @@ attributes #3 = { nounwind }
 !13 = !DILocalVariable(name: "f", scope: !8, file: !1, line: 4, type: !14)
 !14 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !15, size: 64)
 !15 = !DIDerivedType(tag: DW_TAG_typedef, name: "FILE", file: !16, line: 157, baseType: !17)
-!16 = !DIFile(filename: "/usr/include/_stdio.h", directory: "")
+!16 = !DIFile(filename: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_stdio.h", directory: "")
 !17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "__sFILE", file: !16, line: 126, size: 1216, elements: !18)
 !18 = !{!19, !22, !23, !24, !26, !27, !32, !33, !35, !39, !45, !55, !61, !62, !65, !66, !70, !74, !75, !76}
 !19 = !DIDerivedType(tag: DW_TAG_member, name: "_p", scope: !17, file: !16, line: 127, baseType: !20, size: 64)
@@ -175,9 +175,9 @@ attributes #3 = { nounwind }
 !48 = !{!49, !34, !49, !11}
 !49 = !DIDerivedType(tag: DW_TAG_typedef, name: "fpos_t", file: !16, line: 81, baseType: !50)
 !50 = !DIDerivedType(tag: DW_TAG_typedef, name: "__darwin_off_t", file: !51, line: 71, baseType: !52)
-!51 = !DIFile(filename: "/usr/include/sys/_types.h", directory: "")
+!51 = !DIFile(filename: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/_types.h", directory: "")
 !52 = !DIDerivedType(tag: DW_TAG_typedef, name: "__int64_t", file: !53, line: 46, baseType: !54)
-!53 = !DIFile(filename: "/usr/include/i386/_types.h", directory: "")
+!53 = !DIFile(filename: "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/i386/_types.h", directory: "")
 !54 = !DIBasicType(name: "long long int", size: 64, encoding: DW_ATE_signed)
 !55 = !DIDerivedType(tag: DW_TAG_member, name: "_write", scope: !17, file: !16, line: 140, baseType: !56, size: 64, offset: 640)
 !56 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !57, size: 64)
@@ -201,7 +201,7 @@ attributes #3 = { nounwind }
 !74 = !DIDerivedType(tag: DW_TAG_member, name: "_lb", scope: !17, file: !16, line: 152, baseType: !28, size: 128, offset: 960)
 !75 = !DIDerivedType(tag: DW_TAG_member, name: "_blksize", scope: !17, file: !16, line: 155, baseType: !11, size: 32, offset: 1088)
 !76 = !DIDerivedType(tag: DW_TAG_member, name: "_offset", scope: !17, file: !16, line: 156, baseType: !49, size: 64, offset: 1152)
-!77 = !DILocation(line: 4, column: 9, scope: !8)
+!77 = !DILocation(line: 0, scope: !8)
 !78 = !DILocalVariable(name: "buf", scope: !8, file: !1, line: 5, type: !79)
 !79 = !DICompositeType(tag: DW_TAG_array_type, baseType: !44, size: 8200, elements: !80)
 !80 = !{!81}
@@ -212,8 +212,7 @@ attributes #3 = { nounwind }
 !85 = !DILocation(line: 8, column: 3, scope: !8)
 !86 = !DILocation(line: 9, column: 3, scope: !8)
 !87 = !DILocalVariable(name: "x", scope: !8, file: !1, line: 6, type: !11)
-!88 = !DILocation(line: 6, column: 7, scope: !8)
-!89 = !DILocation(line: 11, column: 3, scope: !8)
-!90 = !DILocation(line: 12, column: 3, scope: !8)
-!91 = !DILocation(line: 13, column: 3, scope: !8)
-!92 = !DILocation(line: 14, column: 1, scope: !8)
+!88 = !DILocation(line: 11, column: 3, scope: !8)
+!89 = !DILocation(line: 12, column: 3, scope: !8)
+!90 = !DILocation(line: 13, column: 3, scope: !8)
+!91 = !DILocation(line: 14, column: 1, scope: !8)

@@ -1,12 +1,12 @@
 ; ModuleID = 'file-intrinsics.pp.bc'
 source_filename = "file-intrinsics.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.__sFILE = type { i8*, i32, i32, i16, i16, %struct.__sbuf, i32, i8*, i32 (i8*)*, i32 (i8*, i8*, i32)*, i64 (i8*, i64, i32)*, i32 (i8*, i8*, i32)*, %struct.__sbuf, %struct.__sFILEX*, i32, [3 x i8], [1 x i8], %struct.__sbuf, i32, i64 }
 %struct.__sFILEX = type opaque
@@ -70,25 +70,25 @@ define i32 @main() #0 !dbg !8 {
   %2 = alloca [1025 x i8], align 16
   %3 = alloca i32, align 4
   call void @llvm.dbg.declare(metadata %struct.__sFILE** %1, metadata !12, metadata !DIExpression()), !dbg !76
-  %4 = getelementptr inbounds [10 x i8], [10 x i8]* @.str, i32 0, i32 0, !dbg !77
-  %5 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.1, i32 0, i32 0, !dbg !77
+  %4 = getelementptr inbounds [10 x i8], [10 x i8]* @.str, i64 0, i64 0, !dbg !77
+  %5 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.1, i64 0, i64 0, !dbg !77
   %6 = call %struct.__sFILE* @"\01_fopen"(i8* %4, i8* %5), !dbg !77
   store %struct.__sFILE* %6, %struct.__sFILE** %1, align 8, !dbg !76
   call void @llvm.dbg.declare(metadata [1025 x i8]* %2, metadata !78, metadata !DIExpression()), !dbg !82
   call void @llvm.dbg.declare(metadata i32* %3, metadata !83, metadata !DIExpression()), !dbg !84
-  %7 = getelementptr inbounds [1025 x i8], [1025 x i8]* %2, i32 0, i32 0, !dbg !85
+  %7 = getelementptr inbounds [1025 x i8], [1025 x i8]* %2, i64 0, i64 0, !dbg !85
   %8 = load %struct.__sFILE*, %struct.__sFILE** %1, align 8, !dbg !86
   %9 = call i8* @fgets(i8* %7, i32 1024, %struct.__sFILE* %8), !dbg !87
   %10 = load %struct.__sFILE*, %struct.__sFILE** %1, align 8, !dbg !88
   %11 = call i32 @fgetc(%struct.__sFILE* %10), !dbg !89
   %12 = load %struct.__sFILE*, %struct.__sFILE** %1, align 8, !dbg !90
-  %13 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.2, i32 0, i32 0, !dbg !91
+  %13 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.2, i64 0, i64 0, !dbg !91
   %14 = call i32 @"\01_fputs"(i8* %13, %struct.__sFILE* %12), !dbg !91
   %15 = load %struct.__sFILE*, %struct.__sFILE** %1, align 8, !dbg !92
-  %16 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i32 0, i32 0, !dbg !93
+  %16 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i64 0, i64 0, !dbg !93
   %17 = call i32 (%struct.__sFILE*, i8*, ...) @fprintf(%struct.__sFILE* %15, i8* %16, i32 1), !dbg !93
   %18 = load %struct.__sFILE*, %struct.__sFILE** %1, align 8, !dbg !94
-  %19 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i32 0, i32 0, !dbg !95
+  %19 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.3, i64 0, i64 0, !dbg !95
   %20 = call i32 (%struct.__sFILE*, i8*, ...) @fscanf(%struct.__sFILE* %18, i8* %19, i32* %3), !dbg !95
   %21 = load %struct.__sFILE*, %struct.__sFILE** %1, align 8, !dbg !96
   %22 = call i32 @fflush(%struct.__sFILE* %21), !dbg !97
@@ -138,22 +138,22 @@ define i32 @main() #0 !dbg !8 {
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "file-intrinsics.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 3, type: !9, scopeLine: 3, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}

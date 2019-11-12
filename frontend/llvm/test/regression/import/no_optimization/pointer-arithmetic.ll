@@ -1,12 +1,12 @@
 ; ModuleID = 'pointer-arithmetic.pp.bc'
 source_filename = "pointer-arithmetic.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.vector = type { i32, i32, i32 }
 
@@ -85,7 +85,7 @@ define i32 @main() #1 !dbg !37 {
   store i32 0, i32* %1, align 4
   %2 = getelementptr inbounds [2 x %struct.vector], [2 x %struct.vector]* @v, i64 0, i64 1, i32 2, !dbg !38
   %3 = load i32, i32* %2, align 4, !dbg !38
-  %4 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.2, i32 0, i32 0, !dbg !39
+  %4 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.2, i64 0, i64 0, !dbg !39
   %5 = call i32 (i8*, ...) @printf(i8* %4, i32 %3), !dbg !39
   ret i32 %5, !dbg !40
 }
@@ -101,9 +101,9 @@ define i32 @main() #1 !dbg !37 {
 ; CHECK: }
 ; CHECK: }
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #1 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #1 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!2}
 !llvm.module.flags = !{!28, !29, !30, !31}
@@ -111,7 +111,7 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "ptr_fun", scope: !2, file: !3, line: 7, type: !26, isLocal: false, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !3, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !4, globals: !5, nameTableKind: GNU)
 !3 = !DIFile(filename: "pointer-arithmetic.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !4 = !{}
 !5 = !{!0, !6, !14, !23}
@@ -126,7 +126,7 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !14 = !DIGlobalVariableExpression(var: !15, expr: !DIExpression())
 !15 = distinct !DIGlobalVariable(name: "v", scope: !2, file: !3, line: 17, type: !16, isLocal: false, isDefinition: true)
 !16 = !DICompositeType(tag: DW_TAG_array_type, baseType: !17, size: 192, elements: !12)
-!17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !3, line: 11, size: 96, flags: DIFlagTypePassByValue | DIFlagTrivial, elements: !18, identifier: "_ZTS6vector")
+!17 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "vector", file: !3, line: 11, size: 96, flags: DIFlagTypePassByValue, elements: !18, identifier: "_ZTS6vector")
 !18 = !{!19, !21, !22}
 !19 = !DIDerivedType(tag: DW_TAG_member, name: "x", scope: !17, file: !3, line: 12, baseType: !20, size: 32)
 !20 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
@@ -141,7 +141,7 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !29 = !{i32 2, !"Debug Info Version", i32 3}
 !30 = !{i32 1, !"wchar_size", i32 4}
 !31 = !{i32 7, !"PIC Level", i32 2}
-!32 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!32 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !33 = distinct !DISubprogram(name: "f", linkageName: "_Z1fv", scope: !3, file: !3, line: 3, type: !34, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !4)
 !34 = !DISubroutineType(types: !35)
 !35 = !{!20}

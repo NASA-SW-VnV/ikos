@@ -1,12 +1,12 @@
 ; ModuleID = 'phi-2.pp.bc'
 source_filename = "phi-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.foo = type { i32, %struct.bar, [10 x [10 x [9 x i32]]] }
 %struct.bar = type { i32, float }
@@ -42,30 +42,30 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
   store i32 0, i32* %6, align 4, !dbg !41
   br label %10, !dbg !43
 
-; <label>:10:                                     ; preds = %54, %2
+10:                                               ; preds = %54, %2
   %11 = load i32, i32* %6, align 4, !dbg !44
   %12 = icmp slt i32 %11, 10, !dbg !46
   br i1 %12, label %13, label %57, !dbg !47
 
-; <label>:13:                                     ; preds = %10
+13:                                               ; preds = %10
   store i32 0, i32* %7, align 4, !dbg !48
   br label %14, !dbg !51
 
-; <label>:14:                                     ; preds = %50, %13
+14:                                               ; preds = %50, %13
   %15 = load i32, i32* %7, align 4, !dbg !52
   %16 = icmp slt i32 %15, 10, !dbg !54
   br i1 %16, label %17, label %53, !dbg !55
 
-; <label>:17:                                     ; preds = %14
+17:                                               ; preds = %14
   store i32 0, i32* %8, align 4, !dbg !56
   br label %18, !dbg !59
 
-; <label>:18:                                     ; preds = %46, %17
+18:                                               ; preds = %46, %17
   %19 = load i32, i32* %8, align 4, !dbg !60
   %20 = icmp slt i32 %19, 9, !dbg !62
   br i1 %20, label %21, label %49, !dbg !63
 
-; <label>:21:                                     ; preds = %18
+21:                                               ; preds = %18
   %22 = load i32, i32* %4, align 4, !dbg !64
   %23 = getelementptr inbounds %struct.foo, %struct.foo* %9, i32 0, i32 2, !dbg !66
   %24 = load i32, i32* %6, align 4, !dbg !67
@@ -94,40 +94,40 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
   store i32 %43, i32* %45, align 4, !dbg !79
   br label %46, !dbg !80
 
-; <label>:46:                                     ; preds = %21
+46:                                               ; preds = %21
   %47 = load i32, i32* %8, align 4, !dbg !81
   %48 = add nsw i32 %47, 1, !dbg !81
   store i32 %48, i32* %8, align 4, !dbg !81
   br label %18, !dbg !82, !llvm.loop !83
 
-; <label>:49:                                     ; preds = %18
+49:                                               ; preds = %18
   br label %50, !dbg !85
 
-; <label>:50:                                     ; preds = %49
+50:                                               ; preds = %49
   %51 = load i32, i32* %7, align 4, !dbg !86
   %52 = add nsw i32 %51, 1, !dbg !86
   store i32 %52, i32* %7, align 4, !dbg !86
   br label %14, !dbg !87, !llvm.loop !88
 
-; <label>:53:                                     ; preds = %14
+53:                                               ; preds = %14
   br label %54, !dbg !90
 
-; <label>:54:                                     ; preds = %53
+54:                                               ; preds = %53
   %55 = load i32, i32* %6, align 4, !dbg !91
   %56 = add nsw i32 %55, 1, !dbg !91
   store i32 %56, i32* %6, align 4, !dbg !91
   br label %10, !dbg !92, !llvm.loop !93
 
-; <label>:57:                                     ; preds = %10
+57:                                               ; preds = %10
   store i32 0, i32* %6, align 4, !dbg !95
   br label %58, !dbg !97
 
-; <label>:58:                                     ; preds = %76, %57
+58:                                               ; preds = %76, %57
   %59 = load i32, i32* %6, align 4, !dbg !98
   %60 = icmp slt i32 %59, 10, !dbg !100
   br i1 %60, label %61, label %79, !dbg !101
 
-; <label>:61:                                     ; preds = %58
+61:                                               ; preds = %58
   %62 = getelementptr inbounds %struct.foo, %struct.foo* %9, i32 0, i32 2, !dbg !102
   %63 = load i32, i32* %6, align 4, !dbg !104
   %64 = sext i32 %63 to i64, !dbg !105
@@ -140,17 +140,17 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
   %71 = sext i32 %70 to i64, !dbg !105
   %72 = getelementptr inbounds [9 x i32], [9 x i32]* %68, i64 0, i64 %71, !dbg !105
   %73 = load i32, i32* %72, align 4, !dbg !105
-  %74 = getelementptr inbounds [4 x i8], [4 x i8]* @.str, i32 0, i32 0, !dbg !109
+  %74 = getelementptr inbounds [4 x i8], [4 x i8]* @.str, i64 0, i64 0, !dbg !109
   %75 = call i32 (i8*, ...) @printf(i8* %74, i32 %73), !dbg !109
   br label %76, !dbg !110
 
-; <label>:76:                                     ; preds = %61
+76:                                               ; preds = %61
   %77 = load i32, i32* %6, align 4, !dbg !111
   %78 = add nsw i32 %77, 1, !dbg !111
   store i32 %78, i32* %6, align 4, !dbg !111
   br label %58, !dbg !112, !llvm.loop !113
 
-; <label>:79:                                     ; preds = %58
+79:                                               ; preds = %58
   ret i32 0, !dbg !115
 }
 ; CHECK: define si32 @main(si32 %1, si8** %2) {
@@ -264,22 +264,22 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
-attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "phi-2.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 18, type: !9, scopeLine: 18, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11, !11, !12}

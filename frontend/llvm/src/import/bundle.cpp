@@ -261,7 +261,8 @@ ar::Function* BundleImporter::translate_extern_function(llvm::Function* fun) {
 
 bool BundleImporter::ignore_intrinsic(llvm::Intrinsic::ID id) {
   return id == llvm::Intrinsic::dbg_value ||
-         id == llvm::Intrinsic::dbg_declare || id == llvm::Intrinsic::prefetch;
+         id == llvm::Intrinsic::dbg_declare ||
+         id == llvm::Intrinsic::dbg_label || id == llvm::Intrinsic::prefetch;
 }
 
 ar::Function* BundleImporter::translate_intrinsic_function(

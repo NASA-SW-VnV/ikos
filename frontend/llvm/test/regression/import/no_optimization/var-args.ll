@@ -1,12 +1,12 @@
 ; ModuleID = 'var-args.pp.bc'
 source_filename = "var-args.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.__va_list_tag = type { i32, i32, i8*, i8* }
 
@@ -30,7 +30,7 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   call void @llvm.dbg.declare(metadata i32* %2, metadata !15, metadata !DIExpression()), !dbg !16
   call void @llvm.dbg.declare(metadata i8** %3, metadata !17, metadata !DIExpression()), !dbg !18
   call void @llvm.dbg.declare(metadata i8** %4, metadata !19, metadata !DIExpression()), !dbg !22
-  %9 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i32 0, i32 0, !dbg !22
+  %9 = getelementptr inbounds [6 x i8], [6 x i8]* @.str, i64 0, i64 0, !dbg !22
   store i8* %9, i8** %4, align 8, !dbg !22
   call void @llvm.dbg.declare(metadata i32* %5, metadata !23, metadata !DIExpression()), !dbg !24
   store i32 0, i32* %5, align 4, !dbg !24
@@ -39,29 +39,29 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   store i32 %10, i32* %6, align 4, !dbg !26
   call void @llvm.dbg.declare(metadata [1 x %struct.__va_list_tag]* %7, metadata !28, metadata !DIExpression()), !dbg !45
   call void @llvm.dbg.declare(metadata [1 x %struct.__va_list_tag]* %8, metadata !46, metadata !DIExpression()), !dbg !47
-  %11 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i32 0, i32 0, !dbg !48
+  %11 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i64 0, i64 0, !dbg !48
   %12 = bitcast %struct.__va_list_tag* %11 to i8*, !dbg !48
   call void @llvm.va_start(i8* %12), !dbg !48
-  %13 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %8, i32 0, i32 0, !dbg !49
-  %14 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i32 0, i32 0, !dbg !49
+  %13 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %8, i64 0, i64 0, !dbg !49
+  %14 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i64 0, i64 0, !dbg !49
   %15 = bitcast %struct.__va_list_tag* %13 to i8*, !dbg !49
   %16 = bitcast %struct.__va_list_tag* %14 to i8*, !dbg !49
   call void @llvm.va_copy(i8* %15, i8* %16), !dbg !49
   br label %17, !dbg !50
 
-; <label>:17:                                     ; preds = %36, %1
+17:                                               ; preds = %36, %1
   %18 = load i32, i32* %6, align 4, !dbg !51
   %19 = icmp ne i32 %18, 0, !dbg !52
   br i1 %19, label %20, label %41, !dbg !50
 
-; <label>:20:                                     ; preds = %17
-  %21 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %8, i32 0, i32 0, !dbg !53
+20:                                               ; preds = %17
+  %21 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %8, i64 0, i64 0, !dbg !53
   %22 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %21, i32 0, i32 0, !dbg !53
   %23 = load i32, i32* %22, align 16, !dbg !53
   %24 = icmp ule i32 %23, 40, !dbg !53
   br i1 %24, label %25, label %31, !dbg !53
 
-; <label>:25:                                     ; preds = %20
+25:                                               ; preds = %20
   %26 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %21, i32 0, i32 3, !dbg !53
   %27 = load i8*, i8** %26, align 16, !dbg !53
   %28 = getelementptr i8, i8* %27, i32 %23, !dbg !53
@@ -70,7 +70,7 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   store i32 %30, i32* %22, align 16, !dbg !53
   br label %36, !dbg !53
 
-; <label>:31:                                     ; preds = %20
+31:                                               ; preds = %20
   %32 = getelementptr inbounds %struct.__va_list_tag, %struct.__va_list_tag* %21, i32 0, i32 2, !dbg !53
   %33 = load i8*, i8** %32, align 8, !dbg !53
   %34 = bitcast i8* %33 to i32*, !dbg !53
@@ -78,7 +78,7 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   store i8* %35, i8** %32, align 8, !dbg !53
   br label %36, !dbg !53
 
-; <label>:36:                                     ; preds = %31, %25
+36:                                               ; preds = %31, %25
   %37 = phi i32* [ %29, %25 ], [ %34, %31 ], !dbg !53
   %38 = load i32, i32* %37, align 4, !dbg !53
   store i32 %38, i32* %6, align 4, !dbg !55
@@ -87,8 +87,8 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   store i32 %40, i32* %5, align 4, !dbg !56
   br label %17, !dbg !50, !llvm.loop !57
 
-; <label>:41:                                     ; preds = %17
-  %42 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %8, i32 0, i32 0, !dbg !59
+41:                                               ; preds = %17
+  %42 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %8, i64 0, i64 0, !dbg !59
   %43 = bitcast %struct.__va_list_tag* %42 to i8*, !dbg !59
   call void @llvm.va_end(i8* %43), !dbg !59
   %44 = load i8*, i8** %4, align 8, !dbg !60
@@ -104,31 +104,31 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   store i8 0, i8* %52, align 1, !dbg !68
   br label %53, !dbg !69
 
-; <label>:53:                                     ; preds = %60, %41
+53:                                               ; preds = %60, %41
   %54 = load i32, i32* %5, align 4, !dbg !70
   %55 = icmp sgt i32 %54, 0, !dbg !73
   br i1 %55, label %56, label %63, !dbg !74
 
-; <label>:56:                                     ; preds = %53
+56:                                               ; preds = %53
   %57 = load i8*, i8** %3, align 8, !dbg !75
   %58 = load i8*, i8** %4, align 8, !dbg !77
   %59 = call i8* @strcat(i8* %57, i8* %58), !dbg !78
   br label %60, !dbg !79
 
-; <label>:60:                                     ; preds = %56
+60:                                               ; preds = %56
   %61 = load i32, i32* %5, align 4, !dbg !80
   %62 = add nsw i32 %61, -1, !dbg !80
   store i32 %62, i32* %5, align 4, !dbg !80
   br label %53, !dbg !81, !llvm.loop !82
 
-; <label>:63:                                     ; preds = %53
+63:                                               ; preds = %53
   %64 = load i8*, i8** %4, align 8, !dbg !84
   %65 = load i32, i32* %2, align 4, !dbg !85
   %66 = call i32 (i8*, ...) @printf(i8* %64, i32 %65), !dbg !86
   %67 = load i8*, i8** %3, align 8, !dbg !87
-  %68 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i32 0, i32 0, !dbg !88
+  %68 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i64 0, i64 0, !dbg !88
   %69 = call i32 @vprintf(i8* %67, %struct.__va_list_tag* %68), !dbg !89
-  %70 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i32 0, i32 0, !dbg !90
+  %70 = getelementptr inbounds [1 x %struct.__va_list_tag], [1 x %struct.__va_list_tag]* %7, i64 0, i64 0, !dbg !90
   %71 = bitcast %struct.__va_list_tag* %70 to i8*, !dbg !90
   call void @llvm.va_end(i8* %71), !dbg !90
   ret void, !dbg !91
@@ -286,18 +286,18 @@ declare i32 @vprintf(i8*, %struct.__va_list_tag*) #4
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
 attributes #2 = { nounwind }
-attributes #3 = { allocsize(0) "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
-attributes #4 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #3 = { allocsize(0) "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #4 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #5 = { allocsize(0) }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!6, !7, !8, !9}
 !llvm.ident = !{!10}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, retainedTypes: !3, nameTableKind: GNU)
 !1 = !DIFile(filename: "var-args.c", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{!4}
@@ -307,7 +307,7 @@ attributes #5 = { allocsize(0) }
 !7 = !{i32 2, !"Debug Info Version", i32 3}
 !8 = !{i32 1, !"wchar_size", i32 4}
 !9 = !{i32 7, !"PIC Level", i32 2}
-!10 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!10 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !11 = distinct !DISubprogram(name: "PrintInts", scope: !1, file: !1, line: 8, type: !12, scopeLine: 8, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !12 = !DISubroutineType(types: !13)
 !13 = !{null, !14, null}

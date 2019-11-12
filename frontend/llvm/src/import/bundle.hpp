@@ -104,8 +104,8 @@ public:
 
   /// \brief Translate a llvm::Function* into an ar::Function*
   ///
-  /// Returns nullptr for intrinsics that should not be translated (such as
-  /// llvm.dbg.declare and llvm.dbg.value)
+  /// Returns nullptr for intrinsics that should not be translated (e.g,
+  /// llvm.dbg.* functions)
   ar::Function* translate_function(llvm::Function*);
 
 private:
@@ -114,8 +114,8 @@ private:
 
   /// \brief Translate an external llvm::Function* into an ar::Function*
   ///
-  /// Returns nullptr for intrinsics that should not be translated (such as
-  /// llvm.dbg.declare and llvm.dbg.value)
+  /// Returns nullptr for intrinsics that should not be translated (e.g,
+  /// llvm.dbg.* functions)
   ar::Function* translate_extern_function(llvm::Function*);
 
 public:

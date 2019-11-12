@@ -6,7 +6,7 @@ addons:
   apt:
     update: true
     sources:
-    - llvm-toolchain-xenial-8
+    - llvm-toolchain-xenial-9
     packages:
     - gcc
     - g++
@@ -20,10 +20,10 @@ addons:
     - libsqlite3-dev
     - libz-dev
     - libedit-dev
-    - llvm-8
-    - llvm-8-dev
-    - llvm-8-tools
-    - clang-8
+    - llvm-9
+    - llvm-9-dev
+    - llvm-9-tools
+    - clang-9
   homebrew:
     update: true
     taps: nasa-sw-vnv/core
@@ -31,13 +31,13 @@ addons:
     - cmake
     - gmp
     - boost
-    - llvm@8
+    - llvm
     - apron
 script:
   - mkdir build
   - cd build
-  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-8/bin/llvm-config" ..; fi
-  - if [ $TRAVIS_OS_NAME == osx ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/local/opt/llvm@8/bin/llvm-config" ..; fi
+  - if [ $TRAVIS_OS_NAME == linux ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/lib/llvm-9/bin/llvm-config" ..; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then cmake -DCMAKE_BUILD_TYPE="Debug" -DLLVM_CONFIG_EXECUTABLE="/usr/local/opt/llvm/bin/llvm-config" ..; fi
   - make
   - make install
   - make check

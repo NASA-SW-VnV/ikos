@@ -1,12 +1,12 @@
 ; ModuleID = 'virtual-inheritance.pp.bc'
 source_filename = "virtual-inheritance.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-macosx10.13.0"
+target triple = "x86_64-apple-macosx10.14.0"
 
 ; CHECK-LABEL: Bundle
 ; CHECK: target-endianness = little-endian
 ; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.13.0
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
 
 %struct.E = type { i32 (...)**, %struct.B, %struct.C, i32, %struct.A }
 %struct.B = type { i8* }
@@ -19,8 +19,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 %struct.F.base = type <{ i32 (...)**, i32 }>
 %struct.G.base = type { i32 (...)**, i8* }
 
-@_ZTC1H0_1F = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 32 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*)] }
-; CHECK: define {0: [3 x si8*]}* @_ZTC1H0_1F, init {
+@_ZTC1H0_1F = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 32 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*)] }, align 8
+; CHECK: define {0: [3 x si8*]}* @_ZTC1H0_1F, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %1 = bitcast @_ZTI1F
 ; CHECK:   si8* %2 = sitoptr 32
@@ -28,8 +28,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTC1H16_1G = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 16 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*)] }
-; CHECK: define {0: [3 x si8*]}* @_ZTC1H16_1G, init {
+@_ZTC1H16_1G = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 16 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*)] }, align 8
+; CHECK: define {0: [3 x si8*]}* @_ZTC1H16_1G, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8* %1 = bitcast @_ZTI1G
 ; CHECK:   si8* %2 = sitoptr 16
@@ -37,8 +37,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1A = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1A, i32 0, i32 0) }
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1A, init {
+@_ZTI1A = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1A, i32 0, i32 0) }, align 8
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1A, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = ptrshift @_ZTS1A, 3 * 0, 1 * 0
@@ -47,8 +47,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1B = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1B, i32 0, i32 0) }
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1B, init {
+@_ZTI1B = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1B, i32 0, i32 0) }, align 8
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1B, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = ptrshift @_ZTS1B, 3 * 0, 1 * 0
@@ -57,8 +57,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1C = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1C, i32 0, i32 0) }
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1C, init {
+@_ZTI1C = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1C, i32 0, i32 0) }, align 8
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1C, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = ptrshift @_ZTS1C, 3 * 0, 1 * 0
@@ -67,8 +67,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1D = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1D, i32 0, i32 0), i32 0, i32 3, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141, i8* bitcast ({ i8*, i8* }* @_ZTI1B to i8*), i64 -8189, i8* bitcast ({ i8*, i8* }* @_ZTI1C to i8*), i64 2050 }
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1D, init {
+@_ZTI1D = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1D, i32 0, i32 0), i32 0, i32 3, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141, i8* bitcast ({ i8*, i8* }* @_ZTI1B to i8*), i64 -8189, i8* bitcast ({ i8*, i8* }* @_ZTI1C to i8*), i64 2050 }, align 8
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1D, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = bitcast @_ZTI1C
@@ -80,8 +80,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1E = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1E, i32 0, i32 0), i32 0, i32 3, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141, i8* bitcast ({ i8*, i8* }* @_ZTI1B to i8*), i64 2050, i8* bitcast ({ i8*, i8* }* @_ZTI1C to i8*), i64 4098 }
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1E, init {
+@_ZTI1E = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1E, i32 0, i32 0), i32 0, i32 3, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141, i8* bitcast ({ i8*, i8* }* @_ZTI1B to i8*), i64 2050, i8* bitcast ({ i8*, i8* }* @_ZTI1C to i8*), i64 4098 }, align 8
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1E, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = bitcast @_ZTI1C
@@ -93,8 +93,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1F = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1F, i32 0, i32 0), i32 0, i32 1, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141 }
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1F, init {
+@_ZTI1F = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1F, i32 0, i32 0), i32 0, i32 1, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141 }, align 8
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1F, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = bitcast @_ZTI1A
@@ -104,8 +104,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1G = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1G, i32 0, i32 0), i32 0, i32 1, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141 }
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1G, init {
+@_ZTI1G = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1G, i32 0, i32 0), i32 0, i32 1, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141 }, align 8
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1G, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = bitcast @_ZTI1A
@@ -115,8 +115,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTI1H = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1H, i32 0, i32 0), i32 2, i32 2, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*), i64 2, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*), i64 4098 }
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64}* @_ZTI1H, init {
+@_ZTI1H = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1H, i32 0, i32 0), i32 2, i32 2, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*), i64 2, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*), i64 4098 }, align 8
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64}* @_ZTI1H, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
 ; CHECK:   si8* %2 = bitcast @_ZTI1G
@@ -127,64 +127,64 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1A = linkonce_odr constant [3 x i8] c"1A\00"
-; CHECK: define [3 x si8]* @_ZTS1A, init {
+@_ZTS1A = linkonce_odr constant [3 x i8] c"1A\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1A, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1A, [49, 65, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1B = linkonce_odr constant [3 x i8] c"1B\00"
-; CHECK: define [3 x si8]* @_ZTS1B, init {
+@_ZTS1B = linkonce_odr constant [3 x i8] c"1B\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1B, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1B, [49, 66, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1C = linkonce_odr constant [3 x i8] c"1C\00"
-; CHECK: define [3 x si8]* @_ZTS1C, init {
+@_ZTS1C = linkonce_odr constant [3 x i8] c"1C\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1C, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1C, [49, 67, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1D = linkonce_odr constant [3 x i8] c"1D\00"
-; CHECK: define [3 x si8]* @_ZTS1D, init {
+@_ZTS1D = linkonce_odr constant [3 x i8] c"1D\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1D, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1D, [49, 68, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1E = linkonce_odr constant [3 x i8] c"1E\00"
-; CHECK: define [3 x si8]* @_ZTS1E, init {
+@_ZTS1E = linkonce_odr constant [3 x i8] c"1E\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1E, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1E, [49, 69, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1F = linkonce_odr constant [3 x i8] c"1F\00"
-; CHECK: define [3 x si8]* @_ZTS1F, init {
+@_ZTS1F = linkonce_odr constant [3 x i8] c"1F\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1F, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1F, [49, 70, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1G = linkonce_odr constant [3 x i8] c"1G\00"
-; CHECK: define [3 x si8]* @_ZTS1G, init {
+@_ZTS1G = linkonce_odr constant [3 x i8] c"1G\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1G, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1G, [49, 71, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTS1H = linkonce_odr constant [3 x i8] c"1H\00"
-; CHECK: define [3 x si8]* @_ZTS1H, init {
+@_ZTS1H = linkonce_odr constant [3 x i8] c"1H\00", align 1
+; CHECK: define [3 x si8]* @_ZTS1H, align 1, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   store @_ZTS1H, [49, 72, 0], align 1
 ; CHECK: }
 ; CHECK: }
 
-@_ZTT1D = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [4 x i8*] }, { [4 x i8*] }* @_ZTV1D, i32 0, inrange i32 0, i32 4) to i8*)]
-; CHECK: define [1 x si8*]* @_ZTT1D, init {
+@_ZTT1D = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [4 x i8*] }, { [4 x i8*] }* @_ZTV1D, i32 0, inrange i32 0, i32 4) to i8*)], align 8
+; CHECK: define [1 x si8*]* @_ZTT1D, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTV1D, 32 * 0, 1 * 0, 8 * 4
 ; CHECK:   si8* %2 = bitcast %1
@@ -192,8 +192,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTT1E = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [4 x i8*] }, { [4 x i8*] }* @_ZTV1E, i32 0, inrange i32 0, i32 3) to i8*)]
-; CHECK: define [1 x si8*]* @_ZTT1E, init {
+@_ZTT1E = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [4 x i8*] }, { [4 x i8*] }* @_ZTV1E, i32 0, inrange i32 0, i32 3) to i8*)], align 8
+; CHECK: define [1 x si8*]* @_ZTT1E, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTV1E, 32 * 0, 1 * 0, 8 * 3
 ; CHECK:   si8* %2 = bitcast %1
@@ -201,8 +201,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTT1F = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTV1F, i32 0, inrange i32 0, i32 3) to i8*)]
-; CHECK: define [1 x si8*]* @_ZTT1F, init {
+@_ZTT1F = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTV1F, i32 0, inrange i32 0, i32 3) to i8*)], align 8
+; CHECK: define [1 x si8*]* @_ZTT1F, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTV1F, 24 * 0, 1 * 0, 8 * 3
 ; CHECK:   si8* %2 = bitcast %1
@@ -210,8 +210,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTT1G = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTV1G, i32 0, inrange i32 0, i32 3) to i8*)]
-; CHECK: define [1 x si8*]* @_ZTT1G, init {
+@_ZTT1G = linkonce_odr unnamed_addr constant [1 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTV1G, i32 0, inrange i32 0, i32 3) to i8*)], align 8
+; CHECK: define [1 x si8*]* @_ZTT1G, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTV1G, 24 * 0, 1 * 0, 8 * 3
 ; CHECK:   si8* %2 = bitcast %1
@@ -219,8 +219,8 @@ target triple = "x86_64-apple-macosx10.13.0"
 ; CHECK: }
 ; CHECK: }
 
-@_ZTT1H = linkonce_odr unnamed_addr constant [4 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*], [3 x i8*] }, { [3 x i8*], [3 x i8*] }* @_ZTV1H, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTC1H0_1F, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTC1H16_1G, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*], [3 x i8*] }, { [3 x i8*], [3 x i8*] }* @_ZTV1H, i32 0, inrange i32 1, i32 3) to i8*)]
-; CHECK: define [4 x si8*]* @_ZTT1H, init {
+@_ZTT1H = linkonce_odr unnamed_addr constant [4 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*], [3 x i8*] }, { [3 x i8*], [3 x i8*] }* @_ZTV1H, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTC1H0_1F, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTC1H16_1G, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*], [3 x i8*] }, { [3 x i8*], [3 x i8*] }* @_ZTV1H, i32 0, inrange i32 1, i32 3) to i8*)], align 8
+; CHECK: define [4 x si8*]* @_ZTT1H, align 8, init {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   si8** %1 = ptrshift @_ZTV1H, 48 * 0, 1 * 24, 8 * 3
 ; CHECK:   si8** %2 = ptrshift @_ZTC1H16_1G, 24 * 0, 1 * 0, 8 * 3
@@ -628,42 +628,42 @@ define i32 @main() #0 !dbg !8 {
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
-attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
-attributes #2 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
+attributes #2 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #3 = { nounwind }
 
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!3, !4, !5, !6}
 !llvm.ident = !{!7}
 
-!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 8.0.0 (tags/RELEASE_800/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
+!0 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus, file: !1, producer: "clang version 9.0.0 (tags/RELEASE_900/final)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, enums: !2, nameTableKind: GNU)
 !1 = !DIFile(filename: "virtual-inheritance.cpp", directory: "/Users/marthaud/ikos/ikos-git/frontend/llvm/test/regression/import/no_optimization")
 !2 = !{}
 !3 = !{i32 2, !"Dwarf Version", i32 4}
 !4 = !{i32 2, !"Debug Info Version", i32 3}
 !5 = !{i32 1, !"wchar_size", i32 4}
 !6 = !{i32 7, !"PIC Level", i32 2}
-!7 = !{!"clang version 8.0.0 (tags/RELEASE_800/final)"}
+!7 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
 !8 = distinct !DISubprogram(name: "main", scope: !1, file: !1, line: 33, type: !9, scopeLine: 33, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !0, retainedNodes: !2)
 !9 = !DISubroutineType(types: !10)
 !10 = !{!11}
 !11 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !12 = !DILocalVariable(name: "e", scope: !8, file: !1, line: 34, type: !13)
-!13 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "E", file: !1, line: 13, size: 256, flags: DIFlagTypePassByReference, elements: !14, vtableHolder: !13, identifier: "_ZTS1E")
+!13 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "E", file: !1, line: 13, size: 256, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !14, vtableHolder: !13, identifier: "_ZTS1E")
 !14 = !{!15, !19, !25, !30, !33, !34}
 !15 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !13, baseType: !16, offset: 24, flags: DIFlagVirtual, extraData: i32 0)
-!16 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "A", file: !1, line: 1, size: 32, flags: DIFlagTypePassByValue | DIFlagTrivial, elements: !17, identifier: "_ZTS1A")
+!16 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "A", file: !1, line: 1, size: 32, flags: DIFlagTypePassByValue, elements: !17, identifier: "_ZTS1A")
 !17 = !{!18}
 !18 = !DIDerivedType(tag: DW_TAG_member, name: "x", scope: !16, file: !1, line: 2, baseType: !11, size: 32)
 !19 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !13, baseType: !20, offset: 64, extraData: i32 0)
-!20 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "B", file: !1, line: 5, size: 64, flags: DIFlagTypePassByValue | DIFlagTrivial, elements: !21, identifier: "_ZTS1B")
+!20 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "B", file: !1, line: 5, size: 64, flags: DIFlagTypePassByValue, elements: !21, identifier: "_ZTS1B")
 !21 = !{!22}
 !22 = !DIDerivedType(tag: DW_TAG_member, name: "y", scope: !20, file: !1, line: 6, baseType: !23, size: 64)
 !23 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !24, size: 64)
 !24 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_signed_char)
 !25 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !13, baseType: !26, offset: 128, extraData: i32 0)
-!26 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "C", file: !1, line: 9, size: 8, flags: DIFlagTypePassByValue | DIFlagTrivial, elements: !27, identifier: "_ZTS1C")
+!26 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "C", file: !1, line: 9, size: 8, flags: DIFlagTypePassByValue, elements: !27, identifier: "_ZTS1C")
 !27 = !{!28}
 !28 = !DIDerivedType(tag: DW_TAG_member, name: "a", scope: !26, file: !1, line: 10, baseType: !29, size: 8)
 !29 = !DIBasicType(name: "bool", size: 8, encoding: DW_ATE_boolean)
@@ -677,7 +677,7 @@ attributes #3 = { nounwind }
 !37 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !13, size: 64, flags: DIFlagArtificial | DIFlagObjectPointer)
 !38 = !DILocation(line: 34, column: 5, scope: !8)
 !39 = !DILocalVariable(name: "d", scope: !8, file: !1, line: 35, type: !40)
-!40 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "D", file: !1, line: 19, size: 256, flags: DIFlagTypePassByReference, elements: !41, vtableHolder: !40, identifier: "_ZTS1D")
+!40 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "D", file: !1, line: 19, size: 256, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !41, vtableHolder: !40, identifier: "_ZTS1D")
 !41 = !{!42, !43, !44, !45, !46}
 !42 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !40, baseType: !16, offset: 24, flags: DIFlagVirtual, extraData: i32 0)
 !43 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !40, baseType: !20, offset: 32, flags: DIFlagVirtual, extraData: i32 0)
@@ -687,21 +687,21 @@ attributes #3 = { nounwind }
 !47 = !DIBasicType(name: "float", size: 32, encoding: DW_ATE_float)
 !48 = !DILocation(line: 35, column: 5, scope: !8)
 !49 = !DILocalVariable(name: "f", scope: !8, file: !1, line: 36, type: !50)
-!50 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "F", file: !1, line: 23, size: 128, flags: DIFlagTypePassByReference, elements: !51, vtableHolder: !50, identifier: "_ZTS1F")
+!50 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "F", file: !1, line: 23, size: 128, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !51, vtableHolder: !50, identifier: "_ZTS1F")
 !51 = !{!52, !53, !54}
 !52 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !50, baseType: !16, offset: 24, flags: DIFlagVirtual, extraData: i32 0)
 !53 = !DIDerivedType(tag: DW_TAG_member, name: "_vptr$F", scope: !1, file: !1, baseType: !31, size: 64, flags: DIFlagArtificial)
 !54 = !DIDerivedType(tag: DW_TAG_member, name: "y", scope: !50, file: !1, line: 24, baseType: !11, size: 32, offset: 64)
 !55 = !DILocation(line: 36, column: 5, scope: !8)
 !56 = !DILocalVariable(name: "g", scope: !8, file: !1, line: 37, type: !57)
-!57 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "G", file: !1, line: 27, size: 192, flags: DIFlagTypePassByReference, elements: !58, vtableHolder: !57, identifier: "_ZTS1G")
+!57 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "G", file: !1, line: 27, size: 192, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !58, vtableHolder: !57, identifier: "_ZTS1G")
 !58 = !{!59, !60, !61}
 !59 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !57, baseType: !16, offset: 24, flags: DIFlagVirtual, extraData: i32 0)
 !60 = !DIDerivedType(tag: DW_TAG_member, name: "_vptr$G", scope: !1, file: !1, baseType: !31, size: 64, flags: DIFlagArtificial)
 !61 = !DIDerivedType(tag: DW_TAG_member, name: "z", scope: !57, file: !1, line: 28, baseType: !23, size: 64, offset: 64)
 !62 = !DILocation(line: 37, column: 5, scope: !8)
 !63 = !DILocalVariable(name: "h", scope: !8, file: !1, line: 38, type: !64)
-!64 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "H", file: !1, line: 31, size: 320, flags: DIFlagTypePassByReference, elements: !65, vtableHolder: !50, identifier: "_ZTS1H")
+!64 = distinct !DICompositeType(tag: DW_TAG_structure_type, name: "H", file: !1, line: 31, size: 320, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !65, vtableHolder: !50, identifier: "_ZTS1H")
 !65 = !{!66, !67}
 !66 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !64, baseType: !50, extraData: i32 0)
 !67 = !DIDerivedType(tag: DW_TAG_inheritance, scope: !64, baseType: !57, offset: 128, extraData: i32 0)
