@@ -61,6 +61,7 @@
 #include <ikos/core/linear_expression.hpp>
 #include <ikos/core/number/q_number.hpp>
 #include <ikos/core/number/z_number.hpp>
+#include <ikos/core/semantic/dumpable.hpp>
 #include <ikos/core/semantic/graph.hpp>
 #include <ikos/core/semantic/variable.hpp>
 #include <ikos/core/support/cast.hpp>
@@ -685,6 +686,23 @@ struct GraphTraits< muzq::ControlFlowGraph< VariableRef >* > {
 
   static PredecessorNodeIterator predecessor_end(NodeRef bb) {
     return bb->predecessor_end();
+  }
+};
+
+/// \brief Implement DumpableTraits for BasicBlock*
+template < typename VariableRef >
+struct DumpableTraits< muzq::BasicBlock< VariableRef >* > {
+  static void dump(std::ostream& stream, muzq::BasicBlock< VariableRef >* bb) {
+    bb->dump(stream);
+  }
+};
+
+/// \brief Implement DumpableTraits for ControlFlowGraph*
+template < typename VariableRef >
+struct DumpableTraits< muzq::ControlFlowGraph< VariableRef >* > {
+  static void dump(std::ostream& stream,
+                   muzq::ControlFlowGraph< VariableRef >* cfg) {
+    cfg->dump(stream);
   }
 };
 
