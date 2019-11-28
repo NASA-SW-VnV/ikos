@@ -200,75 +200,113 @@ VariableFactory::VariableFactory(ar::Bundle* bundle)
 VariableFactory::~VariableFactory() = default;
 
 LocalVariable* VariableFactory::get_local(ar::LocalVariable* var) {
-  auto it = this->_local_variable_map.find(var);
-  if (it == this->_local_variable_map.end()) {
-    auto vn = std::make_unique< LocalVariable >(var);
-    vn->set_offset_var(
-        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_local_variable_mutex);
+    auto it = this->_local_variable_map.find(var);
+    if (it != this->_local_variable_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto vn = std::make_unique< LocalVariable >(var);
+  vn->set_offset_var(
+      std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_local_variable_mutex);
     auto res = this->_local_variable_map.try_emplace(var, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 GlobalVariable* VariableFactory::get_global(ar::GlobalVariable* var) {
-  auto it = this->_global_variable_map.find(var);
-  if (it == this->_global_variable_map.end()) {
-    auto vn = std::make_unique< GlobalVariable >(var);
-    vn->set_offset_var(
-        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_global_variable_mutex);
+    auto it = this->_global_variable_map.find(var);
+    if (it != this->_global_variable_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto vn = std::make_unique< GlobalVariable >(var);
+  vn->set_offset_var(
+      std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_global_variable_mutex);
     auto res = this->_global_variable_map.try_emplace(var, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 InternalVariable* VariableFactory::get_internal(ar::InternalVariable* var) {
-  auto it = this->_internal_variable_map.find(var);
-  if (it == this->_internal_variable_map.end()) {
-    auto vn = std::make_unique< InternalVariable >(var);
-    if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
-      vn->set_offset_var(
-          std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_internal_variable_mutex);
+    auto it = this->_internal_variable_map.find(var);
+    if (it != this->_internal_variable_map.end()) {
+      return it->second.get();
     }
+  }
+
+  auto vn = std::make_unique< InternalVariable >(var);
+  if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
+    vn->set_offset_var(
+        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  }
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_internal_variable_mutex);
     auto res = this->_internal_variable_map.try_emplace(var, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 InlineAssemblyPointerVariable* VariableFactory::get_asm_ptr(
     ar::InlineAssemblyConstant* cst) {
-  auto it = this->_inline_asm_pointer_map.find(cst);
-  if (it == this->_inline_asm_pointer_map.end()) {
-    auto vn = std::make_unique< InlineAssemblyPointerVariable >(cst);
-    vn->set_offset_var(
-        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_inline_asm_pointer_mutex);
+    auto it = this->_inline_asm_pointer_map.find(cst);
+    if (it != this->_inline_asm_pointer_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto vn = std::make_unique< InlineAssemblyPointerVariable >(cst);
+  vn->set_offset_var(
+      std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_inline_asm_pointer_mutex);
     auto res = this->_inline_asm_pointer_map.try_emplace(cst, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 FunctionPointerVariable* VariableFactory::get_function_ptr(ar::Function* fun) {
-  auto it = this->_function_pointer_map.find(fun);
-  if (it == this->_function_pointer_map.end()) {
-    auto vn = std::make_unique< FunctionPointerVariable >(fun);
-    vn->set_offset_var(
-        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_function_pointer_mutex);
+    auto it = this->_function_pointer_map.find(fun);
+    if (it != this->_function_pointer_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto vn = std::make_unique< FunctionPointerVariable >(fun);
+  vn->set_offset_var(
+      std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_function_pointer_mutex);
     auto res = this->_function_pointer_map.try_emplace(fun, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
@@ -282,12 +320,23 @@ CellVariable* VariableFactory::get_cell(MemoryLocation* address,
                                         const MachineInt& size,
                                         Signedness sign) {
   auto key = std::make_tuple(address, offset, size);
-  auto it = this->_cell_map.find(key);
-  if (it == this->_cell_map.end()) {
+
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_cell_mutex);
+    auto it = this->_cell_map.find(key);
+    if (it != this->_cell_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  {
     // Create a memory cell variable
     // A cell can be either an integer, a float or a pointer
     // The integer type should have the right bit-width and the given signedness
     // The parameter `size` is in bytes, compute bit-width = size * 8
+    //
+    // Note: IntegerType::get() is not thread safe, so lock the mutex here
+    boost::unique_lock< boost::shared_mutex > lock(this->_cell_mutex);
     bool overflow;
     MachineInt eight(8, size.bit_width(), Unsigned);
     MachineInt bit_width = mul(size, eight, overflow);
@@ -301,60 +350,80 @@ CellVariable* VariableFactory::get_cell(MemoryLocation* address,
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
     auto res = this->_cell_map.emplace(key, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 AllocSizeVariable* VariableFactory::get_alloc_size(MemoryLocation* address) {
-  auto it = this->_alloc_size_map.find(address);
-  if (it == this->_alloc_size_map.end()) {
-    auto vn = std::make_unique< AllocSizeVariable >(this->_size_type, address);
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_alloc_size_mutex);
+    auto it = this->_alloc_size_map.find(address);
+    if (it != this->_alloc_size_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto vn = std::make_unique< AllocSizeVariable >(this->_size_type, address);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_alloc_size_mutex);
     auto res = this->_alloc_size_map.try_emplace(address, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 ReturnVariable* VariableFactory::get_return(ar::Function* fun) {
-  auto it = this->_return_variable_map.find(fun);
-  if (it == this->_return_variable_map.end()) {
-    auto vn = std::make_unique< ReturnVariable >(fun);
-    if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
-      vn->set_offset_var(
-          std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_return_variable_mutex);
+    auto it = this->_return_variable_map.find(fun);
+    if (it != this->_return_variable_map.end()) {
+      return it->second.get();
     }
+  }
+
+  auto vn = std::make_unique< ReturnVariable >(fun);
+  if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
+    vn->set_offset_var(
+        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  }
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_return_variable_mutex);
     auto res = this->_return_variable_map.try_emplace(fun, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 NamedShadowVariable* VariableFactory::get_named_shadow(ar::Type* type,
                                                        llvm::StringRef name) {
-  auto it = this->_named_shadow_variable_map.find(name);
-  if (it == this->_named_shadow_variable_map.end()) {
-    auto vn = std::make_unique< NamedShadowVariable >(type, name);
-    if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
-      vn->set_offset_var(
-          std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_named_shadow_variable_mutex);
+    auto it = this->_named_shadow_variable_map.find(name);
+    if (it != this->_named_shadow_variable_map.end()) {
+      return it->second.get();
     }
+  }
+
+  auto vn = std::make_unique< NamedShadowVariable >(type, name);
+  if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
+    vn->set_offset_var(
+        std::make_unique< OffsetVariable >(this->_size_type, vn.get()));
+  }
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_named_shadow_variable_mutex);
     auto res =
         this->_named_shadow_variable_map.try_emplace(name, std::move(vn));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 UnnamedShadowVariable* VariableFactory::create_unnamed_shadow(ar::Type* type) {
+  boost::lock_guard< boost::mutex > lock(this->_unnamed_shadow_variable_mutex);
   std::size_t id = this->_unnamed_shadow_variable_vec.size();
   auto vn = std::make_unique< UnnamedShadowVariable >(type, id);
   if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {

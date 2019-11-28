@@ -89,7 +89,7 @@ if (CUSTOM_BOOST_ROOT)
 endif()
 
 find_package(Boost 1.55.0 REQUIRED
-             COMPONENTS filesystem system)
+             COMPONENTS filesystem system thread)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 find_package(GMP REQUIRED)

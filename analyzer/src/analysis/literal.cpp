@@ -77,13 +77,21 @@ const AggregateLit& LiteralFactory::get_aggregate(ar::Value* value) {
 }
 
 const Literal& LiteralFactory::get(ar::Value* value) {
-  auto it = this->_map.find(value);
-  if (it == this->_map.end()) {
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_mutex);
+    auto it = this->_map.find(value);
+    if (it != this->_map.end()) {
+      return it->second;
+    }
+  }
+
+  Literal literal = this->create_literal(value);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_mutex);
     std::pair< Map::iterator, bool > res =
-        this->_map.emplace(value, this->create_literal(value));
-    return (res.first)->second;
-  } else {
-    return it->second;
+        this->_map.emplace(value, std::move(literal));
+    return res.first->second;
   }
 }
 

@@ -67,9 +67,6 @@ class WtoProcessor;
 
 } // end namespace interleaved_fwd_fixpoint_iterator_impl
 
-/// \brief Kind of fixpoint iteration
-enum class FixpointIterationKind { Increasing, Decreasing };
-
 /// \brief Interleaved forward fixpoint iterator
 ///
 /// This class computes a fixpoint on a control flow graph.

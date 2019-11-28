@@ -45,6 +45,8 @@
 
 #include <memory>
 
+#include <boost/thread/shared_mutex.hpp>
+
 #include <llvm/ADT/DenseMap.h>
 
 #include <ikos/ar/semantic/statement.hpp>
@@ -129,6 +131,8 @@ private:
 /// \brief Management of calling contexts
 class CallContextFactory {
 private:
+  boost::shared_mutex _mutex;
+
   llvm::DenseMap< std::pair< CallContext*, ar::CallBase* >,
                   std::unique_ptr< CallContext > >
       _map;

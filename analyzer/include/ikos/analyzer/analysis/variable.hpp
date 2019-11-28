@@ -49,6 +49,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <boost/thread/shared_mutex.hpp>
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -462,35 +464,55 @@ private:
   /// This is an unsigned integer with the bit-width of a pointer
   ar::IntegerType* _size_type;
 
+  boost::shared_mutex _local_variable_mutex;
+
   llvm::DenseMap< ar::LocalVariable*, std::unique_ptr< LocalVariable > >
       _local_variable_map;
+
+  boost::shared_mutex _global_variable_mutex;
 
   llvm::DenseMap< ar::GlobalVariable*, std::unique_ptr< GlobalVariable > >
       _global_variable_map;
 
+  boost::shared_mutex _internal_variable_mutex;
+
   llvm::DenseMap< ar::InternalVariable*, std::unique_ptr< InternalVariable > >
       _internal_variable_map;
+
+  boost::shared_mutex _inline_asm_pointer_mutex;
 
   llvm::DenseMap< ar::InlineAssemblyConstant*,
                   std::unique_ptr< InlineAssemblyPointerVariable > >
       _inline_asm_pointer_map;
 
+  boost::shared_mutex _function_pointer_mutex;
+
   llvm::DenseMap< ar::Function*, std::unique_ptr< FunctionPointerVariable > >
       _function_pointer_map;
+
+  boost::shared_mutex _cell_mutex;
 
   std::unordered_map< std::tuple< MemoryLocation*, MachineInt, MachineInt >,
                       std::unique_ptr< CellVariable >,
                       CellMapKeyHash >
       _cell_map;
 
+  boost::shared_mutex _alloc_size_mutex;
+
   llvm::DenseMap< MemoryLocation*, std::unique_ptr< AllocSizeVariable > >
       _alloc_size_map;
+
+  boost::shared_mutex _return_variable_mutex;
 
   llvm::DenseMap< ar::Function*, std::unique_ptr< ReturnVariable > >
       _return_variable_map;
 
+  boost::shared_mutex _named_shadow_variable_mutex;
+
   llvm::StringMap< std::unique_ptr< NamedShadowVariable > >
       _named_shadow_variable_map;
+
+  boost::mutex _unnamed_shadow_variable_mutex;
 
   std::vector< std::unique_ptr< UnnamedShadowVariable > >
       _unnamed_shadow_variable_vec;

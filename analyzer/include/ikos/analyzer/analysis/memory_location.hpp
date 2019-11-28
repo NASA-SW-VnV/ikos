@@ -48,6 +48,8 @@
 #include <memory>
 #include <string>
 
+#include <boost/thread/shared_mutex.hpp>
+
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/ADT/StringMap.h>
 #include <llvm/ADT/StringRef.h>
@@ -292,14 +294,22 @@ public:
 /// \brief Management of memory locations
 class MemoryFactory {
 private:
+  boost::shared_mutex _local_memory_mutex;
+
   llvm::DenseMap< ar::LocalVariable*, std::unique_ptr< LocalMemoryLocation > >
       _local_memory_map;
+
+  boost::shared_mutex _global_memory_mutex;
 
   llvm::DenseMap< ar::GlobalVariable*, std::unique_ptr< GlobalMemoryLocation > >
       _global_memory_map;
 
+  boost::shared_mutex _function_memory_mutex;
+
   llvm::DenseMap< ar::Function*, std::unique_ptr< FunctionMemoryLocation > >
       _function_memory_map;
+
+  boost::shared_mutex _aggregate_memory_mutex;
 
   llvm::DenseMap< ar::InternalVariable*,
                   std::unique_ptr< AggregateMemoryLocation > >
@@ -310,6 +320,8 @@ private:
   std::unique_ptr< ArgvMemoryLocation > _argv;
 
   std::unique_ptr< LibcErrnoMemoryLocation > _libc_errno;
+
+  boost::shared_mutex _dyn_alloc_mutex;
 
   llvm::DenseMap< std::pair< ar::CallBase*, CallContext* >,
                   std::unique_ptr< DynAllocMemoryLocation > >

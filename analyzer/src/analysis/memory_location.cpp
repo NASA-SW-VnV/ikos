@@ -161,38 +161,58 @@ MemoryFactory::MemoryFactory()
 MemoryFactory::~MemoryFactory() = default;
 
 LocalMemoryLocation* MemoryFactory::get_local(ar::LocalVariable* var) {
-  auto it = this->_local_memory_map.find(var);
-  if (it == this->_local_memory_map.end()) {
-    auto ml = std::make_unique< LocalMemoryLocation >(var);
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_local_memory_mutex);
+    auto it = this->_local_memory_map.find(var);
+    if (it != this->_local_memory_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto ml = std::make_unique< LocalMemoryLocation >(var);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_local_memory_mutex);
     auto res = this->_local_memory_map.try_emplace(var, std::move(ml));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 GlobalMemoryLocation* MemoryFactory::get_global(ar::GlobalVariable* var) {
-  auto it = this->_global_memory_map.find(var);
-  if (it == this->_global_memory_map.end()) {
-    auto ml = std::make_unique< GlobalMemoryLocation >(var);
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_global_memory_mutex);
+    auto it = this->_global_memory_map.find(var);
+    if (it != this->_global_memory_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto ml = std::make_unique< GlobalMemoryLocation >(var);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_global_memory_mutex);
     auto res = this->_global_memory_map.try_emplace(var, std::move(ml));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
 FunctionMemoryLocation* MemoryFactory::get_function(ar::Function* fun) {
-  auto it = this->_function_memory_map.find(fun);
-  if (it == this->_function_memory_map.end()) {
-    auto ml = std::make_unique< FunctionMemoryLocation >(fun);
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_function_memory_mutex);
+    auto it = this->_function_memory_map.find(fun);
+    if (it != this->_function_memory_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto ml = std::make_unique< FunctionMemoryLocation >(fun);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_function_memory_mutex);
     auto res = this->_function_memory_map.try_emplace(fun, std::move(ml));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
@@ -203,14 +223,22 @@ FunctionMemoryLocation* MemoryFactory::get_function(
 
 AggregateMemoryLocation* MemoryFactory::get_aggregate(
     ar::InternalVariable* var) {
-  auto it = this->_aggregate_memory_map.find(var);
-  if (it == this->_aggregate_memory_map.end()) {
-    auto ml = std::make_unique< AggregateMemoryLocation >(var);
+  {
+    boost::shared_lock< boost::shared_mutex > lock(
+        this->_aggregate_memory_mutex);
+    auto it = this->_aggregate_memory_map.find(var);
+    if (it != this->_aggregate_memory_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto ml = std::make_unique< AggregateMemoryLocation >(var);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(
+        this->_aggregate_memory_mutex);
     auto res = this->_aggregate_memory_map.try_emplace(var, std::move(ml));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 
@@ -228,14 +256,20 @@ LibcErrnoMemoryLocation* MemoryFactory::get_libc_errno() {
 
 DynAllocMemoryLocation* MemoryFactory::get_dyn_alloc(ar::CallBase* call,
                                                      CallContext* context) {
-  auto it = this->_dyn_alloc_map.find({call, context});
-  if (it == this->_dyn_alloc_map.end()) {
-    auto ml = std::make_unique< DynAllocMemoryLocation >(call, context);
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_dyn_alloc_mutex);
+    auto it = this->_dyn_alloc_map.find({call, context});
+    if (it != this->_dyn_alloc_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto ml = std::make_unique< DynAllocMemoryLocation >(call, context);
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_dyn_alloc_mutex);
     auto res = this->_dyn_alloc_map.try_emplace({call, context}, std::move(ml));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 

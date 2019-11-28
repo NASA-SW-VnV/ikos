@@ -54,15 +54,22 @@ CallContextFactory::~CallContextFactory() = default;
 CallContext* CallContextFactory::get_context(CallContext* parent,
                                              ar::CallBase* call) {
   ikos_assert(parent != nullptr && call != nullptr);
-  auto it = this->_map.find({parent, call});
-  if (it == this->_map.end()) {
-    auto call_context =
-        std::unique_ptr< CallContext >(new CallContext(parent, call));
+
+  {
+    boost::shared_lock< boost::shared_mutex > lock(this->_mutex);
+    auto it = this->_map.find({parent, call});
+    if (it != this->_map.end()) {
+      return it->second.get();
+    }
+  }
+
+  auto call_context =
+      std::unique_ptr< CallContext >(new CallContext(parent, call));
+
+  {
+    boost::unique_lock< boost::shared_mutex > lock(this->_mutex);
     auto res = this->_map.try_emplace({parent, call}, std::move(call_context));
-    ikos_assert(res.second);
     return res.first->second.get();
-  } else {
-    return it->second.get();
   }
 }
 

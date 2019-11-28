@@ -47,6 +47,7 @@
 
 #include <unordered_map>
 
+#include <boost/thread/shared_mutex.hpp>
 #include <boost/variant.hpp>
 #include <boost/version.hpp>
 
@@ -342,6 +343,9 @@ private:
   using Map = std::unordered_map< ar::Value*, Literal >;
 
 private:
+  /// \brief Mutex
+  boost::shared_mutex _mutex;
+
   /// \brief Variable factory
   VariableFactory& _vfac;
 

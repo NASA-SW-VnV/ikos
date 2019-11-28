@@ -116,5 +116,8 @@ public:
 
 }; // end class ForwardFixpointIterator
 
+/// \brief Kind of fixpoint iteration
+enum class FixpointIterationKind { Increasing, Decreasing };
+
 } // end namespace core
 } // end namespace ikos
