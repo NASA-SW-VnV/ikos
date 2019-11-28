@@ -105,9 +105,11 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("use-widening-hints", this->use_widening_hints);
 
+  table.insert("use-partitioning-domain", this->use_partitioning_domain);
+
   table.insert("use-fixpoint-cache", this->use_fixpoint_cache);
 
-  table.insert("use-partitioning-domain", this->use_partitioning_domain);
+  table.insert("use-checks", this->use_checks);
 
   table.insert("globals-init-policy",
                globals_init_policy_str(this->globals_init_policy));

@@ -417,15 +417,19 @@ static llvm::cl::opt< bool > NoWideningHints(
     llvm::cl::desc("Disable the widening hint analysis"),
     llvm::cl::cat(AnalysisCategory));
 
+static llvm::cl::opt< bool > EnablePartitioningDomain(
+    "enable-partitioning-domain",
+    llvm::cl::desc("Enable the partitioning abstract domain"),
+    llvm::cl::cat(AnalysisCategory));
+
 static llvm::cl::opt< bool > NoFixpointCache(
     "no-fixpoint-cache",
     llvm::cl::desc("Disable the cache of fixpoints"),
     llvm::cl::cat(AnalysisCategory));
 
-static llvm::cl::opt< bool > EnablePartitioningDomain(
-    "enable-partitioning-domain",
-    llvm::cl::desc("Enable the partitioning abstract domain"),
-    llvm::cl::cat(AnalysisCategory));
+static llvm::cl::opt< bool > NoChecks("no-checks",
+                                      llvm::cl::desc("Disable all the checks"),
+                                      llvm::cl::cat(AnalysisCategory));
 
 static llvm::cl::opt< analyzer::GlobalsInitPolicy > GlobalsInitPolicy(
     "globals-init",
@@ -793,8 +797,9 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .use_liveness = !NoLiveness,
       .use_pointer = !NoPointer,
       .use_widening_hints = !NoWideningHints,
-      .use_fixpoint_cache = !NoFixpointCache,
       .use_partitioning_domain = EnablePartitioningDomain,
+      .use_fixpoint_cache = !NoFixpointCache,
+      .use_checks = !NoChecks,
       .globals_init_policy = GlobalsInitPolicy,
       .progress = Progress,
       .display_invariants = DisplayInvariants,

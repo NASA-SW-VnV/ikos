@@ -73,8 +73,10 @@ void IntraproceduralValueAnalysis::run() {
 
   // Create checkers
   std::vector< std::unique_ptr< Checker > > checkers;
-  for (CheckerName name : _ctx.opts.analyses) {
-    checkers.emplace_back(make_checker(_ctx, name));
+  if (_ctx.opts.use_checks) {
+    for (CheckerName name : _ctx.opts.analyses) {
+      checkers.emplace_back(make_checker(_ctx, name));
+    }
   }
 
   // Initial invariant
@@ -115,7 +117,7 @@ void IntraproceduralValueAnalysis::run() {
       fixpoint.run(init_inv);
     }
 
-    {
+    if (!checkers.empty()) {
       progress->start_task("Checking properties for function '" +
                            demangle(function->name()) + "'");
       ScopeTimerDatabase t(_ctx.output_db->times,

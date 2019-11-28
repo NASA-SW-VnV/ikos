@@ -77,8 +77,10 @@ void InterproceduralValueAnalysis::run() {
 
   // Create checkers
   std::vector< std::unique_ptr< Checker > > checkers;
-  for (CheckerName name : _ctx.opts.analyses) {
-    checkers.emplace_back(make_checker(_ctx, name));
+  if (_ctx.opts.use_checks) {
+    for (CheckerName name : _ctx.opts.analyses) {
+      checkers.emplace_back(make_checker(_ctx, name));
+    }
   }
 
   // Initial invariant
@@ -155,7 +157,7 @@ void InterproceduralValueAnalysis::run() {
         fixpoint.run(init_inv);
       }
 
-      {
+      if (!checkers.empty()) {
         log::info("Checking properties for global constructor '" +
                   demangle(ctor->name()) + "'");
         ScopeTimerDatabase t(_ctx.output_db->times,
@@ -215,7 +217,7 @@ void InterproceduralValueAnalysis::run() {
       fixpoint.run(entry_inv);
     }
 
-    {
+    if (!checkers.empty()) {
       log::info("Checking properties for entry point '" +
                 demangle(entry_point->name()) + "'");
       ScopeTimerDatabase t(_ctx.output_db->times,
@@ -257,7 +259,7 @@ void InterproceduralValueAnalysis::run() {
         fixpoint.run(init_inv);
       }
 
-      {
+      if (!checkers.empty()) {
         log::info("Checking properties for global destructor: '" +
                   demangle(dtor->name()) + "'");
         ScopeTimerDatabase t(_ctx.output_db->times,

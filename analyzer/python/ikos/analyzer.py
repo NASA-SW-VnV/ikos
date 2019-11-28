@@ -155,6 +155,11 @@ def parse_arguments(argv):
                           help='Disable the cache of fixpoints',
                           action='store_true',
                           default=False)
+    analysis.add_argument('--no-checks',
+                          dest='no_checks',
+                          help='Disable all the checks',
+                          action='store_true',
+                          default=False)
     analysis.add_argument('--proc',
                           dest='procedural',
                           metavar='',
@@ -784,10 +789,12 @@ def ikos_analyzer(db_path, pp_path, opt):
         cmd.append('-no-pointer')
     if opt.no_widening_hints:
         cmd.append('-no-widening-hints')
-    if opt.no_fixpoint_cache:
-        cmd.append('-no-fixpoint-cache')
     if opt.partitioning != 'no':
         cmd.append('-enable-partitioning-domain')
+    if opt.no_fixpoint_cache:
+        cmd.append('-no-fixpoint-cache')
+    if opt.no_checks:
+        cmd.append('-no-checks')
     if opt.hardware_addresses:
         cmd.append('-hardware-addresses=%s' % ','.join(opt.hardware_addresses))
     if opt.hardware_addresses_file:

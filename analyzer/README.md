@@ -431,6 +431,7 @@ During the analysis, IKOS will assume that memory accesses in the range `[0x20, 
 * `--no-pointer`: disable the pointer analysis.
 * `--no-widening-hints`: disable the detection of widening hints.
 * `--no-fixpoint-cache`: disable the cache of fixpoint for called functions.
+* `--no-checks`: disable all the checks
 * `--argc`: specify the value of `argc` for the analysis.
 * `--no-libc`: do not use libc intrinsics. Useful for bare metal programming.
 

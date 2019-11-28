@@ -323,11 +323,14 @@ public:
   /// \brief Wether we should use widening hints or not
   bool use_widening_hints;
 
+  /// \brief Wether we should use the partitioning abstract domain or not
+  bool use_partitioning_domain;
+
   /// \brief Wether we should save fixpoints on called functions or not
   bool use_fixpoint_cache;
 
-  /// \brief Wether we should use the partitioning abstract domain or not
-  bool use_partitioning_domain;
+  /// \brief Wether we should perform checks or not
+  bool use_checks;
 
   /// \brief Policy of initialization for global variables
   GlobalsInitPolicy globals_init_policy;
