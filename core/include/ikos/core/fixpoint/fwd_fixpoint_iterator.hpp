@@ -117,13 +117,13 @@ public:
   InterleavedFwdFixpointIterator& operator=(InterleavedFwdFixpointIterator&&) =
       default;
 
-  /// \brief Get the control flow graph
+  /// \brief Return the control flow graph
   GraphRef cfg() const { return this->_cfg; }
 
-  /// \brief Get the weak topological order of the graph
+  /// \brief Return the weak topological order of the graph
   const WtoT& wto() const { return this->_wto; }
 
-  /// \brief Get the bottom abstract value
+  /// \brief Return the bottom abstract value
   const AbstractValue& bottom() const { return this->_bottom; }
 
 private:
@@ -147,7 +147,7 @@ private:
     this->set(this->_post, node, std::move(inv));
   }
 
-  /// \brief Get the invariant for the given node
+  /// \brief Return the invariant for the given node
   const AbstractValue& get(const InvariantTable& table, NodeRef node) const {
     auto it = table.find(node);
     if (it != table.end()) {
@@ -158,12 +158,12 @@ private:
   }
 
 public:
-  /// \brief Get the pre invariant for the given node
+  /// \brief Return the pre invariant for the given node
   const AbstractValue& pre(NodeRef node) const {
     return this->get(this->_pre, node);
   }
 
-  /// \brief Get the post invariant for the given node
+  /// \brief Return the post invariant for the given node
   const AbstractValue& post(NodeRef node) const {
     return this->get(this->_post, node);
   }

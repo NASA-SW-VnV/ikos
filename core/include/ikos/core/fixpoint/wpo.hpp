@@ -153,6 +153,9 @@ public:
   /// \brief Return the graph node
   NodeRef node() const { return this->_node; }
 
+  /// \brief Return the kind of node
+  Kind kind() const { return this->_kind; }
+
   /// \brief Check the kind of this node
   bool is_plain() const { return this->_kind == Kind::Plain; }
   bool is_head() const { return this->_kind == Kind::Head; }
@@ -409,6 +412,9 @@ public:
   /// \brief Return the node for the given index
   NodeRef node(WpoIndex idx) const { return this->_wpo_nodes[idx].node(); }
 
+  /// \brief Return the kind of the given index
+  Kind kind(WpoIndex idx) const { return this->_wpo_nodes[idx].kind(); }
+
   /// \brief Check the kind of this given node index
   bool is_plain(WpoIndex idx) const { return this->_wpo_nodes[idx].is_plain(); }
   bool is_head(WpoIndex idx) const { return this->_wpo_nodes[idx].is_head(); }
@@ -416,8 +422,13 @@ public:
 
   /// \brief Checks whether a given edge is a backedge
   bool is_back_edge(NodeRef head, NodeRef pred) const {
-    const auto& preds = this->_back_predecessors[head];
-    return preds.find(pred) != preds.end();
+    auto it = this->_back_predecessors.find(head);
+    if (it == this->_back_predecessors.end()) {
+      return false;
+    } else {
+      const auto& preds = it->second;
+      return preds.find(pred) != preds.end();
+    }
   }
 
   void dump(std::ostream& o) const {
