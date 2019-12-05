@@ -82,8 +82,10 @@
 #include <ikos/analyzer/analysis/pointer/function.hpp>
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
 #include <ikos/analyzer/analysis/result.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/interprocedural.hpp>
-#include <ikos/analyzer/analysis/value/intraprocedural/intraprocedural.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/concurrent/analysis.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/sequential/analysis.hpp>
+#include <ikos/analyzer/analysis/value/intraprocedural/concurrent/analysis.hpp>
+#include <ikos/analyzer/analysis/value/intraprocedural/sequential/analysis.hpp>
 #include <ikos/analyzer/analysis/variable.hpp>
 #include <ikos/analyzer/analysis/widening_hint.hpp>
 #include <ikos/analyzer/checker/name.hpp>
@@ -347,6 +349,11 @@ static llvm::cl::opt< analyzer::Procedural > Procedural(
                                 "Intraprocedural analysis")),
     llvm::cl::init(analyzer::Procedural::Interprocedural),
     llvm::cl::cat(AnalysisCategory));
+
+static llvm::cl::opt< int > Jobs("j",
+                                 llvm::cl::desc("Number of threads"),
+                                 llvm::cl::init(1),
+                                 llvm::cl::cat(AnalysisCategory));
 
 static llvm::cl::opt< analyzer::WideningStrategy > WideningStrategy(
     "widening-strategy",
@@ -784,6 +791,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .no_init_globals = parse_function_names(NoInitGlobals, bundle),
       .machine_int_domain = Domain,
       .procedural = Procedural,
+      .num_threads = Jobs,
       .widening_strategy = WideningStrategy,
       .narrowing_strategy = NarrowingStrategy,
       .widening_delay = WideningDelay,
@@ -1096,17 +1104,23 @@ int main(int argc, char** argv) {
 
     // Final step, run a value analysis, and check properties on the results
     if (Procedural == analyzer::Procedural::Interprocedural) {
-      analyzer::InterproceduralValueAnalysis analysis(ctx);
       analyzer::log::info("Running interprocedural value analysis");
       analyzer::ScopeTimerDatabase t(output_db.times,
                                      "ikos-analyzer.value-analysis");
-      analysis.run();
+      if (Jobs == 1) {
+        analyzer::value::interprocedural::sequential::Analysis(ctx).run();
+      } else {
+        analyzer::value::interprocedural::concurrent::Analysis(ctx).run();
+      }
     } else if (Procedural == analyzer::Procedural::Intraprocedural) {
-      analyzer::IntraproceduralValueAnalysis analysis(ctx);
       analyzer::log::info("Running intraprocedural value analysis");
       analyzer::ScopeTimerDatabase t(output_db.times,
                                      "ikos-analyzer.value-analysis");
-      analysis.run();
+      if (Jobs == 1) {
+        analyzer::value::intraprocedural::sequential::Analysis(ctx).run();
+      } else {
+        analyzer::value::intraprocedural::concurrent::Analysis(ctx).run();
+      }
     } else {
       ikos_unreachable("unreachable");
     }

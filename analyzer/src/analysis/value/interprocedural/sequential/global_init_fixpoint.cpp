@@ -43,12 +43,13 @@
 
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
 #include <ikos/analyzer/analysis/value/global_variable.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/global_init_fixpoint.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/sequential/global_init_fixpoint.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
 namespace interprocedural {
+namespace sequential {
 
 GlobalVarInitializerFixpoint::GlobalVarInitializerFixpoint(
     Context& ctx, ar::GlobalVariable* gv)
@@ -127,6 +128,7 @@ const AbstractDomain& GlobalVarInitializerFixpoint::exit_invariant() const {
   return this->post(code->exit_block());
 }
 
+} // end namespace sequential
 } // end namespace interprocedural
 } // end namespace value
 } // end namespace analyzer

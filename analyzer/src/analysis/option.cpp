@@ -78,6 +78,8 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("procedural", procedural_str(this->procedural));
 
+  table.insert("num-threads", this->num_threads);
+
   table.insert("widening-strategy",
                widening_strategy_str(this->widening_strategy));
 

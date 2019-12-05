@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Fixpoint on a global variable initializer
+ * \brief Sequential interprocedural value analysis
  *
  * Author: Maxime Arthaud
  *
@@ -9,7 +9,7 @@
  *
  * Notices:
  *
- * Copyright (c) 2019 United States Government as represented by the
+ * Copyright (c) 2018-2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -43,67 +43,47 @@
 
 #pragma once
 
-#include <ikos/ar/semantic/code.hpp>
-
-#include <ikos/core/fixpoint/fwd_fixpoint_iterator.hpp>
-
-#include <ikos/analyzer/analysis/call_context.hpp>
 #include <ikos/analyzer/analysis/context.hpp>
-#include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
-#include <ikos/analyzer/analysis/value/abstract_domain.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
 namespace interprocedural {
+namespace sequential {
 
-/// \brief Fixpoint on a global variable initializer
-class GlobalVarInitializerFixpoint final
-    : public core::InterleavedFwdFixpointIterator< ar::Code*, AbstractDomain > {
+/// \brief Sequential interprocedural value analysis
+///
+/// Performs a top-down analysis with a memory abstract domain.
+class Analysis {
 private:
-  /// \brief Parent class
-  using FwdFixpointIterator =
-      core::InterleavedFwdFixpointIterator< ar::Code*, AbstractDomain >;
-
-  /// \brief Numerical execution engine
-  using NumericalExecutionEngineT = NumericalExecutionEngine< AbstractDomain >;
-
-private:
-  /// \brief Global variable
-  ar::GlobalVariable* _gv;
-
   /// \brief Analysis context
   Context& _ctx;
 
-  /// \brief Empty call context
-  CallContext* _empty_call_context;
-
 public:
   /// \brief Constructor
-  GlobalVarInitializerFixpoint(Context& ctx, ar::GlobalVariable* gv);
+  explicit Analysis(Context& ctx);
 
-  /// \brief Compute the fixpoint
-  void run(AbstractDomain inv);
+  /// \brief No copy constructor
+  Analysis(const Analysis&) = delete;
 
-  /// \brief Propagate the invariant through the basic block
-  AbstractDomain analyze_node(ar::BasicBlock* bb, AbstractDomain pre) override;
+  /// \brief No move constructor
+  Analysis(Analysis&&) = delete;
 
-  /// \brief Propagate the invariant through an edge
-  AbstractDomain analyze_edge(ar::BasicBlock* src,
-                              ar::BasicBlock* dest,
-                              AbstractDomain pre) override;
+  /// \brief No copy assignment operator
+  Analysis& operator=(const Analysis&) = delete;
 
-  /// \brief Process the computed abstract value for a node
-  void process_pre(ar::BasicBlock* bb, const AbstractDomain& pre) override;
+  /// \brief No move assignment operator
+  Analysis& operator=(Analysis&&) = delete;
 
-  /// \brief Process the computed abstract value for a node
-  void process_post(ar::BasicBlock* bb, const AbstractDomain& post) override;
+  /// \brief Destructor
+  ~Analysis();
 
-  /// \brief Return the invariant at the end of the exit node
-  const AbstractDomain& exit_invariant() const;
+  /// \brief Run the analysis
+  void run();
 
-}; // end class GlobalVarInitializerFixpoint
+}; // end class Analysis
 
+} // end namespace sequential
 } // end namespace interprocedural
 } // end namespace value
 } // end namespace analyzer

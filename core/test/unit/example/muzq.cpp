@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(test1) {
 
   muzq::FixpointIterator< Variable, ZIntervalDomain, QIntervalDomain > fixpoint(
       cfg);
-  fixpoint.run();
+  fixpoint.run({ZIntervalDomain::top(), QIntervalDomain::top()});
 
   // fixpoint.dump(std::cout);
 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(test2) {
 
   muzq::FixpointIterator< Variable, ZIntervalDomain, QIntervalDomain > fixpoint(
       cfg);
-  fixpoint.run();
+  fixpoint.run({ZIntervalDomain::top(), QIntervalDomain::top()});
 
   // fixpoint.dump(std::cout);
 
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(test3) {
 
   muzq::FixpointIterator< Variable, ZIntervalDomain, QIntervalDomain > fixpoint(
       cfg);
-  fixpoint.run();
+  fixpoint.run({ZIntervalDomain::top(), QIntervalDomain::top()});
 
   // fixpoint.dump(std::cout);
 
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(test4) {
   // cfg.dump(std::cout);
 
   muzq::FixpointIterator< Variable, ZDBM, QIntervalDomain > fixpoint(cfg);
-  fixpoint.run();
+  fixpoint.run({ZDBM::top(), QIntervalDomain::top()});
 
   // fixpoint.dump(std::cout);
 
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(test5) {
   // cfg.dump(std::cout);
 
   muzq::FixpointIterator< Variable, ZDBM, QIntervalDomain > fixpoint(cfg);
-  fixpoint.run();
+  fixpoint.run({ZDBM::top(), QIntervalDomain::top()});
 
   // fixpoint.dump(std::cout);
 
@@ -557,7 +557,7 @@ BOOST_AUTO_TEST_CASE(test6) {
 
   muzq::FixpointIterator< Variable, ZIntervalDomain, QIntervalDomain > fixpoint(
       cfg);
-  fixpoint.run();
+  fixpoint.run({ZIntervalDomain::top(), QIntervalDomain::top()});
 
   // fixpoint.dump(std::cout);
 

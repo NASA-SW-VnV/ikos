@@ -43,7 +43,7 @@
 
 #include <llvm/Support/Process.h>
 
-#include <ikos/analyzer/analysis/value/interprocedural/progress.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/sequential/progress.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/source_location.hpp>
 
@@ -51,6 +51,7 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 namespace interprocedural {
+namespace sequential {
 
 // ProgressLogger
 
@@ -115,7 +116,7 @@ void InteractiveProgressLogger::end_logger() {
 }
 
 void InteractiveProgressLogger::start_cycle(ar::BasicBlock* head) {
-  std::lock_guard< std::mutex > guard(this->_mutex);
+  std::lock_guard< std::mutex > lock(this->_mutex);
   this->_current_stack_frame.emplace_back(
       CycleFrame{head, 0, core::FixpointIterationKind::Increasing});
 }
@@ -124,25 +125,25 @@ void InteractiveProgressLogger::start_cycle_iter(
     ar::BasicBlock* head,
     unsigned iteration,
     core::FixpointIterationKind kind) {
-  std::lock_guard< std::mutex > guard(this->_mutex);
+  std::lock_guard< std::mutex > lock(this->_mutex);
   this->_current_stack_frame.pop_back();
   this->_current_stack_frame.emplace_back(CycleFrame{head, iteration, kind});
 }
 
 void InteractiveProgressLogger::end_cycle(ar::BasicBlock* /*head*/) {
-  std::lock_guard< std::mutex > guard(this->_mutex);
+  std::lock_guard< std::mutex > lock(this->_mutex);
   this->_current_stack_frame.pop_back();
 }
 
 void InteractiveProgressLogger::start_callee(CallContext* call_context,
                                              ar::Function* fun) {
-  std::lock_guard< std::mutex > guard(this->_mutex);
+  std::lock_guard< std::mutex > lock(this->_mutex);
   this->_current_stack_frame.emplace_back(CallFrame{call_context, fun});
 }
 
 void InteractiveProgressLogger::end_callee(CallContext* /*call_context*/,
                                            ar::Function* /*fun*/) {
-  std::lock_guard< std::mutex > guard(this->_mutex);
+  std::lock_guard< std::mutex > lock(this->_mutex);
   this->_current_stack_frame.pop_back();
 }
 
@@ -172,13 +173,13 @@ void InteractiveProgressLogger::run() {
     }
 
     {
-      std::lock_guard< std::mutex > guard(this->_mutex);
+      std::lock_guard< std::mutex > lock(this->_mutex);
       this->print_stack_frame();
     }
   }
 
   {
-    std::lock_guard< std::mutex > guard(this->_mutex);
+    std::lock_guard< std::mutex > lock(this->_mutex);
     this->clear_displayed_stack_frame();
   }
 }
@@ -449,6 +450,7 @@ std::unique_ptr< ProgressLogger > make_progress_logger(Context& ctx,
   }
 }
 
+} // end namespace sequential
 } // end namespace interprocedural
 } // end namespace value
 } // end namespace analyzer

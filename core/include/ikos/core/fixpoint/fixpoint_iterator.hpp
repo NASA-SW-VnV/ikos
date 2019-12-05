@@ -82,6 +82,24 @@ public:
   ForwardFixpointIterator& operator=(ForwardFixpointIterator&&) noexcept =
       default;
 
+  /// \brief Return the control flow graph
+  virtual GraphRef cfg() const = 0;
+
+  /// \brief Return the pre abstract value for the given node
+  virtual const AbstractValue& pre(NodeRef node) const = 0;
+
+  /// \brief Return the post invariant for the given node
+  virtual const AbstractValue& post(NodeRef node) const = 0;
+
+  /// \brief Compute the fixpoint with the given initial abstract value
+  virtual void run(AbstractValue init) = 0;
+
+  /// \brief Return true if the fixpoint is reached
+  virtual bool converged() const = 0;
+
+  /// \brief Clear the current fixpoint
+  virtual void clear() = 0;
+
   /// \brief Semantic transformer for a node
   ///
   /// This method is called with the abstract value representing the state

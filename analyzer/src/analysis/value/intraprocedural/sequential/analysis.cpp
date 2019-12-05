@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Intraprocedural value analysis implementation
+ * \brief Sequential intraprocedural value analysis implementation
  *
  * Author: Maxime Arthaud
  *
@@ -45,8 +45,8 @@
 #include <vector>
 
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
-#include <ikos/analyzer/analysis/value/intraprocedural/function_fixpoint.hpp>
-#include <ikos/analyzer/analysis/value/intraprocedural/intraprocedural.hpp>
+#include <ikos/analyzer/analysis/value/intraprocedural/sequential/analysis.hpp>
+#include <ikos/analyzer/analysis/value/intraprocedural/sequential/function_fixpoint.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/log.hpp>
@@ -55,19 +55,15 @@
 
 namespace ikos {
 namespace analyzer {
+namespace value {
+namespace intraprocedural {
+namespace sequential {
 
-IntraproceduralValueAnalysis::IntraproceduralValueAnalysis(Context& ctx)
-    : _ctx(ctx) {}
+Analysis::Analysis(Context& ctx) : _ctx(ctx) {}
 
-IntraproceduralValueAnalysis::~IntraproceduralValueAnalysis() = default;
+Analysis::~Analysis() = default;
 
-void IntraproceduralValueAnalysis::run() {
-  // NOLINTNEXTLINE(google-build-using-namespace)
-  using namespace value;
-
-  // NOLINTNEXTLINE(google-build-using-namespace)
-  using namespace value::intraprocedural;
-
+void Analysis::run() {
   // Bundle
   ar::Bundle* bundle = _ctx.bundle;
 
@@ -127,5 +123,8 @@ void IntraproceduralValueAnalysis::run() {
   }
 }
 
+} // end namespace sequential
+} // end namespace intraprocedural
+} // end namespace value
 } // end namespace analyzer
 } // end namespace ikos

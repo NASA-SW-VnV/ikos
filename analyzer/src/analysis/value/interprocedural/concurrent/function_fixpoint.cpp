@@ -1,9 +1,11 @@
 /*******************************************************************************
  *
  * \file
- * \brief Fixpoint on a function body
+ * \brief Concurrent fixpoint on a function body
  *
- * Author: Maxime Arthaud
+ * Author: Sung Kook Kim
+ *
+ * Contributor: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
@@ -41,84 +43,59 @@
  *
  ******************************************************************************/
 
+#include <ikos/analyzer/analysis/execution_engine/inliner.hpp>
+#include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/function_fixpoint.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/concurrent/function_fixpoint.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
 namespace interprocedural {
+namespace concurrent {
+
+namespace {
+
+/// \brief Numerical execution engine
+using NumericalExecutionEngineT = NumericalExecutionEngine< AbstractDomain >;
+
+/// \brief Call execution engine
+///
+/// TODO: Implement a concurrent inliner
+using InlineCallExecutionEngineT =
+    InlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
+
+} // end anonymous namespace
 
 FunctionFixpoint::FunctionFixpoint(
     Context& ctx,
     const std::vector< std::unique_ptr< Checker > >& checkers,
-    ProgressLogger& logger,
     ar::Function* entry_point)
     : FwdFixpointIterator(entry_point->body(), make_bottom_abstract_value(ctx)),
+      _ctx(ctx),
       _function(entry_point),
       _call_context(ctx.call_context_factory->get_empty()),
       _fixpoint_parameters(ctx.fixpoint_parameters->get(entry_point)),
       _checkers(checkers),
-      _logger(logger),
-      _exec_engine(make_bottom_abstract_value(ctx),
-                   ctx,
-                   this->_call_context,
-                   ExecutionEngine::UpdateAllocSizeVar,
-                   /* liveness = */ ctx.liveness,
-                   /* pointer_info = */ ctx.pointer == nullptr
-                       ? nullptr
-                       : &ctx.pointer->results()),
-      _call_exec_engine(ctx,
-                        _exec_engine,
-                        *this,
-                        make_bottom_abstract_value(ctx),
-                        /* context_stable = */ true,
-                        /* convergence_achieved = */ false) {}
+      _exit_invariant(make_bottom_abstract_value(ctx)),
+      _return_stmt(nullptr) {}
 
 FunctionFixpoint::FunctionFixpoint(Context& ctx,
                                    const FunctionFixpoint& caller,
                                    ar::CallBase* call,
-                                   ar::Function* callee,
-                                   bool context_stable)
+                                   ar::Function* callee)
     : FwdFixpointIterator(callee->body(), make_bottom_abstract_value(ctx)),
+      _ctx(ctx),
       _function(callee),
       _call_context(
           ctx.call_context_factory->get_context(caller._call_context, call)),
       _fixpoint_parameters(ctx.fixpoint_parameters->get(callee)),
       _checkers(caller._checkers),
-      _logger(caller._logger),
-      _exec_engine(make_bottom_abstract_value(ctx),
-                   ctx,
-                   this->_call_context,
-                   ExecutionEngine::UpdateAllocSizeVar,
-                   /* liveness = */ ctx.liveness,
-                   /* pointer_info = */ ctx.pointer == nullptr
-                       ? nullptr
-                       : &ctx.pointer->results()),
-      _call_exec_engine(ctx,
-                        _exec_engine,
-                        *this,
-                        make_bottom_abstract_value(ctx),
-                        /* context_stable = */ context_stable,
-                        /* convergence_achieved = */ false) {}
+      _exit_invariant(make_bottom_abstract_value(ctx)),
+      _return_stmt(nullptr) {}
 
 void FunctionFixpoint::run(AbstractDomain inv) {
-  if (!this->_call_context->empty()) {
-    this->_logger.start_callee(this->_call_context, this->_function);
-  }
-
-  // Compute the fixpoint
   FwdFixpointIterator::run(std::move(inv));
-
-  // Fixpoint reached
-  this->_call_exec_engine.mark_convergence_achieved();
-
-  // Clear post invariants, save a lot of memory
-  this->clear_post();
-
-  if (!this->_call_context->empty()) {
-    this->_logger.end_callee(this->_call_context, this->_function);
-  }
 }
 
 AbstractDomain FunctionFixpoint::extrapolate(ar::BasicBlock* head,
@@ -198,39 +175,43 @@ bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
           iteration >= *this->_fixpoint_parameters.narrowing_iterations) ||
          before.leq(after);
 }
-
 AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
                                               AbstractDomain pre) {
-  this->_exec_engine.set_inv(std::move(pre));
-  this->_exec_engine.exec_enter(bb);
+  NumericalExecutionEngineT
+      exec_engine(std::move(pre),
+                  this->_ctx,
+                  this->_call_context,
+                  ExecutionEngine::UpdateAllocSizeVar,
+                  /* liveness = */ this->_ctx.liveness,
+                  /* pointer_info = */ this->_ctx.pointer == nullptr
+                      ? nullptr
+                      : &this->_ctx.pointer->results());
+  InlineCallExecutionEngineT call_exec_engine(this->_ctx,
+                                              exec_engine,
+                                              *this,
+                                              this->_callees_cache);
+  exec_engine.exec_enter(bb);
   for (ar::Statement* stmt : *bb) {
-    transfer_function(this->_exec_engine, this->_call_exec_engine, stmt);
+    transfer_function(exec_engine, call_exec_engine, stmt);
   }
-  this->_exec_engine.exec_leave(bb);
-  return std::move(this->_exec_engine.inv());
+  exec_engine.exec_leave(bb);
+  return std::move(exec_engine.inv());
 }
 
 AbstractDomain FunctionFixpoint::analyze_edge(ar::BasicBlock* src,
                                               ar::BasicBlock* dest,
                                               AbstractDomain pre) {
-  this->_exec_engine.set_inv(std::move(pre));
-  this->_exec_engine.exec_edge(src, dest);
-  return std::move(this->_exec_engine.inv());
-}
-
-void FunctionFixpoint::notify_enter_cycle(ar::BasicBlock* head) {
-  this->_logger.start_cycle(head);
-}
-
-void FunctionFixpoint::notify_cycle_iteration(
-    ar::BasicBlock* head,
-    unsigned iteration,
-    core::FixpointIterationKind kind) {
-  this->_logger.start_cycle_iter(head, iteration, kind);
-}
-
-void FunctionFixpoint::notify_leave_cycle(ar::BasicBlock* head) {
-  this->_logger.end_cycle(head);
+  NumericalExecutionEngineT
+      exec_engine(std::move(pre),
+                  this->_ctx,
+                  this->_call_context,
+                  ExecutionEngine::UpdateAllocSizeVar,
+                  /* liveness = */ this->_ctx.liveness,
+                  /* pointer_info = */ this->_ctx.pointer == nullptr
+                      ? nullptr
+                      : &this->_ctx.pointer->results());
+  exec_engine.exec_edge(src, dest);
+  return std::move(exec_engine.inv());
 }
 
 void FunctionFixpoint::process_pre(ar::BasicBlock* /*bb*/,
@@ -239,43 +220,61 @@ void FunctionFixpoint::process_pre(ar::BasicBlock* /*bb*/,
 void FunctionFixpoint::process_post(ar::BasicBlock* bb,
                                     const AbstractDomain& post) {
   if (this->_function->body()->exit_block_or_null() == bb) {
-    this->_exec_engine.set_inv(post);
-    this->_call_exec_engine.exec_exit(this->_function);
+    NumericalExecutionEngineT
+        exec_engine(post,
+                    this->_ctx,
+                    this->_call_context,
+                    ExecutionEngine::UpdateAllocSizeVar,
+                    /* liveness = */ this->_ctx.liveness,
+                    /* pointer_info = */ this->_ctx.pointer == nullptr
+                        ? nullptr
+                        : &this->_ctx.pointer->results());
+    InlineCallExecutionEngineT call_exec_engine(this->_ctx,
+                                                exec_engine,
+                                                *this,
+                                                this->_callees_cache);
+    call_exec_engine.exec_exit(this->_function);
   }
 }
 
 void FunctionFixpoint::run_checks() {
-  if (!this->_call_context->empty()) {
-    this->_logger.start_callee(this->_call_context, this->_function);
-  }
-
-  // Check called functions during the transfer function
-  this->_call_exec_engine.mark_check_callees();
-
   for (ar::BasicBlock* bb : *this->cfg()) {
-    this->_exec_engine.set_inv(this->pre(bb));
-    this->_exec_engine.exec_enter(bb);
+    NumericalExecutionEngineT
+        exec_engine(this->pre(bb),
+                    this->_ctx,
+                    this->_call_context,
+                    ExecutionEngine::UpdateAllocSizeVar,
+                    /* liveness = */ this->_ctx.liveness,
+                    /* pointer_info = */ this->_ctx.pointer == nullptr
+                        ? nullptr
+                        : &this->_ctx.pointer->results());
+    InlineCallExecutionEngineT call_exec_engine(this->_ctx,
+                                                exec_engine,
+                                                *this,
+                                                this->_callees_cache);
+
+    // Check called functions during the transfer function
+    call_exec_engine.mark_check_callees();
+
+    exec_engine.exec_enter(bb);
 
     for (ar::Statement* stmt : *bb) {
       // Check the statement if it's related to an llvm instruction
       if (stmt->has_frontend()) {
         for (const auto& checker : this->_checkers) {
-          checker->check(stmt, this->_exec_engine.inv(), this->_call_context);
+          checker->check(stmt, exec_engine.inv(), this->_call_context);
         }
       }
 
       // Propagate
-      transfer_function(this->_exec_engine, this->_call_exec_engine, stmt);
+      transfer_function(exec_engine, call_exec_engine, stmt);
     }
 
-    this->_exec_engine.exec_leave(bb);
-  }
-
-  if (!this->_call_context->empty()) {
-    this->_logger.end_callee(this->_call_context, this->_function);
+    exec_engine.exec_leave(bb);
   }
 }
 
+} // end namespace concurrent
 } // end namespace interprocedural
 } // end namespace value
 } // end namespace analyzer

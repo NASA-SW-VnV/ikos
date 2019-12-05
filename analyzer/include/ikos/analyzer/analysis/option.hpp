@@ -293,6 +293,9 @@ public:
   /// \brief Is the analysis interprocedural or intraprocedural
   Procedural procedural;
 
+  /// \brief Number of threads
+  int num_threads;
+
   /// \brief Strategy for the increasing iterations (before reaching a fixpoint)
   WideningStrategy widening_strategy;
 

@@ -1,15 +1,17 @@
 /*******************************************************************************
  *
  * \file
- * \brief Intraprocedural value analysis
+ * \brief Concurrent interprocedural value analysis
  *
- * Author: Maxime Arthaud
+ * Author: Sung Kook Kim
+ *
+ * Contributor: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
- * Copyright (c) 2018-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -47,38 +49,44 @@
 
 namespace ikos {
 namespace analyzer {
+namespace value {
+namespace interprocedural {
+namespace concurrent {
 
-/// \brief Intraprocedural value analysis
-class IntraproceduralValueAnalysis {
+/// \brief Concurrent interprocedural value analysis
+///
+/// Performs a top-down analysis with a memory abstract domain.
+class Analysis {
 private:
   /// \brief Analysis context
   Context& _ctx;
 
 public:
   /// \brief Constructor
-  explicit IntraproceduralValueAnalysis(Context& ctx);
+  explicit Analysis(Context& ctx);
 
   /// \brief No copy constructor
-  IntraproceduralValueAnalysis(const IntraproceduralValueAnalysis&) = delete;
+  Analysis(const Analysis&) = delete;
 
   /// \brief No move constructor
-  IntraproceduralValueAnalysis(IntraproceduralValueAnalysis&&) = delete;
+  Analysis(Analysis&&) = delete;
 
   /// \brief No copy assignment operator
-  IntraproceduralValueAnalysis& operator=(const IntraproceduralValueAnalysis&) =
-      delete;
+  Analysis& operator=(const Analysis&) = delete;
 
   /// \brief No move assignment operator
-  IntraproceduralValueAnalysis& operator=(IntraproceduralValueAnalysis&&) =
-      delete;
+  Analysis& operator=(Analysis&&) = delete;
 
   /// \brief Destructor
-  ~IntraproceduralValueAnalysis();
+  ~Analysis();
 
   /// \brief Run the analysis
   void run();
 
-}; // end class IntraproceduralValueAnalysis
+}; // end class Analysis
 
+} // end namespace concurrent
+} // end namespace interprocedural
+} // end namespace value
 } // end namespace analyzer
 } // end namespace ikos

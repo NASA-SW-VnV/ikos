@@ -168,6 +168,12 @@ def parse_arguments(argv):
                                          args.default_procedurality),
                           choices=args.choices(args.proceduralities),
                           default=args.default_procedurality)
+    analysis.add_argument('-j', '--jobs',
+                          dest='jobs',
+                          metavar='',
+                          help='Number of threads',
+                          type=int,
+                          default=1)
     analysis.add_argument('--widening-strategy',
                           dest='widening_strategy',
                           metavar='',
@@ -758,6 +764,7 @@ def ikos_analyzer(db_path, pp_path, opt):
             '-entry-points=%s' % ','.join(opt.entry_points),
             '-globals-init=%s' % opt.globals_init,
             '-proc=%s' % opt.procedural,
+            '-j=%d' % opt.jobs,
             '-widening-strategy=%s' % opt.widening_strategy,
             '-widening-delay=%d' % opt.widening_delay,
             '-widening-period=%d' % opt.widening_period]

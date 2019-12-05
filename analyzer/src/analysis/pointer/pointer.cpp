@@ -159,9 +159,6 @@ public:
                 : ctx.fixpoint_parameters->default_params()),
         _function_pointer(function_pointer) {}
 
-  /// \brief Compute an intra-procedural fixpoint on the given code
-  void run() { FwdFixpointIterator::run(make_initial_abstract_value()); }
-
   /// \brief Extrapolate the new state after an increasing iteration
   AbstractDomainT extrapolate(ar::BasicBlock* head,
                               unsigned iteration,
@@ -355,7 +352,7 @@ void PointerAnalysis::run() {
       NumericalCodeInvariants invariants(_ctx,
                                          _function_pointer,
                                          gv->initializer());
-      invariants.run();
+      invariants.run(make_initial_abstract_value());
 
       progress->start_task(
           "Generating pointer constraints for initializer of global variable "
@@ -376,7 +373,7 @@ void PointerAnalysis::run() {
           "Generating intra-procedural numerical invariant for function '" +
           demangle(fun->name()) + "'");
       NumericalCodeInvariants invariants(_ctx, _function_pointer, fun->body());
-      invariants.run();
+      invariants.run(make_initial_abstract_value());
 
       progress->start_task("Generating pointer constraints for function '" +
                            demangle(fun->name()) + "'");

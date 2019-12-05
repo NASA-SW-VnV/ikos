@@ -1,15 +1,17 @@
 /*******************************************************************************
  *
  * \file
- * \brief Interprocedural value analysis implementation
+ * \brief Concurrent interprocedural value analysis implementation
  *
- * Author: Maxime Arthaud
+ * Author: Sung Kook Kim
+ *
+ * Contributor: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
- * Copyright (c) 2018-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -46,32 +48,29 @@
 
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
 #include <ikos/analyzer/analysis/value/global_variable.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/function_fixpoint.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/global_init_fixpoint.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/concurrent/analysis.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/concurrent/function_fixpoint.hpp>
 #include <ikos/analyzer/analysis/value/interprocedural/init_invariant.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/interprocedural.hpp>
-#include <ikos/analyzer/analysis/value/interprocedural/progress.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/sequential/global_init_fixpoint.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
 #include <ikos/analyzer/util/log.hpp>
 #include <ikos/analyzer/util/progress.hpp>
 #include <ikos/analyzer/util/timer.hpp>
 
+#include <tbb/task_scheduler_init.h>
+
 namespace ikos {
 namespace analyzer {
+namespace value {
+namespace interprocedural {
+namespace concurrent {
 
-InterproceduralValueAnalysis::InterproceduralValueAnalysis(Context& ctx)
-    : _ctx(ctx) {}
+Analysis::Analysis(Context& ctx) : _ctx(ctx) {}
 
-InterproceduralValueAnalysis::~InterproceduralValueAnalysis() = default;
+Analysis::~Analysis() = default;
 
-void InterproceduralValueAnalysis::run() {
-  // NOLINTNEXTLINE(google-build-using-namespace)
-  using namespace value;
-
-  // NOLINTNEXTLINE(google-build-using-namespace)
-  using namespace value::interprocedural;
-
+void Analysis::run() {
   // Bundle
   ar::Bundle* bundle = _ctx.bundle;
 
@@ -82,6 +81,11 @@ void InterproceduralValueAnalysis::run() {
       checkers.emplace_back(make_checker(_ctx, name));
     }
   }
+
+  // Initialize the task scheduler
+  tbb::task_scheduler_init init(_ctx.opts.num_threads > 0
+                                    ? _ctx.opts.num_threads
+                                    : tbb::task_scheduler_init::automatic);
 
   // Initial invariant
   AbstractDomain init_inv = make_initial_abstract_value(_ctx);
@@ -111,7 +115,7 @@ void InterproceduralValueAnalysis::run() {
       if (gv->is_definition() && is_initialized(gv, policy)) {
         logger->start_task("Initializing global variable '" +
                            demangle(gv->name()) + "'");
-        GlobalVarInitializerFixpoint fixpoint(_ctx, gv);
+        sequential::GlobalVarInitializerFixpoint fixpoint(_ctx, gv);
         fixpoint.run(init_inv);
         init_inv = fixpoint.exit_invariant();
       }
@@ -141,13 +145,8 @@ void InterproceduralValueAnalysis::run() {
         continue;
       }
 
-      // Setup a progress logger
-      std::unique_ptr< interprocedural::ProgressLogger > logger =
-          make_progress_logger(_ctx, _ctx.opts.progress, LogLevel::Info);
-      ScopeLogger scope(*logger);
-
       // Create a function fixpoint
-      FunctionFixpoint fixpoint(_ctx, checkers, *logger, ctor);
+      FunctionFixpoint fixpoint(_ctx, checkers, ctor);
 
       {
         log::info("Analyzing global constructor '" + demangle(ctor->name()) +
@@ -201,13 +200,8 @@ void InterproceduralValueAnalysis::run() {
       entry_inv = init_main_invariant(_ctx, entry_point, entry_inv);
     }
 
-    // Setup a progress logger
-    std::unique_ptr< interprocedural::ProgressLogger > logger =
-        make_progress_logger(_ctx, _ctx.opts.progress, LogLevel::Info);
-    ScopeLogger scope(*logger);
-
     // Create a function fixpoint
-    FunctionFixpoint fixpoint(_ctx, checkers, *logger, entry_point);
+    FunctionFixpoint fixpoint(_ctx, checkers, entry_point);
 
     {
       log::info("Analyzing entry point '" + demangle(entry_point->name()) +
@@ -242,13 +236,8 @@ void InterproceduralValueAnalysis::run() {
         continue;
       }
 
-      // Setup a progress logger
-      std::unique_ptr< interprocedural::ProgressLogger > logger =
-          make_progress_logger(_ctx, _ctx.opts.progress, LogLevel::Info);
-      ScopeLogger scope(*logger);
-
       // Create a function fixpoint
-      FunctionFixpoint fixpoint(_ctx, checkers, *logger, dtor);
+      FunctionFixpoint fixpoint(_ctx, checkers, dtor);
 
       {
         log::info("Analyzing global destructor '" + demangle(dtor->name()) +
@@ -279,5 +268,8 @@ void InterproceduralValueAnalysis::run() {
   }
 }
 
+} // end namespace concurrent
+} // end namespace interprocedural
+} // end namespace value
 } // end namespace analyzer
 } // end namespace ikos

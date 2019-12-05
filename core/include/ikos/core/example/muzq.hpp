@@ -753,12 +753,6 @@ public:
       : Parent(&cfg,
                AbstractDomain(ZNumDomain::bottom(), QNumDomain::bottom())) {}
 
-  /// \brief Compute the fixpoint
-  void run() {
-    auto top = AbstractDomain(ZNumDomain::top(), QNumDomain::top());
-    Parent::run(top);
-  }
-
   /// \brief Return the invariant at the given checkpoint
   const AbstractDomain& checkpoint(const std::string& name) {
     auto it = this->_checkpoints.find(name);

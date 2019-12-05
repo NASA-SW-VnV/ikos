@@ -90,9 +90,10 @@ private:
 private:
   GraphRef _cfg;
   WtoT _wto;
+  AbstractValue _bottom;
   InvariantTable _pre;
   InvariantTable _post;
-  AbstractValue _bottom;
+  bool _converged;
 
 public:
   /// \brief Create an interleaved forward fixpoint iterator
@@ -100,7 +101,7 @@ public:
   /// \param cfg The control flow graph
   /// \param bottom The bottom abstract value
   InterleavedFwdFixpointIterator(GraphRef cfg, AbstractValue bottom)
-      : _cfg(cfg), _wto(cfg), _bottom(std::move(bottom)) {}
+      : _cfg(cfg), _wto(cfg), _bottom(std::move(bottom)), _converged(false) {}
 
   /// \brief No copy constructor
   InterleavedFwdFixpointIterator(const InterleavedFwdFixpointIterator&) =
@@ -118,13 +119,16 @@ public:
       default;
 
   /// \brief Return the control flow graph
-  GraphRef cfg() const { return this->_cfg; }
+  GraphRef cfg() const override { return this->_cfg; }
 
   /// \brief Return the weak topological order of the graph
   const WtoT& wto() const { return this->_wto; }
 
   /// \brief Return the bottom abstract value
   const AbstractValue& bottom() const { return this->_bottom; }
+
+  /// \brief Return true if the fixpoint is reached
+  bool converged() const override { return this->_converged; }
 
 private:
   /// \brief Set the invariant for the given node
@@ -159,12 +163,12 @@ private:
 
 public:
   /// \brief Return the pre invariant for the given node
-  const AbstractValue& pre(NodeRef node) const {
+  const AbstractValue& pre(NodeRef node) const override {
     return this->get(this->_pre, node);
   }
 
   /// \brief Return the post invariant for the given node
-  const AbstractValue& post(NodeRef node) const {
+  const AbstractValue& post(NodeRef node) const override {
     return this->get(this->_post, node);
   }
 
@@ -272,12 +276,14 @@ public:
   virtual void notify_leave_cycle(NodeRef head) { ikos_ignore(head); }
 
   /// \brief Compute the fixpoint with the given initial abstract value
-  void run(AbstractValue init) {
+  void run(AbstractValue init) override {
+    this->clear();
     this->set_pre(GraphTrait::entry(this->_cfg), std::move(init));
 
     // Compute the fixpoint
     WtoIterator iterator(*this);
     this->_wto.accept(iterator);
+    this->_converged = true;
 
     // Call process_pre/process_post methods
     WtoProcessor processor(*this);
@@ -291,7 +297,8 @@ public:
   void clear_post() { this->_post.clear(); }
 
   /// \brief Clear the current fixpoint
-  void clear() {
+  void clear() override {
+    this->_converged = false;
     this->_pre.clear();
     this->_post.clear();
   }

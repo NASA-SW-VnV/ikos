@@ -197,19 +197,22 @@ add_executable(ikos-analyzer
   src/analysis/pointer/value.cpp
   src/analysis/value/abstract_domain.cpp
   src/analysis/value/global_variable.cpp
-  src/analysis/value/interprocedural/function_fixpoint.cpp
-  src/analysis/value/interprocedural/global_init_fixpoint.cpp
+  src/analysis/value/interprocedural/concurrent/analysis.cpp
+  src/analysis/value/interprocedural/concurrent/function_fixpoint.cpp
   src/analysis/value/interprocedural/init_invariant.cpp
-  src/analysis/value/interprocedural/interprocedural.cpp
-  src/analysis/value/interprocedural/progress.cpp
-  src/analysis/value/intraprocedural/function_fixpoint.cpp
-  src/analysis/value/intraprocedural/intraprocedural.cpp
+  src/analysis/value/interprocedural/sequential/analysis.cpp
+  src/analysis/value/interprocedural/sequential/function_fixpoint.cpp
+  src/analysis/value/interprocedural/sequential/global_init_fixpoint.cpp
+  src/analysis/value/interprocedural/sequential/progress.cpp
+  src/analysis/value/intraprocedural/concurrent/analysis.cpp
+  src/analysis/value/intraprocedural/concurrent/function_fixpoint.cpp
+  src/analysis/value/intraprocedural/sequential/analysis.cpp
+  src/analysis/value/intraprocedural/sequential/function_fixpoint.cpp
   src/analysis/value/machine_int_domain.cpp
   src/analysis/value/machine_int_domain/apron_interval.cpp
   src/analysis/value/machine_int_domain/apron_octagon.cpp
   src/analysis/value/machine_int_domain/apron_pkgrid_polyhedra_lin_cong.cpp
   src/analysis/value/machine_int_domain/apron_polka_linear_equalities.cpp
-  src/analysis/widening_hint.cpp
   src/analysis/value/machine_int_domain/apron_polka_polyhedra.cpp
   src/analysis/value/machine_int_domain/apron_ppl_linear_congruences.cpp
   src/analysis/value/machine_int_domain/apron_ppl_polyhedra.cpp
@@ -228,6 +231,7 @@ add_executable(ikos-analyzer
   src/analysis/value/machine_int_domain/var_pack_dbm.cpp
   src/analysis/value/machine_int_domain/var_pack_dbm_congruence.cpp
   src/analysis/variable.cpp
+  src/analysis/widening_hint.cpp
   src/checker/assert_prover.cpp
   src/checker/buffer_overflow.cpp
   src/checker/checker.cpp

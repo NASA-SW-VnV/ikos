@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Fixpoint on a function body
+ * \brief Sequential interprocedural fixpoint on a function body
  *
  * Author: Maxime Arthaud
  *
@@ -50,16 +50,19 @@
 
 #include <ikos/analyzer/analysis/call_context.hpp>
 #include <ikos/analyzer/analysis/context.hpp>
+#include <ikos/analyzer/analysis/execution_engine/fixpoint_cache.hpp>
 #include <ikos/analyzer/analysis/fixpoint_parameters.hpp>
 #include <ikos/analyzer/analysis/value/abstract_domain.hpp>
+#include <ikos/analyzer/analysis/value/interprocedural/sequential/progress.hpp>
 #include <ikos/analyzer/checker/checker.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
-namespace intraprocedural {
+namespace interprocedural {
+namespace sequential {
 
-/// \brief Fixpoint on a function body
+/// \brief Sequential interprocedural fixpoint on a function body
 class FunctionFixpoint final
     : public core::InterleavedFwdFixpointIterator< ar::Code*, AbstractDomain > {
 private:
@@ -67,22 +70,61 @@ private:
   using FwdFixpointIterator =
       core::InterleavedFwdFixpointIterator< ar::Code*, AbstractDomain >;
 
+  /// \brief Function fixpoint cache of callees
+  using FixpointCacheT = FixpointCache< FunctionFixpoint, AbstractDomain >;
+
 private:
   /// \brief Analysis context
   Context& _ctx;
 
-  /// \brief Empty call context
-  CallContext* _empty_call_context;
+  /// \brief Analyzed function
+  ar::Function* _function;
+
+  /// \brief Current call context
+  CallContext* _call_context;
 
   /// \brief Fixpoint parameters
   const CodeFixpointParameters& _fixpoint_parameters;
 
+  /// \brief List of property checks to run
+  const std::vector< std::unique_ptr< Checker > >& _checkers;
+
+  /// \brief Invariant at the end of the function
+  AbstractDomain _exit_invariant;
+
+  /// \brief Return statement, or null
+  ar::ReturnValue* _return_stmt;
+
+  /// \brief Function fixpoint cache of callees
+  FixpointCacheT _callees_cache;
+
+  /// \brief Progress logger
+  ProgressLogger& _logger;
+
 public:
-  /// \brief Create a function fixpoint iterator
-  FunctionFixpoint(Context& ctx, ar::Function* function);
+  /// \brief Constructor for an entry point
+  ///
+  /// \param ctx Analysis context
+  /// \param checkers List of checkers to run
+  /// \param entry_point Function to analyze
+  FunctionFixpoint(Context& ctx,
+                   const std::vector< std::unique_ptr< Checker > >& checkers,
+                   ProgressLogger& logger,
+                   ar::Function* entry_point);
+
+  /// \brief Constructor for a callee
+  ///
+  /// \param ctx Analysis context
+  /// \param caller Parent function fixpoint
+  /// \param call Call statement
+  /// \param callee Called function
+  FunctionFixpoint(Context& ctx,
+                   const FunctionFixpoint& caller,
+                   ar::CallBase* call,
+                   ar::Function* callee);
 
   /// \brief Compute the fixpoint
-  void run(AbstractDomain inv);
+  void run(AbstractDomain inv) override;
 
   /// \brief Extrapolate the new state after an increasing iteration
   AbstractDomain extrapolate(ar::BasicBlock* head,
@@ -110,6 +152,17 @@ public:
                               ar::BasicBlock* dest,
                               AbstractDomain pre) override;
 
+  /// \brief Notify the beginning of the analysis of a cycle
+  void notify_enter_cycle(ar::BasicBlock* head) override;
+
+  /// \brief Notify the beginning of an iteration on a cycle
+  void notify_cycle_iteration(ar::BasicBlock* head,
+                              unsigned iteration,
+                              core::FixpointIterationKind kind) override;
+
+  /// \brief Notify the end of the analysis of a cycle
+  void notify_leave_cycle(ar::BasicBlock* head) override;
+
   /// \brief Process the computed abstract value for a node
   void process_pre(ar::BasicBlock* bb, const AbstractDomain& pre) override;
 
@@ -117,11 +170,41 @@ public:
   void process_post(ar::BasicBlock* bb, const AbstractDomain& post) override;
 
   /// \brief Run the checks with the previously computed fix-point
-  void run_checks(const std::vector< std::unique_ptr< Checker > >& checkers);
+  void run_checks();
+
+  /// \name Required by InlineCallExecutionEngine
+  /// @{
+
+  /// \brief Return the function
+  ar::Function* function() const { return this->_function; }
+
+  /// \brief Return the call context
+  CallContext* call_context() const { return this->_call_context; }
+
+  /// \brief Return the exit invariant, or bottom
+  const AbstractDomain& exit_invariant() const { return this->_exit_invariant; }
+
+  /// \brief Set the exit invariant
+  void set_exit_invariant(AbstractDomain invariant) {
+    this->_exit_invariant = std::move(invariant);
+  }
+
+  /// \brief Return the return statement, or null
+  ar::ReturnValue* return_stmt() const { return this->_return_stmt; }
+
+  /// \brief Set the return statement
+  void set_return_stmt(ar::ReturnValue* s) {
+    ikos_assert_msg(this->_return_stmt == nullptr || this->_return_stmt == s,
+                    "code has more than one return statement");
+    this->_return_stmt = s;
+  }
+
+  /// @}
 
 }; // end class FunctionFixpoint
 
-} // end namespace intraprocedural
+} // end namespace sequential
+} // end namespace interprocedural
 } // end namespace value
 } // end namespace analyzer
 } // end namespace ikos

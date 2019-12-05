@@ -92,6 +92,7 @@ private:
   NodeRef _entry;
   std::vector< WorkNode, tbb::cache_aligned_allocator< WorkNode > > _work_nodes;
   std::unordered_map< NodeRef, WorkNode* > _node_to_work;
+  bool _converged;
 
 public:
   /// \brief Create an interleaved concurrent forward fixpoint iterator
@@ -103,7 +104,8 @@ public:
       : _cfg(cfg),
         _wpo(cfg),
         _bottom(std::move(bottom)),
-        _entry(GraphTrait::entry(cfg)) {}
+        _entry(GraphTrait::entry(cfg)),
+        _converged(false) {}
 
   /// \brief No copy constructor
   InterleavedConcurrentFwdFixpointIterator(
@@ -122,7 +124,7 @@ public:
       InterleavedConcurrentFwdFixpointIterator&&) = default;
 
   /// \brief Return the control flow graph
-  GraphRef cfg() const { return this->_cfg; }
+  GraphRef cfg() const override { return this->_cfg; }
 
   /// \brief Return the weak partial order of the graph
   const WpoT& wpo() const { return this->_wpo; }
@@ -133,8 +135,11 @@ public:
   /// \brief Return the entry node of the graph
   NodeRef entry() const { return this->_entry; }
 
+  /// \brief Return true if the fixpoint is reached
+  bool converged() const override { return this->_converged; }
+
   /// \brief Return the pre invariant for the given node
-  const AbstractValue& pre(NodeRef node) const {
+  const AbstractValue& pre(NodeRef node) const override {
     auto it = this->_node_to_work.find(node);
     if (it != this->_node_to_work.end()) {
       return it->second->pre();
@@ -144,7 +149,7 @@ public:
   }
 
   /// \brief Return the post invariant for the given node
-  const AbstractValue& post(NodeRef node) const {
+  const AbstractValue& post(NodeRef node) const override {
     auto it = this->_node_to_work.find(node);
     if (it != this->_node_to_work.end()) {
       return it->second->post();
@@ -533,12 +538,11 @@ private:
 
 public:
   /// \brief Compute the fixpoint with the given initial abstract value
-  void run(AbstractValue init) {
+  void run(AbstractValue init) override {
     std::size_t size = this->_wpo.size();
 
     // Clear the fixpoint
-    this->_work_nodes.clear();
-    this->_node_to_work.clear();
+    this->clear();
 
     // Build the work nodes
     this->_work_nodes.reserve(size);
@@ -595,8 +599,9 @@ public:
     // Run the analysis
     std::array< WorkNode*, 1 > root = {this->_node_to_work[this->_entry]};
     tbb::parallel_do(std::begin(root), std::end(root), Worker());
+    this->_converged = true;
 
-    // Populate the pre and post maps
+    // Call process_pre/process_post methods
     for (WorkNode& work_node : this->_work_nodes) {
       if (work_node.kind() != WpoNodeKind::Exit) {
         NodeRef node = work_node.node();
@@ -607,7 +612,8 @@ public:
   }
 
   /// \brief Clear the current fixpoint
-  void clear() {
+  void clear() override {
+    this->_converged = false;
     this->_work_nodes.clear();
     this->_node_to_work.clear();
   }

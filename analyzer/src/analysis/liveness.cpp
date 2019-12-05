@@ -272,7 +272,9 @@ public:
   }
 
   /// \brief Compute the set of dead and live variables
-  void run() { FwdFixpointIterator::run(LivenessDomainT::bottom()); }
+  void run(LivenessDomainT inv) override {
+    FwdFixpointIterator::run(std::move(inv));
+  }
 
   /// \brief Apply the kill-gen equation
   ///
@@ -476,7 +478,7 @@ void LivenessAnalysis::run(ar::Code* code) {
 
   // Run the liveness fixpoint iterator
   LivenessFixpointIterator fixpoint(code, *_ctx.var_factory);
-  fixpoint.run();
+  fixpoint.run(LivenessDomain< Variable* >::bottom());
 
   // Store the results
   for (auto it = fixpoint.live_at_entry_begin(),

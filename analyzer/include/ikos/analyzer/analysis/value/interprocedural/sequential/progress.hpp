@@ -65,6 +65,7 @@ namespace ikos {
 namespace analyzer {
 namespace value {
 namespace interprocedural {
+namespace sequential {
 
 /// \brief Base class for interprocedural value analysis progress loggers
 class ProgressLogger : public Logger {
@@ -318,6 +319,7 @@ std::unique_ptr< ProgressLogger > make_progress_logger(Context& ctx,
                                                        ProgressOption opt,
                                                        LogLevel level);
 
+} // end namespace sequential
 } // end namespace interprocedural
 } // end namespace value
 } // end namespace analyzer

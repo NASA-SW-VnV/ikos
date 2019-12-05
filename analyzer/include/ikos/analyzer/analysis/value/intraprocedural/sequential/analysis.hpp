@@ -1,7 +1,7 @@
 /*******************************************************************************
  *
  * \file
- * \brief Interprocedural value analysis
+ * \brief Sequential intraprocedural value analysis
  *
  * Author: Maxime Arthaud
  *
@@ -47,40 +47,42 @@
 
 namespace ikos {
 namespace analyzer {
+namespace value {
+namespace intraprocedural {
+namespace sequential {
 
-/// \brief Interprocedural value analysis
-///
-/// Performs a top-down analysis with a memory abstract domain.
-class InterproceduralValueAnalysis {
+/// \brief Sequential intraprocedural value analysis
+class Analysis {
 private:
   /// \brief Analysis context
   Context& _ctx;
 
 public:
   /// \brief Constructor
-  explicit InterproceduralValueAnalysis(Context& ctx);
+  explicit Analysis(Context& ctx);
 
   /// \brief No copy constructor
-  InterproceduralValueAnalysis(const InterproceduralValueAnalysis&) = delete;
+  Analysis(const Analysis&) = delete;
 
   /// \brief No move constructor
-  InterproceduralValueAnalysis(InterproceduralValueAnalysis&&) = delete;
+  Analysis(Analysis&&) = delete;
 
   /// \brief No copy assignment operator
-  InterproceduralValueAnalysis& operator=(const InterproceduralValueAnalysis&) =
-      delete;
+  Analysis& operator=(const Analysis&) = delete;
 
   /// \brief No move assignment operator
-  InterproceduralValueAnalysis& operator=(InterproceduralValueAnalysis&&) =
-      delete;
+  Analysis& operator=(Analysis&&) = delete;
 
   /// \brief Destructor
-  ~InterproceduralValueAnalysis();
+  ~Analysis();
 
   /// \brief Run the analysis
   void run();
 
-}; // end class InterproceduralValueAnalysis
+}; // end class Analysis
 
+} // end namespace sequential
+} // end namespace intraprocedural
+} // end namespace value
 } // end namespace analyzer
 } // end namespace ikos

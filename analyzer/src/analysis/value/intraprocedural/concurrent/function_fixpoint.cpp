@@ -1,9 +1,11 @@
 /*******************************************************************************
  *
  * \file
- * \brief Fixpoint on a function body
+ * \brief Concurrent intraprocedural fixpoint on a function body
  *
- * Author: Maxime Arthaud
+ * Author: Sung Kook Kim
+ *
+ * Contributor: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
@@ -45,12 +47,24 @@
 #include <ikos/analyzer/analysis/execution_engine/engine.hpp>
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
-#include <ikos/analyzer/analysis/value/intraprocedural/function_fixpoint.hpp>
+#include <ikos/analyzer/analysis/value/intraprocedural/concurrent/function_fixpoint.hpp>
 
 namespace ikos {
 namespace analyzer {
 namespace value {
 namespace intraprocedural {
+namespace concurrent {
+
+namespace {
+
+/// \brief Numerical execution engine
+using NumericalExecutionEngineT = NumericalExecutionEngine< AbstractDomain >;
+
+/// \brief Call execution engine
+using ContextInsensitiveCallExecutionEngineT =
+    ContextInsensitiveCallExecutionEngine< AbstractDomain >;
+
+} // end anonymous namespace
 
 FunctionFixpoint::FunctionFixpoint(Context& ctx, ar::Function* function)
     : FwdFixpointIterator(function->body(), make_bottom_abstract_value(ctx)),
@@ -142,17 +156,16 @@ bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
 
 AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
                                               AbstractDomain pre) {
-  NumericalExecutionEngine< AbstractDomain >
+  NumericalExecutionEngineT
       exec_engine(std::move(pre),
-                  _ctx,
+                  this->_ctx,
                   this->_empty_call_context,
                   ExecutionEngine::UpdateAllocSizeVar,
-                  /* liveness = */ _ctx.liveness,
-                  /* pointer_info = */ _ctx.pointer == nullptr
+                  /* liveness = */ this->_ctx.liveness,
+                  /* pointer_info = */ this->_ctx.pointer == nullptr
                       ? nullptr
-                      : &_ctx.pointer->results());
-  ContextInsensitiveCallExecutionEngine< AbstractDomain > call_exec_engine(
-      exec_engine);
+                      : &this->_ctx.pointer->results());
+  ContextInsensitiveCallExecutionEngineT call_exec_engine(exec_engine);
   exec_engine.exec_enter(bb);
   for (ar::Statement* stmt : *bb) {
     transfer_function(exec_engine, call_exec_engine, stmt);
@@ -164,15 +177,15 @@ AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
 AbstractDomain FunctionFixpoint::analyze_edge(ar::BasicBlock* src,
                                               ar::BasicBlock* dest,
                                               AbstractDomain pre) {
-  NumericalExecutionEngine< AbstractDomain >
+  NumericalExecutionEngineT
       exec_engine(std::move(pre),
-                  _ctx,
+                  this->_ctx,
                   this->_empty_call_context,
                   ExecutionEngine::UpdateAllocSizeVar,
-                  /* liveness = */ _ctx.liveness,
-                  /* pointer_info = */ _ctx.pointer == nullptr
+                  /* liveness = */ this->_ctx.liveness,
+                  /* pointer_info = */ this->_ctx.pointer == nullptr
                       ? nullptr
-                      : &_ctx.pointer->results());
+                      : &this->_ctx.pointer->results());
   exec_engine.exec_edge(src, dest);
   return std::move(exec_engine.inv());
 }
@@ -186,17 +199,16 @@ void FunctionFixpoint::process_post(ar::BasicBlock* /*bb*/,
 void FunctionFixpoint::run_checks(
     const std::vector< std::unique_ptr< Checker > >& checkers) {
   for (ar::BasicBlock* bb : *this->cfg()) {
-    NumericalExecutionEngine< AbstractDomain >
+    NumericalExecutionEngineT
         exec_engine(this->pre(bb),
-                    _ctx,
+                    this->_ctx,
                     this->_empty_call_context,
                     ExecutionEngine::UpdateAllocSizeVar,
-                    /* liveness = */ _ctx.liveness,
-                    /* pointer_info = */ _ctx.pointer == nullptr
+                    /* liveness = */ this->_ctx.liveness,
+                    /* pointer_info = */ this->_ctx.pointer == nullptr
                         ? nullptr
-                        : &_ctx.pointer->results());
-    ContextInsensitiveCallExecutionEngine< AbstractDomain > call_exec_engine(
-        exec_engine);
+                        : &this->_ctx.pointer->results());
+    ContextInsensitiveCallExecutionEngineT call_exec_engine(exec_engine);
 
     exec_engine.exec_enter(bb);
 
@@ -216,6 +228,7 @@ void FunctionFixpoint::run_checks(
   }
 }
 
+} // end namespace concurrent
 } // end namespace intraprocedural
 } // end namespace value
 } // end namespace analyzer

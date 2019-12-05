@@ -48,14 +48,12 @@
 
 #include <memory>
 
-#include <boost/container/flat_map.hpp>
-
-#include <llvm/ADT/DenseMap.h>
-
 #include <ikos/ar/semantic/function.hpp>
+#include <ikos/ar/semantic/statement.hpp>
 #include <ikos/ar/verify/type.hpp>
 
 #include <ikos/analyzer/analysis/execution_engine/engine.hpp>
+#include <ikos/analyzer/analysis/execution_engine/fixpoint_cache.hpp>
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
 #include <ikos/analyzer/analysis/pointer/value.hpp>
 #include <ikos/analyzer/util/demangle.hpp>
@@ -64,28 +62,20 @@
 namespace ikos {
 namespace analyzer {
 
-/// \brief Inliner of function calls.
+/// \brief Inliner of function calls
 ///
 /// The inlining of a function is done dynamically by matching formal and actual
 /// parameters and analyzing recursively the callee (FunctionFixpoint) and after
 /// the callee returns by simulating call-by-ref and updating the return value
 /// at the call site. The inlining also supports function pointers by resolving
 /// first the set of possible callees and joining the results.
-template < typename FunctionAnalyzer, typename AbstractDomain >
+template < typename FunctionFixpoint, typename AbstractDomain >
 class InlineCallExecutionEngine final : public CallExecutionEngine {
 public:
   using InlineCallExecutionEngineT =
-      InlineCallExecutionEngine< FunctionAnalyzer, AbstractDomain >;
+      InlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
   using NumericalExecutionEngineT = NumericalExecutionEngine< AbstractDomain >;
-
-private:
-  /// \brief Map from callee function to FunctionAnalyzer
-  using CalleeMap =
-      boost::container::flat_map< ar::Function*,
-                                  std::unique_ptr< FunctionAnalyzer > >;
-
-  /// \brief Map from call statement to CalleeMap
-  using CallMap = llvm::DenseMap< ar::CallBase*, CalleeMap >;
+  using FixpointCacheT = FixpointCache< FunctionFixpoint, AbstractDomain >;
 
 private:
   /// \brief Analysis context
@@ -95,22 +85,10 @@ private:
   NumericalExecutionEngineT& _engine;
 
   /// \brief Function analyzer of the caller
-  const FunctionAnalyzer& _caller;
+  FunctionFixpoint& _caller;
 
-  /// \brief Invariant at the end of the function
-  AbstractDomain _exit_inv;
-
-  /// \brief Return statement, or null
-  ar::ReturnValue* _return_stmt;
-
-  /// \brief Store previously-computed fixpoints on callees
-  CallMap _calls_cache;
-
-  /// \brief True if the calling context is stable
-  bool _context_stable;
-
-  /// \brief True if the fixpoint of the current function is reached
-  bool _convergence_achieved;
+  /// \brief Function fixpoint cache of callees
+  FixpointCacheT& _callees_cache;
 
   /// \brief True to check properties on the callees
   bool _check_callees;
@@ -119,33 +97,16 @@ public:
   /// \brief Constructor
   InlineCallExecutionEngine(Context& ctx,
                             NumericalExecutionEngineT& engine,
-                            const FunctionAnalyzer& caller,
-                            AbstractDomain bottom,
-                            bool context_stable,
-                            bool convergence_achieved)
+                            FunctionFixpoint& caller,
+                            FixpointCacheT& callees_cache)
       : _ctx(ctx),
         _engine(engine),
         _caller(caller),
-        _exit_inv(std::move(bottom)),
-        _return_stmt(nullptr),
-        _context_stable(context_stable),
-        _convergence_achieved(convergence_achieved),
+        _callees_cache(callees_cache),
         _check_callees(false) {}
-
-  /// \brief Mark that the calling context is stable
-  void mark_context_stable() { this->_context_stable = true; }
-
-  /// \brief Mark that the reached the fixpoint
-  void mark_convergence_achieved() { this->_convergence_achieved = true; }
 
   /// \brief Mark to check the callees
   void mark_check_callees() { this->_check_callees = true; }
-
-  /// \brief Return the exit invariant, or bottom
-  const AbstractDomain& exit_invariant() const { return this->_exit_inv; }
-
-  /// \brief Return the return statement, or null
-  ar::ReturnValue* return_stmt() const { return this->_return_stmt; }
 
   /// \brief Exit a function
   ///
@@ -157,15 +118,11 @@ public:
   void exec_exit(ar::Function* fun) override {
     this->_engine.deallocate_local_variables(fun->local_variable_begin(),
                                              fun->local_variable_end());
-    this->_exit_inv = this->_engine.inv();
+    this->_caller.set_exit_invariant(this->_engine.inv());
   }
 
   /// \brief Execute a ReturnValue statement
-  void exec(ar::ReturnValue* s) override {
-    ikos_assert_msg(this->_return_stmt == nullptr || this->_return_stmt == s,
-                    "input code has more than one return statement");
-    this->_return_stmt = s;
-  }
+  void exec(ar::ReturnValue* s) override { this->_caller.set_return_stmt(s); }
 
   /// \brief Execute a Call statement
   void exec(ar::Call* s) override {
@@ -329,52 +286,46 @@ private:
       // Analyze recursively the callee
       //
 
-      std::unique_ptr< FunctionAnalyzer > callee_analyzer = nullptr;
+      std::unique_ptr< FunctionFixpoint > callee_fixpoint = nullptr;
 
-      if (this->_convergence_achieved && _ctx.opts.use_fixpoint_cache) {
-        // Use the previously computed fix-point
-        callee_analyzer = std::move(this->_calls_cache[call][callee]);
+      if (_ctx.opts.use_fixpoint_cache && this->_caller.converged()) {
+        // Try to fetch the previously computed fix-point
+        callee_fixpoint = this->_callees_cache.try_fetch(call, callee);
+      }
 
-        if (this->_context_stable) {
-          // Calling context is stable
-          callee_analyzer->mark_context_stable();
-        }
-      } else {
+      if (callee_fixpoint == nullptr) {
         if (_ctx.opts.use_fixpoint_cache) {
           // Erase the previous fix-point on the callee
-          this->_calls_cache[call][callee].reset();
+          this->_callees_cache.erase(call, callee);
         }
 
         // Create a fixpoint on the callee
-        callee_analyzer = std::make_unique<
-            FunctionAnalyzer >(_ctx,
-                               _caller,
-                               call,
-                               callee,
-                               this->_context_stable &&
-                                   this->_convergence_achieved);
+        callee_fixpoint = std::make_unique< FunctionFixpoint >(_ctx,
+                                                               this->_caller,
+                                                               call,
+                                                               callee);
 
         // Run analysis on callee
         log::debug("Analyzing function '" + demangle(callee->name()) + "'");
-        callee_analyzer->run(engine.inv());
+        callee_fixpoint->run(engine.inv());
       }
 
       if (this->_check_callees) {
         // Run the checks on the callee
-        callee_analyzer->run_checks();
+        callee_fixpoint->run_checks();
       }
 
       // Return statement in the callee, or null
-      ar::ReturnValue* return_stmt = callee_analyzer->return_stmt();
+      ar::ReturnValue* return_stmt = callee_fixpoint->return_stmt();
 
-      engine.set_inv(callee_analyzer->exit_invariant());
+      engine.set_inv(callee_fixpoint->exit_invariant());
 
       if (_ctx.opts.use_fixpoint_cache) {
         // Save the fix-point for later
-        this->_calls_cache[call][callee] = std::move(callee_analyzer);
+        this->_callees_cache.store(call, callee, std::move(callee_fixpoint));
       } else {
         // Delete the callee fix-point
-        callee_analyzer.reset();
+        callee_fixpoint.reset();
       }
 
       // Merge exceptions in caught_exceptions, in case it's an invoke
