@@ -329,9 +329,6 @@ private:
   // WPO nodes
   std::vector< WpoNodeT > _wpo_nodes;
 
-  // Top level nodes (outside any component)
-  std::vector< WpoIndex > _top_levels;
-
   // Back predecessors
   std::unordered_map< NodeRef, std::unordered_set< NodeRef > >
       _back_predecessors;
@@ -343,15 +340,11 @@ public:
 
     if (GraphTrait::successor_begin(root) == GraphTrait::successor_end(root)) {
       this->_wpo_nodes.emplace_back(root, Kind::Plain, 1, 1);
-      this->_top_levels.push_back(0);
       return;
     }
 
     wpo_impl::WpoBuilder< GraphRef, GraphTrait >
-        builder(cfg,
-                this->_wpo_nodes,
-                this->_top_levels,
-                this->_back_predecessors);
+        builder(cfg, this->_wpo_nodes, this->_back_predecessors);
   }
 
   /// \brief No copy constructor
@@ -460,9 +453,6 @@ private:
   /// \brief Reference to the WPO nodes
   std::vector< WpoNodeT >& _wpo_nodes;
 
-  /// \brief Reference to the top level nodes
-  std::vector< WpoIndex >& _top_levels;
-
   /// \brief Reference to a map that contains back edges
   std::unordered_map< NodeRef, std::unordered_set< NodeRef > >&
       _back_predecessors;
@@ -501,11 +491,9 @@ public:
   /// \brief Constructor
   WpoBuilder(GraphRef cfg,
              std::vector< WpoNodeT >& wpo_nodes,
-             std::vector< WpoIndex >& top_levels,
              std::unordered_map< NodeRef, std::unordered_set< NodeRef > >&
                  back_predecessors)
       : _wpo_nodes(wpo_nodes),
-        _top_levels(top_levels),
         _back_predecessors(back_predecessors),
         _next_dfn(1),
         _next_post_dfn(1),
