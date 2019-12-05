@@ -54,15 +54,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include <ikos/core/fixpoint/fixpoint_iterator.hpp>
-#include <ikos/core/fixpoint/wpo.hpp>
-
 #include <tbb/atomic.h>
 #include <tbb/cache_aligned_allocator.h>
-#include <tbb/concurrent_unordered_map.h>
 #include <tbb/parallel_do.h>
-#include <tbb/tbb.h>
-#include <tbb/tbb_allocator.h>
+
+#include <ikos/core/fixpoint/fixpoint_iterator.hpp>
+#include <ikos/core/fixpoint/wpo.hpp>
 
 namespace ikos {
 namespace core {
@@ -303,6 +300,9 @@ private:
     /// \brief No move assignment operator
     WorkNode& operator=(WorkNode&&) = delete;
 
+    /// \brief Destructor
+    ~WorkNode() = default;
+
     /// \brief Return the node kind
     WpoNodeKind kind() const { return this->_kind; }
 
@@ -514,6 +514,7 @@ private:
 
   }; // end class WorkNode
 
+  /// \brief Worker on a node for tbb::parallel_do
   class Worker {
   public:
     // Required by tbb::parallel_do
@@ -522,6 +523,21 @@ private:
   public:
     /// \brief Constructor
     Worker() = default;
+
+    /// \brief No copy constructor
+    Worker(const Worker&) = delete;
+
+    /// \brief No move constructor
+    Worker(Worker&&) = delete;
+
+    /// \brief No copy assignment operator
+    Worker& operator=(const Worker&) = delete;
+
+    /// \brief No move assignment operator
+    Worker& operator=(Worker&&) = delete;
+
+    /// \brief Destructor
+    ~Worker() = default;
 
     /// \brief Process a work node
     void operator()(WorkNode* work_node,

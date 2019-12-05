@@ -43,7 +43,7 @@
  *
  ******************************************************************************/
 
-#include <ikos/analyzer/analysis/execution_engine/inliner.hpp>
+#include <ikos/analyzer/analysis/execution_engine/concurrent_inliner.hpp>
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
 #include <ikos/analyzer/analysis/pointer/pointer.hpp>
 #include <ikos/analyzer/analysis/value/interprocedural/concurrent/function_fixpoint.hpp>
@@ -60,10 +60,8 @@ namespace {
 using NumericalExecutionEngineT = NumericalExecutionEngine< AbstractDomain >;
 
 /// \brief Call execution engine
-///
-/// TODO: Implement a concurrent inliner
-using InlineCallExecutionEngineT =
-    InlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
+using ConcurrentInlineCallExecutionEngineT =
+    ConcurrentInlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
 
 } // end anonymous namespace
 
@@ -186,10 +184,10 @@ AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
                   /* pointer_info = */ this->_ctx.pointer == nullptr
                       ? nullptr
                       : &this->_ctx.pointer->results());
-  InlineCallExecutionEngineT call_exec_engine(this->_ctx,
-                                              exec_engine,
-                                              *this,
-                                              this->_callees_cache);
+  ConcurrentInlineCallExecutionEngineT call_exec_engine(this->_ctx,
+                                                        exec_engine,
+                                                        *this,
+                                                        this->_callees_cache);
   exec_engine.exec_enter(bb);
   for (ar::Statement* stmt : *bb) {
     transfer_function(exec_engine, call_exec_engine, stmt);
@@ -229,10 +227,10 @@ void FunctionFixpoint::process_post(ar::BasicBlock* bb,
                     /* pointer_info = */ this->_ctx.pointer == nullptr
                         ? nullptr
                         : &this->_ctx.pointer->results());
-    InlineCallExecutionEngineT call_exec_engine(this->_ctx,
-                                                exec_engine,
-                                                *this,
-                                                this->_callees_cache);
+    ConcurrentInlineCallExecutionEngineT call_exec_engine(this->_ctx,
+                                                          exec_engine,
+                                                          *this,
+                                                          this->_callees_cache);
     call_exec_engine.exec_exit(this->_function);
   }
 }
@@ -248,10 +246,10 @@ void FunctionFixpoint::run_checks() {
                     /* pointer_info = */ this->_ctx.pointer == nullptr
                         ? nullptr
                         : &this->_ctx.pointer->results());
-    InlineCallExecutionEngineT call_exec_engine(this->_ctx,
-                                                exec_engine,
-                                                *this,
-                                                this->_callees_cache);
+    ConcurrentInlineCallExecutionEngineT call_exec_engine(this->_ctx,
+                                                          exec_engine,
+                                                          *this,
+                                                          this->_callees_cache);
 
     // Check called functions during the transfer function
     call_exec_engine.mark_check_callees();

@@ -1,18 +1,17 @@
 /*******************************************************************************
  *
  * \file
- * \brief Dynamic inlining call semantic
+ * \brief Concurrent dynamic inlining call semantic
  *
- * Author: Maxime Arthaud
+ * Author: Sung Kook Kim
  *
- * Contributors: Jorge A. Navas
- *               Clement Decoodt
+ * Contributor: Maxime Arthaud
  *
  * Contact: ikos@lists.nasa.gov
  *
  * Notices:
  *
- * Copyright (c) 2011-2019 United States Government as represented by the
+ * Copyright (c) 2019 United States Government as represented by the
  * Administrator of the National Aeronautics and Space Administration.
  * All Rights Reserved.
  *
@@ -47,6 +46,12 @@
 #pragma once
 
 #include <memory>
+#include <vector>
+
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_reduce.h>
+
+#include <llvm/ADT/Optional.h>
 
 #include <ikos/ar/semantic/function.hpp>
 #include <ikos/ar/semantic/statement.hpp>
@@ -56,13 +61,11 @@
 #include <ikos/analyzer/analysis/execution_engine/fixpoint_cache.hpp>
 #include <ikos/analyzer/analysis/execution_engine/numerical.hpp>
 #include <ikos/analyzer/analysis/pointer/value.hpp>
-#include <ikos/analyzer/util/demangle.hpp>
-#include <ikos/analyzer/util/log.hpp>
 
 namespace ikos {
 namespace analyzer {
 
-/// \brief Inliner of function calls
+/// \brief Concurrent inliner of function calls
 ///
 /// The inlining of a function is done dynamically by matching formal and actual
 /// parameters and analyzing recursively the callee (FunctionFixpoint) and after
@@ -70,10 +73,10 @@ namespace analyzer {
 /// at the call site. The inlining also supports function pointers by resolving
 /// first the set of possible callees and joining the results.
 template < typename FunctionFixpoint, typename AbstractDomain >
-class InlineCallExecutionEngine final : public CallExecutionEngine {
+class ConcurrentInlineCallExecutionEngine final : public CallExecutionEngine {
 public:
   using InlineCallExecutionEngineT =
-      InlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
+      ConcurrentInlineCallExecutionEngine< FunctionFixpoint, AbstractDomain >;
   using NumericalExecutionEngineT = NumericalExecutionEngine< AbstractDomain >;
   using FixpointCacheT = FixpointCache< FunctionFixpoint, AbstractDomain >;
 
@@ -95,10 +98,10 @@ private:
 
 public:
   /// \brief Constructor
-  InlineCallExecutionEngine(Context& ctx,
-                            NumericalExecutionEngineT& engine,
-                            FunctionFixpoint& caller,
-                            FixpointCacheT& callees_cache)
+  ConcurrentInlineCallExecutionEngine(Context& ctx,
+                                      NumericalExecutionEngineT& engine,
+                                      FunctionFixpoint& caller,
+                                      FixpointCacheT& callees_cache)
       : _ctx(ctx),
         _engine(engine),
         _caller(caller),
@@ -146,6 +149,182 @@ public:
 private:
   /// \brief Return a non-const reference on the current invariant
   AbstractDomain& inv() { return this->_engine.inv(); }
+
+  /// \brief Analysis on a callee
+  class CalleeAnalysis {
+  public:
+    ar::Function* callee;
+    std::unique_ptr< FunctionFixpoint > fixpoint;
+
+  public:
+    /// \brief Constructor
+    explicit CalleeAnalysis(ar::Function* callee_)
+        : callee(callee_), fixpoint(nullptr) {}
+
+    /// \brief No copy constructor
+    CalleeAnalysis(const CalleeAnalysis&) = delete;
+
+    /// \brief Move constructor
+    CalleeAnalysis(CalleeAnalysis&&) = default;
+
+    /// \brief No copy assignment operator
+    CalleeAnalysis& operator=(const CalleeAnalysis&) = delete;
+
+    /// \brief No move assignment operator
+    CalleeAnalysis& operator=(CalleeAnalysis&&) = delete;
+
+    /// \brief Destructor
+    ~CalleeAnalysis() = default;
+
+  }; // end class CalleeAnalysis
+
+  /// \brief Worker on a callee for tbb::parallel_reduce
+  class CalleeWorker {
+  private:
+    /// \brief Analysis context
+    Context& _ctx;
+
+    /// \brief Caller numerical execution engine
+    const NumericalExecutionEngineT& _engine;
+
+    /// \brief Function analyzer of the caller
+    FunctionFixpoint& _caller;
+
+    /// \brief Function fixpoint cache of callees
+    FixpointCacheT& _callees_cache;
+
+    /// \brief Call statement
+    ar::CallBase* _call;
+
+    /// \brief Analyses on callees
+    std::vector< CalleeAnalysis >& _callee_analyses;
+
+    /// \brief Post invariant
+    llvm::Optional< AbstractDomain > _post;
+
+  public:
+    /// \brief Constructor
+    CalleeWorker(Context& ctx,
+                 const NumericalExecutionEngineT& engine,
+                 FunctionFixpoint& caller,
+                 FixpointCacheT& callees_cache,
+                 ar::CallBase* call,
+                 std::vector< CalleeAnalysis >& callee_analyses,
+                 AbstractDomain post)
+        : _ctx(ctx),
+          _engine(engine),
+          _caller(caller),
+          _callees_cache(callees_cache),
+          _call(call),
+          _callee_analyses(callee_analyses),
+          _post(std::move(post)) {}
+
+    /// \brief Split constructor
+    CalleeWorker(CalleeWorker& parent, tbb::split)
+        : _ctx(parent._ctx),
+          _engine(parent._engine),
+          _caller(parent._caller),
+          _callees_cache(parent._callees_cache),
+          _call(parent._call),
+          _callee_analyses(parent._callee_analyses),
+          _post(llvm::None) {}
+
+    /// \brief No copy constructor
+    CalleeWorker(const CalleeWorker&) = delete;
+
+    /// \brief No move constructor
+    CalleeWorker(CalleeWorker&&) = delete;
+
+    /// \brief No copy assignment operator
+    CalleeWorker& operator=(const CalleeWorker&) = delete;
+
+    /// \brief No move assignment operator
+    CalleeWorker& operator=(CalleeWorker&&) = delete;
+
+    /// \brief Destructor
+    ~CalleeWorker() = default;
+
+    void operator()(const tbb::blocked_range< size_t >& r) {
+      for (auto i = r.begin(); i != r.end(); i++) {
+        this->operator()(this->_callee_analyses[i]);
+      }
+    }
+
+    /// \brief Analyze a callee
+    void operator()(CalleeAnalysis& analysis) {
+      NumericalExecutionEngineT engine = this->_engine.fork();
+
+      // Do not propagate exceptions from the caller to the callee
+      engine.inv().ignore_exceptions();
+
+      // Assign parameters
+      engine.match_down(this->_call, analysis.callee);
+
+      analysis.fixpoint = nullptr;
+
+      if (_ctx.opts.use_fixpoint_cache && this->_caller.converged()) {
+        // Try to fetch the previously computed fix-point
+        analysis.fixpoint =
+            this->_callees_cache.try_fetch(this->_call, analysis.callee);
+      }
+
+      if (analysis.fixpoint == nullptr) {
+        if (_ctx.opts.use_fixpoint_cache) {
+          // Erase the previous fix-point on the callee
+          this->_callees_cache.erase(this->_call, analysis.callee);
+        }
+
+        // Create a fixpoint on the callee
+        analysis.fixpoint =
+            std::make_unique< FunctionFixpoint >(_ctx,
+                                                 this->_caller,
+                                                 this->_call,
+                                                 analysis.callee);
+
+        // Run analysis on callee
+        analysis.fixpoint->run(std::move(engine.inv()));
+      }
+
+      // Return statement in the callee, or null
+      ar::ReturnValue* return_stmt = analysis.fixpoint->return_stmt();
+
+      engine.set_inv(analysis.fixpoint->exit_invariant());
+
+      // Merge exceptions in caught_exceptions, in case it's an invoke
+      engine.inv().merge_propagated_in_caught_exceptions();
+
+      if (engine.inv().is_normal_flow_bottom()) {
+        this->post_join(engine.inv()); // collect the exception states
+        return;
+      }
+
+      engine.match_up(this->_call, return_stmt);
+      this->post_join(engine.inv());
+    }
+
+    /// \brief Join two workers
+    void join(CalleeWorker& other) {
+      if (other._post) {
+        this->post_join(*other._post);
+      }
+    }
+
+    /// \brief Join the post invariant
+    void post_join(const AbstractDomain& inv) {
+      if (this->_post) {
+        (*this->_post).join_with(inv);
+      } else {
+        this->_post = inv;
+      }
+    }
+
+    /// \brief Return the post invariant
+    AbstractDomain& post() {
+      ikos_assert(this->_post);
+      return *this->_post;
+    }
+
+  }; // end class CalleeWorker
 
   /// \brief Execute any call statement
   void exec(ar::CallBase* call) {
@@ -233,6 +412,9 @@ private:
     AbstractDomain post = this->inv();
     post.set_normal_flow_to_bottom();
 
+    // Analyses on callees
+    std::vector< CalleeAnalysis > callee_analyses;
+
     // For each callee
     for (MemoryLocation* mem : callees) {
       if (!isa< FunctionMemoryLocation >(mem)) {
@@ -274,76 +456,42 @@ private:
         return;
       }
 
-      NumericalExecutionEngineT engine = this->_engine.fork();
-
-      // Do not propagate exceptions from the caller to the callee
-      engine.inv().ignore_exceptions();
-
-      // Assign parameters
-      engine.match_down(call, callee);
-
       //
       // Analyze recursively the callee
       //
 
-      std::unique_ptr< FunctionFixpoint > callee_fixpoint = nullptr;
+      callee_analyses.push_back(CalleeAnalysis(callee));
+    }
 
-      if (_ctx.opts.use_fixpoint_cache && this->_caller.converged()) {
-        // Try to fetch the previously computed fix-point
-        callee_fixpoint = this->_callees_cache.try_fetch(call, callee);
-      }
+    CalleeWorker worker(this->_ctx,
+                        this->_engine,
+                        this->_caller,
+                        this->_callees_cache,
+                        call,
+                        callee_analyses,
+                        std::move(post));
+    tbb::blocked_range< size_t > range(0, callee_analyses.size());
+    tbb::parallel_reduce(range, worker);
 
-      if (callee_fixpoint == nullptr) {
-        if (_ctx.opts.use_fixpoint_cache) {
-          // Erase the previous fix-point on the callee
-          this->_callees_cache.erase(call, callee);
-        }
-
-        // Create a fixpoint on the callee
-        callee_fixpoint = std::make_unique< FunctionFixpoint >(_ctx,
-                                                               this->_caller,
-                                                               call,
-                                                               callee);
-
-        // Run analysis on callee
-        log::debug("Analyzing function '" + demangle(callee->name()) + "'");
-        callee_fixpoint->run(std::move(engine.inv()));
-      }
-
+    // Non-thread safe
+    for (CalleeAnalysis& analysis : callee_analyses) {
       if (this->_check_callees) {
         // Run the checks on the callee
-        callee_fixpoint->run_checks();
+        analysis.fixpoint->run_checks();
       }
-
-      // Return statement in the callee, or null
-      ar::ReturnValue* return_stmt = callee_fixpoint->return_stmt();
-
-      engine.set_inv(callee_fixpoint->exit_invariant());
 
       if (_ctx.opts.use_fixpoint_cache) {
         // Save the fix-point for later
-        this->_callees_cache.store(call, callee, std::move(callee_fixpoint));
-      } else {
-        // Delete the callee fix-point
-        callee_fixpoint.reset();
+        this->_callees_cache.store(call,
+                                   analysis.callee,
+                                   std::move(analysis.fixpoint));
       }
-
-      // Merge exceptions in caught_exceptions, in case it's an invoke
-      engine.inv().merge_propagated_in_caught_exceptions();
-
-      if (engine.inv().is_normal_flow_bottom()) {
-        post.join_with(engine.inv()); // collect the exception states
-        continue;
-      }
-
-      engine.match_up(call, return_stmt);
-      post.join_with(engine.inv());
     }
 
-    this->_engine.set_inv(std::move(post));
+    this->_engine.set_inv(std::move(worker.post()));
   }
 
-}; // end class InlineCallExecutionEngine
+}; // end class ConcurrentInlineCallExecutionEngine
 
 } // end namespace analyzer
 } // end namespace ikos
