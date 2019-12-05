@@ -19,6 +19,7 @@ Table of contents
   - [Checks](#checks)
   - [Numerical abstract domains](#numerical-abstract-domains)
   - [Entry points](#entry-points)
+  - [Multi-threading](#multi-threading)
   - [Optimization level](#optimization-level)
   - [Inter-procedural vs Intra-procedural](#inter-procedural-vs-intra-procedural)
   - [Fixpoint engine parameters](#fixpoint-engine-parameters)
@@ -339,6 +340,23 @@ $ ikos --entry-points=foo,bar test.c
 ```
 
 IKOS analyses each entry point independently, as if they were running in different processes.
+
+### Multi-threading
+
+The analyzer can use multi-threading to speed up the analysis. You can specify the number of threads to use with the `--jobs` or `-j` parameter:
+
+```
+$ ikos --jobs=4 test.c
+```
+
+Use `-j` to use all available threads. By default, the analyzer only uses one thread.
+
+**Warning:** Some numerical abstract domains are currently NOT thread-safe. The following numerical abstract domains are thread-safe:
+* `-d=interval`: The interval domain;
+* `-d=congruence`: The congruence domain;
+* `-d=interval-congruence`: The reduced product of interval and congruence;
+* `-d=gauge`: The gauge domain;
+* `-d=gauge-interval-congruence`: The reduced product of gauge, interval and congruence.
 
 ### Optimization level
 

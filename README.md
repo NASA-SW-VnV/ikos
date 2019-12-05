@@ -198,6 +198,7 @@ Further information:
   - [Checks](analyzer/README.md#checks)
   - [Numerical abstract domains](analyzer/README.md#numerical-abstract-domains)
   - [Entry points](analyzer/README.md#entry-points)
+  - [Multi-threading](analyzer/README.md#multi-threading)
   - [Optimization level](analyzer/README.md#optimization-level)
   - [Inter-procedural vs Intra-procedural](analyzer/README.md#inter-procedural-vs-intra-procedural)
   - [Fixpoint engine parameters](analyzer/README.md#fixpoint-engine-parameters)
@@ -223,6 +224,8 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
 Publications
 ------------
+
+* Sung Kook Kim, Arnaud J. Venet, Aditya V. Thakur. **Deterministic Parallel Fixpoint Computation.** In _Principles of Programming Languages (POPL 2020)_, New Orleans, Louisiana ([PDF](https://arxiv.org/pdf/1909.05951.pdf)).
 
 * Guillaume Brat, Jorge Navas, Nija Shi and Arnaud Venet. **IKOS: a Framework for Static Analysis based on Abstract Interpretation.** In _Proceedings of the International Conference on Software Engineering and Formal Methods (SEFM 2014)_, Grenoble, France ([PDF](http://ti.arc.nasa.gov/publications/16610/download/)).
 

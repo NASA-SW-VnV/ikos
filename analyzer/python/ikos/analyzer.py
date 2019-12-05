@@ -171,8 +171,10 @@ def parse_arguments(argv):
     analysis.add_argument('-j', '--jobs',
                           dest='jobs',
                           metavar='',
+                          nargs='?',
                           help='Number of threads',
                           type=int,
+                          const=0,
                           default=1)
     analysis.add_argument('--widening-strategy',
                           dest='widening_strategy',

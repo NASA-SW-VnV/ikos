@@ -17,3 +17,5 @@ External Contributors
 ---------------------
 
 * [avemilia](https://github.com/avemilia)
+* [Sung Kook Kim](https://github.com/skkeem)
+* Aditya Thakur
