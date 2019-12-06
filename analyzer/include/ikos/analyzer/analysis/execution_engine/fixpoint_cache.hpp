@@ -44,6 +44,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 
 #include <boost/container/flat_map.hpp>
 
