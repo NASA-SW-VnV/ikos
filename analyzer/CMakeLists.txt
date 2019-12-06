@@ -169,6 +169,7 @@ add_compiler_flag(OPTIONAL "WNO_COVERED_SWITCH_DEFAULT" "-Wno-covered-switch-def
 add_compiler_flag(OPTIONAL "WNO_EXIT_TIME_DESTRUCTORS" "-Wno-exit-time-destructors")
 add_compiler_flag(OPTIONAL "WNO_GLOBAL_CONSTRUCTORS" "-Wno-global-constructors")
 add_compiler_flag(OPTIONAL "WNO_WEAK_VTABLES" "-Wno-weak-vtables")
+add_compiler_flag(OPTIONAL "WNO_REDUNDANT_MOVE" "-Wno-redundant-move")
 add_compiler_flag(OPTIONAL "WNO_UNUSED_LOCAL_TYPEDEFS" "-Wno-unused-local-typedefs")
 
 #
