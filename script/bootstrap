@@ -471,7 +471,7 @@ function cxx_compile() {
 
 # Compile a simple program using zlib
 function zlib_version_compile() {
-    cc_compile -o "$tests_dir/zlib_version" -lz <<EOF
+    cc_compile -o "$tests_dir/zlib_version" -lz <<'EOF'
         #include <assert.h>
         #include <stdio.h>
         #include <string.h>
@@ -492,7 +492,7 @@ function zlib_version() {
 
 # Compile a simple program using ncurses
 function ncurses_version_compile() {
-    cc_compile -o "$tests_dir/ncurses_version" -lncurses <<EOF
+    cc_compile -o "$tests_dir/ncurses_version" -lncurses <<'EOF'
         #include <stdio.h>
         #include <ncurses.h>
 
@@ -510,7 +510,7 @@ function ncurses_version() {
 
 # Compile a simple program using libedit
 function libedit_version_compile() {
-    cc_compile -o "$tests_dir/libedit_version" -ledit <<EOF
+    cc_compile -o "$tests_dir/libedit_version" -ledit <<'EOF'
         #include <assert.h>
         #include <stdio.h>
         #include <histedit.h>
@@ -540,7 +540,7 @@ function m4_parse_version() {
 
 # Compile a simple program using gmp
 function gmp_version_compile() {
-    cc_compile -o "$tests_dir/gmp_version" -lgmp <<EOF
+    cc_compile -o "$tests_dir/gmp_version" -lgmp <<'EOF'
         #include <assert.h>
         #include <stdio.h>
         #include <gmp.h>
@@ -565,7 +565,7 @@ function gmp_version() {
 
 # Compile a simple program using mpfr
 function mpfr_version_compile() {
-    cc_compile -o "$tests_dir/mpfr_version" -lmpfr <<EOF
+    cc_compile -o "$tests_dir/mpfr_version" -lmpfr <<'EOF'
         #include <stdio.h>
         #include <mpfr.h>
 
@@ -585,7 +585,7 @@ function mpfr_version() {
 
 # Compile a simple program using ppl
 function ppl_version_compile() {
-    cc_compile -o "$tests_dir/ppl_version" -lppl_c <<EOF
+    cc_compile -o "$tests_dir/ppl_version" -lppl_c <<'EOF'
         #include <stdio.h>
         #include <ppl_c.h>
 
@@ -606,7 +606,7 @@ function ppl_version() {
 
 # Compile a simple program using apron
 function apron_compile() {
-    cc_compile -o "$tests_dir/apron" -lapron -lboxMPQ <<EOF
+    cc_compile -o "$tests_dir/apron" -lapron -lboxMPQ <<'EOF'
         #include <ap_global0.h>
         #include <box.h>
 
@@ -627,7 +627,7 @@ function has_apron() {
 
 # Compile a simple program using sqlite
 function sqlite_version_compile() {
-    cc_compile -o "$tests_dir/sqlite_version" -lsqlite3 <<EOF
+    cc_compile -o "$tests_dir/sqlite_version" -lsqlite3 <<'EOF'
         #include <assert.h>
         #include <stdio.h>
         #include <string.h>
@@ -648,7 +648,7 @@ function sqlite_version() {
 
 # Compile a simple program using boost
 function boost_version_compile() {
-    cxx_compile -o "$tests_dir/boost_version" <<EOF
+    cxx_compile -o "$tests_dir/boost_version" <<'EOF'
         #include <iostream>
         #include <boost/version.hpp>
 
@@ -668,8 +668,7 @@ function boost_version() {
 
 # Compile a simple program using boost::system
 function boost_system_compile() {
-    cxx_compile -o "$tests_dir/boost_system" -lboost_system <<EOF
-        #include <iostream>
+    cxx_compile -o "$tests_dir/boost_system" -lboost_system <<'EOF'
         #include <boost/system/error_code.hpp>
 
         int main() {
@@ -686,8 +685,7 @@ function has_boost_system() {
 
 # Compile a simple program using boost::filesystem
 function boost_filesystem_compile() {
-    cxx_compile -o "$tests_dir/boost_filesystem" -lboost_system -lboost_filesystem <<EOF
-        #include <iostream>
+    cxx_compile -o "$tests_dir/boost_filesystem" -lboost_system -lboost_filesystem <<'EOF'
         #include <boost/filesystem.hpp>
 
         int main() {
@@ -704,7 +702,7 @@ function has_boost_filesystem() {
 
 # Compile a simple program using boost::unit_test_framework
 function boost_unit_test_framework_compile() {
-    cxx_compile -o "$tests_dir/boost_unit_test_framework" -lboost_unit_test_framework <<EOF
+    cxx_compile -o "$tests_dir/boost_unit_test_framework" -lboost_unit_test_framework <<'EOF'
         #define BOOST_TEST_MODULE test
         #define BOOST_TEST_DYN_LINK
         #include <boost/test/unit_test.hpp>
@@ -2070,7 +2068,7 @@ if (( ! found_python )); then
         if [[ -n "$custom_sqlite_root" ]]; then
             # We need to patch python to build _sqlite
 
-            cat > setup-fix-custom-sqlite.patch <<EOF
+            cat > setup-fix-custom-sqlite.patch <<'EOF'
 --- setup.py
 +++ setup.py
 @@ -1117,13 +1117,7 @@
