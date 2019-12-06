@@ -700,6 +700,28 @@ function has_boost_filesystem() {
     boost_filesystem_compile && "$tests_dir/boost_filesystem"
 }
 
+# Compile a simple program using boost::thread
+function boost_thread_compile() {
+    for libname in "boost_thread" "boost_thread-mt"; do
+        cxx_compile -o "$tests_dir/boost_thread" -l$libname <<'EOF'
+            #include <boost/thread/mutex.hpp>
+
+            int main() {
+                boost::mutex m;
+                return 0;
+            }
+EOF
+        (( $? == 0 )) && return 0
+    done
+
+    return 1
+}
+
+# Check if boost::thread is available
+function has_boost_thread() {
+    boost_thread_compile && "$tests_dir/boost_thread"
+}
+
 # Compile a simple program using boost::unit_test_framework
 function boost_unit_test_framework_compile() {
     cxx_compile -o "$tests_dir/boost_unit_test_framework" -lboost_unit_test_framework <<'EOF'
@@ -1950,10 +1972,12 @@ if version=$(boost_version); then
             progress "Could NOT find boost_system"
         elif ! has_boost_filesystem; then
             progress "Could NOT find boost_filesystem"
+        elif ! has_boost_thread; then
+            progress "Could NOT find boost_thread"
         elif ! has_boost_unit_test_framework; then
             progress "Could NOT find boost_unit_test_framework"
         else
-            success "Found Boost $version with libraries: system, filesystem, unit_test_framework"
+            success "Found Boost $version with libraries: system, filesystem, thread, unit_test_framework"
             found_boost=1
         fi
     else
@@ -1966,7 +1990,7 @@ fi
 ##############################
 
 if (( ! found_boost )); then
-    progress "Could NOT find Boost >= $boost_required_version with libraries: system, filesystem, unit_test_framework"
+    progress "Could NOT find Boost >= $boost_required_version with libraries: system, filesystem, thread, unit_test_framework"
 
     if [[ -d "$install_dir/boost-$boost_install_version/include/boost" ]]; then
         progress "Using already built ${cgreen}boost $boost_install_version"
@@ -1982,6 +2006,7 @@ if (( ! found_boost )); then
             --prefix="$install_dir/boost-$boost_install_version" \
             --with-libraries=system \
             --with-libraries=filesystem \
+            --with-libraries=thread \
             --with-libraries=test || error_configure boost
 
         progress_run ./b2 "-j$njobs" || error_make boost
