@@ -4,14 +4,15 @@ ARG njobs=2
 ARG build_type=Release
 
 # Installs the following versions (note that it might be out of date):
-# cmake 3.15.5
+# cmake 3.16.0
 # gmp 6.1.2
 # mpfr 4.0.2
 # ppl 1.2
 # apron 0.9.10
 # boost 1.71.0
-# python 3.7.4
+# python 3.8
 # sqlite 3.30.1
+# tbb 11009
 # llvm 9.0.0
 # clang 9.0.0
 # gcc 9.2.0
@@ -22,7 +23,7 @@ RUN pacman --noconfirm -Syu
 RUN pacman-db-upgrade
 
 # Install most dependencies
-RUN pacman -S --noconfirm base-devel git cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang
+RUN pacman -S --noconfirm base-devel git cmake gmp boost boost-libs python python-pygments sqlite intel-tbb llvm llvm-libs clang
 
 # Use -j$njobs when building packages
 RUN echo "MAKEFLAGS=\"-j$njobs\"" >> /etc/makepkg.conf

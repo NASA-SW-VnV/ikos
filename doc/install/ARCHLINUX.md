@@ -32,7 +32,7 @@ $ sudo pacman -Syu
 Now, install the following packages using **pacman**:
 
 ```
-$ sudo pacman -S base-devel cmake gmp boost boost-libs python python-pygments sqlite llvm llvm-libs clang
+$ sudo pacman -S base-devel cmake gmp boost boost-libs python python-pygments sqlite intel-tbb llvm llvm-libs clang
 ```
 
 Then, install the *apron-ppl-svn* **[AUR](https://aur.archlinux.org/)** package:
