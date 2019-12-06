@@ -96,7 +96,7 @@ find_package(GMP REQUIRED)
 include_directories(SYSTEM ${GMP_INCLUDE_DIR})
 include_directories(SYSTEM ${GMPXX_INCLUDE_DIR})
 
-find_package(TBB 2019.9 REQUIRED)
+find_package(TBB 2 REQUIRED)
 include_directories(SYSTEM ${TBB_INCLUDE_DIRS})
 
 find_package(SQLite3 REQUIRED)

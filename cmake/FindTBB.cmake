@@ -190,7 +190,7 @@ if(NOT TBB_FOUND)
       TBB_VERSION_MINOR "${_tbb_version_file}")
     string(REGEX REPLACE ".*#define TBB_INTERFACE_VERSION ([0-9]+).*" "\\1"
       TBB_INTERFACE_VERSION "${_tbb_version_file}")
-    set(TBB_VERSION "${TBB_VERSION_MAJOR}.${TBB_VERSION_MINOR}")
+    set(TBB_VERSION "${TBB_INTERFACE_VERSION}")
   endif()
 
   ##################################

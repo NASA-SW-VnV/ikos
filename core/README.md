@@ -21,6 +21,7 @@ To use IKOS Core, you will need the following dependencies:
 * CMake >= 2.8.12.2
 * GMP >= 4.3.1
 * Boost >= 1.55
+* (Optional) TBB >= 2
 * (Optional) APRON >= 0.9.10
 
 ### Install
