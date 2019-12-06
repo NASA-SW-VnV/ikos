@@ -31,7 +31,7 @@ $ brew upgrade
 Now, install the following packages:
 
 ```
-$ brew install cmake gmp boost llvm
+$ brew install cmake gmp boost tbb llvm
 ```
 
 When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
