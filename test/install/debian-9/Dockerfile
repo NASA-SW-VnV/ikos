@@ -9,6 +9,7 @@ ARG build_type=Release
 # boost 1.62.0
 # python 2.7.13
 # sqlite 3.16.2
+# tbb 8006
 # llvm 9.0.1
 # clang 9.0.1
 # gcc 6.3.0
@@ -29,8 +30,9 @@ RUN apt-get update
 
 # Install all dependencies
 RUN apt-get install -y gcc g++ cmake libgmp-dev libboost-dev \
-        libboost-filesystem-dev libboost-test-dev python python-pygments \
-        libsqlite3-dev libz-dev libedit-dev llvm-9 llvm-9-dev llvm-9-tools clang-9
+        libboost-filesystem-dev libboost-thread-dev libboost-test-dev python \
+        python-pygments libsqlite3-dev libtbb-dev libz-dev libedit-dev \
+        llvm-9 llvm-9-dev llvm-9-tools clang-9
 
 # Add ikos source code
 ADD . /root/ikos
