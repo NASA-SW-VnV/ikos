@@ -93,6 +93,8 @@ sqlite_required_version="3.6.20"
 sqlite_install_version="3.29.0"
 boost_required_version="1.55.0"
 boost_install_version="1.70.0"
+tbb_required_version="2"
+tbb_install_version="11009"
 python2_required_version="2.7.3"
 python3_required_version="3.3"
 python_install_version="2.7.16"
@@ -738,6 +740,26 @@ EOF
 # Check if boost::unit_test_framework is available
 function has_boost_unit_test_framework() {
     boost_unit_test_framework_compile && "$tests_dir/boost_unit_test_framework" >/dev/null 2>&1
+}
+
+# Compile a simple program using tbb
+function tbb_version_compile() {
+    cxx_compile -o "$tests_dir/tbb_version" -ltbb <<'EOF'
+        #include <iostream>
+        #include <tbb/tbb_stddef.h>
+        #include <tbb/mutex.h>
+
+        int main() {
+            tbb::mutex m;
+            std::cout << tbb::TBB_runtime_interface_version();
+            return 0;
+        }
+EOF
+}
+
+# Detect the version of tbb
+function tbb_version() {
+    tbb_version_compile && "$tests_dir/tbb_version"
 }
 
 # Parse and detect the version of python, given the command name
@@ -2024,6 +2046,73 @@ if (( ! found_boost )); then
     success "${cgreen}boost $boost_install_version${coff}${cbold} successfully installed"
 fi
 
+#############
+# Check tbb #
+#############
+
+progress "Checking for TBB"
+found_tbb=0
+
+if version=$(tbb_version); then
+    if version_ge "$version" "$tbb_required_version"; then
+        found_tbb=1
+        success "Found TBB $version"
+    else
+        progress "Found TBB $version, version too old, skipped"
+    fi
+fi
+
+############################
+# Install tbb if necessary #
+############################
+
+if (( ! found_tbb )); then
+    progress "Could NOT find TBB >= $tbb_required_version"
+
+    if [[ -f "$install_dir/tbb-$tbb_install_version/include/tbb/tbb.h" ]]; then
+        progress "Using already built ${cgreen}tbb $tbb_install_version"
+    else
+        progress "Installing ${cgreen}tbb $tbb_install_version"
+
+        download "https://github.com/intel/tbb/archive/2019_U9.tar.gz"
+        mv "$download_dir/2019_U9.tar.gz" "$download_dir/tbb-2019_U9.tar.gz"
+        extract "$download_dir/tbb-2019_U9.tar.gz" "$build_dir/tbb-$tbb_install_version"
+
+        cd "$build_dir/tbb-$tbb_install_version"
+
+        progress_run make tbb_build_prefix= || error_make tbb
+
+        progress_run install -d \
+            "$install_dir/tbb-$tbb_install_version/lib" || error_install tbb
+
+        progress_run install \
+            build/_release/lib*.* \
+            "$install_dir/tbb-$tbb_install_version/lib" || error_install tbb
+
+        progress_run install -d \
+            "$install_dir/tbb-$tbb_install_version/include" || error_install tbb
+
+        progress_run cp -a \
+            include/tbb \
+            "$install_dir/tbb-$tbb_install_version/include" || error_install tbb
+
+        progress_run cmake \
+            -DINSTALL_DIR="$install_dir/tbb-$tbb_install_version/lib/cmake/TBB" \
+            -DSYSTEM_NAME="$(uname)" \
+            -DTBB_VERSION_FILE="$install_dir/tbb-$tbb_install_version/include/tbb/tbb_stddef.h" \
+            -P cmake/tbb_config_installer.cmake || error_install tbb
+    fi
+
+    custom_tbb_root="$install_dir/tbb-$tbb_install_version"
+    prepend_include_path "$install_dir/tbb-$tbb_install_version/include"
+    prepend_library_path "$install_dir/tbb-$tbb_install_version/lib"
+
+    (version=$(tbb_version) && [[ "$version" = "$tbb_install_version" ]]) ||
+        assert_failed "tbb is not properly installed"
+
+    success "${cgreen}tbb $tbb_install_version${coff}${cbold} successfully installed"
+fi
+
 ################
 # Check python #
 ################
@@ -2298,6 +2387,9 @@ else
     fi
     if [[ -n "$custom_boost_root" ]]; then
         cmake_extra_args+=("-DCUSTOM_BOOST_ROOT=$custom_boost_root")
+    fi
+    if [[ -n "$custom_tbb_root" ]]; then
+        cmake_extra_args+=("-DTBB_ROOT=$custom_tbb_root")
     fi
 
     progress_run cmake \
