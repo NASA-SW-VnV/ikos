@@ -43,7 +43,6 @@
 #define BOOST_TEST_MODULE test_constant
 #define BOOST_TEST_DYN_LINK
 #include <boost/mpl/list.hpp>
-#include <boost/test/output_test_stream.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <ikos/core/value/numeric/constant.hpp>

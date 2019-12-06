@@ -43,7 +43,6 @@
 #define BOOST_TEST_MODULE test_machine_integer_interval
 #define BOOST_TEST_DYN_LINK
 #include <boost/mpl/list.hpp>
-#include <boost/test/output_test_stream.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <ikos/core/number/machine_int.hpp>

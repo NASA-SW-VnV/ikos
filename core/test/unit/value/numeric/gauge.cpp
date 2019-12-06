@@ -44,7 +44,6 @@
 #define BOOST_TEST_DYN_LINK
 #include <boost/mpl/list.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/test/output_test_stream.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <ikos/core/example/variable_factory.hpp>

@@ -43,8 +43,14 @@
 #define BOOST_TEST_MODULE test_q_number
 #define BOOST_TEST_DYN_LINK
 #include <boost/mpl/list.hpp>
-#include <boost/test/output_test_stream.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/version.hpp>
+
+#if BOOST_VERSION >= 107100
+#include <boost/test/tools/output_test_stream.hpp>
+#else
+#include <boost/test/output_test_stream.hpp>
+#endif
 
 #include <ikos/core/number/q_number.hpp>
 
