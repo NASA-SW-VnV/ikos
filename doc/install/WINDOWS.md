@@ -25,6 +25,7 @@ $ pacman -S \
     mingw-w64-x86_64-python3 \
     mingw-w64-x86_64-python3-pygments \
     mingw-w64-x86_64-sqlite3 \
+    mingw-w64-x86_64-intel-tbb \
     mingw-w64-x86_64-llvm \
     mingw-w64-x86_64-clang \
     mingw-w64-x86_64-polly
