@@ -10,8 +10,9 @@ ARG build_type=Release
 # ppl 1.2
 # apron 0.9.10
 # boost 1.66.0
-# python 2.7.16
+# python 2.7.17
 # sqlite 3.26.0
+# tbb 10005
 # llvm 9.0.0
 # clang 9.0.0
 # gcc 8.3.1
@@ -22,7 +23,7 @@ RUN dnf -y update
 # Install all dependencies
 RUN dnf install -y which findutils patch bzip2 xz zlib-devel libedit-devel \
         gcc gcc-c++ make cmake m4 gmp-devel mpfr-devel ppl-devel boost-devel \
-        python python-pygments sqlite-devel
+        python python-pygments sqlite-devel tbb-devel
 
 # Add ikos source code
 ADD . /root/ikos
