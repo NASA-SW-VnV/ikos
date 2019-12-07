@@ -43,6 +43,8 @@
  *
  ******************************************************************************/
 
+#include <boost/thread/locks.hpp>
+
 #include <ikos/ar/semantic/value_visitor.hpp>
 
 #include <ikos/analyzer/analysis/literal.hpp>

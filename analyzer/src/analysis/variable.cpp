@@ -43,6 +43,8 @@
  *
  ******************************************************************************/
 
+#include <boost/thread/locks.hpp>
+
 #include <ikos/analyzer/analysis/variable.hpp>
 #include <ikos/analyzer/exception.hpp>
 

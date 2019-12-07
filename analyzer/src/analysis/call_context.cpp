@@ -41,6 +41,8 @@
  *
  ******************************************************************************/
 
+#include <boost/thread/locks.hpp>
+
 #include <ikos/analyzer/analysis/call_context.hpp>
 
 namespace ikos {

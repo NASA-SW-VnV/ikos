@@ -49,6 +49,7 @@
 #include <string>
 #include <unordered_map>
 
+#include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 
 #include <llvm/ADT/DenseMap.h>

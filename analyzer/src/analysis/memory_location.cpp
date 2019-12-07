@@ -43,6 +43,8 @@
  *
  ******************************************************************************/
 
+#include <boost/thread/locks.hpp>
+
 #include <ikos/analyzer/analysis/memory_location.hpp>
 #include <ikos/analyzer/util/source_location.hpp>
 
