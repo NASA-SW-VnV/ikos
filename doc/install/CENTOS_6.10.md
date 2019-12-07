@@ -3,7 +3,7 @@ Install IKOS on CentOS 6.10
 
 Here are the steps to install IKOS and its dependencies on **[CentOS 6.10](https://www.centos.org/)**
 
-IKOS requires certain versions of cmake, apron, boost and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
+IKOS requires certain versions of cmake, apron, boost, tbb and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
 
 First, make sure your system is up-to-date:
 
@@ -88,11 +88,14 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-└── ppl-1.2
-    ├── bin
+├── ppl-1.2
+│   ├── bin
+│   ├── include
+│   ├── lib
+│   └── share
+└── tbb-11009
     ├── include
-    ├── lib
-    └── share
+    └── lib
 ```
 
 During its execution, the **bootstrap** script creates a special environment with all the required dependencies for IKOS. To enter that environment, simply run the following command (consider adding this in your `.bashrc`):
