@@ -19,6 +19,7 @@ addons:
     - python
     - python-pygments
     - libsqlite3-dev
+    - libtbb-dev
     - libz-dev
     - libedit-dev
     - llvm-9
@@ -32,6 +33,7 @@ addons:
     - cmake
     - gmp
     - boost
+    - tbb
     - llvm
     - apron
 script:
