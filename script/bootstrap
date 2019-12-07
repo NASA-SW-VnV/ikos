@@ -1666,7 +1666,7 @@ if (( ! found_mpfr )); then
     else
         progress "Installing ${cgreen}mpfr $mpfr_install_version"
 
-        download_extract "https://www.mpfr.org/mpfr-current/mpfr-$mpfr_install_version.tar.xz" \
+        download_extract "https://ftp.gnu.org/gnu/mpfr/mpfr-$mpfr_install_version.tar.xz" \
             "$build_dir/mpfr-$mpfr_install_version"
 
         cd "$build_dir/mpfr-$mpfr_install_version"
