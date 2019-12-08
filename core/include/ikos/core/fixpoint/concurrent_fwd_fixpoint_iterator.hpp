@@ -281,15 +281,19 @@ private:
           _node(node),
           _index(index),
           _iterator(iterator),
-          _ref_count(ref_count),
           _iteration_kind(FixpointIterationKind::Increasing),
           _iteration_count(0),
           _pre(std::move(pre)),
           _post(std::move(post)),
-          _head(nullptr) {}
+          _head(nullptr) {
+      // Required by old versions of TBB
+      this->_ref_count = ref_count;
+    }
 
-    /// \brief No copy constructor
-    WorkNode(const WorkNode&) = delete;
+    /// \brief Copy constructor
+    ///
+    /// Required by old versions of TBB
+    WorkNode(const WorkNode&) = default;
 
     /// \brief Move constructor
     WorkNode(WorkNode&&) = default;
