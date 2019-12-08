@@ -17,7 +17,7 @@ Now, install the following packages using yum:
 
 ```
 $ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
-    gcc gcc-c++ make m4 gmp-devel mpfr-devel python sqlite-devel
+    gcc gcc-c++ make m4 gmp-devel mpfr-devel python sqlite-devel tbb-devel
 ```
 
 In the next step, we will use the bootstrap script to build and install gcc, cmake, apron, boost, llvm and IKOS.

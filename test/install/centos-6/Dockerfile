@@ -12,7 +12,7 @@ ARG build_type=Release
 # boost 1.70.0
 # python 2.7.16
 # sqlite 3.6.20
-# tbb 11009
+# tbb 4001
 # llvm 9.0.0
 # clang 9.0.0
 # gcc 8.3.1
@@ -21,7 +21,7 @@ ARG build_type=Release
 RUN yum -y update
 
 # Install dependencies using CentOS Sofware Collections Repository
-RUN yum -y install patch bzip2 xz zlib-devel libedit-devel make m4 sqlite-devel
+RUN yum -y install patch bzip2 xz zlib-devel libedit-devel make m4 sqlite-devel tbb-devel
 RUN yum -y install centos-release-scl
 RUN yum -y install devtoolset-8-gcc devtoolset-8-gcc-c++ python27
 

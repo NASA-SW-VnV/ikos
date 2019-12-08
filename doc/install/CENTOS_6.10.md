@@ -3,7 +3,7 @@ Install IKOS on CentOS 6.10
 
 Here are the steps to install IKOS and its dependencies on **[CentOS 6.10](https://www.centos.org/)**
 
-IKOS requires certain versions of cmake, apron, boost, tbb and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
+IKOS requires certain versions of cmake, apron, boost and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
 
 First, make sure your system is up-to-date:
 
@@ -14,7 +14,7 @@ $ sudo yum update
 Install the following packages using yum:
 
 ```
-$ sudo yum install patch bzip2 xz zlib-devel libedit-devel make m4 sqlite-devel
+$ sudo yum install patch bzip2 xz zlib-devel libedit-devel make m4 sqlite-devel tbb-devel
 ```
 
 We will use [CentOS Sofware Collections (CSL)](https://wiki.centos.org/AdditionalResources/Repositories/SCL) to get a more recent version of gcc and python. Enable the CSL by running:
@@ -88,14 +88,11 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-├── ppl-1.2
-│   ├── bin
-│   ├── include
-│   ├── lib
-│   └── share
-└── tbb-11009
+└── ppl-1.2
+    ├── bin
     ├── include
-    └── lib
+    ├── lib
+    └── share
 ```
 
 During its execution, the **bootstrap** script creates a special environment with all the required dependencies for IKOS. To enter that environment, simply run the following command (consider adding this in your `.bashrc`):
