@@ -358,7 +358,8 @@ DbOstream::~DbOstream() {
 }
 
 void DbOstream::add(StringRef s) {
-  ikos_assert(s.size() <= std::numeric_limits< int >::max());
+  ikos_assert(s.size() <=
+              static_cast< std::size_t >(std::numeric_limits< int >::max()));
 
   int status = sqlite3_bind_text(this->_stmt,
                                  this->_current_column++,
