@@ -369,11 +369,9 @@ public:
          ++it) {
       NodeRef pred = *it;
       if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
-        AbstractValue inv =
-            this->_iterator.analyze_edge(pred,
-                                         head,
-                                         this->_iterator.post(pred));
-        pre.join_with(inv);
+        pre.join_with(this->_iterator.analyze_edge(pred,
+                                                   head,
+                                                   this->_iterator.post(pred)));
       }
     }
 
@@ -404,13 +402,13 @@ public:
                                          head,
                                          this->_iterator.post(pred));
         if (this->_iterator.wto().nesting(pred) <= cycle_nesting) {
-          new_pre_in.join_with(inv);
+          new_pre_in.join_with(std::move(inv));
         } else {
-          new_pre_back.join_with(inv);
+          new_pre_back.join_with(std::move(inv));
         }
       }
 
-      new_pre_in.join_loop_with(new_pre_back);
+      new_pre_in.join_loop_with(std::move(new_pre_back));
       AbstractValue new_pre(std::move(new_pre_in));
 
       if (kind == FixpointIterationKind::Increasing) {

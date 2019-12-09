@@ -173,6 +173,7 @@ bool FunctionFixpoint::is_decreasing_iterations_fixpoint(
           iteration >= *this->_fixpoint_parameters.narrowing_iterations) ||
          before.leq(after);
 }
+
 AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
                                               AbstractDomain pre) {
   NumericalExecutionEngineT

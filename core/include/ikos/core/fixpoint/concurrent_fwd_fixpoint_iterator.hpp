@@ -455,7 +455,7 @@ private:
         }
       }
 
-      new_pre_in.join_loop_with(new_pre_back);
+      new_pre_in.join_loop_with(std::move(new_pre_back));
       AbstractValue new_pre(std::move(new_pre_in));
 
       if (this->_iteration_kind == FixpointIterationKind::Increasing) {

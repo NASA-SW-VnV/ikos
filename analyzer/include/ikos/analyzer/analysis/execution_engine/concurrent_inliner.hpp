@@ -294,18 +294,28 @@ private:
       engine.inv().merge_propagated_in_caught_exceptions();
 
       if (engine.inv().is_normal_flow_bottom()) {
-        this->post_join(engine.inv()); // collect the exception states
+        // Collect the exception states
+        this->post_join(std::move(engine.inv()));
         return;
       }
 
       engine.match_up(this->_call, return_stmt);
-      this->post_join(engine.inv());
+      this->post_join(std::move(engine.inv()));
     }
 
     /// \brief Join two workers
     void join(CalleeWorker& other) {
       if (other._post) {
-        this->post_join(*other._post);
+        this->post_join(std::move(*other._post));
+      }
+    }
+
+    /// \brief Join the post invariant
+    void post_join(AbstractDomain&& inv) {
+      if (this->_post) {
+        (*this->_post).join_with(std::move(inv));
+      } else {
+        this->_post = std::move(inv);
       }
     }
 
@@ -440,7 +450,7 @@ private:
         engine.inv().ignore_exceptions();
         engine.exec_extern_call(call, callee);
         engine.inv().merge_propagated_in_caught_exceptions();
-        post.join_with(engine.inv());
+        post.join_with(std::move(engine.inv()));
         continue;
       }
       ikos_assert(callee->is_definition());

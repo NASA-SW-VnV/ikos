@@ -121,6 +121,12 @@ public:
   ///
   /// If the abstract domain is a lattice, this is the least upper bound
   /// operation.
+  virtual void join_with(Derived&& other) { this->join_with(other); }
+
+  /// \brief Perform the union of two abstract values
+  ///
+  /// If the abstract domain is a lattice, this is the least upper bound
+  /// operation.
   virtual void join_with(const Derived& other) = 0;
 
   /// \brief Perform a union on a loop head
@@ -128,7 +134,26 @@ public:
   /// Example: `pre_in.join_loop_with(pre_back)`
   ///
   /// For most abstract domains, this is equivalent to join_with.
+  virtual void join_loop_with(Derived&& other) {
+    this->join_with(std::move(other));
+  }
+
+  /// \brief Perform a union on a loop head
+  ///
+  /// Example: `pre_in.join_loop_with(pre_back)`
+  ///
+  /// For most abstract domains, this is equivalent to join_with.
   virtual void join_loop_with(const Derived& other) { this->join_with(other); }
+
+  /// \brief Perform a union on two consecutive iterations of a fix-point
+  /// algorithm
+  ///
+  /// Example: `x(n).join_iter_with(x(n+1))`
+  ///
+  /// For most abstract domains, this is equivalent to join_with.
+  virtual void join_iter_with(Derived&& other) {
+    this->join_with(std::move(other));
+  }
 
   /// \brief Perform a union on two consecutive iterations of a fix-point
   /// algorithm

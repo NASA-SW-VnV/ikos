@@ -258,7 +258,7 @@ private:
         engine.inv().ignore_exceptions();
         engine.exec_extern_call(call, callee);
         engine.inv().merge_propagated_in_caught_exceptions();
-        post.join_with(engine.inv());
+        post.join_with(std::move(engine.inv()));
         continue;
       }
       ikos_assert(callee->is_definition());
@@ -332,12 +332,13 @@ private:
       engine.inv().merge_propagated_in_caught_exceptions();
 
       if (engine.inv().is_normal_flow_bottom()) {
-        post.join_with(engine.inv()); // collect the exception states
+        // Collect the exception states
+        post.join_with(std::move(engine.inv()));
         continue;
       }
 
       engine.match_up(call, return_stmt);
-      post.join_with(engine.inv());
+      post.join_with(std::move(engine.inv()));
     }
 
     this->_engine.set_inv(std::move(post));
