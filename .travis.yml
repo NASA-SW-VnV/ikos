@@ -15,6 +15,7 @@ addons:
     - libgmp-dev
     - libboost-dev
     - libboost-filesystem-dev
+    - libboost-thread-dev
     - libboost-test-dev
     - python
     - python-pygments
