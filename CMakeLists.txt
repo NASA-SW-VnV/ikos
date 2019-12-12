@@ -41,7 +41,7 @@
 cmake_minimum_required(VERSION 3.4.3 FATAL_ERROR)
 
 project(ikos)
-set(PACKAGE_VERSION "2.2")
+set(PACKAGE_VERSION "3.0")
 
 #
 # Build settings

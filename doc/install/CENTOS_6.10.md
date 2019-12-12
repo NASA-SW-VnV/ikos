@@ -73,7 +73,7 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   └── share
-├── ikos-2.2
+├── ikos-3.0
 │   ├── bin
 │   ├── include
 │   ├── lib
