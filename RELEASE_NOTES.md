@@ -1,3 +1,32 @@
+IKOS version 3.0 release notes
+==============================
+
+Release date
+------------
+
+December 2019
+
+List of changes
+---------------
+
+### IKOS Core changes
+
+* Implemented a parallel fixpoint engine
+* Implemented a partitioning abstract domain based on the values of a given integer variable
+* Implemented a polymorphic memory abstract domain
+* Fixed most abstract domains to be thread-safe
+* Refactor the pointer and memory abstract domain interfaces
+
+### LLVM frontend changes
+
+* Upgraded LLVM from 8.0.x to 9.0.x
+
+### Analyzer changes
+
+* Implemented a parallel interprocedural and intraprocedural value analysis
+* Add an option to enable abstract domain partitioning based on the returned value of a function
+
+
 IKOS version 2.2 release notes
 ==============================
 
