@@ -87,6 +87,8 @@ public:
   /// \brief Destructor
   ~DummyDomain() override = default;
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override { return !this->_is_bottom; }
@@ -191,8 +193,6 @@ public:
   }
 
   void forget(VariableRef) override {}
-
-  void normalize() const override {}
 
   Interval to_interval(VariableRef x) const override {
     if (this->_is_bottom) {

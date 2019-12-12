@@ -108,6 +108,8 @@ public:
   /// \brief Return the signedness (Signed or Unsigned) of the constant
   Signedness sign() const { return this->_n.sign(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_kind == BottomKind; }
 
   bool is_top() const override { return this->_kind == TopKind; }

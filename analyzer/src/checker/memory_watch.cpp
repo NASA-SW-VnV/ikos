@@ -597,6 +597,7 @@ void MemoryWatchChecker::check_mem_write(ar::Statement* stmt,
   tmp1.normal().int_add(IntPredicate::LT, x, offset_plus_size);
   tmp1.normal().int_add(IntPredicate::GE, x, watch_offset);
   tmp1.normal().int_add(IntPredicate::LT, x, watch_offset_plus_size);
+  tmp1.normal().normalize();
 
   if (tmp1.is_normal_flow_bottom()) {
     // Overlap not possible
@@ -608,10 +609,12 @@ void MemoryWatchChecker::check_mem_write(ar::Statement* stmt,
   // Check if all offset + size - 1 >= watch_offset
   value::AbstractDomain tmp2 = inv;
   tmp2.normal().int_add(IntPredicate::LE, offset_plus_size, watch_offset);
+  tmp2.normal().normalize();
 
   // Check if all offset < watch_offset + watch_size
   value::AbstractDomain tmp3 = inv;
   tmp3.normal().int_add(IntPredicate::GE, offset, watch_offset_plus_size);
+  tmp3.normal().normalize();
 
   LogMessage msg = log::msg();
   this->display_stmt_location(msg, stmt);

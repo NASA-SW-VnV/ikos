@@ -133,6 +133,8 @@ public:
 private:
   /// \brief Set the invariant for the given node
   void set(InvariantTable& table, NodeRef node, AbstractValue inv) const {
+    inv.normalize();
+
     auto it = table.find(node);
     if (it != table.end()) {
       it->second = std::move(inv);
@@ -351,6 +353,7 @@ public:
           this->_iterator.analyze_edge(pred, node, this->_iterator.post(pred)));
     }
 
+    pre.normalize();
     this->_iterator.set_pre(node, pre);
     this->_iterator.set_post(node, this->_iterator.analyze_node(node, pre));
   }
@@ -379,6 +382,7 @@ public:
     FixpointIterationKind kind = FixpointIterationKind::Increasing;
     for (unsigned iteration = 1;; ++iteration) {
       this->_iterator.notify_cycle_iteration(head, iteration, kind);
+      pre.normalize();
       this->_iterator.set_pre(head, pre);
       this->_iterator.set_post(head, this->_iterator.analyze_node(head, pre));
 
@@ -410,11 +414,13 @@ public:
 
       new_pre_in.join_loop_with(std::move(new_pre_back));
       AbstractValue new_pre(std::move(new_pre_in));
+      new_pre.normalize();
 
       if (kind == FixpointIterationKind::Increasing) {
         // Increasing iteration with widening
         AbstractValue inv =
             this->_iterator.extrapolate(head, iteration, pre, new_pre);
+        inv.normalize();
         if (this->_iterator.is_increasing_iterations_fixpoint(head,
                                                               iteration,
                                                               pre,
@@ -432,6 +438,7 @@ public:
         // Decreasing iteration with narrowing
         AbstractValue inv =
             this->_iterator.refine(head, iteration, pre, new_pre);
+        inv.normalize();
         if (this->_iterator.is_decreasing_iterations_fixpoint(head,
                                                               iteration,
                                                               pre,

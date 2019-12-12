@@ -85,6 +85,8 @@ public:
   /// \brief Destructor
   ~DummyDomain() override = default;
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override { return !this->_is_bottom; }
@@ -128,16 +130,9 @@ public:
 
   void add(Predicate, VariableRef, VariableRef) override {}
 
-  bool is_null(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom, "trying to call is_null() on bottom");
-    return false;
-  }
+  bool is_null(VariableRef) const override { return this->_is_bottom; }
 
-  bool is_non_null(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call is_non_null() on bottom");
-    return false;
-  }
+  bool is_non_null(VariableRef) const override { return this->_is_bottom; }
 
   void set(VariableRef, const Nullity& value) override {
     if (value.is_bottom()) {
@@ -152,8 +147,6 @@ public:
   }
 
   void forget(VariableRef) override {}
-
-  void normalize() const override {}
 
   Nullity get(VariableRef) const override {
     if (this->_is_bottom) {

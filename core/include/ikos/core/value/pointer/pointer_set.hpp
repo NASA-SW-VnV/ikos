@@ -75,8 +75,8 @@ private:
   MachineIntInterval _offsets;
 
 private:
-  /// \brief Normalize the pointer set
-  void normalize() {
+  /// \brief Reduce the pointer set
+  void reduce() {
     if (this->_points_to.is_bottom() || this->_points_to.is_empty()) {
       this->_offsets.set_to_bottom();
     } else if (this->_offsets.is_bottom()) {
@@ -109,7 +109,7 @@ public:
   /// \brief Create the pointer set with the given points-to set and interval
   PointerSet(PointsToSetT points_to, MachineIntInterval offsets)
       : _points_to(std::move(points_to)), _offsets(std::move(offsets)) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Copy constructor
@@ -139,8 +139,12 @@ public:
   /// \brief Return the interval offsets
   const MachineIntInterval& offsets() const { return this->_offsets; }
 
+  void normalize() override {
+    // Already performed by the reduction
+  }
+
   bool is_bottom() const override {
-    return this->_points_to.is_bottom(); // Correct because of normalization
+    return this->_points_to.is_bottom(); // Correct because of reduction
   }
 
   bool is_top() const override {
@@ -170,44 +174,44 @@ public:
   void join_with(const PointerSet& other) override {
     this->_points_to.join_with(other._points_to);
     this->_offsets.join_with(other._offsets);
-    this->normalize();
+    this->reduce();
   }
 
   void join_loop_with(const PointerSet& other) override {
     this->_points_to.join_loop_with(other._points_to);
     this->_offsets.join_loop_with(other._offsets);
-    this->normalize();
+    this->reduce();
   }
 
   void join_iter_with(const PointerSet& other) override {
     this->_points_to.join_iter_with(other._points_to);
     this->_offsets.join_iter_with(other._offsets);
-    this->normalize();
+    this->reduce();
   }
 
   void widen_with(const PointerSet& other) override {
     this->_points_to.widen_with(other._points_to);
     this->_offsets.widen_with(other._offsets);
-    this->normalize();
+    this->reduce();
   }
 
   void meet_with(const PointerSet& other) override {
     this->_points_to.meet_with(other._points_to);
     this->_offsets.meet_with(other._offsets);
-    this->normalize();
+    this->reduce();
   }
 
   void narrow_with(const PointerSet& other) override {
     this->_points_to.narrow_with(other._points_to);
     this->_offsets.narrow_with(other._offsets);
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Add a pointer abstract value in the set
   void add(const PointerAbsValueT& pointer) {
     this->_points_to.join_with(pointer.points_to());
     this->_offsets.join_with(pointer.offset());
-    this->normalize();
+    this->reduce();
   }
 
   void dump(std::ostream& o) const override {

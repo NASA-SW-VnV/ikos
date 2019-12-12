@@ -102,6 +102,8 @@ public:
   /// \brief End iterator over the pairs (variable, uninitialized)
   Iterator end() const { return this->_inv.end(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }
@@ -151,15 +153,13 @@ public:
   }
 
   bool is_initialized(VariableRef x) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_initialized() on bottom");
-    return this->_inv.get(x).is_initialized();
+    Uninitialized value = this->_inv.get(x);
+    return value.is_bottom() || value.is_initialized();
   }
 
   bool is_uninitialized(VariableRef x) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_uninitialized() on bottom");
-    return this->_inv.get(x).is_uninitialized();
+    Uninitialized value = this->_inv.get(x);
+    return value.is_bottom() || value.is_uninitialized();
   }
 
   void set(VariableRef x, const Uninitialized& value) override {
@@ -171,8 +171,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_inv.forget(x); }
-
-  void normalize() const override {}
 
   Uninitialized get(VariableRef x) const override { return this->_inv.get(x); }
 

@@ -79,8 +79,8 @@ private:
   MachineIntInterval _offset;
 
 private:
-  /// \brief Normalize the pointer abstract value
-  void normalize() {
+  /// \brief Reduce the pointer abstract value
+  void reduce() {
     if (this->_uninitialized.is_bottom()) {
       this->set_to_bottom();
     } else if (this->_uninitialized.is_uninitialized()) {
@@ -145,7 +145,7 @@ public:
         _nullity(std::move(nullity)),
         _points_to(std::move(points_to)),
         _offset(std::move(offset)) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Copy constructor
@@ -175,8 +175,12 @@ public:
   /// \brief Return the interval offset
   const MachineIntInterval& offset() const { return this->_offset; }
 
+  void normalize() override {
+    // Already performed by the reduction
+  }
+
   bool is_bottom() const override {
-    return this->_uninitialized.is_bottom(); // Correct because of normalization
+    return this->_uninitialized.is_bottom(); // Correct because of reduction
   }
 
   bool is_top() const override {
@@ -241,7 +245,7 @@ public:
     this->_nullity.join_with(other._nullity);
     this->_points_to.join_with(other._points_to);
     this->_offset.join_with(other._offset);
-    this->normalize();
+    this->reduce();
   }
 
   void join_loop_with(const PointerAbsValue& other) override {
@@ -249,7 +253,7 @@ public:
     this->_nullity.join_loop_with(other._nullity);
     this->_points_to.join_loop_with(other._points_to);
     this->_offset.join_loop_with(other._offset);
-    this->normalize();
+    this->reduce();
   }
 
   void join_iter_with(const PointerAbsValue& other) override {
@@ -257,7 +261,7 @@ public:
     this->_nullity.join_iter_with(other._nullity);
     this->_points_to.join_iter_with(other._points_to);
     this->_offset.join_iter_with(other._offset);
-    this->normalize();
+    this->reduce();
   }
 
   void widen_with(const PointerAbsValue& other) override {
@@ -265,7 +269,7 @@ public:
     this->_nullity.widen_with(other._nullity);
     this->_points_to.widen_with(other._points_to);
     this->_offset.widen_with(other._offset);
-    this->normalize();
+    this->reduce();
   }
 
   void meet_with(const PointerAbsValue& other) override {
@@ -273,7 +277,7 @@ public:
     this->_nullity.meet_with(other._nullity);
     this->_points_to.meet_with(other._points_to);
     this->_offset.meet_with(other._offset);
-    this->normalize();
+    this->reduce();
   }
 
   void narrow_with(const PointerAbsValue& other) override {
@@ -281,7 +285,7 @@ public:
     this->_nullity.narrow_with(other._nullity);
     this->_points_to.narrow_with(other._points_to);
     this->_offset.narrow_with(other._offset);
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Add an offset to the pointer

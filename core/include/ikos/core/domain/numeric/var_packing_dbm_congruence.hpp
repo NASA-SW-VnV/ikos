@@ -85,16 +85,13 @@ private:
 private:
   /// \brief Private constructor
   explicit VarPackingDBMCongruence(DomainProduct product)
-      : _product(std::move(product)) {}
+      : _product(std::move(product)) {
+    this->reduce();
+  }
 
   /// \brief Reduce the equivalence class containing the variable `v`
-  ///
-  /// Does not normalize the entire domain.
-  ///
-  /// `need_copy` is false if we know that a copy has already been made.
-  void reduce_equivalence_class(VariableRef v, bool need_copy = true) {
-    if (this->_product.first()._inv._is_bottom ||
-        this->_product.second().is_bottom()) {
+  void reduce_equivalence_class(VariableRef v) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -104,20 +101,10 @@ private:
       return;
     }
 
-    std::shared_ptr< DBM< Number, VariableRef > > subdomain =
-        equiv_relation.find_domain(v);
-    subdomain->normalize();
+    auto& equiv_class = equiv_relation.find_equiv_class(v);
 
-    if (subdomain->is_bottom()) {
-      this->set_to_bottom();
-      return;
-    }
-
-    // TODO(marthaud): var_begin()/var_end() might not give all the variables
-    // in the DBM (after a join, for instance). In that case, the reduction
-    // might be wrong.
-    std::vector< VariableRef > variables(subdomain->var_begin(),
-                                         subdomain->var_end());
+    std::shared_ptr< const DBM< Number, VariableRef > > domain_ptr =
+        equiv_class.domain_ptr();
 
     bool change_dbm = true;
     bool change_congruence = true;
@@ -126,8 +113,11 @@ private:
       change_dbm = false;
       change_congruence = false;
 
-      for (VariableRef x : variables) {
-        IntervalT i = subdomain->to_interval(x);
+      for (auto it = domain_ptr->var_begin(), et = domain_ptr->var_end();
+           it != et;
+           ++it) {
+        VariableRef x = *it;
+        IntervalT i = domain_ptr->to_interval(x);
         CongruenceT c = this->_product.second().to_congruence(x);
         IntervalCongruenceT val(i, c);
 
@@ -137,14 +127,15 @@ private:
         }
 
         if (val.interval() != i) {
-          if (need_copy) {
-            // need to copy the subdomain before updating it
-            equiv_relation.find_equiv_class(v).copy_domain();
-            subdomain = equiv_relation.find_domain(v);
-            need_copy = false;
+          DBM< Number, VariableRef > domain = *domain_ptr;
+          domain.refine(x, val.interval());
+          domain.normalize();
+          if (domain.is_bottom()) {
+            this->set_to_bottom();
+            return;
           }
-
-          subdomain->refine(x, val.interval());
+          domain_ptr = std::make_shared< const DBM< Number, VariableRef > >(
+              std::move(domain));
           change_dbm = true;
         }
 
@@ -153,22 +144,14 @@ private:
           change_congruence = true;
         }
       }
-
-      if (change_dbm) {
-        subdomain->normalize();
-
-        if (subdomain->is_bottom()) {
-          this->set_to_bottom();
-          return;
-        }
-      }
     }
+
+    equiv_class.set_domain_ptr(domain_ptr);
   }
 
   /// \brief Reduce the abstract value
   void reduce() {
-    if (this->_product.first()._inv._is_bottom ||
-        this->_product.second().is_bottom()) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -177,7 +160,7 @@ private:
     for (const auto& equiv_class : equiv_relation) {
       this->reduce_equivalence_class(equiv_class.first);
 
-      if (this->_product.first()._inv._is_bottom) {
+      if (this->is_bottom()) {
         // iterators are invalidated, exit
         return;
       }
@@ -232,6 +215,8 @@ public:
   /// Note: does not normalize.
   CongruenceDomainT& second() { return this->_product.second(); }
 
+  void normalize() override { this->_product.normalize(); }
+
   bool is_bottom() const override { return this->_product.is_bottom(); }
 
   bool is_top() const override { return this->_product.is_top(); }
@@ -248,13 +233,28 @@ public:
     return this->_product.equals(other._product);
   }
 
+  void join_with(VarPackingDBMCongruence&& other) override {
+    this->_product.join_with(std::move(other._product));
+    this->reduce();
+  }
+
   void join_with(const VarPackingDBMCongruence& other) override {
     this->_product.join_with(other._product);
     this->reduce();
   }
 
+  void join_loop_with(VarPackingDBMCongruence&& other) override {
+    this->_product.join_loop_with(std::move(other._product));
+    this->reduce();
+  }
+
   void join_loop_with(const VarPackingDBMCongruence& other) override {
     this->_product.join_loop_with(other._product);
+    this->reduce();
+  }
+
+  void join_iter_with(VarPackingDBMCongruence&& other) override {
+    this->_product.join_iter_with(std::move(other._product));
     this->reduce();
   }
 
@@ -290,6 +290,50 @@ public:
     this->reduce();
   }
 
+  VarPackingDBMCongruence join(
+      const VarPackingDBMCongruence& other) const override {
+    return VarPackingDBMCongruence(this->_product.join(other._product));
+  }
+
+  VarPackingDBMCongruence join_loop(
+      const VarPackingDBMCongruence& other) const override {
+    return VarPackingDBMCongruence(this->_product.join_loop(other._product));
+  }
+
+  VarPackingDBMCongruence join_iter(
+      const VarPackingDBMCongruence& other) const override {
+    return VarPackingDBMCongruence(this->_product.join_iter(other._product));
+  }
+
+  VarPackingDBMCongruence widening(
+      const VarPackingDBMCongruence& other) const override {
+    return VarPackingDBMCongruence(this->_product.widening(other._product));
+  }
+
+  VarPackingDBMCongruence widening_threshold(
+      const VarPackingDBMCongruence& other,
+      const Number& threshold) const override {
+    return VarPackingDBMCongruence(
+        this->_product.widening_threshold(other._product, threshold));
+  }
+
+  VarPackingDBMCongruence meet(
+      const VarPackingDBMCongruence& other) const override {
+    return VarPackingDBMCongruence(this->_product.meet(other._product));
+  }
+
+  VarPackingDBMCongruence narrowing(
+      const VarPackingDBMCongruence& other) const override {
+    return VarPackingDBMCongruence(this->_product.narrowing(other._product));
+  }
+
+  VarPackingDBMCongruence narrowing_threshold(
+      const VarPackingDBMCongruence& other,
+      const Number& threshold) const override {
+    return VarPackingDBMCongruence(
+        this->_product.narrowing_threshold(other._product, threshold));
+  }
+
   void assign(VariableRef x, int n) override { this->_product.assign(x, n); }
 
   void assign(VariableRef x, const Number& n) override {
@@ -298,12 +342,12 @@ public:
 
   void assign(VariableRef x, VariableRef y) override {
     this->_product.assign(x, y);
-    this->reduce_equivalence_class(x, false);
+    this->reduce_equivalence_class(x);
   }
 
   void assign(VariableRef x, const LinearExpressionT& e) override {
     this->_product.assign(x, e);
-    this->reduce_equivalence_class(x, false);
+    this->reduce_equivalence_class(x);
   }
 
   void apply(BinaryOperator op,
@@ -311,7 +355,7 @@ public:
              VariableRef y,
              VariableRef z) override {
     this->_product.apply(op, x, y, z);
-    this->reduce_equivalence_class(x, false);
+    this->reduce_equivalence_class(x);
   }
 
   void apply(BinaryOperator op,
@@ -319,7 +363,7 @@ public:
              VariableRef y,
              const Number& z) override {
     this->_product.apply(op, x, y, z);
-    this->reduce_equivalence_class(x, false);
+    this->reduce_equivalence_class(x);
   }
 
   void apply(BinaryOperator op,
@@ -327,14 +371,13 @@ public:
              const Number& y,
              VariableRef z) override {
     this->_product.apply(op, x, y, z);
-    this->reduce_equivalence_class(x, false);
+    this->reduce_equivalence_class(x);
   }
 
   void add(const LinearConstraintT& cst) override {
     this->_product.add(cst);
 
-    if (this->_product.first()._inv._is_bottom ||
-        this->_product.second().is_bottom()) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -350,8 +393,8 @@ public:
          (cst.num_terms() == 1 && it->second == -1) ||
          (cst.num_terms() == 2 && it->second == 1 && it2->second == -1) ||
          (cst.num_terms() == 2 && it->second == -1 && it2->second == 1))) {
-      // variables are together in the same equivalence class
-      this->reduce_equivalence_class(it->first, false);
+      // Variables are together in the same equivalence class
+      this->reduce_equivalence_class(it->first);
     } else {
       for (const auto& term : cst) {
         this->reduce_equivalence_class(term.first);
@@ -362,8 +405,7 @@ public:
   void add(const LinearConstraintSystemT& csts) override {
     this->_product.add(csts);
 
-    if (this->_product.first()._inv._is_bottom ||
-        this->_product.second().is_bottom()) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -379,8 +421,8 @@ public:
              (cst.num_terms() == 1 && it->second == -1) ||
              (cst.num_terms() == 2 && it->second == 1 && it2->second == -1) ||
              (cst.num_terms() == 2 && it->second == -1 && it2->second == 1))) {
-          // variables are together in the same equivalence class
-          this->reduce_equivalence_class(it->first, false);
+          // Variables are together in the same equivalence class
+          this->reduce_equivalence_class(it->first);
         } else {
           for (const auto& term : cst) {
             this->reduce_equivalence_class(term.first);
@@ -420,8 +462,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_product.forget(x); }
-
-  void normalize() const override { this->_product.normalize(); }
 
   IntervalT to_interval(VariableRef x) const override {
     return this->to_interval_congruence(x).interval();

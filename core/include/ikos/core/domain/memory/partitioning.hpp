@@ -149,23 +149,22 @@ public:
   /// \name Partitioning abstract domain methods
   /// @{
 
-  void normalize() const override {
+  void normalize() override {
     ikos_assert(this->_partitions.size() >= 1);
-
-    auto self = const_cast< PartitioningDomain* >(this);
 
     // Remove bottom partitions, but always keep at least one partition.
     // Start from the end for efficiency.
-    for (auto it = self->_partitions.end();
-         it != self->_partitions.begin() && self->_partitions.size() > 1;) {
+    for (auto it = this->_partitions.end();
+         it != this->_partitions.begin() && this->_partitions.size() > 1;) {
       --it;
+      it->memory.normalize();
       if (it->memory.is_bottom()) {
-        it = self->_partitions.erase(it);
+        it = this->_partitions.erase(it);
       }
     }
 
     // Normalize the first partition
-    self->_partitions[0].memory.normalize();
+    this->_partitions[0].memory.normalize();
   }
 
 private:
@@ -223,7 +222,7 @@ private:
       --it;
       if (it->interval.ub() >= std::next(it)->interval.lb()) {
         it->interval.join_with(std::next(it)->interval);
-        it->memory.join_with(std::next(it)->memory);
+        it->memory.join_with(std::move(std::next(it)->memory));
         it = std::prev(this->_partitions.erase(std::next(it)));
       }
     }
@@ -264,7 +263,7 @@ public:
          it != et;
          ++it) {
       this->_partitions[0].interval.join_with(it->interval);
-      this->_partitions[0].memory.join_with(it->memory);
+      this->_partitions[0].memory.join_with(std::move(it->memory));
     }
 
     this->_partitions.erase(std::next(this->_partitions.begin()),
@@ -288,8 +287,11 @@ public:
   /// @{
 
   bool is_bottom() const override {
-    this->normalize();
-    return this->_partitions[0].memory.is_bottom();
+    return std::all_of(this->_partitions.begin(),
+                       this->_partitions.end(),
+                       [](const Partition& partition) {
+                         return partition.memory.is_bottom();
+                       });
   }
 
   bool is_top() const override {
@@ -689,7 +691,6 @@ public:
   }
 
   bool uninit_is_initialized(VariableRef x) const override {
-    this->normalize();
     return std::all_of(this->_partitions.begin(),
                        this->_partitions.end(),
                        [=](const Partition& partition) {
@@ -698,7 +699,6 @@ public:
   }
 
   bool uninit_is_uninitialized(VariableRef x) const override {
-    this->normalize();
     return std::all_of(this->_partitions.begin(),
                        this->_partitions.end(),
                        [=](const Partition& partition) {
@@ -1065,7 +1065,6 @@ public:
   }
 
   bool nullity_is_null(VariableRef p) const override {
-    this->normalize();
     return std::all_of(this->_partitions.begin(),
                        this->_partitions.end(),
                        [=](const Partition& partition) {
@@ -1074,7 +1073,6 @@ public:
   }
 
   bool nullity_is_non_null(VariableRef p) const override {
-    this->normalize();
     return std::all_of(this->_partitions.begin(),
                        this->_partitions.end(),
                        [=](const Partition& partition) {
@@ -1356,7 +1354,6 @@ public:
   }
 
   bool dynamic_is_zero(VariableRef x) const override {
-    this->normalize();
     return std::all_of(this->_partitions.begin(),
                        this->_partitions.end(),
                        [=](const Partition& partition) {
@@ -1365,7 +1362,6 @@ public:
   }
 
   bool dynamic_is_null(VariableRef x) const override {
-    this->normalize();
     return std::all_of(this->_partitions.begin(),
                        this->_partitions.end(),
                        [=](const Partition& partition) {

@@ -117,13 +117,6 @@ public:
   /// \brief Destructor
   ~DomainProduct2() override = default;
 
-  /// \brief Normalize the abstract value
-  void normalize() const override {
-    this->_product.first().normalize();
-    this->_product.second().normalize();
-    this->_product.normalize();
-  }
-
   /// \brief Return the first abstract value
   ///
   /// Note: does not normalize.
@@ -144,6 +137,8 @@ public:
   /// Note: does not normalize.
   Domain2& second() { return this->_product.second(); }
 
+  void normalize() override { this->_product.normalize(); }
+
   bool is_bottom() const override { return this->_product.is_bottom(); }
 
   bool is_top() const override { return this->_product.is_top(); }
@@ -160,12 +155,24 @@ public:
     return this->_product.equals(other._product);
   }
 
+  void join_with(DomainProduct2&& other) override {
+    this->_product.join_with(std::move(other._product));
+  }
+
   void join_with(const DomainProduct2& other) override {
     this->_product.join_with(other._product);
   }
 
+  void join_loop_with(DomainProduct2&& other) override {
+    this->_product.join_loop_with(std::move(other._product));
+  }
+
   void join_loop_with(const DomainProduct2& other) override {
     this->_product.join_loop_with(other._product);
+  }
+
+  void join_iter_with(DomainProduct2&& other) override {
+    this->_product.join_iter_with(std::move(other._product));
   }
 
   void join_iter_with(const DomainProduct2& other) override {
@@ -178,15 +185,14 @@ public:
 
   void widen_threshold_with(const DomainProduct2& other,
                             const Number& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
       return;
     } else {
-      this->_product.first().widen_threshold_with(other._product.first(),
-                                                  threshold);
-      this->_product.second().widen_threshold_with(other._product.second(),
-                                                   threshold);
+      this->first().widen_threshold_with(other.first(), threshold);
+      this->second().widen_threshold_with(other.second(), threshold);
     }
   }
 
@@ -200,15 +206,66 @@ public:
 
   void narrow_threshold_with(const DomainProduct2& other,
                              const Number& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
       this->set_to_bottom();
     } else {
-      this->_product.first().narrow_threshold_with(other._product.first(),
-                                                   threshold);
-      this->_product.second().narrow_threshold_with(other._product.second(),
-                                                    threshold);
+      this->first().narrow_threshold_with(other.first(), threshold);
+      this->second().narrow_threshold_with(other.second(), threshold);
+    }
+  }
+
+  DomainProduct2 join(const DomainProduct2& other) const override {
+    return DomainProduct2(this->_product.join(other._product));
+  }
+
+  DomainProduct2 join_loop(const DomainProduct2& other) const override {
+    return DomainProduct2(this->_product.join_loop(other._product));
+  }
+
+  DomainProduct2 join_iter(const DomainProduct2& other) const override {
+    return DomainProduct2(this->_product.join_iter(other._product));
+  }
+
+  DomainProduct2 widening(const DomainProduct2& other) const override {
+    return DomainProduct2(this->_product.widening(other._product));
+  }
+
+  DomainProduct2 widening_threshold(const DomainProduct2& other,
+                                    const Number& threshold) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return DomainProduct2(this->first().widening_threshold(other.first(),
+                                                             threshold),
+                            this->second().widening_threshold(other.second(),
+                                                              threshold));
+    }
+  }
+
+  DomainProduct2 meet(const DomainProduct2& other) const override {
+    return DomainProduct2(this->_product.meet(other._product));
+  }
+
+  DomainProduct2 narrowing(const DomainProduct2& other) const override {
+    return DomainProduct2(this->_product.narrowing(other._product));
+  }
+
+  DomainProduct2 narrowing_threshold(const DomainProduct2& other,
+                                     const Number& threshold) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return DomainProduct2(this->first().narrowing_threshold(other.first(),
+                                                              threshold),
+                            this->second().narrowing_threshold(other.second(),
+                                                               threshold));
     }
   }
 
@@ -472,9 +529,6 @@ public:
     return DomainProduct3(Product123::bottom());
   }
 
-  /// \brief Normalize the abstract value
-  void normalize() const override { this->_product.normalize(); }
-
   /// \brief Return the first abstract value
   ///
   /// Note: does not normalize.
@@ -505,6 +559,8 @@ public:
   /// Note: does not normalize.
   Domain3& third() { return this->_product.second(); }
 
+  void normalize() override { this->_product.normalize(); }
+
   bool is_bottom() const override { return this->_product.is_bottom(); }
 
   bool is_top() const override { return this->_product.is_top(); }
@@ -521,12 +577,24 @@ public:
     return this->_product.equals(other._product);
   }
 
+  void join_with(DomainProduct3&& other) override {
+    this->_product.join_with(std::move(other._product));
+  }
+
   void join_with(const DomainProduct3& other) override {
     this->_product.join_with(other._product);
   }
 
+  void join_loop_with(DomainProduct3&& other) override {
+    this->_product.join_loop_with(std::move(other._product));
+  }
+
   void join_loop_with(const DomainProduct3& other) override {
     this->_product.join_loop_with(other._product);
+  }
+
+  void join_iter_with(DomainProduct3&& other) override {
+    this->_product.join_iter_with(std::move(other._product));
   }
 
   void join_iter_with(const DomainProduct3& other) override {
@@ -553,6 +621,42 @@ public:
   void narrow_threshold_with(const DomainProduct3& other,
                              const Number& threshold) override {
     this->_product.narrow_threshold_with(other._product, threshold);
+  }
+
+  DomainProduct3 join(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.join(other._product));
+  }
+
+  DomainProduct3 join_loop(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.join_loop(other._product));
+  }
+
+  DomainProduct3 join_iter(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.join_iter(other._product));
+  }
+
+  DomainProduct3 widening(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.widening(other._product));
+  }
+
+  DomainProduct3 widening_threshold(const DomainProduct3& other,
+                                    const Number& threshold) const override {
+    return DomainProduct3(
+        this->_product.widening_threshold(other._product, threshold));
+  }
+
+  DomainProduct3 meet(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.meet(other._product));
+  }
+
+  DomainProduct3 narrowing(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.narrowing(other._product));
+  }
+
+  DomainProduct3 narrowing_threshold(const DomainProduct3& other,
+                                     const Number& threshold) const override {
+    return DomainProduct3(
+        this->_product.narrowing_threshold(other._product, threshold));
   }
 
   void assign(VariableRef x, int n) override { this->_product.assign(x, n); }

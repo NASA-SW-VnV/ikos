@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(test4) {
 
   ZDBM loop_end = fixpoint.checkpoint("loop.end").first();
   BOOST_CHECK(loop_end.to_interval(i) ==
-              ZInterval(ZBound(0), ZBound::plus_infinity()));
+              ZInterval(ZBound(1), ZBound::plus_infinity()));
   BOOST_CHECK(loop_end.to_interval(n) ==
               ZInterval(ZBound(1), ZBound::plus_infinity()));
   loop_end.add(ZVarExpr(i) <= ZVarExpr(n) - 1);

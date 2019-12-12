@@ -120,6 +120,8 @@ public:
   /// \brief Destructor
   ~NumericDomainAdapter() override = default;
 
+  void normalize() override { this->_inv.normalize(); }
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }
@@ -136,12 +138,24 @@ public:
     return this->_inv.equals(other._inv);
   }
 
+  void join_with(NumericDomainAdapter&& other) override {
+    this->_inv.join_with(std::move(other._inv));
+  }
+
   void join_with(const NumericDomainAdapter& other) override {
     this->_inv.join_with(other._inv);
   }
 
+  void join_loop_with(NumericDomainAdapter&& other) override {
+    this->_inv.join_loop_with(std::move(other._inv));
+  }
+
   void join_loop_with(const NumericDomainAdapter& other) override {
     this->_inv.join_loop_with(other._inv);
+  }
+
+  void join_iter_with(NumericDomainAdapter&& other) override {
+    this->_inv.join_iter_with(std::move(other._inv));
   }
 
   void join_iter_with(const NumericDomainAdapter& other) override {
@@ -168,6 +182,48 @@ public:
   void narrow_threshold_with(const NumericDomainAdapter& other,
                              const MachineInt& threshold) override {
     this->_inv.narrow_threshold_with(other._inv, threshold.to_z_number());
+  }
+
+  NumericDomainAdapter join(const NumericDomainAdapter& other) const override {
+    return NumericDomainAdapter(this->_inv.join(other._inv));
+  }
+
+  NumericDomainAdapter join_loop(
+      const NumericDomainAdapter& other) const override {
+    return NumericDomainAdapter(this->_inv.join_loop(other._inv));
+  }
+
+  NumericDomainAdapter join_iter(
+      const NumericDomainAdapter& other) const override {
+    return NumericDomainAdapter(this->_inv.join_iter(other._inv));
+  }
+
+  NumericDomainAdapter widening(
+      const NumericDomainAdapter& other) const override {
+    return NumericDomainAdapter(this->_inv.widening(other._inv));
+  }
+
+  NumericDomainAdapter widening_threshold(
+      const NumericDomainAdapter& other,
+      const MachineInt& threshold) const override {
+    return NumericDomainAdapter(
+        this->_inv.widening_threshold(other._inv, threshold.to_z_number()));
+  }
+
+  NumericDomainAdapter meet(const NumericDomainAdapter& other) const override {
+    return NumericDomainAdapter(this->_inv.meet(other._inv));
+  }
+
+  NumericDomainAdapter narrowing(
+      const NumericDomainAdapter& other) const override {
+    return NumericDomainAdapter(this->_inv.narrowing(other._inv));
+  }
+
+  NumericDomainAdapter narrowing_threshold(
+      const NumericDomainAdapter& other,
+      const MachineInt& threshold) const override {
+    return NumericDomainAdapter(
+        this->_inv.narrowing_threshold(other._inv, threshold.to_z_number()));
   }
 
 private:
@@ -697,8 +753,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_inv.forget(x); }
-
-  void normalize() const override { this->_inv.normalize(); }
 
   MachIntInterval to_interval(VariableRef x) const override {
     return MachIntInterval::from_z_interval(this->_inv.to_interval(x),

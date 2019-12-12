@@ -154,9 +154,6 @@ public:
   /// \brief Forget a numerical variable
   virtual void forget(VariableRef x) = 0;
 
-  /// \brief Normalize the abstract value
-  virtual void normalize() const = 0;
-
   /// \brief Projection to an interval
   ///
   /// Return an overapproximation of the value of `x` as an interval

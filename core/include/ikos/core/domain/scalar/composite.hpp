@@ -140,6 +140,19 @@ private:
   /// \brief Map pointer variables to set of addresses
   PointsToMap _points_to_map;
 
+private:
+  /// \brief Constructor
+  CompositeDomain(UninitializedDomain uninitialized,
+                  MachineIntDomain integer,
+                  NullityDomain nullity,
+                  PointsToMap points_to_map)
+      : _uninitialized(std::move(uninitialized)),
+        _integer(std::move(integer)),
+        _nullity(std::move(nullity)),
+        _points_to_map(std::move(points_to_map)) {
+    this->normalize();
+  }
+
 public:
   /// \brief Create an abstract value with the given underlying abstract values
   ///
@@ -186,21 +199,47 @@ public:
   /// \name Implement core abstract domain methods
   /// @{
 
+  void normalize() override {
+    this->_uninitialized.normalize();
+    if (this->_uninitialized.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    this->_nullity.normalize();
+    if (this->_nullity.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    this->_points_to_map.normalize();
+    if (this->_points_to_map.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    this->_integer.normalize();
+    if (this->_integer.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+  }
+
 private:
   /// \brief Return true if the abstract value is bottom
   ///
-  /// Does not normalize.
-  bool is_bottom_fast() const { return this->_points_to_map.is_bottom(); }
+  /// This is not always correct since it doesn't check this->_integer
+  bool is_bottom_fast() const { return this->_uninitialized.is_bottom(); }
 
 public:
   bool is_bottom() const override {
-    this->normalize();
-    return this->_points_to_map.is_bottom(); // Correct because of normalization
+    return this->_uninitialized.is_bottom() || this->_nullity.is_bottom() ||
+           this->_points_to_map.is_bottom() || this->_integer.is_bottom();
   }
 
   bool is_top() const override {
-    return this->_uninitialized.is_top() && this->_integer.is_top() &&
-           this->_nullity.is_top() && this->_points_to_map.is_top();
+    return this->_uninitialized.is_top() && this->_nullity.is_top() &&
+           this->_points_to_map.is_top() && this->_integer.is_top();
   }
 
   void set_to_bottom() override {
@@ -243,7 +282,23 @@ public:
     }
   }
 
+  void join_with(CompositeDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_uninitialized.join_with(std::move(other._uninitialized));
+      this->_integer.join_with(std::move(other._integer));
+      this->_nullity.join_with(std::move(other._nullity));
+      this->_points_to_map.join_with(std::move(other._points_to_map));
+    }
+  }
+
   void join_with(const CompositeDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -256,7 +311,23 @@ public:
     }
   }
 
+  void join_loop_with(CompositeDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_uninitialized.join_loop_with(std::move(other._uninitialized));
+      this->_integer.join_loop_with(std::move(other._integer));
+      this->_nullity.join_loop_with(std::move(other._nullity));
+      this->_points_to_map.join_loop_with(std::move(other._points_to_map));
+    }
+  }
+
   void join_loop_with(const CompositeDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -269,7 +340,23 @@ public:
     }
   }
 
+  void join_iter_with(CompositeDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_uninitialized.join_iter_with(std::move(other._uninitialized));
+      this->_integer.join_iter_with(std::move(other._integer));
+      this->_nullity.join_iter_with(std::move(other._nullity));
+      this->_points_to_map.join_iter_with(std::move(other._points_to_map));
+    }
+  }
+
   void join_iter_with(const CompositeDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -283,6 +370,7 @@ public:
   }
 
   void widen_with(const CompositeDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -297,6 +385,7 @@ public:
 
   void widen_threshold_with(const CompositeDomain& other,
                             const MachineInt& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -310,6 +399,7 @@ public:
   }
 
   void meet_with(const CompositeDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -323,6 +413,7 @@ public:
   }
 
   void narrow_with(const CompositeDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -337,6 +428,7 @@ public:
 
   void narrow_threshold_with(const CompositeDomain& other,
                              const MachineInt& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -346,6 +438,128 @@ public:
       this->_integer.narrow_threshold_with(other._integer, threshold);
       this->_nullity.narrow_with(other._nullity);
       this->_points_to_map.narrow_with(other._points_to_map);
+    }
+  }
+
+  CompositeDomain join(const CompositeDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return CompositeDomain(this->_uninitialized.join(other._uninitialized),
+                             this->_integer.join(other._integer),
+                             this->_nullity.join(other._nullity),
+                             this->_points_to_map.join(other._points_to_map));
+    }
+  }
+
+  CompositeDomain join_loop(const CompositeDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return CompositeDomain(this->_uninitialized.join_loop(
+                                 other._uninitialized),
+                             this->_integer.join_loop(other._integer),
+                             this->_nullity.join_loop(other._nullity),
+                             this->_points_to_map.join_loop(
+                                 other._points_to_map));
+    }
+  }
+
+  CompositeDomain join_iter(const CompositeDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return CompositeDomain(this->_uninitialized.join_iter(
+                                 other._uninitialized),
+                             this->_integer.join_iter(other._integer),
+                             this->_nullity.join_iter(other._nullity),
+                             this->_points_to_map.join_iter(
+                                 other._points_to_map));
+    }
+  }
+
+  CompositeDomain widening(const CompositeDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return CompositeDomain(this->_uninitialized.widening(
+                                 other._uninitialized),
+                             this->_integer.widening(other._integer),
+                             this->_nullity.widening(other._nullity),
+                             this->_points_to_map.widening(
+                                 other._points_to_map));
+    }
+  }
+
+  CompositeDomain widening_threshold(
+      const CompositeDomain& other,
+      const MachineInt& threshold) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return CompositeDomain(this->_uninitialized.widening(
+                                 other._uninitialized),
+                             this->_integer.widening_threshold(other._integer,
+                                                               threshold),
+                             this->_nullity.widening(other._nullity),
+                             this->_points_to_map.widening(
+                                 other._points_to_map));
+    }
+  }
+
+  CompositeDomain meet(const CompositeDomain& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return CompositeDomain(this->_uninitialized.meet(other._uninitialized),
+                             this->_integer.meet(other._integer),
+                             this->_nullity.meet(other._nullity),
+                             this->_points_to_map.meet(other._points_to_map));
+    }
+  }
+
+  CompositeDomain narrowing(const CompositeDomain& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return CompositeDomain(this->_uninitialized.narrowing(
+                                 other._uninitialized),
+                             this->_integer.narrowing(other._integer),
+                             this->_nullity.narrowing(other._nullity),
+                             this->_points_to_map.narrowing(
+                                 other._points_to_map));
+    }
+  }
+
+  CompositeDomain narrowing_threshold(
+      const CompositeDomain& other,
+      const MachineInt& threshold) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return CompositeDomain(this->_uninitialized.narrowing(
+                                 other._uninitialized),
+                             this->_integer.narrowing_threshold(other._integer,
+                                                                threshold),
+                             this->_nullity.narrowing(other._nullity),
+                             this->_points_to_map.narrowing(
+                                 other._points_to_map));
     }
   }
 
@@ -1420,16 +1634,13 @@ public:
 
   bool dynamic_is_zero(VariableRef x) const override {
     ikos_assert(ScalarVariableTrait::is_dynamic(x));
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call dynamic_is_zero() on bottom");
 
-    return this->_integer.to_interval(x).is_zero();
+    IntInterval value = this->_integer.to_interval(x);
+    return value.is_bottom() || value.is_zero();
   }
 
   bool dynamic_is_null(VariableRef x) const override {
     ikos_assert(ScalarVariableTrait::is_dynamic(x));
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call dynamic_is_null() on bottom");
 
     return this->_nullity.is_null(x);
   }
@@ -1499,6 +1710,8 @@ public:
 
     this->_uninitialized.assert_initialized(p);
 
+    this->normalize();
+
     if (this->is_bottom()) {
       return;
     }
@@ -1534,6 +1747,8 @@ public:
     }
 
     this->_uninitialized.assert_initialized(x);
+
+    this->normalize();
 
     if (this->is_bottom()) {
       return;
@@ -1577,14 +1792,6 @@ public:
       this->dynamic_forget(x);
     } else {
       ikos_unreachable("unexpected type");
-    }
-  }
-
-  void normalize() const override {
-    // is_bottom() will normalize
-    if (this->_uninitialized.is_bottom() || this->_nullity.is_bottom() ||
-        this->_points_to_map.is_bottom() || this->_integer.is_bottom()) {
-      const_cast< CompositeDomain* >(this)->set_to_bottom();
     }
   }
 

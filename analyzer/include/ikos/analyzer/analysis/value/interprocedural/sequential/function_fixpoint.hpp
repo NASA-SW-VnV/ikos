@@ -186,6 +186,7 @@ public:
 
   /// \brief Set the exit invariant
   void set_exit_invariant(AbstractDomain invariant) {
+    invariant.normalize();
     this->_exit_invariant = std::move(invariant);
   }
 

@@ -114,7 +114,7 @@ public:
 
 private:
   /// \brief Shared pointer on the underlying abstract domain
-  using DomainPtr = std::shared_ptr< Domain >;
+  using DomainPtr = std::shared_ptr< const Domain >;
 
   /// \brief Hash function for VariableRef
   struct VariableRefHash {
@@ -131,40 +131,32 @@ private:
   using Parent =
       numeric::AbstractDomain< Number, VariableRef, VarPackingDomain >;
 
-  /// \brief Result of a call to EquivalenceRelation::forget(v)
-  enum class ForgetResult {
-    /// \brief Success
-    Success,
-
-    /// \brief Bottom was found
-    Bottom,
-  };
-
   /*
    * Implementation of Union-Find
    */
-
-  // forward declaration
-  class EquivalenceRelation;
 
   /// \brief Equivalence class
   ///
   /// Represents a 'pack' of variables
   class EquivalenceClass {
-  public:
-    std::size_t rank;
-    DomainPtr domain;
+  private:
+    std::size_t _rank;
+    DomainPtr _domain_ptr;
+
+    // Invariant: _domain_ptr is normalized
 
     // TODO(marthaud): We could store the list of variables in the class
 
-    // Note: The reason why sometimes we explicitly call domain->normalize() is
-    // because it is better to normalize a (probably) shared domain. If we don't
-    // do that, some methods will normalize a copy.
-
   public:
     /// \brief Create an empty equivalence class
-    explicit EquivalenceClass()
-        : rank(0), domain(std::make_shared< Domain >(Domain::top())) {}
+    EquivalenceClass()
+        : _rank(0),
+          _domain_ptr(std::make_shared< const Domain >(Domain::top())) {}
+
+    /// \brief Create an equivalence class with the given domain
+    EquivalenceClass(Domain domain)
+        : _rank(0),
+          _domain_ptr(std::make_shared< const Domain >(std::move(domain))) {}
 
     /// \brief Copy constructor
     EquivalenceClass(const EquivalenceClass&) noexcept = default;
@@ -181,13 +173,29 @@ private:
     /// \brief Destructor
     ~EquivalenceClass() = default;
 
-    /// \brief Copy before a write
-    void copy_domain() {
-      // XXX(marthaud): This is not thread safe.
-      if (this->domain.use_count() == 1) {
-        return; // copy is unnecessary
-      }
-      this->domain = std::make_shared< Domain >(*this->domain);
+    /// \brief Return the rank
+    std::size_t rank() const { return this->_rank; }
+
+    /// \brief Increment the rank
+    void increment_rank() { this->_rank++; }
+
+    /// \brief Return the abstract domain
+    const Domain& domain() const { return *this->_domain_ptr; }
+
+    /// \brief Update the abstract domain
+    void set_domain(Domain domain) {
+      domain.normalize();
+      ikos_assert(!domain.is_bottom());
+      this->_domain_ptr = std::make_shared< const Domain >(std::move(domain));
+    }
+
+    /// \brief Return the abstract domain pointer
+    const DomainPtr& domain_ptr() const { return this->_domain_ptr; }
+
+    /// \brief Update the abstract domain pointer
+    void set_domain_ptr(const DomainPtr& domain_ptr) {
+      ikos_assert(!domain_ptr->is_bottom());
+      this->_domain_ptr = domain_ptr;
     }
 
   }; // end class EquivalenceClass
@@ -208,9 +216,6 @@ private:
 
     // Map from root variable to equivalence class
     ClassMap _classes;
-
-    // Note: We are using at(key) instead of operator[](key) because VariableRef
-    // may not have a default constructor
 
   public:
     /// \brief Create an empty equivalence relation
@@ -245,6 +250,15 @@ private:
       this->_classes.emplace(v, EquivalenceClass());
     }
 
+    /// \brief Create an equivalence class containing the given variable
+    ///
+    /// Precondition: `v` is not already present in the relation
+    void add_equiv_class(VariableRef v, Domain domain) {
+      ikos_assert_msg(!this->contains(v), "variable already present");
+      this->_parents.emplace(v, v);
+      this->_classes.emplace(v, EquivalenceClass(std::move(domain)));
+    }
+
     /// \brief Add a variable in an equivalence class
     ///
     /// Precondition: `v` is not already present in the relation
@@ -254,17 +268,17 @@ private:
       ikos_assert_msg(this->contains(parent), "variable missing");
 
       VariableRef parent_root = this->find_root_var(parent);
-      EquivalenceClass& parent_class = this->_classes[parent_root];
+      EquivalenceClass& parent_class = this->_classes.find(parent_root)->second;
 
-      if (parent_class.rank == 0) {
-        parent_class.rank++;
+      if (parent_class.rank() == 0) {
+        parent_class.increment_rank();
       }
       this->_parents.emplace(v, parent_root);
     }
 
     /// \brief Find the root of the equivalence class containing `v`
     VariableRef find_root_var(VariableRef v) {
-      VariableRef& parent = this->_parents.at(v);
+      VariableRef& parent = this->_parents.find(v)->second;
 
       if (parent == v) {
         return v;
@@ -275,7 +289,7 @@ private:
 
     /// \brief Find the root of the equivalence class containing `v`
     VariableRef cfind_root_var(VariableRef v) const {
-      VariableRef parent = this->_parents.at(v);
+      VariableRef parent = this->_parents.find(v)->second;
 
       if (parent == v) {
         return v;
@@ -286,22 +300,32 @@ private:
 
     /// \brief Find the equivalence class containing `v`
     EquivalenceClass& find_equiv_class(VariableRef v) {
-      return this->_classes[this->find_root_var(v)];
+      return this->_classes.find(this->find_root_var(v))->second;
     }
 
     /// \brief Find the equivalence class containing `v`
     const EquivalenceClass& cfind_equiv_class(VariableRef v) const {
-      return this->_classes.at(this->cfind_root_var(v));
+      return this->_classes.find(this->cfind_root_var(v))->second;
     }
 
     /// \brief Find the abstract domain containing `v`
-    const DomainPtr& find_domain(VariableRef v) {
-      return this->find_equiv_class(v).domain;
+    const Domain& find_domain(VariableRef v) {
+      return this->find_equiv_class(v).domain();
     }
 
     /// \brief Find the abstract domain containing `v`
-    const DomainPtr& cfind_domain(VariableRef v) const {
-      return this->cfind_equiv_class(v).domain;
+    const Domain& cfind_domain(VariableRef v) const {
+      return this->cfind_equiv_class(v).domain();
+    }
+
+    /// \brief Find the abstract domain pointer containing `v`
+    DomainPtr find_domain_ptr(VariableRef v) {
+      return this->find_equiv_class(v).domain_ptr();
+    }
+
+    /// \brief Find the abstract domain pointer containing `v`
+    DomainPtr cfind_domain_ptr(VariableRef v) const {
+      return this->cfind_equiv_class(v).domain_ptr();
     }
 
     /// \brief Merge two equivalence classes
@@ -315,28 +339,25 @@ private:
         return false;
       }
 
-      EquivalenceClass& x_class = this->_classes[x_root];
-      EquivalenceClass& y_class = this->_classes[y_root];
+      EquivalenceClass& x_class = this->_classes.find(x_root)->second;
+      EquivalenceClass& y_class = this->_classes.find(y_root)->second;
 
-      // Merge the domains
-      auto merge_domain = std::make_shared< Domain >(Domain::top());
-      x_class.domain->normalize();
-      y_class.domain->normalize();
-      *merge_domain = (*x_class.domain).meet(*y_class.domain);
+      // Merge the abstract domains
+      Domain domain = x_class.domain().meet(y_class.domain());
 
-      if (x_class.rank > y_class.rank) {
-        this->_parents.at(y_root) = x_root;
+      if (x_class.rank() > y_class.rank()) {
+        this->_parents.find(y_root)->second = x_root;
 
-        x_class.domain.swap(merge_domain);
+        x_class.set_domain(std::move(domain));
         this->_classes.erase(y_root);
       } else {
-        this->_parents.at(x_root) = y_root;
+        this->_parents.find(x_root)->second = y_root;
 
-        if (x_class.rank == y_class.rank) {
-          y_class.rank++;
+        if (x_class.rank() == y_class.rank()) {
+          y_class.increment_rank();
         }
 
-        y_class.domain.swap(merge_domain);
+        y_class.set_domain(std::move(domain));
         this->_classes.erase(x_root);
       }
 
@@ -380,33 +401,33 @@ private:
     }
 
     /// \brief Forget the given variable
-    ///
-    /// Note: calling forget() on an equivalence class might reduce it to bottom
-    ForgetResult forget(VariableRef v) {
+    void forget(VariableRef v) {
       auto it = this->_parents.find(v);
 
       if (it == this->_parents.end()) {
-        return ForgetResult::Success;
+        return;
       }
 
       if (it->second != v) {
         // v is not the root of the equivalence class
         VariableRef root = this->find_root_var(it->second);
 
-        // update parents
+        // Update parents
         for (auto& p : this->_parents) {
           if (p.second == v) {
             p.second = root;
           }
         }
 
-        EquivalenceClass& equiv_class = this->_classes[root];
-        equiv_class.copy_domain();
-        equiv_class.domain->forget(v);
+        EquivalenceClass& equiv_class = this->_classes.find(root)->second;
+        Domain domain = equiv_class.domain();
+        domain.forget(v);
+        equiv_class.set_domain(std::move(domain));
       } else {
         // v is the root of the equivalence class
         boost::optional< VariableRef > new_root;
 
+        // Find a new root
         for (auto& p : this->_parents) {
           if (p.second == v && p.first != v) {
             if (!new_root) {
@@ -417,23 +438,18 @@ private:
         }
 
         if (new_root) {
-          EquivalenceClass equiv_class = std::move(this->_classes[v]);
-          equiv_class.copy_domain();
-          equiv_class.domain->forget(v);
+          EquivalenceClass equiv_class =
+              std::move(this->_classes.find(v)->second);
+          Domain domain = equiv_class.domain();
+          domain.forget(v);
+          equiv_class.set_domain(std::move(domain));
           this->_classes.emplace(*new_root, std::move(equiv_class));
-        } else {
-          EquivalenceClass& equiv_class = this->_classes[v];
-          if (equiv_class.domain->is_bottom()) {
-            // In that case, do nothing
-            return ForgetResult::Bottom;
-          }
         }
 
         this->_classes.erase(v);
       }
 
       this->_parents.erase(v);
-      return ForgetResult::Success;
     }
 
     /// \brief Forget the equivalence class containing the given variable
@@ -446,7 +462,7 @@ private:
 
       for (auto it = this->_parents.begin(); it != this->_parents.end();) {
         if (this->find_root_var(it->second) == root) {
-          it = _parents.erase(it);
+          it = this->_parents.erase(it);
         } else {
           ++it;
         }
@@ -482,7 +498,7 @@ private:
            it != et;) {
         DumpableTraits< VariableRef >::dump(o, it->first);
         o << " -> ";
-        it->second.domain->dump(o);
+        it->second.domain().dump(o);
         ++it;
         if (it != et) {
           o << ", ";
@@ -494,20 +510,18 @@ private:
   }; // end class EquivalenceRelation
 
 private:
-  bool _is_bottom;
-  bool _is_normalized;
   EquivalenceRelation _equiv_relation;
+  bool _is_bottom;
 
 private:
   struct TopTag {};
   struct BottomTag {};
 
   /// \brief Create the top abstract value
-  explicit VarPackingDomain(TopTag) : _is_bottom(false), _is_normalized(true) {}
+  explicit VarPackingDomain(TopTag) : _is_bottom(false) {}
 
   /// \brief Create the bottom abstract value
-  explicit VarPackingDomain(BottomTag)
-      : _is_bottom(true), _is_normalized(true) {}
+  explicit VarPackingDomain(BottomTag) : _is_bottom(true) {}
 
 public:
   /// \brief Create the top abstract value
@@ -531,45 +545,17 @@ public:
   /// \brief Destructor
   ~VarPackingDomain() override = default;
 
-  /// \brief Normalize the abstract value
-  void normalize() const override {
-    if (this->_is_normalized) {
-      return;
-    }
+  void normalize() override {}
 
-    auto self = const_cast< VarPackingDomain* >(this);
-
-    if (this->_is_bottom) {
-      self->set_to_bottom();
-      return;
-    }
-
-    for (const auto& equiv_class : this->_equiv_relation) {
-      equiv_class.second.domain->normalize();
-
-      if (equiv_class.second.domain->is_bottom()) {
-        self->set_to_bottom();
-        return;
-      }
-    }
-
-    self->_is_normalized = true;
-  }
-
-  bool is_bottom() const override {
-    this->normalize();
-    return this->_is_bottom;
-  }
+  bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override {
-    // Does not require normalization
-
     if (this->_is_bottom) {
       return false;
     }
 
     for (const auto& equiv_class : this->_equiv_relation) {
-      if (!equiv_class.second.domain->is_top()) {
+      if (!equiv_class.second.domain().is_top()) {
         return false;
       }
     }
@@ -578,22 +564,16 @@ public:
   }
 
   void set_to_bottom() override {
-    this->_is_bottom = true;
-    this->_is_normalized = true;
     this->_equiv_relation.clear();
+    this->_is_bottom = true;
   }
 
   void set_to_top() override {
-    this->_is_bottom = false;
-    this->_is_normalized = true;
     this->_equiv_relation.clear();
+    this->_is_bottom = false;
   }
 
   bool leq(const VarPackingDomain& other) const override {
-    // Requires normalization
-    this->normalize();
-    other.normalize();
-
     if (this->is_bottom()) {
       return true;
     } else if (other.is_bottom()) {
@@ -603,15 +583,15 @@ public:
 
       // For each equivalence class in `other`
       for (const auto& other_class : other_roots) {
-        const VariableRef& other_root = other_class.first;
-        const DomainPtr& other_domain =
-            other._equiv_relation.cfind_domain(other_root);
+        VariableRef other_root = other_class.first;
+        DomainPtr other_domain_ptr =
+            other._equiv_relation.cfind_domain_ptr(other_root);
 
         // Set of root variables of equivalence classes we have merged
         boost::container::flat_set< VariableRef > this_roots;
 
         // Domain for `this`, containing all needed variables
-        DomainPtr this_domain = nullptr;
+        DomainPtr this_domain_ptr = nullptr;
 
         // Merge domains in `this`
         for (VariableRef v : other_class.second) {
@@ -621,40 +601,35 @@ public:
 
           VariableRef this_root = this->_equiv_relation.cfind_root_var(v);
 
-          if (this_roots.find(this_root) != this_roots.end()) {
-            continue; // equivalence class for v already merged
+          if (!this_roots.insert(this_root).second) {
+            continue; // Equivalence class for v already merged
           }
 
-          this_roots.insert(this_root);
-
-          const DomainPtr& domain =
-              this->_equiv_relation.cfind_domain(this_root);
+          DomainPtr domain_ptr =
+              this->_equiv_relation.cfind_domain_ptr(this_root);
 
           // Merge `domain` into `this_domain`
-          if (this_domain == nullptr) {
-            this_domain = domain;
-          } else if (this_domain == domain) {
-            // nothing to do
+          if (this_domain_ptr == nullptr) {
+            this_domain_ptr = domain_ptr;
+          } else if (this_domain_ptr == domain_ptr) {
+            // Nothing to do
           } else {
-            auto merge_domain = std::make_shared< Domain >(Domain::top());
-            this_domain->normalize();
-            domain->normalize();
-            *merge_domain = (*this_domain).meet(*domain);
-            this_domain.swap(merge_domain);
+            Domain domain = (*this_domain_ptr).meet(*domain_ptr);
+            domain.normalize();
+            this_domain_ptr =
+                std::make_shared< const Domain >(std::move(domain));
           }
         }
 
-        // Compare `this_domain` and `other_domain`
-        if (this_domain == nullptr) {
-          if (!other_domain->is_top()) {
+        // Compare `this_domain_ptr` and `other_domain_ptr`
+        if (this_domain_ptr == nullptr) {
+          if (!other_domain_ptr->is_top()) {
             return false;
           }
-        } else if (this_domain == other_domain) {
-          // this_domain.leq(other_domain) is true
+        } else if (this_domain_ptr == other_domain_ptr) {
+          // (*this_domain_ptr).leq(*other_domain_ptr) is true
         } else {
-          this_domain->normalize();
-          other_domain->normalize();
-          if (!((*this_domain).leq(*other_domain))) {
+          if (!((*this_domain_ptr).leq(*other_domain_ptr))) {
             return false;
           }
         }
@@ -697,39 +672,38 @@ private:
   }
 
   /// \brief Binary operation with a union semantic (join, widening)
+  ///
+  /// This uses a copy of `other` for ease of implementation.
+  ///
+  /// TODO(marthaud): Try to implement this without copying `other`
   template < typename BinaryOperator >
-  VarPackingDomain union_binary_op(VarPackingDomain other,
-                                   const BinaryOperator& op) const {
-    // `other` is a copy, thus we can update it
-    /// TODO(marthaud): try to implement this without copying `other`
-    VarPackingDomain result(*this);
-
-    // Forget variables in `result` that are not in `other`
+  void union_binary_op_with(VarPackingDomain other, const BinaryOperator& op) {
+    // Forget variables in `this` that are not in `other`
     // TODO(marthaud): variables() needs to creates a temporary vector because
     // forget() might invalidate iterators
-    for (VariableRef v : result._equiv_relation.variables()) {
+    for (VariableRef v : this->_equiv_relation.variables()) {
       if (!other._equiv_relation.contains(v)) {
-        result._equiv_relation.forget(v);
+        this->_equiv_relation.forget(v);
       }
     }
 
-    // Forget variables in `other` that are not in `result`
+    // Forget variables in `other` that are not in `this`
     // TODO(marthaud): variables() needs to creates a temporary vector because
     // forget() might invalidate iterators
     for (VariableRef v : other._equiv_relation.variables()) {
-      if (!result._equiv_relation.contains(v)) {
+      if (!this->_equiv_relation.contains(v)) {
         other._equiv_relation.forget(v);
       }
     }
 
     {
-      // Iterate on equivalence classes in `results`, merge the variables in
+      // Iterate on equivalence classes in `this`, merge the variables in
       // `other`
-      RootVariablesMap result_roots = result._equiv_relation.root_to_vars();
-      for (const auto& result_class : result_roots) {
+      RootVariablesMap this_roots = this->_equiv_relation.root_to_vars();
+      for (const auto& this_class : this_roots) {
         boost::optional< VariableRef > root;
 
-        for (VariableRef v : result_class.second) {
+        for (VariableRef v : this_class.second) {
           other.merge_existing_equiv_classes(root, v);
         }
       }
@@ -737,254 +711,266 @@ private:
 
     {
       // Iterator on equivalence classes in `other`, merge the variables in
-      // `results` and compute the binary operation
+      // `this` and compute the binary operation
       RootVariablesMap other_roots = other._equiv_relation.root_to_vars();
       for (const auto& other_class : other_roots) {
         const VariableRef& other_root = other_class.first;
-        const DomainPtr& other_domain =
-            other._equiv_relation.find_domain(other_root);
+        DomainPtr other_domain_ptr =
+            other._equiv_relation.find_domain_ptr(other_root);
 
         boost::optional< VariableRef > root;
         for (VariableRef v : other_class.second) {
-          result.merge_existing_equiv_classes(root, v);
+          this->merge_existing_equiv_classes(root, v);
         }
 
         if (root) {
           EquivalenceClass& equiv_class =
-              result._equiv_relation.find_equiv_class(*root);
-          if (equiv_class.domain == other_domain) {
-            // nothing to do, left and right packs are the same
+              this->_equiv_relation.find_equiv_class(*root);
+          if (equiv_class.domain_ptr() == other_domain_ptr) {
+            // Nothing to do, left and right packs are the same
           } else {
-            auto merge_domain = std::make_shared< Domain >(Domain::top());
-            op(*merge_domain, *equiv_class.domain, *other_domain);
-            equiv_class.domain = merge_domain;
+            equiv_class.set_domain(op(equiv_class.domain(), *other_domain_ptr));
           }
         }
       }
     }
-
-    result._is_normalized = false;
-    return result;
   }
 
   /// \brief Binary operation with an intersection semantic (meet, narrowing)
   template < typename BinaryOperator >
-  VarPackingDomain meet_binary_op(const VarPackingDomain& other,
-                                  BinaryOperator op) const {
-    VarPackingDomain result(*this);
-
+  void meet_binary_op_with(const VarPackingDomain& other, BinaryOperator op) {
     RootVariablesMap other_roots = other._equiv_relation.root_to_vars();
     for (const auto& other_class : other_roots) {
       const VariableRef& other_root = other_class.first;
-      const DomainPtr& other_domain =
-          other._equiv_relation.cfind_domain(other_root);
+      DomainPtr other_domain_ptr =
+          other._equiv_relation.cfind_domain_ptr(other_root);
 
       boost::optional< VariableRef > root;
       for (VariableRef v : other_class.second) {
-        result.merge_existing_equiv_classes(root, v);
+        this->merge_existing_equiv_classes(root, v);
       }
 
       bool new_domain = !root;
       for (VariableRef v : other_class.second) {
-        result.merge_unexisting_equiv_classes(root, v);
+        this->merge_unexisting_equiv_classes(root, v);
       }
 
       EquivalenceClass& equiv_class =
-          result._equiv_relation.find_equiv_class(*root);
+          this->_equiv_relation.find_equiv_class(*root);
       if (!new_domain) {
-        if (equiv_class.domain == other_domain) {
-          // nothing to do, left and right packs are the same
+        if (equiv_class.domain_ptr() == other_domain_ptr) {
+          // Nothing to do, left and right packs are the same
         } else {
-          auto merge_domain = std::make_shared< Domain >(Domain::top());
-          op(*merge_domain, *equiv_class.domain, *other_domain);
-          equiv_class.domain = merge_domain;
+          Domain domain = op(equiv_class.domain(), *other_domain_ptr);
+          domain.normalize();
+          if (domain.is_bottom()) {
+            this->set_to_bottom();
+            return;
+          }
+          equiv_class.set_domain(std::move(domain));
         }
       } else {
-        equiv_class.domain = other_domain;
+        equiv_class.set_domain_ptr(other_domain_ptr);
       }
     }
-
-    result._is_normalized = false;
-    return result;
   }
 
   struct JoinOperator {
-    void operator()(Domain& result, Domain& left, Domain& right) const {
-      left.normalize();
-      right.normalize();
-      result = left.join(right);
+    Domain operator()(const Domain& left, const Domain& right) const {
+      return left.join(right);
     }
   };
 
   struct MeetOperator {
-    void operator()(Domain& result, Domain& left, Domain& right) const {
-      left.normalize();
-      right.normalize();
-      result = left.meet(right);
+    Domain operator()(const Domain& left, const Domain& right) const {
+      return left.meet(right);
     }
   };
 
   struct WideningOperator {
-    void operator()(Domain& result, Domain& left, Domain& right) const {
-      right.normalize();
-      result = left.widening(right);
+    Domain operator()(const Domain& left, const Domain& right) const {
+      return left.widening(right);
     }
   };
 
   struct WideningThresholdOperator {
     const Number& threshold;
 
-    void operator()(Domain& result, Domain& left, Domain& right) const {
-      right.normalize();
-      result = left.widening_threshold(right, threshold);
+    Domain operator()(const Domain& left, const Domain& right) const {
+      return left.widening_threshold(right, threshold);
     }
   };
 
   struct NarrowingOperator {
-    void operator()(Domain& result, Domain& left, Domain& right) const {
-      left.normalize();
-      right.normalize();
-      result = left.narrowing(right);
+    Domain operator()(const Domain& left, const Domain& right) const {
+      return left.narrowing(right);
     }
   };
 
   struct NarrowingThresholdOperator {
     const Number& threshold;
 
-    void operator()(Domain& result, Domain& left, Domain& right) const {
-      left.normalize();
-      right.normalize();
-      result = left.narrowing_threshold(right, threshold);
+    Domain operator()(const Domain& left, const Domain& right) const {
+      return left.narrowing_threshold(right, threshold);
     }
   };
 
 public:
-  VarPackingDomain join(const VarPackingDomain& other) const override {
-    // Requires normalization
-    this->normalize();
-    other.normalize();
+  void join_with(VarPackingDomain&& other) override {
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->union_binary_op_with(std::move(other), JoinOperator{});
+    }
+  }
 
+  void join_with(const VarPackingDomain& other) override {
+    if (this->is_bottom()) {
+      this->operator=(other);
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->union_binary_op_with(other, JoinOperator{});
+    }
+  }
+
+  VarPackingDomain join(const VarPackingDomain& other) const override {
     if (this->is_bottom()) {
       return other;
     } else if (other.is_bottom()) {
       return *this;
     } else {
-      return this->union_binary_op(other, JoinOperator{});
-    }
-  }
-
-  void join_with(const VarPackingDomain& other) override {
-    this->operator=(this->join(other));
-  }
-
-  VarPackingDomain widening(const VarPackingDomain& other) const override {
-    // Requires the normalization of the right operand.
-    // The left operand (this) should not be normalized.
-    other.normalize();
-
-    if (this->_is_bottom) {
-      return other;
-    } else if (other.is_bottom()) {
-      return *this;
-    } else {
-      return this->union_binary_op(other, WideningOperator{});
+      VarPackingDomain result = *this;
+      result.union_binary_op_with(other, JoinOperator{});
+      return result;
     }
   }
 
   void widen_with(const VarPackingDomain& other) override {
-    this->operator=(this->widening(other));
+    if (this->is_bottom()) {
+      this->operator=(other);
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->union_binary_op_with(other, WideningOperator{});
+    }
   }
 
-  VarPackingDomain widening_threshold(const VarPackingDomain& other,
-                                      const Number& threshold) const override {
-    // Requires the normalization of the right operand.
-    // The left operand (this) should not be normalized.
-    other.normalize();
-
-    if (this->_is_bottom) {
+  VarPackingDomain widening(const VarPackingDomain& other) const override {
+    if (this->is_bottom()) {
       return other;
     } else if (other.is_bottom()) {
       return *this;
     } else {
-      return this->union_binary_op(other, WideningThresholdOperator{threshold});
+      VarPackingDomain result = *this;
+      result.union_binary_op_with(other, WideningOperator{});
+      return result;
     }
   }
 
   void widen_threshold_with(const VarPackingDomain& other,
                             const Number& threshold) override {
-    this->operator=(this->widening_threshold(other, threshold));
+    if (this->is_bottom()) {
+      this->operator=(other);
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->union_binary_op_with(other, WideningThresholdOperator{threshold});
+    }
   }
 
-  VarPackingDomain meet(const VarPackingDomain& other) const override {
-    // Requires normalization
-    this->normalize();
-    other.normalize();
-
-    if (this->is_bottom() || other.is_bottom()) {
-      return VarPackingDomain::bottom();
+  VarPackingDomain widening_threshold(const VarPackingDomain& other,
+                                      const Number& threshold) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
     } else {
-      return this->meet_binary_op(other, MeetOperator{});
+      VarPackingDomain result = *this;
+      result.union_binary_op_with(other, WideningThresholdOperator{threshold});
+      return result;
     }
   }
 
   void meet_with(const VarPackingDomain& other) override {
-    this->operator=(this->meet(other));
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->meet_binary_op_with(other, MeetOperator{});
+    }
   }
 
-  VarPackingDomain narrowing(const VarPackingDomain& other) const override {
-    // Requires normalization
-    this->normalize();
-    other.normalize();
-
+  VarPackingDomain meet(const VarPackingDomain& other) const override {
     if (this->is_bottom() || other.is_bottom()) {
       return VarPackingDomain::bottom();
     } else {
-      return this->meet_binary_op(other, NarrowingOperator{});
+      VarPackingDomain result = *this;
+      result.meet_binary_op_with(other, MeetOperator{});
+      return result;
     }
   }
 
   void narrow_with(const VarPackingDomain& other) override {
-    this->operator=(this->narrowing(other));
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->meet_binary_op_with(other, NarrowingOperator{});
+    }
   }
 
-  VarPackingDomain narrowing_threshold(const VarPackingDomain& other,
-                                       const Number& threshold) const override {
-    // Requires normalization
-    this->normalize();
-    other.normalize();
-
+  VarPackingDomain narrowing(const VarPackingDomain& other) const override {
     if (this->is_bottom() || other.is_bottom()) {
       return VarPackingDomain::bottom();
     } else {
-      return this->meet_binary_op(other, NarrowingThresholdOperator{threshold});
+      VarPackingDomain result = *this;
+      result.meet_binary_op_with(other, NarrowingOperator{});
+      return result;
     }
   }
 
   void narrow_threshold_with(const VarPackingDomain& other,
                              const Number& threshold) override {
-    this->operator=(this->narrowing_threshold(other, threshold));
+    if (this->is_bottom()) {
+      return;
+    } else if (other.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      this->meet_binary_op_with(other, NarrowingThresholdOperator{threshold});
+    }
+  }
+
+  VarPackingDomain narrowing_threshold(const VarPackingDomain& other,
+                                       const Number& threshold) const override {
+    if (this->is_bottom() || other.is_bottom()) {
+      return VarPackingDomain::bottom();
+    } else {
+      VarPackingDomain result = *this;
+      result.meet_binary_op_with(other, NarrowingThresholdOperator{threshold});
+      return result;
+    }
   }
 
   void assign(VariableRef x, int n) override { this->assign(x, Number(n)); }
 
   void assign(VariableRef x, const Number& n) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
-    auto result = this->_equiv_relation.forget(x);
-    if (result == ForgetResult::Bottom) {
-      this->set_to_bottom();
-      return;
-    }
-
-    this->_equiv_relation.add_equiv_class(x);
-    this->_equiv_relation.find_domain(x)->assign(x, n);
-    this->_is_normalized = false;
+    this->_equiv_relation.forget(x);
+    Domain domain = Domain::top();
+    domain.assign(x, n);
+    this->_equiv_relation.add_equiv_class(x, std::move(domain));
   }
 
   void assign(VariableRef x, VariableRef y) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -996,21 +982,16 @@ public:
       this->_equiv_relation.add_equiv_class(y);
     }
 
-    auto result = this->_equiv_relation.forget(x);
-    if (result == ForgetResult::Bottom) {
-      this->set_to_bottom();
-      return;
-    }
-
+    this->_equiv_relation.forget(x);
     this->_equiv_relation.add_var_to_equiv_class(x, y);
     EquivalenceClass& equiv_class = this->_equiv_relation.find_equiv_class(y);
-    equiv_class.copy_domain();
-    equiv_class.domain->assign(x, y);
-    this->_is_normalized = false;
+    Domain domain = equiv_class.domain();
+    domain.assign(x, y);
+    equiv_class.set_domain(std::move(domain));
   }
 
   void assign(VariableRef x, const LinearExpressionT& e) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1030,27 +1011,22 @@ public:
     }
 
     if (e.factor(x) == 0) {
-      auto result = this->_equiv_relation.forget(x);
-      if (result == ForgetResult::Bottom) {
-        this->set_to_bottom();
-        return;
-      }
-
+      this->_equiv_relation.forget(x);
       this->_equiv_relation.add_var_to_equiv_class(x, *root);
     }
 
-    // otherwise, x has already been merged
+    // Otherwise, x has already been merged
 
     EquivalenceClass& equiv_class =
         this->_equiv_relation.find_equiv_class(*root);
-    equiv_class.copy_domain();
-    equiv_class.domain->assign(x, e);
-    this->_is_normalized = false;
+    Domain domain = equiv_class.domain();
+    domain.assign(x, e);
+    equiv_class.set_domain(std::move(domain));
   }
 
 private:
   /// \brief Add a relation x = f(y, z)
-  const DomainPtr& add_relation(VariableRef x, VariableRef y, VariableRef z) {
+  EquivalenceClass& add_relation(VariableRef x, VariableRef y, VariableRef z) {
     boost::optional< VariableRef > root;
     this->merge_existing_equiv_classes(root, y);
     this->merge_existing_equiv_classes(root, z);
@@ -1058,40 +1034,26 @@ private:
     this->merge_unexisting_equiv_classes(root, z);
 
     if (x != y && x != z) {
-      auto result = this->_equiv_relation.forget(x);
-      if (result == ForgetResult::Bottom) {
-        this->_is_bottom = true;
-        return this->_equiv_relation.find_domain(x);
-      }
-
+      this->_equiv_relation.forget(x);
       this->_equiv_relation.add_var_to_equiv_class(x, *root);
     }
-    // otherwise, x has already been merged
+    // Otherwise, x has already been merged
 
-    EquivalenceClass& equiv_class =
-        this->_equiv_relation.find_equiv_class(*root);
-    equiv_class.copy_domain();
-    return equiv_class.domain;
+    return this->_equiv_relation.find_equiv_class(*root);
   }
 
   /// \brief Add a relation x = f(y)
-  const DomainPtr& add_relation(VariableRef x, VariableRef y) {
+  EquivalenceClass& add_relation(VariableRef x, VariableRef y) {
     if (!this->_equiv_relation.contains(y)) {
       this->_equiv_relation.add_equiv_class(y);
     }
 
     if (x != y) {
-      auto result = this->_equiv_relation.forget(x);
-      if (result == ForgetResult::Bottom) {
-        this->_is_bottom = true;
-        return this->_equiv_relation.find_domain(x);
-      }
+      this->_equiv_relation.forget(x);
       this->_equiv_relation.add_var_to_equiv_class(x, y);
     }
 
-    EquivalenceClass& equiv_class = this->_equiv_relation.find_equiv_class(y);
-    equiv_class.copy_domain();
-    return equiv_class.domain;
+    return this->_equiv_relation.find_equiv_class(y);
   }
 
 public:
@@ -1099,40 +1061,61 @@ public:
              VariableRef x,
              VariableRef y,
              VariableRef z) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
-    this->add_relation(x, y, z)->apply(op, x, y, z);
-    this->_is_normalized = false;
+    EquivalenceClass& equiv_class = this->add_relation(x, y, z);
+    Domain domain = equiv_class.domain();
+    domain.apply(op, x, y, z);
+    domain.normalize();
+    if (domain.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      equiv_class.set_domain(std::move(domain));
+    }
   }
 
   void apply(BinaryOperator op,
              VariableRef x,
              VariableRef y,
              const Number& z) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
-    add_relation(x, y)->apply(op, x, y, z);
-    this->_is_normalized = false;
+    EquivalenceClass& equiv_class = this->add_relation(x, y);
+    Domain domain = equiv_class.domain();
+    domain.apply(op, x, y, z);
+    domain.normalize();
+    if (domain.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      equiv_class.set_domain(std::move(domain));
+    }
   }
 
   void apply(BinaryOperator op,
              VariableRef x,
              const Number& y,
              VariableRef z) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
-    add_relation(x, z)->apply(op, x, y, z);
-    this->_is_normalized = false;
+    EquivalenceClass& equiv_class = add_relation(x, z);
+    Domain domain = equiv_class.domain();
+    domain.apply(op, x, y, z);
+    domain.normalize();
+    if (domain.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      equiv_class.set_domain(std::move(domain));
+    }
   }
 
   void add(const LinearConstraintT& cst) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1154,9 +1137,14 @@ public:
 
     EquivalenceClass& equiv_class =
         this->_equiv_relation.find_equiv_class(*root);
-    equiv_class.copy_domain();
-    equiv_class.domain->add(cst);
-    this->_is_normalized = false;
+    Domain domain = equiv_class.domain();
+    domain.add(cst);
+    domain.normalize();
+    if (domain.is_bottom()) {
+      this->set_to_bottom();
+    } else {
+      equiv_class.set_domain(std::move(domain));
+    }
   }
 
   void add(const LinearConstraintSystemT& csts) override {
@@ -1166,7 +1154,7 @@ public:
   }
 
   void set(VariableRef x, const IntervalT& value) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1175,23 +1163,19 @@ public:
       return;
     }
 
-    auto result = this->_equiv_relation.forget(x);
-    if (result == ForgetResult::Bottom) {
-      this->set_to_bottom();
-      return;
-    }
+    this->_equiv_relation.forget(x);
 
     if (value.is_top()) {
       return;
     }
 
-    this->_equiv_relation.add_equiv_class(x);
-    this->_equiv_relation.find_domain(x)->set(x, value);
-    this->_is_normalized = false;
+    Domain domain = Domain::top();
+    domain.set(x, value);
+    this->_equiv_relation.add_equiv_class(x, std::move(domain));
   }
 
   void set(VariableRef x, const CongruenceT& value) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1200,23 +1184,19 @@ public:
       return;
     }
 
-    auto result = this->_equiv_relation.forget(x);
-    if (result == ForgetResult::Bottom) {
-      this->set_to_bottom();
-      return;
-    }
+    this->_equiv_relation.forget(x);
 
     if (value.is_top()) {
       return;
     }
 
-    this->_equiv_relation.add_equiv_class(x);
-    this->_equiv_relation.find_domain(x)->set(x, value);
-    this->_is_normalized = false;
+    Domain domain = Domain::top();
+    domain.set(x, value);
+    this->_equiv_relation.add_equiv_class(x, std::move(domain));
   }
 
   void set(VariableRef x, const IntervalCongruenceT& value) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1225,23 +1205,19 @@ public:
       return;
     }
 
-    auto result = this->_equiv_relation.forget(x);
-    if (result == ForgetResult::Bottom) {
-      this->set_to_bottom();
-      return;
-    }
+    this->_equiv_relation.forget(x);
 
     if (value.is_top()) {
       return;
     }
 
-    this->_equiv_relation.add_equiv_class(x);
-    this->_equiv_relation.find_domain(x)->set(x, value);
-    this->_is_normalized = false;
+    Domain domain = Domain::top();
+    domain.set(x, value);
+    this->_equiv_relation.add_equiv_class(x, std::move(domain));
   }
 
   void refine(VariableRef x, const IntervalT& value) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1256,17 +1232,23 @@ public:
 
     if (this->_equiv_relation.contains(x)) {
       EquivalenceClass& equiv_class = this->_equiv_relation.find_equiv_class(x);
-      equiv_class.copy_domain();
-      equiv_class.domain->refine(x, value);
-      this->_is_normalized = false;
+      Domain domain = equiv_class.domain();
+      domain.refine(x, value);
+      domain.normalize();
+      if (domain.is_bottom()) {
+        this->set_to_bottom();
+      } else {
+        equiv_class.set_domain(std::move(domain));
+      }
     } else {
-      this->_equiv_relation.add_equiv_class(x);
-      this->_equiv_relation.find_domain(x)->set(x, value);
+      Domain domain = Domain::top();
+      domain.set(x, value);
+      this->_equiv_relation.add_equiv_class(x, std::move(domain));
     }
   }
 
   void refine(VariableRef x, const CongruenceT& value) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1281,17 +1263,23 @@ public:
 
     if (this->_equiv_relation.contains(x)) {
       EquivalenceClass& equiv_class = this->_equiv_relation.find_equiv_class(x);
-      equiv_class.copy_domain();
-      equiv_class.domain->refine(x, value);
-      this->_is_normalized = false;
+      Domain domain = equiv_class.domain();
+      domain.refine(x, value);
+      domain.normalize();
+      if (domain.is_bottom()) {
+        this->set_to_bottom();
+      } else {
+        equiv_class.set_domain(std::move(domain));
+      }
     } else {
-      this->_equiv_relation.add_equiv_class(x);
-      this->_equiv_relation.find_domain(x)->set(x, value);
+      Domain domain = Domain::top();
+      domain.set(x, value);
+      this->_equiv_relation.add_equiv_class(x, std::move(domain));
     }
   }
 
   void refine(VariableRef x, const IntervalCongruenceT& value) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
@@ -1306,23 +1294,27 @@ public:
 
     if (this->_equiv_relation.contains(x)) {
       EquivalenceClass& equiv_class = this->_equiv_relation.find_equiv_class(x);
-      equiv_class.copy_domain();
-      equiv_class.domain->refine(x, value);
-      this->_is_normalized = false;
+      Domain domain = equiv_class.domain();
+      domain.refine(x, value);
+      domain.normalize();
+      if (domain.is_bottom()) {
+        this->set_to_bottom();
+      } else {
+        equiv_class.set_domain(std::move(domain));
+      }
     } else {
-      this->_equiv_relation.add_equiv_class(x);
-      this->_equiv_relation.find_domain(x)->set(x, value);
+      Domain domain = Domain::top();
+      domain.set(x, value);
+      this->_equiv_relation.add_equiv_class(x, std::move(domain));
     }
   }
 
   void forget(VariableRef x) override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return;
     }
 
-    auto result = this->_equiv_relation.forget(x);
-    this->_is_bottom = (result == ForgetResult::Bottom);
-    this->_is_normalized = false;
+    this->_equiv_relation.forget(x);
   }
 
 private:
@@ -1333,11 +1325,11 @@ private:
 
 public:
   IntervalT to_interval(VariableRef x) const override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return IntervalT::bottom();
     } else {
       if (this->_equiv_relation.contains(x)) {
-        return this->_equiv_relation.cfind_domain(x)->to_interval(x);
+        return this->_equiv_relation.cfind_domain(x).to_interval(x);
       } else {
         return IntervalT::top();
       }
@@ -1349,11 +1341,11 @@ public:
   }
 
   CongruenceT to_congruence(VariableRef x) const override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return CongruenceT::bottom();
     } else {
       if (this->_equiv_relation.contains(x)) {
-        return this->_equiv_relation.cfind_domain(x)->to_congruence(x);
+        return this->_equiv_relation.cfind_domain(x).to_congruence(x);
       } else {
         return CongruenceT::top();
       }
@@ -1365,11 +1357,11 @@ public:
   }
 
   IntervalCongruenceT to_interval_congruence(VariableRef x) const override {
-    if (this->_is_bottom) {
+    if (this->is_bottom()) {
       return IntervalCongruenceT::bottom();
     } else {
       if (this->_equiv_relation.contains(x)) {
-        return this->_equiv_relation.cfind_domain(x)->to_interval_congruence(x);
+        return this->_equiv_relation.cfind_domain(x).to_interval_congruence(x);
       } else {
         return IntervalCongruenceT::top();
       }
@@ -1382,15 +1374,13 @@ public:
   }
 
   LinearConstraintSystemT to_linear_constraint_system() const override {
-    this->normalize();
-
     if (this->is_bottom()) {
       return LinearConstraintSystemT(LinearConstraintT::contradiction());
     }
 
     LinearConstraintSystemT csts;
     for (const auto& equiv_class : this->_equiv_relation) {
-      csts.add(equiv_class.second.domain->to_linear_constraint_system());
+      csts.add(equiv_class.second.domain().to_linear_constraint_system());
     }
 
     return csts;

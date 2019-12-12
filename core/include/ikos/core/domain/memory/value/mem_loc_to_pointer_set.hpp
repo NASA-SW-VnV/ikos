@@ -117,6 +117,8 @@ public:
     return this->_tree.end();
   }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override {

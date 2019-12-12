@@ -183,6 +183,8 @@ public:
   /// Note: does not normalize.
   CongruenceDomainT& third() { return this->_product.third(); }
 
+  void normalize() override { this->_product.normalize(); }
+
   bool is_bottom() const override { return this->_product.is_bottom(); }
 
   bool is_top() const override { return this->_product.is_top(); }
@@ -199,12 +201,24 @@ public:
     return this->_product.equals(other._product);
   }
 
+  void join_with(GaugeIntervalCongruenceDomain&& other) override {
+    this->_product.join_with(std::move(other._product));
+  }
+
   void join_with(const GaugeIntervalCongruenceDomain& other) override {
     this->_product.join_with(other._product);
   }
 
+  void join_loop_with(GaugeIntervalCongruenceDomain&& other) override {
+    this->_product.join_loop_with(std::move(other._product));
+  }
+
   void join_loop_with(const GaugeIntervalCongruenceDomain& other) override {
     this->_product.join_loop_with(other._product);
+  }
+
+  void join_iter_with(GaugeIntervalCongruenceDomain&& other) override {
+    this->_product.join_iter_with(std::move(other._product));
   }
 
   void join_iter_with(const GaugeIntervalCongruenceDomain& other) override {
@@ -231,6 +245,54 @@ public:
   void narrow_threshold_with(const GaugeIntervalCongruenceDomain& other,
                              const Number& threshold) override {
     this->_product.narrow_threshold_with(other._product, threshold);
+  }
+
+  GaugeIntervalCongruenceDomain join(
+      const GaugeIntervalCongruenceDomain& other) const override {
+    return GaugeIntervalCongruenceDomain(this->_product.join(other._product));
+  }
+
+  GaugeIntervalCongruenceDomain join_loop(
+      const GaugeIntervalCongruenceDomain& other) const override {
+    return GaugeIntervalCongruenceDomain(
+        this->_product.join_loop(other._product));
+  }
+
+  GaugeIntervalCongruenceDomain join_iter(
+      const GaugeIntervalCongruenceDomain& other) const override {
+    return GaugeIntervalCongruenceDomain(
+        this->_product.join_iter(other._product));
+  }
+
+  GaugeIntervalCongruenceDomain widening(
+      const GaugeIntervalCongruenceDomain& other) const override {
+    return GaugeIntervalCongruenceDomain(
+        this->_product.widening(other._product));
+  }
+
+  GaugeIntervalCongruenceDomain widening_threshold(
+      const GaugeIntervalCongruenceDomain& other,
+      const Number& threshold) const override {
+    return GaugeIntervalCongruenceDomain(
+        this->_product.widening_threshold(other._product, threshold));
+  }
+
+  GaugeIntervalCongruenceDomain meet(
+      const GaugeIntervalCongruenceDomain& other) const override {
+    return GaugeIntervalCongruenceDomain(this->_product.meet(other._product));
+  }
+
+  GaugeIntervalCongruenceDomain narrowing(
+      const GaugeIntervalCongruenceDomain& other) const override {
+    return GaugeIntervalCongruenceDomain(
+        this->_product.narrowing(other._product));
+  }
+
+  GaugeIntervalCongruenceDomain narrowing_threshold(
+      const GaugeIntervalCongruenceDomain& other,
+      const Number& threshold) const override {
+    return GaugeIntervalCongruenceDomain(
+        this->_product.narrowing_threshold(other._product, threshold));
   }
 
   void assign(VariableRef x, int n) override { this->_product.assign(x, n); }
@@ -332,8 +394,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_product.forget(x); }
-
-  void normalize() const override { this->_product.normalize(); }
 
   GaugeT to_gauge(VariableRef x) const {
     return this->_product.first().to_gauge(x);

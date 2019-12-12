@@ -177,6 +177,7 @@ public:
 
   /// \brief Set the exit invariant
   void set_exit_invariant(AbstractDomain invariant) {
+    invariant.normalize();
     std::lock_guard< std::mutex > lock(this->_mutex);
     this->_exit_invariant = std::move(invariant);
   }

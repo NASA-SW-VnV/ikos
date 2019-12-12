@@ -481,9 +481,6 @@ public:
   /// \brief Forget a scalar variable
   virtual void scalar_forget(VariableRef x) = 0;
 
-  /// \brief Normalize the abstract value
-  virtual void normalize() const = 0;
-
   /// @}
 
 }; // end class AbstractDomain

@@ -79,8 +79,7 @@ private:
   Interval _i;
   ZCongruence _c;
 
-private:
-  /// \brief Normalize the interval-congruence
+  /// \brief Reduce the interval-congruence
   ///
   /// Let (i, c) be a pair of interval and congruence
   /// if (c.is_bottom() || i.is_bottom()) (bottom(), bottom());
@@ -89,7 +88,7 @@ private:
   /// if (i=[a,b] and R(c,a) > L(c,b))    (bottom(), bottom());
   /// if (i=[a,b] and R(c,a) = L(c,b))    ([R(c,a), R(c,b)], R(c,a))
   /// else (i=[a,b])                      ([R(c,a), L(c,b)], c);
-  void normalize() {
+  void reduce() {
     if (this->_c.is_bottom()) {
       this->_i.set_to_bottom();
       return;
@@ -184,25 +183,25 @@ public:
   IntervalCongruence(const Interval& i, const Congruence& c)
       : _i(i), _c(c.to_z_congruence()) {
     assert_compatible(i, c);
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Create the interval-congruence (i, c)
   IntervalCongruence(Interval i, ZCongruence c)
       : _i(std::move(i)), _c(std::move(c)) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Create the interval-congruence (i, T)
   explicit IntervalCongruence(Interval i)
       : _i(std::move(i)), _c(ZCongruence::top()) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Create the interval-congruence (T, c)
   explicit IntervalCongruence(const Congruence& c)
       : _i(Interval::top(c.bit_width(), c.sign())), _c(c.to_z_congruence()) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Copy constructor
@@ -264,8 +263,12 @@ public:
     return this->_c.residue();
   }
 
+  void normalize() override {
+    // Already performed by the reduction
+  }
+
   bool is_bottom() const override {
-    return this->_c.is_bottom(); // Correct because of normalization
+    return this->_c.is_bottom(); // Correct because of reduction
   }
 
   bool is_top() const override {
@@ -306,7 +309,7 @@ public:
     assert_compatible(*this, other);
     this->_i.join_with(other._i);
     this->_c.join_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   IntervalCongruence widening(const IntervalCongruence& other) const override {
@@ -319,7 +322,7 @@ public:
     assert_compatible(*this, other);
     this->_i.widen_with(other._i);
     this->_c.widen_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   IntervalCongruence widening_threshold(const IntervalCongruence& other,
@@ -334,7 +337,7 @@ public:
     assert_compatible(*this, other);
     this->_i.widen_threshold_with(other._i, threshold);
     this->_c.widen_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   IntervalCongruence meet(const IntervalCongruence& other) const override {
@@ -346,7 +349,7 @@ public:
     assert_compatible(*this, other);
     this->_i.meet_with(other._i);
     this->_c.meet_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   IntervalCongruence narrowing(const IntervalCongruence& other) const override {
@@ -359,7 +362,7 @@ public:
     assert_compatible(*this, other);
     this->_i.narrow_with(other._i);
     this->_c.narrow_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   IntervalCongruence narrowing_threshold(const IntervalCongruence& other,
@@ -374,7 +377,7 @@ public:
     assert_compatible(*this, other);
     this->_i.narrow_threshold_with(other._i, threshold);
     this->_c.narrow_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   /// \name Unary Operators

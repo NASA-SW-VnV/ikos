@@ -45,6 +45,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <ap_global0.h>
@@ -69,65 +70,6 @@ namespace core {
 namespace numeric {
 
 namespace apron {
-
-/// \brief Wrapper for ap_abstract0_t*
-using InvPtr = std::shared_ptr< ap_abstract0_t >;
-
-/// \brief Deleter for InvPtr
-struct InvDeleter {
-  void operator()(ap_abstract0_t* inv) {
-    ap_abstract0_free(ap_abstract0_manager(inv), inv);
-  }
-};
-
-/// \brief Create a InvPtr from a ap_abstract0_t*
-inline InvPtr inv_ptr(ap_abstract0_t* inv) {
-  return std::shared_ptr< ap_abstract0_t >(inv, InvDeleter());
-}
-
-/// \returns the size of a ap_abstract0_t
-inline std::size_t dims(ap_abstract0_t* inv) {
-  return ap_abstract0_dimension(ap_abstract0_manager(inv), inv).intdim;
-}
-
-/// \brief Add some dimensions to a ap_abstract0_t
-inline InvPtr add_dimensions(ap_abstract0_t* inv, std::size_t dims) {
-  ikos_assert(dims > 0);
-
-  ap_dimchange_t* dimchange = ap_dimchange_alloc(dims, 0);
-  for (std::size_t i = 0; i < dims; i++) {
-    // add dimension at the end
-    dimchange->dim[i] = static_cast< ap_dim_t >(apron::dims(inv));
-  }
-
-  ap_manager_t* manager = ap_abstract0_manager(inv);
-  InvPtr r = inv_ptr(
-      ap_abstract0_add_dimensions(manager, false, inv, dimchange, false));
-  ap_dimchange_free(dimchange);
-  return r;
-}
-
-/// \brief Remove some dimensions of a ap_abstract0_t
-inline InvPtr remove_dimensions(ap_abstract0_t* inv,
-                                const std::vector< ap_dim_t >& dims) {
-  ikos_assert(!dims.empty());
-  ikos_assert(std::is_sorted(dims.begin(), dims.end()));
-
-  // make sure that the removing dimensions are in ascending order
-
-  ap_dimchange_t* dimchange = ap_dimchange_alloc(dims.size(), 0);
-  for (std::size_t i = 0; i < dims.size(); i++) {
-    // remove dimension dims[i] and shift to the left all the dimensions greater
-    // than dims[i]
-    dimchange->dim[i] = dims[i];
-  }
-
-  ap_manager_t* manager = ap_abstract0_manager(inv);
-  InvPtr r =
-      inv_ptr(ap_abstract0_remove_dimensions(manager, false, inv, dimchange));
-  ap_dimchange_free(dimchange);
-  return r;
-}
 
 /// \brief Create a binary expression
 template < typename Number >
@@ -290,18 +232,6 @@ inline ap_manager_t* alloc_domain_manager(Domain d) {
   }
 }
 
-inline ap_abstract0_t* domain_narrowing(Domain d,
-                                        ap_manager_t* manager,
-                                        ap_abstract0_t* a,
-                                        ap_abstract0_t* b) {
-  if (d == Octagon) {
-    return ap_abstract0_oct_narrowing(manager, a, b);
-  } else {
-    // by default, use meet
-    return ap_abstract0_meet(manager, false, a, b);
-  }
-}
-
 } // end namespace apron
 
 /// \brief Wrapper for APRON abstract domains
@@ -324,8 +254,17 @@ private:
   using VariableMap = PatriciaTreeMap< VariableRef, ap_dim_t >;
   using Parent = numeric::AbstractDomain< Number, VariableRef, ApronDomain >;
 
+  /// \brief Deleter for ap_abstract0_t*
+  struct InvDeleter {
+    void operator()(ap_abstract0_t* inv) { ap_abstract0_free(manager(), inv); }
+  };
+
+  /// \brief Wrapper for ap_abstract0_t
+  using InvPtr = std::unique_ptr< ap_abstract0_t, InvDeleter >;
+
 private:
-  apron::InvPtr _inv;
+  mutable std::mutex _mutex;
+  InvPtr _inv;
   VariableMap _var_map;
 
 private:
@@ -336,6 +275,50 @@ private:
     return Man;
   }
 
+  /*
+   * Dimension utils
+   */
+
+  /// \brief Return the size of an ap_abstract0_t
+  static std::size_t dimension(ap_abstract0_t* inv) {
+    return ap_abstract0_dimension(manager(), inv).intdim;
+  }
+
+  /// \brief Return a dimension change that adds a number of dimensions
+  static ap_dimchange_t* add_dimensions(ap_abstract0_t* inv, std::size_t dims) {
+    ikos_assert(dims > 0);
+
+    ap_dimchange_t* dimchange = ap_dimchange_alloc(dims, 0);
+    for (std::size_t i = 0; i < dims; i++) {
+      // Add dimension at the end
+      dimchange->dim[i] = static_cast< ap_dim_t >(dimension(inv));
+    }
+
+    return dimchange;
+  }
+
+  /// \brief Return a dimension change that removes the given dimensions of an
+  /// ap_abstract0_t
+  static ap_dimchange_t* remove_dimensions(
+      ap_abstract0_t* /*inv*/, const std::vector< ap_dim_t >& dims) {
+    ikos_assert(!dims.empty());
+    ikos_assert(std::is_sorted(dims.begin(), dims.end()));
+
+    // Make sure that the removed dimensions are in ascending order
+    ap_dimchange_t* dimchange = ap_dimchange_alloc(dims.size(), 0);
+    for (std::size_t i = 0; i < dims.size(); i++) {
+      // Remove dimension dims[i] and shift to the left all the dimensions
+      // greater than dims[i]
+      dimchange->dim[i] = dims[i];
+    }
+
+    return dimchange;
+  }
+
+  /*
+   * Variable dimension utils
+   */
+
   /// \brief Get the dimension associated to a variable
   boost::optional< const ap_dim_t& > var_dim(VariableRef v) const {
     return this->_var_map.at(v);
@@ -343,75 +326,80 @@ private:
 
   /// \brief Get the dimension associated to a variable, or create one
   ap_dim_t var_dim_insert(VariableRef v) {
-    boost::optional< const ap_dim_t& > dim = var_dim(v);
+    boost::optional< const ap_dim_t& > dim = this->_var_map.at(v);
 
     if (dim) {
       return *dim;
-    } else {
-      auto new_dim = static_cast< ap_dim_t >(this->_var_map.size());
-      this->_inv = apron::add_dimensions(this->_inv.get(), 1);
-      this->_var_map.insert_or_assign(v, new_dim);
-      ikos_assert(this->_var_map.size() == apron::dims(this->_inv.get()));
-      return new_dim;
     }
+
+    auto new_dim = static_cast< ap_dim_t >(this->_var_map.size());
+    this->_var_map.insert_or_assign(v, new_dim);
+    ap_dimchange_t* dimchange = add_dimensions(this->_inv.get(), 1);
+    ap_abstract0_add_dimensions(manager(),
+                                true,
+                                this->_inv.get(),
+                                dimchange,
+                                false);
+    ap_dimchange_free(dimchange);
+    return new_dim;
   }
 
+  /*
+   * Abstract operator utils
+   */
+
   /// \brief Merge two variable maps, updating the associated abstract values
-  static VariableMap merge_var_maps(const VariableMap& var_map_x,
-                                    apron::InvPtr& inv_x,
-                                    const VariableMap& var_map_y,
-                                    apron::InvPtr& inv_y) {
-    ikos_assert(var_map_x.size() == apron::dims(inv_x.get()));
-    ikos_assert(var_map_y.size() == apron::dims(inv_y.get()));
+  static VariableMap merge_var_maps(const VariableMap& lhs_var_map,
+                                    ap_abstract0_t* lhs_inv,
+                                    const VariableMap& rhs_var_map,
+                                    ap_abstract0_t* rhs_inv) {
+    ikos_assert(lhs_var_map.size() == dimension(lhs_inv));
+    ikos_assert(rhs_var_map.size() == dimension(rhs_inv));
 
-    // build a result variable map, based on var_map_x
-    VariableMap result_var_map(var_map_x);
+    // Build a result variable map, based on lhs_var_map
+    VariableMap result = lhs_var_map;
 
-    // (optimization) check if the variable mappings are equal
-    bool equal = (var_map_x.size() == var_map_y.size());
+    // Add variables from rhs_var_map to the result variable map
+    for (auto it = rhs_var_map.begin(), et = rhs_var_map.end(); it != et;
+         ++it) {
+      VariableRef rhs_v = it->first;
+      boost::optional< const ap_dim_t& > lhs_dim = lhs_var_map.at(rhs_v);
 
-    // add variables from var_map_y to the result variable map
-    for (auto it = var_map_y.begin(); it != var_map_y.end(); ++it) {
-      const VariableRef& v_y = it->first;
-      const ap_dim_t& dim_y = it->second;
-      boost::optional< const ap_dim_t& > dim_x = var_map_x.at(v_y);
-      equal = equal && dim_x && *dim_x == dim_y;
-
-      if (!dim_x) {
-        auto dim = static_cast< ap_dim_t >(result_var_map.size());
-        result_var_map.insert_or_assign(v_y, dim);
+      if (!lhs_dim) {
+        auto dim = static_cast< ap_dim_t >(result.size());
+        result.insert_or_assign(rhs_v, dim);
       }
     }
 
-    if (equal) { // var_map_x == var_map_y
-      return result_var_map;
+    // Add the necessary dimensions to lhs_inv and rhs_inv
+    if (result.size() > lhs_var_map.size()) {
+      ap_dimchange_t* dimchange =
+          add_dimensions(lhs_inv, result.size() - lhs_var_map.size());
+      ap_abstract0_add_dimensions(manager(), true, lhs_inv, dimchange, false);
+      ap_dimchange_free(dimchange);
+    }
+    if (result.size() > rhs_var_map.size()) {
+      ap_dimchange_t* dimchange =
+          add_dimensions(rhs_inv, result.size() - rhs_var_map.size());
+      ap_abstract0_add_dimensions(manager(), true, rhs_inv, dimchange, false);
+      ap_dimchange_free(dimchange);
     }
 
-    // add the necessary dimensions to inv_x and inv_y
-    if (result_var_map.size() > var_map_x.size()) {
-      inv_x = apron::add_dimensions(inv_x.get(),
-                                    result_var_map.size() - var_map_x.size());
-    }
-    if (result_var_map.size() > var_map_y.size()) {
-      inv_y = apron::add_dimensions(inv_y.get(),
-                                    result_var_map.size() - var_map_y.size());
-    }
+    ikos_assert(result.size() == dimension(lhs_inv));
+    ikos_assert(result.size() == dimension(rhs_inv));
 
-    ikos_assert(result_var_map.size() == apron::dims(inv_x.get()));
-    ikos_assert(result_var_map.size() == apron::dims(inv_y.get()));
+    // Build and apply the permutation map for rhs_inv
+    ap_dimperm_t* rhs_perm = build_perm_map(rhs_var_map, result);
+    ap_abstract0_permute_dimensions(manager(), true, rhs_inv, rhs_perm);
+    ap_dimperm_free(rhs_perm);
 
-    // build and apply the permutation map for inv_y
-    ap_dimperm_t* perm_y = build_perm_map(var_map_y, result_var_map);
-    inv_y = apron::inv_ptr(
-        ap_abstract0_permute_dimensions(manager(), false, inv_y.get(), perm_y));
-    ap_dimperm_free(perm_y);
+    ikos_assert(result.size() == dimension(lhs_inv));
+    ikos_assert(result.size() == dimension(rhs_inv));
 
-    ikos_assert(result_var_map.size() == apron::dims(inv_x.get()));
-    ikos_assert(result_var_map.size() == apron::dims(inv_y.get()));
-
-    return result_var_map;
+    return result;
   }
 
+  /// \brief Return a permutation map from the old to the new map
   static ap_dimperm_t* build_perm_map(const VariableMap& old_map,
                                       const VariableMap& new_map) {
     std::size_t n = new_map.size();
@@ -419,7 +407,7 @@ private:
     std::vector< bool > index_assigned(n, false);
     std::vector< bool > value_assigned(n, false);
 
-    for (auto it = old_map.begin(); it != old_map.end(); ++it) {
+    for (auto it = old_map.begin(), et = old_map.end(); it != et; ++it) {
       boost::optional< const ap_dim_t& > dim = new_map.at(it->first);
       ikos_assert(dim);
 
@@ -445,9 +433,19 @@ private:
     return perm;
   }
 
+  /// \brief Return the narrowing of the given invariants
+  static ap_abstract0_t* apron_narrowing(ap_abstract0_t* a, ap_abstract0_t* b) {
+    if (Domain == apron::Octagon) {
+      return ap_abstract0_oct_narrowing(manager(), a, b);
+    } else {
+      // by default, use meet
+      return ap_abstract0_meet(manager(), false, a, b);
+    }
+  }
+
   /// \brief Conversion from VariableRef to ap_texpr0_t*
   ap_texpr0_t* to_ap_expr(VariableRef v) {
-    return ap_texpr0_dim(var_dim_insert(v));
+    return ap_texpr0_dim(this->var_dim_insert(v));
   }
 
   /// \brief Conversion from LinearExpression to ap_texpr0_t*
@@ -458,7 +456,7 @@ private:
       ap_texpr0_t* term =
           apron::binop_expr< Number >(AP_TEXPR_MUL,
                                       apron::to_ap_expr(it->second),
-                                      to_ap_expr(it->first));
+                                      this->to_ap_expr(it->first));
       r = apron::binop_expr< Number >(AP_TEXPR_ADD, r, term);
     }
 
@@ -470,11 +468,11 @@ private:
     const LinearExpressionT& exp = cst.expression();
 
     if (cst.is_equality()) {
-      return ap_tcons0_make(AP_CONS_EQ, to_ap_expr(exp), nullptr);
+      return ap_tcons0_make(AP_CONS_EQ, this->to_ap_expr(exp), nullptr);
     } else if (cst.is_inequality()) {
-      return ap_tcons0_make(AP_CONS_SUPEQ, to_ap_expr(-exp), nullptr);
+      return ap_tcons0_make(AP_CONS_SUPEQ, this->to_ap_expr(-exp), nullptr);
     } else {
-      return ap_tcons0_make(AP_CONS_DISEQ, to_ap_expr(exp), nullptr);
+      return ap_tcons0_make(AP_CONS_DISEQ, this->to_ap_expr(exp), nullptr);
     }
   }
 
@@ -502,7 +500,7 @@ private:
   LinearConstraintT to_ikos_linear_constraint(const ap_lincons0_t& cst) const {
     ikos_assert(cst.scalar == nullptr);
 
-    LinearExpressionT e = to_ikos_linear_expression(cst.linexpr0);
+    LinearExpressionT e = this->to_ikos_linear_expression(cst.linexpr0);
 
     switch (cst.constyp) {
       case AP_CONS_EQ:
@@ -520,21 +518,28 @@ private:
     }
   }
 
+  /// \brief Return true if the variable mapping is the same
+  bool same_var_map(const ApronDomain& other) const {
+    return dimension(this->_inv.get()) == dimension(other._inv.get()) &&
+           this->_var_map.size() == other._var_map.size() &&
+           this->_var_map.equals(other._var_map,
+                                 [](ap_dim_t x, ap_dim_t y) { return x == y; });
+  }
+
 private:
   struct TopTag {};
   struct BottomTag {};
 
   /// \brief Private constructor
-  ApronDomain(apron::InvPtr inv, VariableMap var_map)
+  ApronDomain(InvPtr inv, VariableMap var_map)
       : _inv(std::move(inv)), _var_map(std::move(var_map)) {}
 
   /// \brief Create the top abstract value
-  explicit ApronDomain(TopTag)
-      : _inv(apron::inv_ptr(ap_abstract0_top(manager(), 0, 0))) {}
+  explicit ApronDomain(TopTag) : _inv(ap_abstract0_top(manager(), 0, 0)) {}
 
   /// \brief Create the bottom abstract value
   explicit ApronDomain(BottomTag)
-      : _inv(apron::inv_ptr(ap_abstract0_bottom(manager(), 0, 0))) {}
+      : _inv(ap_abstract0_bottom(manager(), 0, 0)) {}
 
 public:
   /// \brief Create the top abstract value
@@ -544,99 +549,216 @@ public:
   static ApronDomain bottom() { return ApronDomain(BottomTag{}); }
 
   /// \brief Copy constructor
-  ApronDomain(const ApronDomain&) noexcept = default;
+  ApronDomain(const ApronDomain& other) {
+    std::lock_guard< std::mutex > lock(other._mutex);
+    this->_inv = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+    this->_var_map = other._var_map;
+  }
 
   /// \brief Move constructor
-  ApronDomain(ApronDomain&&) noexcept = default;
+  ApronDomain(ApronDomain&& other) noexcept
+      : _inv(std::move(other._inv)), _var_map(std::move(other._var_map)) {}
 
   /// \brief Copy assignment operator
-  ApronDomain& operator=(const ApronDomain&) noexcept = default;
+  ApronDomain& operator=(const ApronDomain& other) {
+    std::lock_guard< std::mutex > lock(other._mutex);
+    this->_inv = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+    this->_var_map = other._var_map;
+    return *this;
+  }
 
   /// \brief Move assignment operator
-  ApronDomain& operator=(ApronDomain&&) noexcept = default;
+  ApronDomain& operator=(ApronDomain&& other) noexcept {
+    this->_inv = std::move(other._inv);
+    this->_var_map = std::move(other._var_map);
+    return *this;
+  }
 
   /// \brief Destructor
   ~ApronDomain() override = default;
 
+  void normalize() override {
+    std::lock_guard< std::mutex > lock(this->_mutex);
+    ap_abstract0_canonicalize(manager(), this->_inv.get());
+  }
+
   bool is_bottom() const override {
+    std::lock_guard< std::mutex > lock(this->_mutex);
     return ap_abstract0_is_bottom(manager(), this->_inv.get());
   }
 
   bool is_top() const override {
+    std::lock_guard< std::mutex > lock(this->_mutex);
     return ap_abstract0_is_top(manager(), this->_inv.get());
   }
 
-  void set_to_bottom() override { this->operator=(bottom()); }
+  void set_to_bottom() override {
+    this->_inv = InvPtr(ap_abstract0_bottom(manager(), 0, 0));
+    this->_var_map.clear();
+  }
 
-  void set_to_top() override { this->operator=(top()); }
+  void set_to_top() override {
+    this->_inv = InvPtr(ap_abstract0_top(manager(), 0, 0));
+    this->_var_map.clear();
+  }
 
   bool leq(const ApronDomain& other) const override {
-    if (this->is_bottom()) {
+    if (this == &other) {
       return true;
-    } else if (other.is_bottom()) {
-      return false;
-    } else if (other.is_top()) {
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
       return true;
-    } else if (this->is_top()) {
+    } else if (ap_abstract0_is_bottom(manager(), other._inv.get())) {
       return false;
+    } else if (this->same_var_map(other)) {
+      return ap_abstract0_is_leq(manager(), this->_inv.get(), other._inv.get());
     } else {
-      apron::InvPtr inv_x(this->_inv);
-      apron::InvPtr inv_y(other._inv);
-      merge_var_maps(this->_var_map, inv_x, other._var_map, inv_y);
-      return ap_abstract0_is_leq(manager(), inv_x.get(), inv_y.get());
+      InvPtr lhs = InvPtr(ap_abstract0_copy(manager(), this->_inv.get()));
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+      merge_var_maps(this->_var_map, lhs.get(), other._var_map, rhs.get());
+      return ap_abstract0_is_leq(manager(), lhs.get(), rhs.get());
     }
   }
 
   bool equals(const ApronDomain& other) const override {
-    if (this->is_bottom()) {
-      return other.is_bottom();
-    } else if (other.is_bottom()) {
+    if (this == &other) {
+      return true;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
+      return ap_abstract0_is_bottom(manager(), other._inv.get());
+    } else if (ap_abstract0_is_bottom(manager(), other._inv.get())) {
       return false;
-    } else if (this->is_top()) {
-      return other.is_top();
-    } else if (other.is_top()) {
-      return false;
+    } else if (this->same_var_map(other)) {
+      return ap_abstract0_is_eq(manager(), this->_inv.get(), other._inv.get());
     } else {
-      apron::InvPtr inv_x(this->_inv);
-      apron::InvPtr inv_y(other._inv);
-      merge_var_maps(this->_var_map, inv_x, other._var_map, inv_y);
-      return ap_abstract0_is_eq(manager(), inv_x.get(), inv_y.get());
+      InvPtr lhs = InvPtr(ap_abstract0_copy(manager(), this->_inv.get()));
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+      merge_var_maps(this->_var_map, lhs.get(), other._var_map, rhs.get());
+      return ap_abstract0_is_eq(manager(), lhs.get(), rhs.get());
     }
   }
 
-  ApronDomain join(const ApronDomain& other) const override {
-    if (this->is_bottom() || other.is_top()) {
-      return other;
-    } else if (this->is_top() || other.is_bottom()) {
-      return *this;
+  void join_with(ApronDomain&& other) override {
+    if (this == &other) {
+      return;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
+      this->_inv = std::move(other._inv);
+      this->_var_map = std::move(other._var_map);
+    } else if (ap_abstract0_is_bottom(manager(), other._inv.get())) {
+      return;
+    } else if (this->same_var_map(other)) {
+      ap_abstract0_join(manager(), true, this->_inv.get(), other._inv.get());
     } else {
-      apron::InvPtr inv_x(this->_inv);
-      apron::InvPtr inv_y(other._inv);
-      VariableMap var_map =
-          merge_var_maps(this->_var_map, inv_x, other._var_map, inv_y);
-      apron::InvPtr inv = apron::inv_ptr(
-          ap_abstract0_join(manager(), false, inv_x.get(), inv_y.get()));
-      return ApronDomain(inv, var_map);
+      this->_var_map = merge_var_maps(this->_var_map,
+                                      this->_inv.get(),
+                                      other._var_map,
+                                      other._inv.get());
+      ap_abstract0_join(manager(), true, this->_inv.get(), other._inv.get());
     }
   }
 
   void join_with(const ApronDomain& other) override {
-    this->operator=(this->join(other));
+    if (this == &other) {
+      return;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
+      this->_inv = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+      this->_var_map = other._var_map;
+    } else if (ap_abstract0_is_bottom(manager(), other._inv.get())) {
+      return;
+    } else if (this->same_var_map(other)) {
+      ap_abstract0_join(manager(), true, this->_inv.get(), other._inv.get());
+    } else {
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+      this->_var_map = merge_var_maps(this->_var_map,
+                                      this->_inv.get(),
+                                      other._var_map,
+                                      rhs.get());
+      ap_abstract0_join(manager(), true, this->_inv.get(), rhs.get());
+    }
+  }
+
+  ApronDomain join(const ApronDomain& other) const override {
+    if (this == &other) {
+      return *this;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
+      return ApronDomain(InvPtr(ap_abstract0_copy(manager(), other._inv.get())),
+                         other._var_map);
+    } else if (ap_abstract0_is_bottom(manager(), other._inv.get())) {
+      return ApronDomain(InvPtr(ap_abstract0_copy(manager(), this->_inv.get())),
+                         this->_var_map);
+    } else if (this->same_var_map(other)) {
+      return ApronDomain(InvPtr(ap_abstract0_join(manager(),
+                                                  false,
+                                                  this->_inv.get(),
+                                                  other._inv.get())),
+                         this->_var_map);
+    } else {
+      InvPtr lhs = InvPtr(ap_abstract0_copy(manager(), this->_inv.get()));
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
+      VariableMap var_map =
+          merge_var_maps(this->_var_map, lhs.get(), other._var_map, rhs.get());
+      ap_abstract0_join(manager(), true, lhs.get(), rhs.get());
+      return ApronDomain(std::move(lhs), var_map);
+    }
   }
 
   ApronDomain widening(const ApronDomain& other) const override {
-    if (this->is_bottom()) {
-      return other;
-    } else if (other.is_bottom()) {
+    if (this == &other) {
       return *this;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
+      return ApronDomain(InvPtr(ap_abstract0_copy(manager(), other._inv.get())),
+                         other._var_map);
+    } else if (ap_abstract0_is_bottom(manager(), other._inv.get())) {
+      return ApronDomain(InvPtr(ap_abstract0_copy(manager(), this->_inv.get())),
+                         this->_var_map);
+    } else if (this->same_var_map(other)) {
+      return ApronDomain(InvPtr(ap_abstract0_widening(manager(),
+                                                      this->_inv.get(),
+                                                      other._inv.get())),
+                         this->_var_map);
     } else {
-      apron::InvPtr inv_x(this->_inv);
-      apron::InvPtr inv_y(other._inv);
+      InvPtr lhs = InvPtr(ap_abstract0_copy(manager(), this->_inv.get()));
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
       VariableMap var_map =
-          merge_var_maps(this->_var_map, inv_x, other._var_map, inv_y);
-      apron::InvPtr inv = apron::inv_ptr(
-          ap_abstract0_widening(manager(), inv_x.get(), inv_y.get()));
-      return ApronDomain(inv, var_map);
+          merge_var_maps(this->_var_map, lhs.get(), other._var_map, rhs.get());
+      return ApronDomain(InvPtr(ap_abstract0_widening(manager(),
+                                                      lhs.get(),
+                                                      rhs.get())),
+                         var_map);
     }
   }
 
@@ -655,20 +777,30 @@ public:
   }
 
   ApronDomain meet(const ApronDomain& other) const override {
-    if (this->is_bottom() || other.is_bottom()) {
-      return bottom();
-    } else if (this->is_top()) {
-      return other;
-    } else if (other.is_top()) {
+    if (this == &other) {
       return *this;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get()) ||
+        ap_abstract0_is_bottom(manager(), other._inv.get())) {
+      return bottom();
+    } else if (this->same_var_map(other)) {
+      return ApronDomain(InvPtr(ap_abstract0_meet(manager(),
+                                                  false,
+                                                  this->_inv.get(),
+                                                  other._inv.get())),
+                         this->_var_map);
     } else {
-      apron::InvPtr inv_x(this->_inv);
-      apron::InvPtr inv_y(other._inv);
+      InvPtr lhs = InvPtr(ap_abstract0_copy(manager(), this->_inv.get()));
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
       VariableMap var_map =
-          merge_var_maps(this->_var_map, inv_x, other._var_map, inv_y);
-      apron::InvPtr inv = apron::inv_ptr(
-          ap_abstract0_meet(manager(), false, inv_x.get(), inv_y.get()));
-      return ApronDomain(inv, var_map);
+          merge_var_maps(this->_var_map, lhs.get(), other._var_map, rhs.get());
+      ap_abstract0_meet(manager(), true, lhs.get(), rhs.get());
+      return ApronDomain(std::move(lhs), var_map);
     }
   }
 
@@ -677,20 +809,28 @@ public:
   }
 
   ApronDomain narrowing(const ApronDomain& other) const override {
-    if (this->is_bottom() || other.is_bottom()) {
-      return bottom();
-    } else if (this->is_top()) {
-      return other;
-    } else if (other.is_top()) {
+    if (this == &other) {
       return *this;
+    }
+
+    std::lock(this->_mutex, other._mutex);
+    std::lock_guard< std::mutex > lock_this(this->_mutex, std::adopt_lock);
+    std::lock_guard< std::mutex > lock_other(other._mutex, std::adopt_lock);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get()) ||
+        ap_abstract0_is_bottom(manager(), other._inv.get())) {
+      return bottom();
+    } else if (this->same_var_map(other)) {
+      return ApronDomain(InvPtr(apron_narrowing(this->_inv.get(),
+                                                other._inv.get())),
+                         this->_var_map);
     } else {
-      apron::InvPtr inv_x(this->_inv);
-      apron::InvPtr inv_y(other._inv);
+      InvPtr lhs = InvPtr(ap_abstract0_copy(manager(), this->_inv.get()));
+      InvPtr rhs = InvPtr(ap_abstract0_copy(manager(), other._inv.get()));
       VariableMap var_map =
-          merge_var_maps(this->_var_map, inv_x, other._var_map, inv_y);
-      apron::InvPtr inv = apron::inv_ptr(
-          apron::domain_narrowing(Domain, manager(), inv_x.get(), inv_y.get()));
-      return ApronDomain(inv, var_map);
+          merge_var_maps(this->_var_map, lhs.get(), other._var_map, rhs.get());
+      return ApronDomain(InvPtr(apron_narrowing(lhs.get(), rhs.get())),
+                         var_map);
     }
   }
 
@@ -721,23 +861,26 @@ public:
   }
 
   void assign(VariableRef x, const LinearExpressionT& e) override {
-    if (this->is_bottom()) {
+    std::lock_guard< std::mutex > lock(this->_mutex);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
       return;
     }
 
-    ap_texpr0_t* t = to_ap_expr(e);
-    ap_dim_t v_dim = var_dim_insert(x);
-    this->_inv = apron::inv_ptr(ap_abstract0_assign_texpr(manager(),
-                                                          false,
-                                                          this->_inv.get(),
-                                                          v_dim,
-                                                          t,
-                                                          nullptr));
+    ap_texpr0_t* t = this->to_ap_expr(e);
+    ap_dim_t v_dim = this->var_dim_insert(x);
+    ap_abstract0_assign_texpr(manager(),
+                              true,
+                              this->_inv.get(),
+                              v_dim,
+                              t,
+                              nullptr);
     ap_texpr0_free(t);
   }
 
 private:
-  bool is_supported(BinaryOperator op) {
+  /// \brief Return true if the operator is supported
+  static bool is_supported(BinaryOperator op) {
     switch (op) {
       case BinaryOperator::Add:
       case BinaryOperator::Sub:
@@ -750,6 +893,7 @@ private:
     }
   }
 
+  /// \brief Apply `x = left op right`
   void apply(BinaryOperator op,
              VariableRef x,
              ap_texpr0_t* left,
@@ -778,13 +922,13 @@ private:
       }
     }
 
-    ap_dim_t x_dim = var_dim_insert(x);
-    this->_inv = apron::inv_ptr(ap_abstract0_assign_texpr(manager(),
-                                                          false,
-                                                          this->_inv.get(),
-                                                          x_dim,
-                                                          t,
-                                                          nullptr));
+    ap_dim_t x_dim = this->var_dim_insert(x);
+    ap_abstract0_assign_texpr(manager(),
+                              true,
+                              this->_inv.get(),
+                              x_dim,
+                              t,
+                              nullptr);
     ap_texpr0_free(t);
   }
 
@@ -797,8 +941,9 @@ public:
       return;
     }
 
-    if (this->is_supported(op)) {
-      this->apply(op, x, to_ap_expr(y), to_ap_expr(z));
+    if (is_supported(op)) {
+      std::lock_guard< std::mutex > lock(this->_mutex);
+      this->apply(op, x, this->to_ap_expr(y), this->to_ap_expr(z));
     } else {
       this->set(x,
                 apply_bin_operator(op,
@@ -815,8 +960,9 @@ public:
       return;
     }
 
-    if (this->is_supported(op)) {
-      this->apply(op, x, to_ap_expr(y), apron::to_ap_expr(z));
+    if (is_supported(op)) {
+      std::lock_guard< std::mutex > lock(this->_mutex);
+      this->apply(op, x, this->to_ap_expr(y), apron::to_ap_expr(z));
     } else if (op == BinaryOperator::Mod) {
       // Optimized version, because mod is heavily used on machine integers
       if (z == 0) {
@@ -846,8 +992,9 @@ public:
       return;
     }
 
-    if (this->is_supported(op)) {
-      this->apply(op, x, apron::to_ap_expr(y), to_ap_expr(z));
+    if (is_supported(op)) {
+      std::lock_guard< std::mutex > lock(this->_mutex);
+      this->apply(op, x, apron::to_ap_expr(y), this->to_ap_expr(z));
     } else {
       this->set(x, apply_bin_operator(op, IntervalT(y), this->to_interval(z)));
     }
@@ -858,11 +1005,13 @@ public:
   }
 
   void add(const LinearConstraintSystemT& csts) override {
+    std::lock_guard< std::mutex > lock(this->_mutex);
+
     if (csts.empty()) {
       return;
     }
 
-    if (this->is_bottom()) {
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
       return;
     }
 
@@ -870,17 +1019,16 @@ public:
 
     std::size_t i = 0;
     for (const LinearConstraintT& cst : csts) {
-      ap_csts.p[i++] = to_ap_constraint(cst);
+      ap_csts.p[i++] = this->to_ap_constraint(cst);
     }
 
-    this->_inv = apron::inv_ptr(ap_abstract0_meet_tcons_array(manager(),
-                                                              false,
-                                                              this->_inv.get(),
-                                                              &ap_csts));
+    ap_abstract0_meet_tcons_array(manager(), true, this->_inv.get(), &ap_csts);
 
-    // this step allows to improve the precision
-    for (i = 0; i < csts.size() && !this->is_bottom(); i++) {
-      // check satisfiability of ap_csts.p[i]
+    // Improve the precision
+    for (i = 0; i < csts.size() &&
+                !ap_abstract0_is_bottom(manager(), this->_inv.get());
+         i++) {
+      // Check satisfiability of ap_csts.p[i]
       ap_tcons0_t& cst = ap_csts.p[i];
       ap_interval_t* ap_intv =
           ap_abstract0_bound_texpr(manager(), this->_inv.get(), cst.texpr0);
@@ -890,9 +1038,8 @@ public:
           (cst.constyp == AP_CONS_EQ && !intv.contains(0)) ||
           (cst.constyp == AP_CONS_SUPEQ && intv.ub() < BoundT(0)) ||
           (cst.constyp == AP_CONS_DISEQ && intv == IntervalT(0))) {
-        // cst is not satisfiable
+        // Cst is not satisfiable
         this->set_to_bottom();
-        return;
       }
 
       ap_interval_free(ap_intv);
@@ -957,15 +1104,13 @@ public:
     } else if (value.singleton()) {
       this->add(VariableExprT(x) == *value.singleton());
     } else {
+      std::lock_guard< std::mutex > lock(this->_mutex);
       ap_tcons0_array_t csts = ap_tcons0_array_make(1);
-      csts.p[0] = ap_tcons0_make(AP_CONS_EQMOD,
-                                 to_ap_expr(VariableExprT(x) - value.residue()),
-                                 apron::to_ap_scalar(value.modulus()));
-      this->_inv =
-          apron::inv_ptr(ap_abstract0_meet_tcons_array(manager(),
-                                                       false,
-                                                       this->_inv.get(),
-                                                       &csts));
+      csts.p[0] =
+          ap_tcons0_make(AP_CONS_EQMOD,
+                         this->to_ap_expr(VariableExprT(x) - value.residue()),
+                         apron::to_ap_scalar(value.modulus()));
+      ap_abstract0_meet_tcons_array(manager(), true, this->_inv.get(), &csts);
       ap_tcons0_array_clear(&csts);
     }
   }
@@ -982,7 +1127,8 @@ public:
   }
 
   void forget(VariableRef x) override {
-    boost::optional< const ap_dim_t& > has_dim = var_dim(x);
+    std::lock_guard< std::mutex > lock(this->_mutex);
+    boost::optional< const ap_dim_t& > has_dim = this->var_dim(x);
 
     if (!has_dim) {
       return;
@@ -990,13 +1136,19 @@ public:
 
     ap_dim_t dim = *has_dim;
     std::vector< ap_dim_t > vector_dims{dim};
-    this->_inv = apron::inv_ptr(ap_abstract0_forget_array(manager(),
-                                                          false,
-                                                          this->_inv.get(),
-                                                          &vector_dims[0],
-                                                          vector_dims.size(),
-                                                          false));
-    this->_inv = apron::remove_dimensions(this->_inv.get(), vector_dims);
+    ap_abstract0_forget_array(manager(),
+                              true,
+                              this->_inv.get(),
+                              &vector_dims[0],
+                              vector_dims.size(),
+                              false);
+    ap_dimchange_t* dimchange =
+        remove_dimensions(this->_inv.get(), vector_dims);
+    ap_abstract0_remove_dimensions(manager(),
+                                   true,
+                                   this->_inv.get(),
+                                   dimchange);
+    ap_dimchange_free(dimchange);
     this->_var_map.transform([dim](VariableRef, ap_dim_t d) {
       if (d < dim) {
         return boost::optional< ap_dim_t >(d);
@@ -1006,29 +1158,27 @@ public:
         return boost::optional< ap_dim_t >(d - 1);
       }
     });
-    ikos_assert(this->_var_map.size() == apron::dims(this->_inv.get()));
-  }
-
-  void normalize() const override {
-    ap_abstract0_canonicalize(manager(), this->_inv.get());
+    ikos_assert(this->_var_map.size() == dimension(this->_inv.get()));
   }
 
   IntervalT to_interval(VariableRef x) const override {
-    if (this->is_bottom()) {
+    std::lock_guard< std::mutex > lock(this->_mutex);
+
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
       return IntervalT::bottom();
     }
 
-    boost::optional< const ap_dim_t& > dim = var_dim(x);
+    boost::optional< const ap_dim_t& > dim = this->var_dim(x);
 
-    if (dim) {
-      ap_interval_t* intv =
-          ap_abstract0_bound_dimension(manager(), this->_inv.get(), *dim);
-      IntervalT r = apron::to_ikos_interval< Number >(intv);
-      ap_interval_free(intv);
-      return r;
-    } else {
+    if (!dim) {
       return IntervalT::top();
     }
+
+    ap_interval_t* intv =
+        ap_abstract0_bound_dimension(manager(), this->_inv.get(), *dim);
+    IntervalT r = apron::to_ikos_interval< Number >(intv);
+    ap_interval_free(intv);
+    return r;
   }
 
   IntervalT to_interval(const LinearExpressionT& e) const override {
@@ -1036,7 +1186,7 @@ public:
   }
 
   CongruenceT to_congruence(VariableRef) const override {
-    if (is_bottom()) {
+    if (this->is_bottom()) {
       return CongruenceT::bottom();
     }
 
@@ -1048,7 +1198,7 @@ public:
   }
 
   IntervalCongruenceT to_interval_congruence(VariableRef x) const override {
-    if (is_bottom()) {
+    if (this->is_bottom()) {
       return IntervalCongruenceT::bottom();
     }
 
@@ -1057,7 +1207,7 @@ public:
 
   IntervalCongruenceT to_interval_congruence(
       const LinearExpressionT& e) const override {
-    if (is_bottom()) {
+    if (this->is_bottom()) {
       return IntervalCongruenceT::bottom();
     }
 
@@ -1065,9 +1215,9 @@ public:
   }
 
   LinearConstraintSystemT to_linear_constraint_system() const override {
-    this->normalize();
+    std::lock_guard< std::mutex > lock(this->_mutex);
 
-    if (this->is_bottom()) {
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
       return LinearConstraintSystemT(LinearConstraintT::contradiction());
     }
 
@@ -1082,7 +1232,7 @@ public:
         continue;
       }
 
-      csts.add(to_ikos_linear_constraint(ap_cst));
+      csts.add(this->to_ikos_linear_constraint(ap_cst));
     }
 
     ap_lincons0_array_clear(&ap_csts);
@@ -1090,9 +1240,9 @@ public:
   }
 
   void dump(std::ostream& o) const override {
-    this->normalize();
+    std::lock_guard< std::mutex > lock(this->_mutex);
 
-    if (this->is_bottom()) {
+    if (ap_abstract0_is_bottom(manager(), this->_inv.get())) {
       o << "⊥";
       return;
     }
@@ -1109,11 +1259,12 @@ public:
         // ikos::LinearConstraint does not support modular equality
         ikos_assert(ap_cst.scalar != nullptr);
 
-        LinearExpressionT expr = to_ikos_linear_expression(ap_cst.linexpr0);
+        LinearExpressionT expr =
+            this->to_ikos_linear_expression(ap_cst.linexpr0);
         Number mod = apron::to_ikos_number< Number >(ap_cst.scalar, false);
         o << expr << " = 0 mod " << mod;
       } else {
-        LinearConstraintT cst = to_ikos_linear_constraint(ap_cst);
+        LinearConstraintT cst = this->to_ikos_linear_constraint(ap_cst);
         o << cst;
       }
 

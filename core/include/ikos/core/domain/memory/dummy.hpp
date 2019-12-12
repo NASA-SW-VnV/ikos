@@ -115,6 +115,8 @@ public:
   /// \name Implement core abstract domain methods
   /// @{
 
+  void normalize() override { this->_scalar.normalize(); }
+
   bool is_bottom() const override { return this->_scalar.is_bottom(); }
 
   bool is_top() const override { return this->_scalar.is_top(); }
@@ -131,12 +133,24 @@ public:
     return this->_scalar.equals(other._scalar);
   }
 
+  void join_with(DummyDomain&& other) override {
+    this->_scalar.join_with(std::move(other._scalar));
+  }
+
   void join_with(const DummyDomain& other) override {
     this->_scalar.join_with(other._scalar);
   }
 
+  void join_loop_with(DummyDomain&& other) override {
+    this->_scalar.join_loop_with(std::move(other._scalar));
+  }
+
   void join_loop_with(const DummyDomain& other) override {
     this->_scalar.join_loop_with(other._scalar);
+  }
+
+  void join_iter_with(DummyDomain&& other) override {
+    this->_scalar.join_iter_with(std::move(other._scalar));
   }
 
   void join_iter_with(const DummyDomain& other) override {
@@ -163,6 +177,42 @@ public:
   void narrow_threshold_with(const DummyDomain& other,
                              const MachineInt& threshold) override {
     this->_scalar.narrow_threshold_with(other._scalar, threshold);
+  }
+
+  DummyDomain join(const DummyDomain& other) const override {
+    return DummyDomain(this->_scalar.join(other._scalar));
+  }
+
+  DummyDomain join_loop(const DummyDomain& other) const override {
+    return DummyDomain(this->_scalar.join_loop(other._scalar));
+  }
+
+  DummyDomain join_iter(const DummyDomain& other) const override {
+    return DummyDomain(this->_scalar.join_iter(other._scalar));
+  }
+
+  DummyDomain widening(const DummyDomain& other) const override {
+    return DummyDomain(this->_scalar.widening(other._scalar));
+  }
+
+  DummyDomain widening_threshold(const DummyDomain& other,
+                                 const MachineInt& threshold) const override {
+    return DummyDomain(
+        this->_scalar.widening_threshold(other._scalar, threshold));
+  }
+
+  DummyDomain meet(const DummyDomain& other) const override {
+    return DummyDomain(this->_scalar.meet(other._scalar));
+  }
+
+  DummyDomain narrowing(const DummyDomain& other) const override {
+    return DummyDomain(this->_scalar.narrowing(other._scalar));
+  }
+
+  DummyDomain narrowing_threshold(const DummyDomain& other,
+                                  const MachineInt& threshold) const override {
+    return DummyDomain(
+        this->_scalar.narrowing_threshold(other._scalar, threshold));
   }
 
   /// @}
@@ -743,8 +793,6 @@ public:
   void partitioning_disable() override {}
 
   /// @}
-
-  void normalize() const override { this->_scalar.normalize(); }
 
   void dump(std::ostream& o) const override { this->_scalar.dump(o); }
 

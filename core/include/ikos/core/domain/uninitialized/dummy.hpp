@@ -86,6 +86,8 @@ public:
   /// \brief Destructor
   ~DummyDomain() override = default;
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override { return !this->_is_bottom; }
@@ -125,17 +127,9 @@ public:
 
   void assert_initialized(VariableRef) override {}
 
-  bool is_initialized(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call is_initialized() on bottom");
-    return false;
-  }
+  bool is_initialized(VariableRef) const override { return this->_is_bottom; }
 
-  bool is_uninitialized(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call is_uninitialized() on bottom");
-    return false;
-  }
+  bool is_uninitialized(VariableRef) const override { return this->_is_bottom; }
 
   void set(VariableRef, const Uninitialized& value) override {
     if (value.is_bottom()) {
@@ -150,8 +144,6 @@ public:
   }
 
   void forget(VariableRef) override {}
-
-  void normalize() const override {}
 
   Uninitialized get(VariableRef) const override {
     if (this->_is_bottom) {

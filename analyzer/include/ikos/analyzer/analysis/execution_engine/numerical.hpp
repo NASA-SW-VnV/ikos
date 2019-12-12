@@ -349,6 +349,8 @@ private:
     // Assert `ptr != null`
     this->_inv.normal().nullity_assert_non_null(ptr.var());
 
+    this->_inv.normal().normalize();
+
     // Ready for read/write
     return !this->_inv.is_normal_flow_bottom();
   }
@@ -1878,6 +1880,8 @@ public:
 
   /// \brief Execute a call to the given intrinsic function
   void exec_intrinsic_call(ar::CallBase* call, ar::Intrinsic::ID id) override {
+    this->_inv.normal().normalize();
+
     if (this->_inv.is_normal_flow_bottom()) {
       return;
     }
@@ -1900,6 +1904,8 @@ public:
         this->_inv.normal().uninit_assert_initialized(var);
       }
     }
+
+    this->_inv.normal().normalize();
 
     if (this->_inv.is_normal_flow_bottom()) {
       return;
@@ -2309,6 +2315,8 @@ public:
                          bool ignore_unknown_write,
                          bool may_write_globals,
                          bool may_throw_exc) override {
+    this->_inv.normal().normalize();
+
     if (this->_inv.is_normal_flow_bottom()) {
       return;
     }
@@ -2325,6 +2333,8 @@ public:
         this->_inv.normal().uninit_assert_initialized(var);
       }
     }
+
+    this->_inv.normal().normalize();
 
     if (this->_inv.is_normal_flow_bottom()) {
       return;
@@ -2866,6 +2876,8 @@ private:
         this->_inv.normal().mem_copy(lhs.var(), ptr.var(), size);
       }
     }
+
+    this->_inv.normal().normalize();
 
     if (this->_inv.is_normal_flow_bottom()) {
       // If the mem_copy generated an error

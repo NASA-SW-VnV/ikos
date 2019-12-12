@@ -159,6 +159,7 @@ private:
   }
 
   static TreePtr make_leaf(NumericDomain value) {
+    value.normalize();
     if (value.is_bottom()) {
       return nullptr;
     }
@@ -258,6 +259,8 @@ public:
 
   /// \brief Destructor
   ~UnionDomain() override = default;
+
+  void normalize() override {}
 
   bool is_bottom() const override {
     // This is correct because make_leaf() calls .is_bottom() on leaf creation
@@ -547,8 +550,6 @@ public:
       return inv;
     });
   }
-
-  void normalize() const override {}
 
 private:
   static IntervalT to_interval(const TreePtr& t, VariableRef v) {

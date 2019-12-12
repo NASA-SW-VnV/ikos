@@ -102,6 +102,8 @@ public:
   /// \brief End iterator over the pairs (variable, nullity)
   Iterator end() const { return this->_inv.end(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }
@@ -195,14 +197,13 @@ public:
   }
 
   bool is_null(VariableRef x) const override {
-    ikos_assert_msg(!this->is_bottom(), "trying to call is_null() on bottom");
-    return this->_inv.get(x).is_null();
+    Nullity value = this->_inv.get(x);
+    return value.is_bottom() || value.is_null();
   }
 
   bool is_non_null(VariableRef x) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_non_null() on bottom");
-    return this->_inv.get(x).is_non_null();
+    Nullity value = this->_inv.get(x);
+    return value.is_bottom() || value.is_non_null();
   }
 
   void set(VariableRef x, const Nullity& value) override {
@@ -214,8 +215,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_inv.forget(x); }
-
-  void normalize() const override {}
 
   Nullity get(VariableRef x) const override { return this->_inv.get(x); }
 

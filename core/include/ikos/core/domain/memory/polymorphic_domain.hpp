@@ -114,6 +114,9 @@ private:
     /// \name Core abstract domain methods
     /// @{
 
+    /// \brief Normalize the abstract value
+    virtual void normalize() = 0;
+
     /// \brief Check if the abstract value is bottom
     virtual bool is_bottom() const = 0;
 
@@ -133,10 +136,20 @@ private:
     virtual bool equals(const PolymorphicBase& other) const = 0;
 
     /// \brief Perform the union of two abstract values
+    virtual void join_with(PolymorphicBase&& other) = 0;
+
+    /// \brief Perform the union of two abstract values
     virtual void join_with(const PolymorphicBase& other) = 0;
 
     /// \brief Perform a union on a loop head
+    virtual void join_loop_with(PolymorphicBase&& other) = 0;
+
+    /// \brief Perform a union on a loop head
     virtual void join_loop_with(const PolymorphicBase& other) = 0;
+
+    /// \brief Perform a union on two consecutive iterations of a fix-point
+    /// algorithm
+    virtual void join_iter_with(PolymorphicBase&& other) = 0;
 
     /// \brief Perform a union on two consecutive iterations of a fix-point
     /// algorithm
@@ -158,6 +171,39 @@ private:
     /// \brief Perform the narrowing of two abstract values with a threshold
     virtual void narrow_threshold_with(const PolymorphicBase& other,
                                        const MachineInt& threshold) = 0;
+
+    /// \brief Perform the union of two abstract values
+    virtual std::unique_ptr< PolymorphicBase > join(
+        const PolymorphicBase& other) const = 0;
+
+    /// \brief Perform a union on a loop head
+    virtual std::unique_ptr< PolymorphicBase > join_loop(
+        const PolymorphicBase& other) const = 0;
+
+    /// \brief Perform a union on two consecutive iterations of a fix-point
+    /// algorithm
+    virtual std::unique_ptr< PolymorphicBase > join_iter(
+        const PolymorphicBase& other) const = 0;
+
+    /// \brief Perform the widening of two abstract values
+    virtual std::unique_ptr< PolymorphicBase > widening(
+        const PolymorphicBase& other) const = 0;
+
+    /// \brief Perform the widening of two abstract values with a threshold
+    virtual std::unique_ptr< PolymorphicBase > widening_threshold(
+        const PolymorphicBase& other, const MachineInt& threshold) const = 0;
+
+    /// \brief Perform the intersection of two abstract values
+    virtual std::unique_ptr< PolymorphicBase > meet(
+        const PolymorphicBase& other) const = 0;
+
+    /// \brief Perform the narrowing of two abstract values
+    virtual std::unique_ptr< PolymorphicBase > narrowing(
+        const PolymorphicBase& other) const = 0;
+
+    /// \brief Perform the narrowing of two abstract values with a threshold
+    virtual std::unique_ptr< PolymorphicBase > narrowing_threshold(
+        const PolymorphicBase& other, const MachineInt& threshold) const = 0;
 
     /// @}
     /// \name Uninitialized abstract domain methods
@@ -679,9 +725,6 @@ private:
 
     /// @}
 
-    /// \brief Normalize the abstract value
-    virtual void normalize() const = 0;
-
     /// \brief Dump the abstract value, for debugging purpose
     virtual void dump(std::ostream&) const = 0;
 
@@ -712,6 +755,8 @@ private:
 
     /// \name Core abstract domain methods
     /// @{
+
+    void normalize() override { return this->_inv.normalize(); }
 
     bool is_bottom() const override { return this->_inv.is_bottom(); }
 
@@ -745,16 +790,34 @@ private:
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
+    void join_with(PolymorphicBase&& other) override {
+      this->assert_compatible(other);
+      this->_inv.join_with(
+          std::move(static_cast< PolymorphicDerivedT& >(other)._inv));
+    }
+
     void join_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.join_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
     }
 
+    void join_loop_with(PolymorphicBase&& other) override {
+      this->assert_compatible(other);
+      this->_inv.join_loop_with(
+          std::move(static_cast< PolymorphicDerivedT& >(other)._inv));
+    }
+
     void join_loop_with(const PolymorphicBase& other) override {
       this->assert_compatible(other);
       this->_inv.join_loop_with(
           static_cast< const PolymorphicDerivedT& >(other)._inv);
+    }
+
+    void join_iter_with(PolymorphicBase&& other) override {
+      this->assert_compatible(other);
+      this->_inv.join_iter_with(
+          std::move(static_cast< PolymorphicDerivedT& >(other)._inv));
     }
 
     void join_iter_with(const PolymorphicBase& other) override {
@@ -798,6 +861,72 @@ private:
                                      other)
                                      ._inv,
                                  threshold);
+    }
+
+    std::unique_ptr< PolymorphicBase > join(
+        const PolymorphicBase& other) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(this->_inv.join(
+          static_cast< const PolymorphicDerivedT& >(other)._inv));
+    }
+
+    std::unique_ptr< PolymorphicBase > join_loop(
+        const PolymorphicBase& other) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(this->_inv.join_loop(
+          static_cast< const PolymorphicDerivedT& >(other)._inv));
+    }
+
+    std::unique_ptr< PolymorphicBase > join_iter(
+        const PolymorphicBase& other) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(this->_inv.join_iter(
+          static_cast< const PolymorphicDerivedT& >(other)._inv));
+    }
+
+    std::unique_ptr< PolymorphicBase > widening(
+        const PolymorphicBase& other) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(this->_inv.widening(
+          static_cast< const PolymorphicDerivedT& >(other)._inv));
+    }
+
+    std::unique_ptr< PolymorphicBase > widening_threshold(
+        const PolymorphicBase& other,
+        const MachineInt& threshold) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(
+          this->_inv
+              .widening_threshold(static_cast< const PolymorphicDerivedT& >(
+                                      other)
+                                      ._inv,
+                                  threshold));
+    }
+
+    std::unique_ptr< PolymorphicBase > meet(
+        const PolymorphicBase& other) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(this->_inv.meet(
+          static_cast< const PolymorphicDerivedT& >(other)._inv));
+    }
+
+    std::unique_ptr< PolymorphicBase > narrowing(
+        const PolymorphicBase& other) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(this->_inv.narrowing(
+          static_cast< const PolymorphicDerivedT& >(other)._inv));
+    }
+
+    std::unique_ptr< PolymorphicBase > narrowing_threshold(
+        const PolymorphicBase& other,
+        const MachineInt& threshold) const override {
+      this->assert_compatible(other);
+      return std::make_unique< PolymorphicDerivedT >(
+          this->_inv
+              .narrowing_threshold(static_cast< const PolymorphicDerivedT& >(
+                                       other)
+                                       ._inv,
+                                   threshold));
     }
 
     /// @}
@@ -1325,8 +1454,6 @@ private:
 
     /// @}
 
-    void normalize() const override { this->_inv.normalize(); }
-
     void dump(std::ostream& o) const override { this->_inv.dump(o); }
 
   }; // end class PolymorphicDerived
@@ -1334,6 +1461,11 @@ private:
 private:
   /// \brief Pointer on the polymorphic base class
   std::unique_ptr< PolymorphicBase > _ptr;
+
+private:
+  /// \brief Constructor
+  explicit PolymorphicDomain(std::unique_ptr< PolymorphicBase > ptr)
+      : _ptr(std::move(ptr)) {}
 
 public:
   /// \brief Create a polymorphic domain with the given abstract value
@@ -1365,6 +1497,8 @@ public:
   /// \name Core abstract domain methods
   /// @{
 
+  void normalize() override { this->_ptr->normalize(); }
+
   bool is_bottom() const override { return this->_ptr->is_bottom(); }
 
   bool is_top() const override { return this->_ptr->is_top(); }
@@ -1381,12 +1515,24 @@ public:
     return this->_ptr->equals(*other._ptr);
   }
 
+  void join_with(PolymorphicDomain&& other) override {
+    this->_ptr->join_with(std::move(*other._ptr));
+  }
+
   void join_with(const PolymorphicDomain& other) override {
     this->_ptr->join_with(*other._ptr);
   }
 
+  void join_loop_with(PolymorphicDomain&& other) override {
+    this->_ptr->join_loop_with(std::move(*other._ptr));
+  }
+
   void join_loop_with(const PolymorphicDomain& other) override {
     this->_ptr->join_loop_with(*other._ptr);
+  }
+
+  void join_iter_with(PolymorphicDomain&& other) override {
+    this->_ptr->join_iter_with(std::move(*other._ptr));
   }
 
   void join_iter_with(const PolymorphicDomain& other) override {
@@ -1413,6 +1559,44 @@ public:
   void narrow_threshold_with(const PolymorphicDomain& other,
                              const MachineInt& threshold) override {
     this->_ptr->narrow_threshold_with(*other._ptr, threshold);
+  }
+
+  PolymorphicDomain join(const PolymorphicDomain& other) const override {
+    return PolymorphicDomain(this->_ptr->join(*other._ptr));
+  }
+
+  PolymorphicDomain join_loop(const PolymorphicDomain& other) const override {
+    return PolymorphicDomain(this->_ptr->join_loop(*other._ptr));
+  }
+
+  PolymorphicDomain join_iter(const PolymorphicDomain& other) const override {
+    return PolymorphicDomain(this->_ptr->join_iter(*other._ptr));
+  }
+
+  PolymorphicDomain widening(const PolymorphicDomain& other) const override {
+    return PolymorphicDomain(this->_ptr->widening(*other._ptr));
+  }
+
+  PolymorphicDomain widening_threshold(
+      const PolymorphicDomain& other,
+      const MachineInt& threshold) const override {
+    return PolymorphicDomain(
+        this->_ptr->widening_threshold(*other._ptr, threshold));
+  }
+
+  PolymorphicDomain meet(const PolymorphicDomain& other) const override {
+    return PolymorphicDomain(this->_ptr->meet(*other._ptr));
+  }
+
+  PolymorphicDomain narrowing(const PolymorphicDomain& other) const override {
+    return PolymorphicDomain(this->_ptr->narrowing(*other._ptr));
+  }
+
+  PolymorphicDomain narrowing_threshold(
+      const PolymorphicDomain& other,
+      const MachineInt& threshold) const override {
+    return PolymorphicDomain(
+        this->_ptr->narrowing_threshold(*other._ptr, threshold));
   }
 
   /// @}
@@ -1924,8 +2108,6 @@ public:
   void partitioning_disable() override { this->_ptr->partitioning_disable(); }
 
   /// @}
-
-  void normalize() const override { this->_ptr->normalize(); }
 
   void dump(std::ostream& o) const override { this->_ptr->dump(o); }
 

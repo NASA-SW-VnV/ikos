@@ -61,8 +61,6 @@ namespace core {
 namespace numeric {
 
 /// \brief Difference-Bound Matrices abstract domain
-///
-/// Note that this abstract domain is not thread-safe.
 template < typename Number,
            typename VariableRef,
            std::size_t MaxReductionCycles = 10 >
@@ -195,6 +193,8 @@ private:
     }
 
     /// \brief Return true if the matrix has a negative cycle
+    ///
+    /// Precondition: matrix is normalized
     bool has_negative_cycle() const {
       for (MatrixIndex i = 0; i < this->_num_vars; i++) {
         if (this->operator()(i, i) < BoundT(0)) {
@@ -283,45 +283,43 @@ public:
   /// \brief Destructor
   ~DBM() override = default;
 
-  /// \brief Normalize the difference bound matrix
-  void normalize() const override {
+  void normalize() override {
     if (this->_is_normalized) {
       return;
     }
 
-    auto self = const_cast< DBM* >(this);
-
     if (this->_is_bottom) {
-      self->_is_normalized = true;
+      this->set_to_bottom();
       return;
     }
 
     // Floyd-Warshall algorithm
-    self->_matrix.normalize();
+    this->_matrix.normalize();
 
     // Check for negative cycle
     if (this->_matrix.has_negative_cycle()) {
-      self->_is_bottom = true;
-      self->_is_normalized = true;
+      this->set_to_bottom();
       return;
     }
 
-    self->_is_normalized = true;
+    this->_is_normalized = true;
   }
 
   bool is_bottom() const override {
-    this->normalize();
-    return this->_is_bottom;
+    if (this->_is_normalized) {
+      return this->_is_bottom;
+    } else if (this->_is_bottom) {
+      return true;
+    } else {
+      // Very inefficient, make sure this is not in a hot path
+      Matrix tmp = this->_matrix;
+      tmp.normalize();
+      return tmp.has_negative_cycle();
+    }
   }
 
   bool is_top() const override {
-    // Does not require normalization
-
-    if (this->_is_bottom) {
-      return false;
-    }
-
-    return this->_matrix.all_plus_infinity();
+    return !this->_is_bottom && this->_matrix.all_plus_infinity();
   }
 
   void set_to_bottom() override {
@@ -338,16 +336,31 @@ public:
     this->_var_index_map.clear();
   }
 
+private:
+  /// \brief Return a normalized copy
+  DBM normalize_copy() const {
+    // Very inefficient, make sure this is not in a hot path
+    DBM tmp = *this;
+    tmp.normalize();
+    return tmp;
+  }
+
+public:
   bool leq(const DBM& other) const override {
     // Requires normalization
-    this->normalize();
-    other.normalize();
+    if (!this->_is_normalized) {
+      return this->normalize_copy().leq(other);
+    }
+    if (!other._is_normalized) {
+      return this->leq(other.normalize_copy());
+    }
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom) {
       return true;
-    }
-
-    if (other._is_bottom) {
+    } else if (other._is_bottom) {
       return false;
     }
 
@@ -402,9 +415,10 @@ private:
   /// \brief Apply a pointwise binary operator
   template < typename BinaryOperator >
   DBM pointwise_binary_op(const DBM& other, const BinaryOperator& op) const {
-    auto dbm = DBM::top(); // result dbm
+    // Result dbm
+    auto dbm = DBM::top();
 
-    // marker for an invalid index
+    // Marker for an invalid index
     const MatrixIndex none = std::numeric_limits< MatrixIndex >::max();
 
     // Build index map
@@ -593,10 +607,57 @@ private:
   };
 
 public:
-  DBM join(const DBM& other) const override {
+  void join_with(DBM&& other) override {
     // Requires normalization
     this->normalize();
     other.normalize();
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
+
+    if (this->_is_bottom) {
+      this->operator=(std::move(other));
+    } else if (other._is_bottom) {
+      return;
+    } else {
+      DBM dbm = this->pointwise_binary_op(other, JoinOperator{});
+      dbm._is_normalized = true; // The join is normalized by construction
+      this->operator=(std::move(dbm));
+    }
+  }
+
+  void join_with(const DBM& other) override {
+    // Requires normalization
+    this->normalize();
+    if (!other._is_normalized) {
+      this->join_with(other.normalize_copy());
+      return;
+    }
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
+
+    if (this->_is_bottom) {
+      this->operator=(other);
+    } else if (other._is_bottom) {
+      return;
+    } else {
+      DBM dbm = this->pointwise_binary_op(other, JoinOperator{});
+      dbm._is_normalized = true; // The join is normalized by construction
+      this->operator=(std::move(dbm));
+    }
+  }
+
+  DBM join(const DBM& other) const override {
+    // Requires normalization
+    if (!this->_is_normalized) {
+      return this->normalize_copy().join(other);
+    } else if (!other._is_normalized) {
+      return this->join(other.normalize_copy());
+    }
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom) {
       return other;
@@ -609,14 +670,18 @@ public:
     }
   }
 
-  void join_with(const DBM& other) override {
-    this->operator=(this->join(other));
+  void widen_with(const DBM& other) override {
+    this->operator=(this->widening(other));
   }
 
   DBM widening(const DBM& other) const override {
-    // Requires the normalization of the right operand.
-    // The left operand (this) should not be normalized.
-    other.normalize();
+    // Requires the normalization of the right hand side.
+    // The left hand side should not be normalized.
+    if (!other._is_normalized) {
+      return this->widening(other.normalize_copy());
+    }
+
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom) {
       return other;
@@ -627,15 +692,15 @@ public:
     }
   }
 
-  void widen_with(const DBM& other) override {
-    this->operator=(this->widening(other));
-  }
-
   DBM widening_threshold(const DBM& other,
                          const Number& threshold) const override {
-    // Requires the normalization of the right operand.
-    // The left operand (this) should not be normalized.
-    other.normalize();
+    // Requires the normalization of the right hand side.
+    // The left hand side should not be normalized.
+    if (!other._is_normalized) {
+      return this->widening_threshold(other.normalize_copy(), threshold);
+    }
+
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom) {
       return other;
@@ -654,8 +719,14 @@ public:
 
   DBM meet(const DBM& other) const override {
     // Requires normalization
-    this->normalize();
-    other.normalize();
+    if (!this->_is_normalized) {
+      return this->normalize_copy().meet(other);
+    } else if (!other._is_normalized) {
+      return this->meet(other.normalize_copy());
+    }
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom || other._is_bottom) {
       return bottom();
@@ -670,8 +741,14 @@ public:
 
   DBM narrowing(const DBM& other) const override {
     // Requires normalization
-    this->normalize();
-    other.normalize();
+    if (!this->_is_normalized) {
+      return this->normalize_copy().narrowing(other);
+    } else if (!other._is_normalized) {
+      return this->narrowing(other.normalize_copy());
+    }
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom || other._is_bottom) {
       return bottom();
@@ -687,8 +764,14 @@ public:
   DBM narrowing_threshold(const DBM& other,
                           const Number& threshold) const override {
     // Requires normalization
-    this->normalize();
-    other.normalize();
+    if (!this->_is_normalized) {
+      return this->normalize_copy().narrowing_threshold(other, threshold);
+    } else if (!other._is_normalized) {
+      return this->narrowing_threshold(other.normalize_copy(), threshold);
+    }
+
+    ikos_assert(this->_is_normalized);
+    ikos_assert(other._is_normalized);
 
     if (this->_is_bottom || other._is_bottom) {
       return bottom();
@@ -715,29 +798,29 @@ private:
     }
 
     auto it = this->_var_index_map.find(x);
-    if (it == this->_var_index_map.end()) {
-      // look for an unused index in _matrix
-      std::vector< bool > is_used(this->_matrix.num_vars(), false);
-
-      is_used[0] = true;
-      for (const auto& p : this->_var_index_map) {
-        is_used[p.second] = true;
-      }
-
-      auto unused_index = std::find(is_used.begin(), is_used.end(), false);
-      if (unused_index == is_used.end()) {
-        // no unused index found, we resize the matrix
-        MatrixIndex i = this->_matrix.add_variable();
-        this->_var_index_map.emplace(x, i);
-        return i;
-      } else {
-        MatrixIndex i = static_cast< MatrixIndex >(
-            std::distance(is_used.begin(), unused_index));
-        this->_var_index_map.emplace(x, i);
-        return i;
-      }
-    } else {
+    if (it != this->_var_index_map.end()) {
       return it->second;
+    }
+
+    // Look for an unused index in _matrix
+    std::vector< bool > is_used(this->_matrix.num_vars(), false);
+
+    is_used[0] = true;
+    for (const auto& p : this->_var_index_map) {
+      is_used[p.second] = true;
+    }
+
+    auto unused_index = std::find(is_used.begin(), is_used.end(), false);
+    if (unused_index == is_used.end()) {
+      // No unused index found, we resize the matrix
+      MatrixIndex i = this->_matrix.add_variable();
+      this->_var_index_map.emplace(x, i);
+      return i;
+    } else {
+      MatrixIndex i = static_cast< MatrixIndex >(
+          std::distance(is_used.begin(), unused_index));
+      this->_var_index_map.emplace(x, i);
+      return i;
     }
   }
 
@@ -1121,7 +1204,7 @@ public:
       i = this->var_index(it2->first);
       j = this->var_index(it->first);
     } else {
-      // use the linear interval solver
+      // Use the linear interval solver
       this->normalize();
 
       if (this->_is_bottom) {
@@ -1140,7 +1223,7 @@ public:
       this->add_constraint(i, j, c);
       this->add_constraint(j, i, -c);
     } else {
-      // use the linear interval solver
+      // Use the linear interval solver
       this->normalize();
 
       if (this->_is_bottom) {
@@ -1161,7 +1244,7 @@ public:
     LinearIntervalSolverT solver(MaxReductionCycles);
 
     for (const LinearConstraintT& cst : csts) {
-      // process each constraint
+      // Process each constraint
       if (cst.num_terms() == 0) {
         if (cst.is_contradiction()) {
           this->set_to_bottom();
@@ -1205,7 +1288,7 @@ public:
     }
 
     if (!solver.empty()) {
-      // use the linear interval solver
+      // Use the linear interval solver
       this->normalize();
 
       if (this->_is_bottom) {
@@ -1402,8 +1485,6 @@ public:
   }
 
   LinearConstraintSystemT to_linear_constraint_system() const override {
-    this->normalize();
-
     if (this->_is_bottom) {
       return LinearConstraintSystemT(LinearConstraintT::contradiction());
     }

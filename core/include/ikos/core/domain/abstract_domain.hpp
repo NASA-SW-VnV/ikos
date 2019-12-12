@@ -51,6 +51,13 @@ namespace ikos {
 namespace core {
 
 /// \brief Base class for abstract domains
+///
+/// Abstract domains should be thread-safe:
+/// * It should be safe to call a `const` method on an abstract value shared
+///   between multiple threads;
+/// * It should be safe to copy an abstract value between multiple threads;
+/// * It is NOT safe to call a non-`const` method on an abstract value
+///   shared between multiple threads;
 template < typename Derived >
 class AbstractDomain {
 public:
@@ -89,7 +96,13 @@ public:
   /// \brief Move assignment operator
   AbstractDomain& operator=(AbstractDomain&&) noexcept = default;
 
+  /// \brief Normalize the abstract value
+  virtual void normalize() = 0;
+
   /// \brief Check if the abstract value is bottom
+  ///
+  /// Consider calling `normalize()` before calling `is_bottom()`, otherwise
+  /// it might normalize a temporary copy.
   virtual bool is_bottom() const = 0;
 
   /// \brief Check if the abstract value is top

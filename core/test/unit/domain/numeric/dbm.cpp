@@ -736,7 +736,8 @@ BOOST_AUTO_TEST_CASE(add) {
   BOOST_CHECK(inv.to_interval(z) == Interval(Bound(11), Bound(19)));
 
   inv.add(3 * VariableExpr(y) <= VariableExpr(z));
-  BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(9)));
+  inv.normalize();
+  BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound(4)));
   BOOST_CHECK(inv.to_interval(y) == Interval(Bound(5), Bound(6)));
   BOOST_CHECK(inv.to_interval(z) == Interval(Bound(15), Bound(19)));
 

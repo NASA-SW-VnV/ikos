@@ -114,6 +114,8 @@ public:
   /// \brief End iterator over the cells
   Iterator end() const { return this->_set.end(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return false; }
 
   bool is_top() const override { return this->_set.empty(); }

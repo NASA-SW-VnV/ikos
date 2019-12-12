@@ -260,6 +260,7 @@ void FunctionFixpoint::run_checks() {
     for (ar::Statement* stmt : *bb) {
       // Check the statement if it's related to an llvm instruction
       if (stmt->has_frontend()) {
+        exec_engine.inv().normalize();
         for (const auto& checker : this->_checkers) {
           checker->check(stmt, exec_engine.inv(), this->_call_context);
         }

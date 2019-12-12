@@ -302,9 +302,10 @@ private:
     this->_norm_vector.resize(this->_var_index_map.size(), 0);
   }
 
-public:
   /// \brief Compute the strong closure algorithm
-  void normalize() const override {
+  ///
+  /// TODO(marthaud): This is not thread-safe.
+  void unsafe_normalize() const {
     if (this->_is_normalized) {
       return;
     }
@@ -363,8 +364,11 @@ public:
     self->_is_normalized = true;
   }
 
+public:
+  void normalize() override { this->unsafe_normalize(); }
+
   bool is_bottom() const override {
-    this->normalize();
+    this->unsafe_normalize();
     return this->_is_bottom;
   }
 
@@ -391,7 +395,7 @@ public:
 
   bool leq(const Octagon& other) const override {
     // Require normalization of the left operand
-    this->normalize();
+    this->unsafe_normalize();
 
     if (this->_is_bottom) {
       return true;
@@ -583,8 +587,8 @@ private:
 public:
   Octagon join(const Octagon& other) const override {
     // Requires normalization
-    this->normalize();
-    other.normalize();
+    this->unsafe_normalize();
+    other.unsafe_normalize();
 
     if (this->_is_bottom) {
       return other;
@@ -605,7 +609,7 @@ public:
     // The left operand of the widenning cannot be closed, otherwise
     // termination is not ensured. However, if the right operand is
     // close precision may be improved.
-    other.normalize();
+    other.unsafe_normalize();
 
     if (this->_is_bottom) {
       return other;
@@ -627,7 +631,7 @@ public:
     // The left operand of the widenning cannot be closed, otherwise
     // termination is not ensured. However, if the right operand is
     // close precision may be improved.
-    other.normalize();
+    other.unsafe_normalize();
 
     if (this->_is_bottom) {
       return other;
@@ -992,7 +996,7 @@ private:
     // Requires normalization.
     auto it = this->_var_index_map.find(v);
     if (it != this->_var_index_map.end()) {
-      this->normalize();
+      this->unsafe_normalize();
       MatrixIndex n = it->second;
       MatrixIndex odd = 2 * n - 1;
       MatrixIndex even = 2 * n;
@@ -1096,7 +1100,7 @@ public:
       i = it->second;
     }
 
-    this->abstract(x); // call normalize()
+    this->abstract(x); // call unsafe_normalize()
 
     if (e.is_constant()) {
       this->apply_constraint(i, true, BoundT(e.constant())); // adding  x <= c
@@ -1114,7 +1118,7 @@ public:
       this->apply_constraint(i, j, false, true, BoundT(0));
     } else {
       // Projection using intervals, requires normalization
-      this->normalize();
+      this->unsafe_normalize();
 
       if (this->_is_bottom) {
         return;
@@ -1267,7 +1271,7 @@ private:
 
     MatrixIndex i = this->_var_index_map.find(x)->second;
     MatrixIndex j = this->_var_index_map.find(y)->second;
-    this->normalize();
+    this->unsafe_normalize();
 
     switch (op) {
       case BinaryOperator::Add: {
@@ -1370,7 +1374,7 @@ private:
   /// Only to be used if cst is too hard for octagons
   bool check_sat(const LinearConstraintT& cst) {
     auto inv = IntervalDomainT::top();
-    this->normalize();
+    this->unsafe_normalize();
     for (const auto& term : cst) {
       inv.set(term.first, this->to_interval(term.first));
     }
@@ -1582,7 +1586,7 @@ public:
   }
 
   LinearConstraintSystemT to_linear_constraint_system() const override {
-    this->normalize();
+    this->unsafe_normalize();
 
     if (this->is_bottom()) {
       return LinearConstraintSystemT{LinearConstraintT::contradiction()};

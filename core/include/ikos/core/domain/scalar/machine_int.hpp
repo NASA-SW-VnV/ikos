@@ -137,16 +137,29 @@ public:
   /// \name Implement core abstract domain methods
   /// @{
 
+  void normalize() override {
+    this->_uninitialized.normalize();
+    if (this->_uninitialized.is_bottom()) {
+      this->_integer.set_to_bottom();
+      return;
+    }
+
+    this->_integer.normalize();
+    if (this->_integer.is_bottom()) {
+      this->_uninitialized.set_to_bottom();
+      return;
+    }
+  }
+
 private:
   /// \brief Return true if the abstract value is bottom
   ///
-  /// Does not normalize.
+  /// This is not always correct since it doesn't check this->_integer
   bool is_bottom_fast() const { return this->_uninitialized.is_bottom(); }
 
 public:
   bool is_bottom() const override {
-    this->normalize();
-    return this->_uninitialized.is_bottom(); // Correct because of normalization
+    return this->_uninitialized.is_bottom() || this->_integer.is_bottom();
   }
 
   bool is_top() const override {
@@ -185,7 +198,21 @@ public:
     }
   }
 
+  void join_with(MachineIntDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_uninitialized.join_with(std::move(other._uninitialized));
+      this->_integer.join_with(std::move(other._integer));
+    }
+  }
+
   void join_with(const MachineIntDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -196,7 +223,21 @@ public:
     }
   }
 
+  void join_loop_with(MachineIntDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_uninitialized.join_loop_with(std::move(other._uninitialized));
+      this->_integer.join_loop_with(std::move(other._integer));
+    }
+  }
+
   void join_loop_with(const MachineIntDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -207,7 +248,21 @@ public:
     }
   }
 
+  void join_iter_with(MachineIntDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_uninitialized.join_iter_with(std::move(other._uninitialized));
+      this->_integer.join_iter_with(std::move(other._integer));
+    }
+  }
+
   void join_iter_with(const MachineIntDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -219,6 +274,7 @@ public:
   }
 
   void widen_with(const MachineIntDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -231,6 +287,7 @@ public:
 
   void widen_threshold_with(const MachineIntDomain& other,
                             const MachineInt& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -242,6 +299,7 @@ public:
   }
 
   void meet_with(const MachineIntDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -253,6 +311,7 @@ public:
   }
 
   void narrow_with(const MachineIntDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -265,6 +324,7 @@ public:
 
   void narrow_threshold_with(const MachineIntDomain& other,
                              const MachineInt& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -272,6 +332,106 @@ public:
     } else {
       this->_uninitialized.narrow_with(other._uninitialized);
       this->_integer.narrow_threshold_with(other._integer, threshold);
+    }
+  }
+
+  MachineIntDomain join(const MachineIntDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return MachineIntDomain(this->_uninitialized.join(other._uninitialized),
+                              this->_integer.join(other._integer));
+    }
+  }
+
+  MachineIntDomain join_loop(const MachineIntDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return MachineIntDomain(this->_uninitialized.join_loop(
+                                  other._uninitialized),
+                              this->_integer.join_loop(other._integer));
+    }
+  }
+
+  MachineIntDomain join_iter(const MachineIntDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return MachineIntDomain(this->_uninitialized.join_iter(
+                                  other._uninitialized),
+                              this->_integer.join_iter(other._integer));
+    }
+  }
+
+  MachineIntDomain widening(const MachineIntDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return MachineIntDomain(this->_uninitialized.widening(
+                                  other._uninitialized),
+                              this->_integer.widening(other._integer));
+    }
+  }
+
+  MachineIntDomain widening_threshold(
+      const MachineIntDomain& other,
+      const MachineInt& threshold) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return MachineIntDomain(this->_uninitialized.widening(
+                                  other._uninitialized),
+                              this->_integer.widening_threshold(other._integer,
+                                                                threshold));
+    }
+  }
+
+  MachineIntDomain meet(const MachineIntDomain& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return MachineIntDomain(this->_uninitialized.meet(other._uninitialized),
+                              this->_integer.meet(other._integer));
+    }
+  }
+
+  MachineIntDomain narrowing(const MachineIntDomain& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return MachineIntDomain(this->_uninitialized.narrowing(
+                                  other._uninitialized),
+                              this->_integer.narrowing(other._integer));
+    }
+  }
+
+  MachineIntDomain narrowing_threshold(
+      const MachineIntDomain& other,
+      const MachineInt& threshold) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return MachineIntDomain(this->_uninitialized.narrowing(
+                                  other._uninitialized),
+                              this->_integer.narrowing_threshold(other._integer,
+                                                                 threshold));
     }
   }
 
@@ -682,16 +842,10 @@ public:
     this->_uninitialized.assert_initialized(p);
   }
 
-  bool nullity_is_null(VariableRef) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call nullity_is_null() on bottom");
-    return false;
-  }
+  bool nullity_is_null(VariableRef) const override { return this->is_bottom(); }
 
   bool nullity_is_non_null(VariableRef) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call nullity_is_non_null() on bottom");
-    return false;
+    return this->is_bottom();
   }
 
   void nullity_set(VariableRef, Nullity value) override {
@@ -1079,19 +1233,16 @@ public:
 
   bool dynamic_is_zero(VariableRef x) const override {
     ikos_assert(ScalarVariableTrait::is_dynamic(x));
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call dynamic_is_zero() on bottom");
 
-    return this->_integer.to_interval(x).is_zero();
+    IntInterval value = this->_integer.to_interval(x);
+    return value.is_bottom() || value.is_zero();
   }
 
   bool dynamic_is_null(VariableRef x) const override {
     ikos_assert(ScalarVariableTrait::is_dynamic(x));
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call dynamic_is_null() on bottom");
-
     ikos_ignore(x);
-    return false;
+
+    return this->is_bottom();
   }
 
   void dynamic_forget(VariableRef x) override {
@@ -1183,15 +1334,6 @@ public:
       this->dynamic_forget(x);
     } else {
       ikos_unreachable("unexpected type");
-    }
-  }
-
-  void normalize() const override {
-    // is_bottom() will normalize
-    if (this->_uninitialized.is_bottom()) {
-      const_cast< MachineIntDomain* >(this)->_integer.set_to_bottom();
-    } else if (this->_integer.is_bottom()) {
-      const_cast< MachineIntDomain* >(this)->_uninitialized.set_to_bottom();
     }
   }
 

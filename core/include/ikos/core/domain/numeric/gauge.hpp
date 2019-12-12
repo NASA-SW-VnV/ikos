@@ -121,6 +121,8 @@ public:
   /// \brief Destructor
   ~GaugeSemiLattice() override = default;
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override {
@@ -518,17 +520,16 @@ public:
   /// \brief Destructor
   ~GaugeDomain() override = default;
 
-  /// \brief Normalize the abstract value
-  void normalize() const override {
+  void normalize() override {
     if (this->_sections.is_bottom() || this->_gauges.is_bottom() ||
         this->_intervals.is_bottom()) {
-      const_cast< GaugeDomain* >(this)->set_to_bottom();
+      this->set_to_bottom();
     }
   }
 
   bool is_bottom() const override {
-    this->normalize();
-    return this->_sections.is_bottom(); // Correct because of normalization
+    return this->_sections.is_bottom() || this->_gauges.is_bottom() ||
+           this->_intervals.is_bottom();
   }
 
   bool is_top() const override {

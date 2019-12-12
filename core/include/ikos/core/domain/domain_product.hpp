@@ -66,14 +66,11 @@ public:
 private:
   Domain1 _first;
   Domain2 _second;
-  bool _is_bottom;
 
 public:
   /// \brief Create the abstract value with the given abstract values
   DomainProduct2(Domain1 first, Domain2 second)
-      : _first(std::move(first)),
-        _second(std::move(second)),
-        _is_bottom(false) {
+      : _first(std::move(first)), _second(std::move(second)) {
     this->normalize();
   }
 
@@ -100,20 +97,6 @@ public:
   /// \brief Destructor
   ~DomainProduct2() override = default;
 
-  /// \brief Normalize the abstract value
-  void normalize() const {
-    if (!this->_is_bottom) {
-      auto self = const_cast< DomainProduct2* >(this);
-      if (this->_first.is_bottom()) {
-        self->_second.set_to_bottom();
-        self->_is_bottom = true;
-      } else if (this->_second.is_bottom()) {
-        self->_first.set_to_bottom();
-        self->_is_bottom = true;
-      }
-    }
-  }
-
   /// \brief Return the first abstract value
   ///
   /// Note: does not normalize.
@@ -134,9 +117,22 @@ public:
   /// Note: does not normalize.
   Domain2& second() { return this->_second; }
 
+  void normalize() override {
+    this->_first.normalize();
+    if (this->_first.is_bottom()) {
+      this->_second.set_to_bottom();
+      return;
+    }
+
+    this->_second.normalize();
+    if (this->_second.is_bottom()) {
+      this->_first.set_to_bottom();
+      return;
+    }
+  }
+
   bool is_bottom() const override {
-    this->normalize();
-    return this->_is_bottom;
+    return this->_first.is_bottom() || this->_second.is_bottom();
   }
 
   bool is_top() const override {
@@ -146,13 +142,11 @@ public:
   void set_to_bottom() override {
     this->_first.set_to_bottom();
     this->_second.set_to_bottom();
-    this->_is_bottom = true;
   }
 
   void set_to_top() override {
     this->_first.set_to_top();
     this->_second.set_to_top();
-    this->_is_bottom = false;
   }
 
   bool leq(const DomainProduct2& other) const override {
@@ -176,7 +170,21 @@ public:
     }
   }
 
+  void join_with(DomainProduct2&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_first.join_with(std::move(other._first));
+      this->_second.join_with(std::move(other._second));
+    }
+  }
+
   void join_with(const DomainProduct2& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -187,7 +195,21 @@ public:
     }
   }
 
+  void join_loop_with(DomainProduct2&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_first.join_loop_with(std::move(other._first));
+      this->_second.join_loop_with(std::move(other._second));
+    }
+  }
+
   void join_loop_with(const DomainProduct2& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -198,7 +220,21 @@ public:
     }
   }
 
+  void join_iter_with(DomainProduct2&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_first.join_iter_with(std::move(other._first));
+      this->_second.join_iter_with(std::move(other._second));
+    }
+  }
+
   void join_iter_with(const DomainProduct2& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -210,6 +246,7 @@ public:
   }
 
   void widen_with(const DomainProduct2& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -221,6 +258,7 @@ public:
   }
 
   void meet_with(const DomainProduct2& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -232,6 +270,7 @@ public:
   }
 
   void narrow_with(const DomainProduct2& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -239,6 +278,72 @@ public:
     } else {
       this->_first.narrow_with(other._first);
       this->_second.narrow_with(other._second);
+    }
+  }
+
+  DomainProduct2 join(const DomainProduct2& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return DomainProduct2(this->_first.join(other._first),
+                            this->_second.join(other._second));
+    }
+  }
+
+  DomainProduct2 join_loop(const DomainProduct2& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return DomainProduct2(this->_first.join_loop(other._first),
+                            this->_second.join_loop(other._second));
+    }
+  }
+
+  DomainProduct2 join_iter(const DomainProduct2& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return DomainProduct2(this->_first.join_iter(other._first),
+                            this->_second.join_iter(other._second));
+    }
+  }
+
+  DomainProduct2 widening(const DomainProduct2& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return DomainProduct2(this->_first.widening(other._first),
+                            this->_second.widening(other._second));
+    }
+  }
+
+  DomainProduct2 meet(const DomainProduct2& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return DomainProduct2(this->_first.meet(other._first),
+                            this->_second.meet(other._second));
+    }
+  }
+
+  DomainProduct2 narrowing(const DomainProduct2& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return DomainProduct2(this->_first.narrowing(other._first),
+                            this->_second.narrowing(other._second));
     }
   }
 
@@ -316,9 +421,6 @@ public:
   /// \brief Destructor
   ~DomainProduct3() override = default;
 
-  /// \brief Normalize the abstract value
-  void normalize() const { this->_product.normalize(); }
-
   /// \brief Return the first abstract value
   ///
   /// Note: does not normalize.
@@ -349,6 +451,8 @@ public:
   /// Note: does not normalize.
   Domain3& third() { return this->_product.second(); }
 
+  void normalize() override { this->_product.normalize(); }
+
   bool is_bottom() const override { return this->_product.is_bottom(); }
 
   bool is_top() const override { return this->_product.is_top(); }
@@ -365,12 +469,24 @@ public:
     return this->_product.equals(other._product);
   }
 
+  void join_with(DomainProduct3&& other) override {
+    this->_product.join_with(std::move(other._product));
+  }
+
   void join_with(const DomainProduct3& other) override {
     this->_product.join_with(other._product);
   }
 
+  void join_loop_with(DomainProduct3&& other) override {
+    this->_product.join_loop_with(std::move(other._product));
+  }
+
   void join_loop_with(const DomainProduct3& other) override {
     this->_product.join_loop_with(other._product);
+  }
+
+  void join_iter_with(DomainProduct3&& other) override {
+    this->_product.join_iter_with(std::move(other._product));
   }
 
   void join_iter_with(const DomainProduct3& other) override {
@@ -387,6 +503,30 @@ public:
 
   void narrow_with(const DomainProduct3& other) override {
     this->_product.narrow_with(other._product);
+  }
+
+  DomainProduct3 join(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.join(other._product));
+  }
+
+  DomainProduct3 join_loop(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.join_loop(other._product));
+  }
+
+  DomainProduct3 join_iter(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.join_iter(other._product));
+  }
+
+  DomainProduct3 widening(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.widening(other._product));
+  }
+
+  DomainProduct3 meet(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.meet(other._product));
+  }
+
+  DomainProduct3 narrowing(const DomainProduct3& other) const override {
+    return DomainProduct3(this->_product.narrowing(other._product));
   }
 
   void dump(std::ostream& o) const override {

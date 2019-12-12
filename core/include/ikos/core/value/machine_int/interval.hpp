@@ -125,6 +125,8 @@ public:
     return this->_ub;
   }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_lb > this->_ub; }
 
   bool is_top() const override {

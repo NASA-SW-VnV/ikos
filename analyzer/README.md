@@ -351,12 +351,7 @@ $ ikos --jobs=4 test.c
 
 Use `-j` to use all available threads. By default, the analyzer only uses one thread.
 
-**Warning:** Some numerical abstract domains are currently NOT thread-safe. The following numerical abstract domains are thread-safe:
-* `-d=interval`: The interval domain;
-* `-d=congruence`: The congruence domain;
-* `-d=interval-congruence`: The reduced product of interval and congruence;
-* `-d=gauge`: The gauge domain;
-* `-d=gauge-interval-congruence`: The reduced product of gauge, interval and congruence.
+**Warning:** APRON numerical abstract domains are currently NOT thread-safe and might cause crashes.
 
 ### Optimization level
 

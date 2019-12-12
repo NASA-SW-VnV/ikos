@@ -115,6 +115,8 @@ public:
   /// \brief Destructor
   ~VarPackingDBM() override = default;
 
+  void normalize() override { this->_inv.normalize(); }
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }
@@ -131,12 +133,24 @@ public:
     return this->_inv.equals(other._inv);
   }
 
+  void join_with(VarPackingDBM&& other) override {
+    this->_inv.join_with(std::move(other._inv));
+  }
+
   void join_with(const VarPackingDBM& other) override {
     this->_inv.join_with(other._inv);
   }
 
+  void join_loop_with(VarPackingDBM&& other) override {
+    this->_inv.join_loop_with(std::move(other._inv));
+  }
+
   void join_loop_with(const VarPackingDBM& other) override {
     this->_inv.join_loop_with(other._inv);
+  }
+
+  void join_iter_with(VarPackingDBM&& other) override {
+    this->_inv.join_iter_with(std::move(other._inv));
   }
 
   void join_iter_with(const VarPackingDBM& other) override {
@@ -165,6 +179,40 @@ public:
     this->_inv.narrow_threshold_with(other._inv, threshold);
   }
 
+  VarPackingDBM join(const VarPackingDBM& other) const override {
+    return VarPackingDBM(this->_inv.join(other._inv));
+  }
+
+  VarPackingDBM join_loop(const VarPackingDBM& other) const override {
+    return VarPackingDBM(this->_inv.join_loop(other._inv));
+  }
+
+  VarPackingDBM join_iter(const VarPackingDBM& other) const override {
+    return VarPackingDBM(this->_inv.join_iter(other._inv));
+  }
+
+  VarPackingDBM widening(const VarPackingDBM& other) const override {
+    return VarPackingDBM(this->_inv.widening(other._inv));
+  }
+
+  VarPackingDBM widening_threshold(const VarPackingDBM& other,
+                                   const Number& threshold) const override {
+    return VarPackingDBM(this->_inv.widening_threshold(other._inv, threshold));
+  }
+
+  VarPackingDBM meet(const VarPackingDBM& other) const override {
+    return VarPackingDBM(this->_inv.meet(other._inv));
+  }
+
+  VarPackingDBM narrowing(const VarPackingDBM& other) const override {
+    return VarPackingDBM(this->_inv.narrowing(other._inv));
+  }
+
+  VarPackingDBM narrowing_threshold(const VarPackingDBM& other,
+                                    const Number& threshold) const override {
+    return VarPackingDBM(this->_inv.narrowing_threshold(other._inv, threshold));
+  }
+
   void assign(VariableRef x, int n) override { this->_inv.assign(x, n); }
 
   void assign(VariableRef x, const Number& n) override {
@@ -184,7 +232,6 @@ public:
       this->_inv.assign(x, e);
     } else {
       // Projection using intervals
-      this->_inv.normalize();
       this->_inv.set(x, this->_inv.to_interval(e));
     }
   }
@@ -193,8 +240,6 @@ public:
              VariableRef x,
              VariableRef y,
              VariableRef z) override {
-    this->_inv.normalize();
-
     if (this->_inv.is_bottom()) {
       return;
     }
@@ -215,8 +260,6 @@ public:
              VariableRef x,
              VariableRef y,
              const Number& z) override {
-    this->_inv.normalize();
-
     if (this->_inv.is_bottom()) {
       return;
     }
@@ -238,8 +281,6 @@ public:
              VariableRef x,
              const Number& y,
              VariableRef z) override {
-    this->_inv.normalize();
-
     if (this->_inv.is_bottom()) {
       return;
     }
@@ -277,8 +318,6 @@ public:
          (cst.num_terms() == 2 && it->second == -1 && it2->second == 1))) {
       this->_inv.add(cst);
     } else {
-      this->_inv.normalize();
-
       if (this->_inv.is_bottom()) {
         return;
       }
@@ -321,8 +360,6 @@ public:
     }
 
     if (!solver.empty()) {
-      this->_inv.normalize();
-
       if (this->_inv.is_bottom()) {
         return;
       }
@@ -356,8 +393,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_inv.forget(x); }
-
-  void normalize() const override { this->_inv.normalize(); }
 
   IntervalT to_interval(VariableRef x) const override {
     return this->_inv.to_interval(x);

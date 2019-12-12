@@ -338,6 +338,8 @@ private:
 
   /// \brief Execute any call statement
   void exec(ar::CallBase* call) {
+    this->inv().normal().normalize();
+
     if (this->inv().is_normal_flow_bottom()) {
       return;
     }
@@ -387,6 +389,8 @@ private:
           this->inv().normal().pointer_refine(ptr_var, points_to);
         }
       }
+
+      this->inv().normal().normalize();
 
       if (this->inv().is_normal_flow_bottom()) {
         return;

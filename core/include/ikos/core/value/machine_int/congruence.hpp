@@ -102,8 +102,8 @@ private:
     return a - mod(a - c.residue(), c.modulus());
   }
 
-  /// \brief Normalize the congruence
-  void normalize() {
+  /// \brief Reduce the congruence
+  void reduce() {
     if (this->_c.is_bottom()) {
       return;
     }
@@ -212,19 +212,19 @@ public:
         _bit_width(b.bit_width()),
         _sign(b.sign()) {
     assert_compatible(a, b);
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Create the congruence aZ + b
   Congruence(ZNumber a, ZNumber b, unsigned bit_width, Signedness sign)
       : _c(std::move(a), std::move(b)), _bit_width(bit_width), _sign(sign) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Create the machine integer congruence from a congruence in Z
   Congruence(ZCongruence c, unsigned bit_width, Signedness sign)
       : _c(std::move(c)), _bit_width(bit_width), _sign(sign) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Copy constructor
@@ -263,6 +263,10 @@ public:
     return this->_c.residue();
   }
 
+  void normalize() override {
+    // Already performed by the reduction
+  }
+
   bool is_bottom() const override { return this->_c.is_bottom(); }
 
   bool is_top() const override { return this->_c.is_top(); }
@@ -292,7 +296,7 @@ public:
   void join_with(const Congruence& other) override {
     assert_compatible(*this, other);
     this->_c.join_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   Congruence widening(const Congruence& other) const override {
@@ -325,7 +329,7 @@ public:
   void meet_with(const Congruence& other) override {
     assert_compatible(*this, other);
     this->_c.meet_with(other._c);
-    this->normalize();
+    this->reduce();
   }
 
   Congruence narrowing(const Congruence& other) const override {

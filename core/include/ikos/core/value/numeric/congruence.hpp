@@ -90,8 +90,8 @@ private:
   /// \brief Create the bottom congruence
   explicit Congruence(BottomTag) : _is_bottom(true), _a(0), _b(0) {}
 
-  /// \brief Normalize the congruence
-  void normalize() {
+  /// \brief Reduce the congruence
+  void reduce() {
     ikos_assert(this->_a >= 0);
 
     // if a != 0: 0 <= b < a
@@ -116,7 +116,7 @@ public:
   /// \brief Create the congruence aZ + b
   Congruence(ZNumber a, ZNumber b)
       : _is_bottom(false), _a(std::move(a)), _b(std::move(b)) {
-    this->normalize();
+    this->reduce();
   }
 
   /// \brief Copy constructor
@@ -144,6 +144,10 @@ public:
   const ZNumber& residue() const {
     ikos_assert(!this->is_bottom());
     return this->_b;
+  }
+
+  void normalize() override {
+    // Already performed by reduction
   }
 
   bool is_bottom() const override { return this->_is_bottom; }
@@ -317,7 +321,7 @@ public:
     } else {
       this->_a = gcd(this->_a, other._a);
       this->_b += other._b;
-      this->normalize();
+      this->reduce();
     }
   }
 
@@ -330,7 +334,7 @@ public:
     } else {
       this->_a = gcd(this->_a, other._a);
       this->_b -= other._b;
-      this->normalize();
+      this->reduce();
     }
   }
 
@@ -743,6 +747,8 @@ public:
   Congruence& operator=(Congruence&&) noexcept = default;
 
   ~Congruence() override = default;
+
+  void normalize() override { this->_cst.normalize(); }
 
   bool is_bottom() const override { return this->_cst.is_bottom(); }
 

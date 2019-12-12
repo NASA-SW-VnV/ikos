@@ -100,6 +100,8 @@ public:
   /// \brief Destructor
   ~Uninitialized() override = default;
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_kind == BottomKind; }
 
   bool is_top() const override { return this->_kind == TopKind; }

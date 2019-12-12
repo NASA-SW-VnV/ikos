@@ -904,6 +904,8 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
     }
   }
 
+  inv.normal().normalize();
+
   if (auto element_size =
           this->is_array_access(stmt, inv, offset_intv, addrs)) {
     info.put("array_element_size", *element_size);
@@ -1126,9 +1128,11 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
   // Checks: `offset > mem_size || offset + access_size > mem_size`
   value::AbstractDomain tmp1 = inv;
   tmp1.normal().int_add(IntPredicate::GT, offset_var, size_var);
+  tmp1.normal().normalize();
 
   value::AbstractDomain tmp2 = inv;
   tmp2.normal().int_add(IntPredicate::GT, offset_plus_size, size_var);
+  tmp2.normal().normalize();
 
   bool is_bottom = tmp1.is_normal_flow_bottom() && tmp2.is_normal_flow_bottom();
 
@@ -1153,6 +1157,7 @@ BufferOverflowChecker::MemoryLocationCheckResult BufferOverflowChecker::
   value::AbstractDomain tmp3 = inv;
   tmp3.normal().int_add(IntPredicate::LE, offset_var, size_var);
   tmp3.normal().int_add(IntPredicate::LE, offset_plus_size, size_var);
+  tmp3.normal().normalize();
   is_bottom = tmp3.is_normal_flow_bottom();
 
   if (is_bottom) {
@@ -1285,11 +1290,13 @@ void BufferOverflowChecker::init_global_ptr(value::AbstractDomain& inv,
     Variable* ptr = _ctx.var_factory->get_global(gv);
     MemoryLocation* addr = _ctx.mem_factory->get_global(gv);
     inv.normal().pointer_assign(ptr, addr, core::Nullity::non_null());
+    inv.normal().normalize();
   } else if (auto cst = dyn_cast< ar::FunctionPointerConstant >(value)) {
     auto fun = cst->function();
     Variable* ptr = _ctx.var_factory->get_function_ptr(fun);
     MemoryLocation* addr = _ctx.mem_factory->get_function(fun);
     inv.normal().pointer_assign(ptr, addr, core::Nullity::non_null());
+    inv.normal().normalize();
   }
 }
 
@@ -1303,12 +1310,15 @@ void BufferOverflowChecker::init_global_alloc_size(
                     this->_data_layout.pointers.bit_width,
                     Unsigned);
     inv.normal().int_assign(size_var, size);
+    inv.normal().normalize();
   } else if (isa< FunctionMemoryLocation >(addr)) {
     MachineInt size(0, this->_data_layout.pointers.bit_width, Unsigned);
     inv.normal().int_assign(size_var, size);
+    inv.normal().normalize();
   } else if (isa< LibcErrnoMemoryLocation >(addr)) {
     MachineInt size(4, this->_data_layout.pointers.bit_width, Unsigned);
     inv.normal().int_assign(size_var, size);
+    inv.normal().normalize();
   }
 }
 

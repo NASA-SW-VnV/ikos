@@ -666,7 +666,6 @@ BOOST_AUTO_TEST_CASE(assign) {
   inv1.set_to_top();
   inv1.set(x, Interval(Bound(-1), Bound(1)));
   inv1.assign(y, x);
-  inv1.normalize();
   BOOST_CHECK(inv1.to_interval(y) == Interval(Bound(-1), Bound(1)));
 
   inv1.set_to_top();
@@ -868,7 +867,6 @@ BOOST_AUTO_TEST_CASE(add) {
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
 
   inv.add(VariableExpr(y) >= VariableExpr(x) + 2);
-  inv.normalize();
   BOOST_CHECK(inv.to_interval(x) == Interval(Bound(1), Bound::plus_infinity()));
   BOOST_CHECK(inv.to_interval(y) == Interval(Bound(3), Bound::plus_infinity()));
 
@@ -895,7 +893,6 @@ BOOST_AUTO_TEST_CASE(add) {
   BOOST_CHECK(inv.to_interval(z) == Interval(Bound(15), Bound(19)));
 
   inv.add(VariableExpr(x) == VariableExpr(y));
-  inv.normalize();
   BOOST_CHECK(inv.is_bottom());
 
   inv.set_to_top();

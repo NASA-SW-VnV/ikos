@@ -106,6 +106,8 @@ public:
   /// \name Implement core abstract domain methods
   /// @{
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override { return !this->_is_bottom; }
@@ -154,15 +156,11 @@ public:
   void uninit_assert_initialized(VariableRef) override {}
 
   bool uninit_is_initialized(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call uninit_is_initialized() on bottom");
-    return false;
+    return this->_is_bottom;
   }
 
   bool uninit_is_uninitialized(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call uninit_is_uninitialized() on bottom");
-    return false;
+    return this->_is_bottom;
   }
 
   void uninit_refine(VariableRef, Uninitialized value) override {
@@ -353,16 +351,10 @@ public:
 
   void nullity_assert_non_null(VariableRef) override {}
 
-  bool nullity_is_null(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call nullity_is_null() on bottom");
-    return false;
-  }
+  bool nullity_is_null(VariableRef) const override { return this->_is_bottom; }
 
   bool nullity_is_non_null(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call nullity_is_non_null() on bottom");
-    return false;
+    return this->_is_bottom;
   }
 
   void nullity_set(VariableRef, Nullity value) override {
@@ -531,17 +523,9 @@ public:
 
   void dynamic_read_pointer(VariableRef, VariableRef) override {}
 
-  bool dynamic_is_zero(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call dynamic_is_zero() on bottom");
-    return false;
-  }
+  bool dynamic_is_zero(VariableRef) const override { return this->_is_bottom; }
 
-  bool dynamic_is_null(VariableRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call dynamic_is_null() on bottom");
-    return false;
-  }
+  bool dynamic_is_null(VariableRef) const override { return this->_is_bottom; }
 
   void dynamic_forget(VariableRef) override {}
 
@@ -562,8 +546,6 @@ public:
                                      MemoryLocationRef) override {}
 
   void scalar_forget(VariableRef) override {}
-
-  void normalize() const override {}
 
   /// @}
 

@@ -102,6 +102,8 @@ public:
   /// \brief End iterator over the pairs (memory location, lifetime)
   Iterator end() const { return this->_inv.end(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }
@@ -151,15 +153,13 @@ public:
   }
 
   bool is_allocated(MemoryLocationRef m) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_allocated() on bottom");
-    return this->_inv.get(m).is_allocated();
+    Lifetime value = this->_inv.get(m);
+    return value.is_bottom() || value.is_allocated();
   }
 
   bool is_deallocated(MemoryLocationRef m) const override {
-    ikos_assert_msg(!this->is_bottom(),
-                    "trying to call is_deallocated() on bottom");
-    return this->_inv.get(m).is_deallocated();
+    Lifetime value = this->_inv.get(m);
+    return value.is_bottom() || value.is_deallocated();
   }
 
   void set(MemoryLocationRef m, const Lifetime& value) override {
@@ -167,8 +167,6 @@ public:
   }
 
   void forget(MemoryLocationRef m) override { this->_inv.forget(m); }
-
-  void normalize() const override {}
 
   Lifetime get(MemoryLocationRef m) const override { return this->_inv.get(m); }
 

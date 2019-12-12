@@ -123,6 +123,8 @@ public:
     return this->_set.end();
   }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return !this->_top && this->_set.empty(); }
 
   bool is_top() const override { return this->_top; }

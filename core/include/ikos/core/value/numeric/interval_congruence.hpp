@@ -218,6 +218,10 @@ public:
   /// \brief Return the congruence
   const CongruenceT& congruence() const { return this->_c; }
 
+  void normalize() override {
+    // Already performed by the reduction
+  }
+
   bool is_bottom() const override {
     return this->_c.is_bottom(); // Correct because of reduction
   }
@@ -482,6 +486,8 @@ public:
   const QInterval& interval() const { return this->_i; }
 
   QCongruence congruence() const { return QCongruence::top(); }
+
+  void normalize() override {}
 
   bool is_bottom() const override { return this->_i.is_bottom(); }
 

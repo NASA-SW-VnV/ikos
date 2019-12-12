@@ -97,9 +97,6 @@ public:
   /// \brief Forget the nullity of a variable
   virtual void forget(VariableRef x) = 0;
 
-  /// \brief Normalize the abstract value
-  virtual void normalize() const = 0;
-
   /// \brief Get the nullity value for the given variable
   virtual Nullity get(VariableRef x) const = 0;
 

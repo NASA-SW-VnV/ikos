@@ -119,6 +119,8 @@ public:
   /// \brief End iterator over the pairs (variable, constant)
   Iterator end() const { return this->_inv.end(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }
@@ -358,8 +360,6 @@ public:
   }
 
   void forget(VariableRef x) override { this->_inv.forget(x); }
-
-  void normalize() const override {}
 
   ConstantT to_constant(VariableRef x) const { return this->_inv.get(x); }
 

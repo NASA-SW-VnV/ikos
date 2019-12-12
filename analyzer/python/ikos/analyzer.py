@@ -624,7 +624,7 @@ def signal_name(signum):
 
 def is_apron_domain(domain):
     ''' Return True if the given domain is an APRON numerical domain '''
-    return domain.startswith('apron-')
+    return 'apron-' in domain
 
 
 domains_without_narrowing = (
@@ -753,6 +753,9 @@ class AnalyzerError(Exception):
 def ikos_analyzer(db_path, pp_path, opt):
     if settings.BUILD_MODE == 'Debug':
         log.warning('ikos was built in debug mode, the analysis might be slow')
+    if is_apron_domain(opt.domain) and opt.jobs != 1:
+        log.warning('apron abstract domains are not thread-safe, '
+                    'the analysis might crash')
 
     # Fix huge slow down when ikos-analyzer uses DROP TABLE on an existing db
     if os.path.isfile(db_path):

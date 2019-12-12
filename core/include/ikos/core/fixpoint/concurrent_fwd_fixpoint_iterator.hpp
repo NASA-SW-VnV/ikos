@@ -51,6 +51,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -247,6 +248,7 @@ private:
         std::vector< WorkNode*, tbb::cache_aligned_allocator< WorkNode* > >;
 
   private:
+    std::mutex _mutex;
     WpoNodeKind _kind;
     NodeRef _node;
     WpoIndex _index;
@@ -262,6 +264,7 @@ private:
 
     // For plain and head nodes
     WorkNodeVector _predecessors;
+    std::mutex _post_mutex;
     AbstractValue _pre;
     AbstractValue _post;
 
@@ -288,15 +291,40 @@ private:
           _head(nullptr) {
       // Required by old versions of TBB
       this->_ref_count = ref_count;
+      this->_pre.normalize();
     }
 
     /// \brief Copy constructor
     ///
     /// Required by old versions of TBB
-    WorkNode(const WorkNode&) = default;
+    WorkNode(const WorkNode& other)
+        : _kind(other._kind),
+          _node(other._node),
+          _index(other._index),
+          _iterator(other._iterator),
+          _ref_count(other._ref_count),
+          _successors(other._successors),
+          _iteration_kind(other._iteration_kind),
+          _iteration_count(other._iteration_count),
+          _predecessors(other._predecessors),
+          _pre(other._pre),
+          _post(other._post),
+          _head(other._head) {}
 
     /// \brief Move constructor
-    WorkNode(WorkNode&&) = default;
+    WorkNode(WorkNode&& other)
+        : _kind(other._kind),
+          _node(other._node),
+          _index(other._index),
+          _iterator(other._iterator),
+          _ref_count(other._ref_count),
+          _successors(std::move(other._successors)),
+          _iteration_kind(other._iteration_kind),
+          _iteration_count(other._iteration_count),
+          _predecessors(std::move(other._predecessors)),
+          _pre(std::move(other._pre)),
+          _post(std::move(other._post)),
+          _head(other._head) {}
 
     /// \brief No copy assignment operator
     WorkNode& operator=(const WorkNode&) = delete;
@@ -347,6 +375,7 @@ private:
 
     /// \brief Update the node
     const WorkNodeVector& update() {
+      std::lock_guard< std::mutex > lock(this->_mutex);
       switch (_kind) {
         case WpoNodeKind::Plain:
           return this->update_plain();
@@ -363,18 +392,25 @@ private:
     std::size_t decr_ref_count() { return --this->_ref_count; }
 
   private:
-    /// \brief Propagate the invariant through the current node
-    void analyze_node() {
-      this->_post = this->_iterator.analyze_node(this->_node, this->_pre);
-    }
-
     /// \brief Reset the reference counter
     void reset_ref_count() {
       this->_ref_count =
           this->_iterator.wpo().num_predecessors_reducible(this->_index);
     }
 
-    /// \brief Update a plain node
+    /// \brief Thread-safe read access to the post invariant
+    AbstractValue get_post() {
+      std::lock_guard< std::mutex > lock(this->_post_mutex);
+      return AbstractValue(this->_post);
+    }
+
+    /// \brief Thread-safe write access to the post invariant
+    void set_post(AbstractValue post) {
+      post.normalize();
+      std::lock_guard< std::mutex > lock(this->_post_mutex);
+      this->_post = std::move(post);
+    }
+
     const WorkNodeVector& update_plain() {
       ikos_assert(this->_kind == WpoNodeKind::Plain);
 
@@ -388,10 +424,11 @@ private:
       for (WorkNode* pred : this->_predecessors) {
         this->_pre.join_with(this->_iterator.analyze_edge(pred->_node,
                                                           this->_node,
-                                                          pred->_post));
+                                                          pred->get_post()));
       }
 
-      this->analyze_node();
+      this->_pre.normalize();
+      this->set_post(this->_iterator.analyze_node(this->_node, this->_pre));
       this->reset_ref_count();
       return this->_successors;
     }
@@ -405,16 +442,18 @@ private:
         // Collect invariants from incoming edges
         for (WorkNode* pred : this->_predecessors) {
           if (!this->_iterator.wpo().is_back_edge(this->_node, pred->_node)) {
-            this->_pre.join_with(this->_iterator.analyze_edge(pred->_node,
-                                                              this->_node,
-                                                              pred->_post));
+            this->_pre.join_with(
+                this->_iterator.analyze_edge(pred->_node,
+                                             this->_node,
+                                             pred->get_post()));
           }
         }
 
+        this->_pre.normalize();
         this->_iteration_count++;
       }
 
-      this->analyze_node();
+      this->set_post(this->_iterator.analyze_node(this->_node, this->_pre));
       return this->_successors;
     }
 
@@ -447,16 +486,18 @@ private:
         if (!this->_iterator.wpo().is_back_edge(this->_node, pred->_node)) {
           new_pre_in.join_with(this->_iterator.analyze_edge(pred->_node,
                                                             this->_node,
-                                                            pred->_post));
+                                                            pred->get_post()));
         } else {
-          new_pre_back.join_with(this->_iterator.analyze_edge(pred->_node,
-                                                              this->_node,
-                                                              pred->_post));
+          new_pre_back.join_with(
+              this->_iterator.analyze_edge(pred->_node,
+                                           this->_node,
+                                           pred->get_post()));
         }
       }
 
       new_pre_in.join_loop_with(std::move(new_pre_back));
       AbstractValue new_pre(std::move(new_pre_in));
+      new_pre.normalize();
 
       if (this->_iteration_kind == FixpointIterationKind::Increasing) {
         // Increasing iteration with widening
@@ -464,6 +505,7 @@ private:
                                                         this->_iteration_count,
                                                         this->_pre,
                                                         new_pre);
+        inv.normalize();
         if (this->_iterator
                 .is_increasing_iterations_fixpoint(this->_node,
                                                    this->_iteration_count,
@@ -486,6 +528,7 @@ private:
                                                    this->_iteration_count,
                                                    this->_pre,
                                                    new_pre);
+        inv.normalize();
         if (this->_iterator
                 .is_decreasing_iterations_fixpoint(this->_node,
                                                    this->_iteration_count,

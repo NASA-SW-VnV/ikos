@@ -121,6 +121,8 @@ public:
   /// \brief End iterator over the elements
   Iterator end() const { return this->_inv.end(); }
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_inv.is_bottom(); }
 
   bool is_top() const override { return this->_inv.is_top(); }

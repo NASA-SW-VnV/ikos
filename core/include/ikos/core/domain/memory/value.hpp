@@ -155,15 +155,30 @@ private:
   /// \brief Underlying lifetime abstract domain
   LifetimeDomain _lifetime;
 
+private:
+  /// \brief Constructor
+  ValueDomain(CellFactoryRef cell_factory,
+              ScalarDomain scalar,
+              MemLocToCellSetT cells,
+              MemLocToPointerSetT pointer_sets,
+              LifetimeDomain lifetime)
+      : _cell_factory(std::move(cell_factory)),
+        _scalar(std::move(scalar)),
+        _cells(std::move(cells)),
+        _pointer_sets(std::move(pointer_sets)),
+        _lifetime(std::move(lifetime)) {
+    this->normalize();
+  }
+
 public:
   /// \brief Create an abstract value with the given underlying abstract values
   ///
   /// \param cell_factory The cell factory
   /// \param scalar The scalar abstract value
   /// \param lifetime The lifetime abstract value
-  explicit ValueDomain(CellFactoryRef cell_factory,
-                       ScalarDomain scalar,
-                       LifetimeDomain lifetime)
+  ValueDomain(CellFactoryRef cell_factory,
+              ScalarDomain scalar,
+              LifetimeDomain lifetime)
       : _cell_factory(std::move(cell_factory)),
         _scalar(std::move(scalar)),
         _cells(MemLocToCellSetT::top()),
@@ -198,21 +213,47 @@ public:
   /// \name Implement core abstract domain methods
   /// @{
 
+  void normalize() override {
+    this->_lifetime.normalize();
+    if (this->_lifetime.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    this->_pointer_sets.normalize();
+    if (this->_pointer_sets.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    this->_cells.normalize();
+    if (this->_cells.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+
+    this->_scalar.normalize();
+    if (this->_scalar.is_bottom()) {
+      this->set_to_bottom();
+      return;
+    }
+  }
+
 private:
   /// \brief Return true if the abstract value is bottom
   ///
-  /// Does not normalize.
+  /// This is not always correct since it doesn't check this->_scalar
   bool is_bottom_fast() const { return this->_cells.is_bottom(); }
 
 public:
   bool is_bottom() const override {
-    this->normalize();
-    return this->_cells.is_bottom(); // Correct because of normalization
+    return this->_lifetime.is_bottom() || this->_pointer_sets.is_bottom() ||
+           this->_cells.is_bottom() || this->_scalar.is_bottom();
   }
 
   bool is_top() const override {
-    return this->_scalar.is_top() && this->_cells.is_top() &&
-           this->_pointer_sets.is_top() && this->_lifetime.is_top();
+    return this->_lifetime.is_top() && this->_pointer_sets.is_top() &&
+           this->_cells.is_top() && this->_scalar.is_top();
   }
 
   void set_to_bottom() override {
@@ -255,7 +296,23 @@ public:
     }
   }
 
+  void join_with(ValueDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_scalar.join_with(std::move(other._scalar));
+      this->_cells.join_with(std::move(other._cells));
+      this->_pointer_sets.join_with(std::move(other._pointer_sets));
+      this->_lifetime.join_with(std::move(other._lifetime));
+    }
+  }
+
   void join_with(const ValueDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -268,7 +325,23 @@ public:
     }
   }
 
+  void join_loop_with(ValueDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_scalar.join_loop_with(std::move(other._scalar));
+      this->_cells.join_loop_with(std::move(other._cells));
+      this->_pointer_sets.join_loop_with(std::move(other._pointer_sets));
+      this->_lifetime.join_loop_with(std::move(other._lifetime));
+    }
+  }
+
   void join_loop_with(const ValueDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -281,7 +354,23 @@ public:
     }
   }
 
+  void join_iter_with(ValueDomain&& other) override {
+    this->normalize();
+    other.normalize();
+    if (this->is_bottom()) {
+      this->operator=(std::move(other));
+    } else if (other.is_bottom()) {
+      return;
+    } else {
+      this->_scalar.join_iter_with(std::move(other._scalar));
+      this->_cells.join_iter_with(std::move(other._cells));
+      this->_pointer_sets.join_iter_with(std::move(other._pointer_sets));
+      this->_lifetime.join_iter_with(std::move(other._lifetime));
+    }
+  }
+
   void join_iter_with(const ValueDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -295,6 +384,7 @@ public:
   }
 
   void widen_with(const ValueDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -309,6 +399,7 @@ public:
 
   void widen_threshold_with(const ValueDomain& other,
                             const MachineInt& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       this->operator=(other);
     } else if (other.is_bottom()) {
@@ -322,6 +413,7 @@ public:
   }
 
   void meet_with(const ValueDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -335,6 +427,7 @@ public:
   }
 
   void narrow_with(const ValueDomain& other) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -349,6 +442,7 @@ public:
 
   void narrow_threshold_with(const ValueDomain& other,
                              const MachineInt& threshold) override {
+    this->normalize();
     if (this->is_bottom()) {
       return;
     } else if (other.is_bottom()) {
@@ -358,6 +452,122 @@ public:
       this->_cells.narrow_with(other._cells);
       this->_pointer_sets.narrow_with(other._pointer_sets);
       this->_lifetime.narrow_with(other._lifetime);
+    }
+  }
+
+  ValueDomain join(const ValueDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.join(other._scalar),
+                         this->_cells.join(other._cells),
+                         this->_pointer_sets.join(other._pointer_sets),
+                         this->_lifetime.join(other._lifetime));
+    }
+  }
+
+  ValueDomain join_loop(const ValueDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.join_loop(other._scalar),
+                         this->_cells.join_loop(other._cells),
+                         this->_pointer_sets.join_loop(other._pointer_sets),
+                         this->_lifetime.join_loop(other._lifetime));
+    }
+  }
+
+  ValueDomain join_iter(const ValueDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.join_iter(other._scalar),
+                         this->_cells.join_iter(other._cells),
+                         this->_pointer_sets.join_iter(other._pointer_sets),
+                         this->_lifetime.join_iter(other._lifetime));
+    }
+  }
+
+  ValueDomain widening(const ValueDomain& other) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.widening(other._scalar),
+                         this->_cells.widening(other._cells),
+                         this->_pointer_sets.widening(other._pointer_sets),
+                         this->_lifetime.widening(other._lifetime));
+    }
+  }
+
+  ValueDomain widening_threshold(const ValueDomain& other,
+                                 const MachineInt& threshold) const override {
+    if (this->is_bottom()) {
+      return other;
+    } else if (other.is_bottom()) {
+      return *this;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.widening_threshold(other._scalar,
+                                                          threshold),
+                         this->_cells.widening(other._cells),
+                         this->_pointer_sets.join(other._pointer_sets),
+                         this->_lifetime.widening(other._lifetime));
+    }
+  }
+
+  ValueDomain meet(const ValueDomain& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.meet(other._scalar),
+                         this->_cells.meet(other._cells),
+                         this->_pointer_sets.meet(other._pointer_sets),
+                         this->_lifetime.meet(other._lifetime));
+    }
+  }
+
+  ValueDomain narrowing(const ValueDomain& other) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.narrowing(other._scalar),
+                         this->_cells.narrowing(other._cells),
+                         this->_pointer_sets.narrowing(other._pointer_sets),
+                         this->_lifetime.narrowing(other._lifetime));
+    }
+  }
+
+  ValueDomain narrowing_threshold(const ValueDomain& other,
+                                  const MachineInt& threshold) const override {
+    if (this->is_bottom()) {
+      return *this;
+    } else if (other.is_bottom()) {
+      return other;
+    } else {
+      return ValueDomain(this->_cell_factory,
+                         this->_scalar.narrowing_threshold(other._scalar,
+                                                           threshold),
+                         this->_cells.narrowing(other._cells),
+                         this->_pointer_sets.narrowing(other._pointer_sets),
+                         this->_lifetime.narrowing(other._lifetime));
     }
   }
 
@@ -1091,7 +1301,7 @@ private:
     ScalarDomain scalar = this->_scalar;
     LiteralWriter v(lhs, scalar);
     rhs.apply_visitor(v);
-    this->_scalar.join_with(scalar);
+    this->_scalar.join_with(std::move(scalar));
   }
 
   /// \brief Perform a strong update `lhs = rhs`
@@ -1105,7 +1315,7 @@ private:
     ScalarDomain scalar = this->_scalar;
     LiteralReader v(rhs, scalar);
     lhs.apply_visitor(v);
-    this->_scalar.join_with(scalar);
+    this->_scalar.join_with(std::move(scalar));
   }
 
 public:
@@ -1114,7 +1324,7 @@ public:
                  const MachineInt& size) override {
     ikos_assert(ScalarVariableTrait::is_pointer(ptr));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
@@ -1126,6 +1336,8 @@ public:
     if (rhs.is_var()) {
       this->_scalar.uninit_assert_initialized(rhs.var());
     }
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1238,12 +1450,14 @@ public:
     ikos_assert(ScalarVariableTrait::is_pointer(ptr));
     ikos_assert(size.is_strictly_positive());
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
     // Null/undefined pointer dereference
     this->_scalar.nullity_assert_non_null(ptr);
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1338,7 +1552,7 @@ public:
     ikos_assert(ScalarVariableTrait::is_pointer(dest));
     ikos_assert(ScalarVariableTrait::is_pointer(src));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
@@ -1352,6 +1566,8 @@ public:
     } else if (size.is_var()) {
       this->_scalar.uninit_assert_initialized(size.var());
     }
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1435,7 +1651,7 @@ public:
         if (!new_scalar) {
           new_scalar = std::move(scalar);
         } else {
-          new_scalar->join_with(scalar);
+          new_scalar->join_with(std::move(scalar));
         }
       }
 
@@ -1473,7 +1689,7 @@ public:
                const LiteralT& size) override {
     ikos_assert(ScalarVariableTrait::is_pointer(dest));
 
-    if (this->_scalar.is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
@@ -1493,6 +1709,8 @@ public:
     } else if (size.is_var()) {
       this->_scalar.uninit_assert_initialized(size.var());
     }
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1708,11 +1926,13 @@ public:
   void mem_forget_reachable(VariableRef p) override {
     ikos_assert(ScalarVariableTrait::is_pointer(p));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
     this->_scalar.uninit_assert_initialized(p);
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1739,11 +1959,13 @@ public:
   void mem_forget_reachable(VariableRef p, const MachineInt& size) override {
     ikos_assert(ScalarVariableTrait::is_pointer(p));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
     this->_scalar.uninit_assert_initialized(p);
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1777,11 +1999,13 @@ public:
   void mem_abstract_reachable(VariableRef p) override {
     ikos_assert(ScalarVariableTrait::is_pointer(p));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
     this->_scalar.uninit_assert_initialized(p);
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1808,11 +2032,13 @@ public:
   void mem_abstract_reachable(VariableRef p, const MachineInt& size) override {
     ikos_assert(ScalarVariableTrait::is_pointer(p));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
     this->_scalar.uninit_assert_initialized(p);
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1850,11 +2076,13 @@ public:
   void mem_uninitialize_reachable(VariableRef p) override {
     ikos_assert(ScalarVariableTrait::is_pointer(p));
 
-    if (this->is_bottom()) {
+    if (this->is_bottom_fast()) {
       return;
     }
 
     this->_scalar.uninit_assert_initialized(p);
+
+    this->_scalar.normalize();
 
     if (this->_scalar.is_bottom()) {
       this->set_to_bottom();
@@ -1931,14 +2159,6 @@ public:
   void partitioning_disable() override {}
 
   /// @}
-
-  void normalize() const override {
-    // is_bottom() will normalize
-    if (this->_lifetime.is_bottom() || this->_pointer_sets.is_bottom() ||
-        this->_cells.is_bottom() || this->_scalar.is_bottom()) {
-      const_cast< ValueDomain* >(this)->set_to_bottom();
-    }
-  }
 
   void dump(std::ostream& o) const override {
     if (this->is_bottom()) {

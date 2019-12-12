@@ -86,9 +86,6 @@ public:
   /// \brief Forget the lifetime of a memory location
   virtual void forget(MemoryLocationRef m) = 0;
 
-  /// \brief Normalize the abstract value
-  virtual void normalize() const = 0;
-
   /// \brief Get the lifetime value for the given memory location
   virtual Lifetime get(MemoryLocationRef m) const = 0;
 

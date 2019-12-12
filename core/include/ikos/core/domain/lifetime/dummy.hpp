@@ -85,6 +85,8 @@ public:
   /// \brief Destructor
   ~DummyDomain() override = default;
 
+  void normalize() override {}
+
   bool is_bottom() const override { return this->_is_bottom; }
 
   bool is_top() const override { return !this->_is_bottom; }
@@ -125,15 +127,11 @@ public:
   void assert_deallocated(MemoryLocationRef) override {}
 
   bool is_allocated(MemoryLocationRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call is_allocated() on bottom");
-    return false;
+    return this->_is_bottom;
   }
 
   bool is_deallocated(MemoryLocationRef) const override {
-    ikos_assert_msg(!this->_is_bottom,
-                    "trying to call is_deallocated() on bottom");
-    return false;
+    return this->_is_bottom;
   }
 
   void set(MemoryLocationRef, const Lifetime& value) override {
@@ -143,8 +141,6 @@ public:
   }
 
   void forget(MemoryLocationRef) override {}
-
-  void normalize() const override {}
 
   Lifetime get(MemoryLocationRef) const override {
     if (this->_is_bottom) {

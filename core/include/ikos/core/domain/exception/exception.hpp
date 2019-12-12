@@ -111,6 +111,12 @@ public:
   /// \name Implement core abstract domain methods
   /// @{
 
+  void normalize() override {
+    this->_normal.normalize();
+    this->_caught_exceptions.normalize();
+    this->_propagated_exceptions.normalize();
+  }
+
   bool is_bottom() const override {
     return this->_normal.is_bottom() && this->_caught_exceptions.is_bottom() &&
            this->_propagated_exceptions.is_bottom();
@@ -145,16 +151,39 @@ public:
            this->_propagated_exceptions.equals(other._propagated_exceptions);
   }
 
+  void join_with(ExceptionDomain&& other) override {
+    this->_normal.join_with(std::move(other._normal));
+    this->_caught_exceptions.join_with(std::move(other._caught_exceptions));
+    this->_propagated_exceptions.join_with(
+        std::move(other._propagated_exceptions));
+  }
+
   void join_with(const ExceptionDomain& other) override {
     this->_normal.join_with(other._normal);
     this->_caught_exceptions.join_with(other._caught_exceptions);
     this->_propagated_exceptions.join_with(other._propagated_exceptions);
   }
 
+  void join_loop_with(ExceptionDomain&& other) override {
+    this->_normal.join_loop_with(std::move(other._normal));
+    this->_caught_exceptions.join_loop_with(
+        std::move(other._caught_exceptions));
+    this->_propagated_exceptions.join_loop_with(
+        std::move(other._propagated_exceptions));
+  }
+
   void join_loop_with(const ExceptionDomain& other) override {
     this->_normal.join_loop_with(other._normal);
     this->_caught_exceptions.join_loop_with(other._caught_exceptions);
     this->_propagated_exceptions.join_loop_with(other._propagated_exceptions);
+  }
+
+  void join_iter_with(ExceptionDomain&& other) override {
+    this->_normal.join_iter_with(std::move(other._normal));
+    this->_caught_exceptions.join_iter_with(
+        std::move(other._caught_exceptions));
+    this->_propagated_exceptions.join_iter_with(
+        std::move(other._propagated_exceptions));
   }
 
   void join_iter_with(const ExceptionDomain& other) override {
@@ -184,9 +213,14 @@ public:
   template < typename Threshold >
   ExceptionDomain widening_threshold(const ExceptionDomain& other,
                                      const Threshold& threshold) const {
-    ExceptionDomain tmp(*this);
-    tmp.widen_threshold_with(other, threshold);
-    return tmp;
+    return ExceptionDomain(this->_normal.widening_threshold(other._normal,
+                                                            threshold),
+                           this->_caught_exceptions
+                               .widening_threshold(other._caught_exceptions,
+                                                   threshold),
+                           this->_propagated_exceptions
+                               .widening_threshold(other._propagated_exceptions,
+                                                   threshold));
   }
 
   void meet_with(const ExceptionDomain& other) override {
@@ -216,9 +250,63 @@ public:
   template < typename Threshold >
   ExceptionDomain narrowing_threshold(const ExceptionDomain& other,
                                       const Threshold& threshold) const {
-    ExceptionDomain tmp(*this);
-    tmp.narrow_threshold_with(other, threshold);
-    return tmp;
+    return ExceptionDomain(this->_normal.narrowing_threshold(other._normal,
+                                                             threshold),
+                           this->_caught_exceptions
+                               .narrowing_threshold(other._caught_exceptions,
+                                                    threshold),
+                           this->_propagated_exceptions
+                               .narrowing_threshold(other
+                                                        ._propagated_exceptions,
+                                                    threshold));
+  }
+
+  ExceptionDomain join(const ExceptionDomain& other) const override {
+    return ExceptionDomain(this->_normal.join(other._normal),
+                           this->_caught_exceptions.join(
+                               other._caught_exceptions),
+                           this->_propagated_exceptions.join(
+                               other._propagated_exceptions));
+  }
+
+  ExceptionDomain join_loop(const ExceptionDomain& other) const override {
+    return ExceptionDomain(this->_normal.join_loop(other._normal),
+                           this->_caught_exceptions.join_loop(
+                               other._caught_exceptions),
+                           this->_propagated_exceptions.join_loop(
+                               other._propagated_exceptions));
+  }
+
+  ExceptionDomain join_iter(const ExceptionDomain& other) const override {
+    return ExceptionDomain(this->_normal.join_iter(other._normal),
+                           this->_caught_exceptions.join_iter(
+                               other._caught_exceptions),
+                           this->_propagated_exceptions.join_iter(
+                               other._propagated_exceptions));
+  }
+
+  ExceptionDomain widening(const ExceptionDomain& other) const override {
+    return ExceptionDomain(this->_normal.widening(other._normal),
+                           this->_caught_exceptions.widening(
+                               other._caught_exceptions),
+                           this->_propagated_exceptions.widening(
+                               other._propagated_exceptions));
+  }
+
+  ExceptionDomain meet(const ExceptionDomain& other) const override {
+    return ExceptionDomain(this->_normal.meet(other._normal),
+                           this->_caught_exceptions.meet(
+                               other._caught_exceptions),
+                           this->_propagated_exceptions.meet(
+                               other._propagated_exceptions));
+  }
+
+  ExceptionDomain narrowing(const ExceptionDomain& other) const override {
+    return ExceptionDomain(this->_normal.narrowing(other._normal),
+                           this->_caught_exceptions.narrowing(
+                               other._caught_exceptions),
+                           this->_propagated_exceptions.narrowing(
+                               other._propagated_exceptions));
   }
 
   /// @}
