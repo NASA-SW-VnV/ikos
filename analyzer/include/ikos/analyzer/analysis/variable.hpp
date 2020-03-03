@@ -407,6 +407,9 @@ public:
   /// \brief Default constructor
   NamedShadowVariable(ar::Type* type, std::string name);
 
+  /// \brief Default constructor
+  NamedShadowVariable(ar::Type* type, llvm::StringRef name);
+
   /// \brief Get the variable name
   const std::string& name() const { return this->_name; }
 

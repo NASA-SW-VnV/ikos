@@ -46,6 +46,7 @@
 
 #include <boost/container/flat_set.hpp>
 
+#include <llvm/ADT/SmallString.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/InlineAsm.h>
 #include <llvm/IR/Instructions.h>
@@ -163,7 +164,7 @@ std::string to_string(const llvm::APInt& n) {
 std::string to_string(const llvm::APFloat& f) {
   llvm::SmallString< 16 > str;
   f.toString(str, /*FormatPrecision=*/0, /*FormatMaxPadding=*/0);
-  return str.str();
+  return str.str().str();
 }
 
 /// \brief Return the hexadecimal character for the given number
@@ -359,7 +360,7 @@ std::string repr(llvm::Type* type, TypeSet seen) {
       llvm::StringRef name = struct_type->getName();
       name.consume_front("struct.");
       name.consume_front("class.");
-      return name;
+      return name.str();
     }
 
     if (struct_type->isOpaque()) {
@@ -701,7 +702,7 @@ ReprResult repr(llvm::Value* value, ValueSet seen) {
       llvm::StringRef name = di_var->getName();
 
       if (!name.empty()) {
-        return ReprResult{name, pointee_type(di_type)};
+        return ReprResult{name.str(), pointee_type(di_type)};
       }
     }
   }

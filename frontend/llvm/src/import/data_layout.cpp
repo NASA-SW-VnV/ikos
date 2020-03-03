@@ -62,9 +62,17 @@ std::unique_ptr< ar::DataLayout > translate_data_layout(
       llvm_data_layout.isLittleEndian() ? ar::LittleEndian : ar::BigEndian;
 
   // Translate pointer size and alignments
-  ar::DataLayoutInfo pointers(llvm_data_layout.getPointerSizeInBits(),
-                              llvm_data_layout.getPointerABIAlignment(0),
-                              llvm_data_layout.getPointerPrefAlignment());
+#if HAS_LLVM_9
+  ar::DataLayoutInfo
+      pointers(llvm_data_layout.getPointerSizeInBits(),
+               llvm_data_layout.getPointerABIAlignment(0),
+               llvm_data_layout.getPointerPrefAlignment());
+#else
+  ar::DataLayoutInfo
+      pointers(llvm_data_layout.getPointerSizeInBits(),
+               llvm_data_layout.getPointerABIAlignment(0).value(),
+               llvm_data_layout.getPointerPrefAlignment().value());
+#endif
 
   // Create ar::DataLayout
   std::unique_ptr< ar::DataLayout > ar_data_layout =

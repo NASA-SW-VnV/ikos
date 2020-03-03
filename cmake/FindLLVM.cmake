@@ -59,6 +59,7 @@ if (NOT LLVM_FOUND)
     endfunction()
 
     run_llvm_config("--version" LLVM_VERSION)
+    string(REGEX REPLACE "[.].*" "" LLVM_VERSION_MAJOR ${LLVM_VERSION})
 
     run_llvm_config("--prefix" LLVM_ROOT)
     file(TO_CMAKE_PATH "${LLVM_ROOT}" LLVM_ROOT)

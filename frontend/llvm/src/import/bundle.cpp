@@ -71,7 +71,7 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
 
   std::string name;
   if (gv->hasName()) {
-    name = gv->getName();
+    name = gv->getName().str();
   } else {
     name = this->_bundle->find_available_name("__unnamed_global_var");
   }
