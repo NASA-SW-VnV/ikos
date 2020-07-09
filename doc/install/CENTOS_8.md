@@ -20,7 +20,7 @@ sudo dnf group install "Development Tools"
 Install other required tools using dnf:
 
 ```
-$ sudo dnf install which patch bzip2 xz make m4 python3 python-pygments
+$ sudo dnf install python3 python3-pygments
 ```
 
 Install required libraries which the bootstrap script fails to build
