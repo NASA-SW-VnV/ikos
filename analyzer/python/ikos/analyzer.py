@@ -909,7 +909,7 @@ def ikos_analyzer(db_path, pp_path, opt):
             _, return_status = os.waitpid(p.pid, 0)
     finally:
         # kill the timer if the process has terminated already
-        if timer.isAlive():
+        if timer.is_alive():
             timer.cancel()
 
     # special case for Windows, since it does not define WIFEXITED & co.
