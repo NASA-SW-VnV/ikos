@@ -169,7 +169,7 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
 
     // Last chance, use llvm variable name
     if (llvm_gv->hasName()) {
-      std::string name = llvm_gv->getName();
+      std::string name = llvm_gv->getName().str();
       if (is_mangled(name)) {
         return {{"name", name}, {"demangle", demangle(name)}};
       } else {

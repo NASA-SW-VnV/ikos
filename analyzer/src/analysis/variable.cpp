@@ -180,6 +180,11 @@ NamedShadowVariable::NamedShadowVariable(ar::Type* type, std::string name)
   ikos_assert(!this->_name.empty());
 }
 
+NamedShadowVariable::NamedShadowVariable(ar::Type* type, llvm::StringRef name)
+    : Variable(NamedShadowVariableKind, type), _name(std::move(name.str())) {
+  ikos_assert(!this->_name.empty());
+}
+
 void NamedShadowVariable::dump(std::ostream& o) const {
   o << this->_name;
 }

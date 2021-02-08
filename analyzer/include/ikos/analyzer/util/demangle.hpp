@@ -95,5 +95,11 @@ inline std::string demangle(StringRef name) {
   return demangle(name.to_string());
 }
 
+/// \brief Return the demangled symbol name, or name if it is not mangled
+inline std::string demangle(llvm::StringRef name) {
+  // boost::core::demangle requires a null-terminated string
+  return demangle(name.str());
+}
+
 } // end namespace analyzer
 } // end namespace ikos
