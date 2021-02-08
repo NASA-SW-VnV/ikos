@@ -52,6 +52,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>
+#include <llvm/InitializePasses.h>
 #include <llvm/LinkAllPasses.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Debug.h>

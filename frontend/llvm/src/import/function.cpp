@@ -468,8 +468,13 @@ void FunctionImporter::translate_call(BasicBlockTranslation* bb_translation,
   // If this is a direct call, force exact types of arguments
   // Otherwise, it's a call on a function pointer, we allow implicit casts
   // (signed/unsigned and between pointer types)
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+  const bool force_args_cast =
+      llvm::isa< llvm::Function >(unalias(call->getCalledOperand()));
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
   const bool force_args_cast =
       llvm::isa< llvm::Function >(unalias(call->getCalledValue()));
+#endif
 
   this->translate_call_helper(bb_translation,
                               call,
@@ -504,13 +509,23 @@ void FunctionImporter::translate_intrinsic_call(
     ar::Value* length =
         this->translate_value(bb_translation, memcpy->getLength(), size_ty);
 
-    auto stmt = ar::MemoryCopy::create(this->_bundle,
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+    auto stmt = ar::MemoryMove::create(this->_bundle,
+                                       dest,
+                                       src,
+                                       length,
+                                       memcpy->getParamAlign(0)->value(),
+                                       memcpy->getParamAlign(1)->value(),
+                                       memcpy->isVolatile());
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
+    auto stmt = ar::MemoryMove::create(this->_bundle,
                                        dest,
                                        src,
                                        length,
                                        memcpy->getParamAlignment(0),
                                        memcpy->getParamAlignment(1),
                                        memcpy->isVolatile());
+#endif
     stmt->set_frontend< llvm::Value >(memcpy);
     bb_translation->add_statement(std::move(stmt));
   } else if (auto memmove = llvm::dyn_cast< llvm::MemMoveInst >(call)) {
@@ -525,6 +540,15 @@ void FunctionImporter::translate_intrinsic_call(
     ar::Value* length =
         this->translate_value(bb_translation, memmove->getLength(), size_ty);
 
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+    auto stmt = ar::MemoryMove::create(this->_bundle,
+                                       dest,
+                                       src,
+                                       length,
+                                       memmove->getParamAlign(0)->value(),
+                                       memmove->getParamAlign(1)->value(),
+                                       memmove->isVolatile());
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
     auto stmt = ar::MemoryMove::create(this->_bundle,
                                        dest,
                                        src,
@@ -532,6 +556,7 @@ void FunctionImporter::translate_intrinsic_call(
                                        memmove->getParamAlignment(0),
                                        memmove->getParamAlignment(1),
                                        memmove->isVolatile());
+#endif
     stmt->set_frontend< llvm::Value >(memmove);
     bb_translation->add_statement(std::move(stmt));
   } else if (auto memset = llvm::dyn_cast< llvm::MemSetInst >(call)) {
@@ -608,8 +633,13 @@ void FunctionImporter::translate_invoke(BasicBlockTranslation* bb_translation,
   // If this is a direct call, force exact types of arguments
   // Otherwise, it's a call on a function pointer, we allow implicit casts
   // (signed/unsigned and between pointer types)
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+  const bool force_args_cast =
+      llvm::isa< llvm::Function >(unalias(invoke->getCalledOperand()));
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
   const bool force_args_cast =
       llvm::isa< llvm::Function >(unalias(invoke->getCalledValue()));
+#endif
 
   // Translate the invoke
   //
@@ -642,8 +672,13 @@ void FunctionImporter::translate_call_helper(
     bool force_args_cast,
     CreateStmtFun create_stmt) {
   // Translate called value
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+  ar::Value* called =
+      this->translate_value(bb_translation, call->getCalledOperand(), nullptr);
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
   ar::Value* called =
       this->translate_value(bb_translation, call->getCalledValue(), nullptr);
+#endif
   auto called_type = ar::cast< ar::PointerType >(called->type());
   auto fun_type = ar::cast< ar::FunctionType >(called_type->pointee());
 
@@ -1533,15 +1568,22 @@ ar::IntegerConstant* FunctionImporter::translate_indexes(
       offset += this->_llvm_data_layout.getStructLayout(struct_type)
                     ->getElementOffset(idx);
     } else if (auto seq_type =
-                   llvm::dyn_cast< llvm::SequentialType >(indexed_type)) {
+                   llvm::dyn_cast< llvm::ArrayType >(indexed_type)) {
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
       ar::ZNumber element_size(
           this->_llvm_data_layout.getTypeAllocSize(seq_type->getElementType()));
       offset += element_size * idx;
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+      ar::ZNumber element_size(
+          this->_llvm_data_layout.getTypeAllocSize(seq_type->getElementType())
+              .getFixedSize());
+      offset += element_size * idx;
+#endif
     } else {
       throw ImportError("unsupported operand to llvm extractvalue");
     }
 
-    auto comp_type = llvm::cast< llvm::CompositeType >(indexed_type);
+    auto comp_type = llvm::cast< llvm::StructType >(indexed_type);
     indexed_type = comp_type->getTypeAtIndex(idx);
   }
 
@@ -1570,8 +1612,15 @@ void FunctionImporter::translate_extractelement(
     throw ImportError("unsupported operand to llvm extractelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
   ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
       inst->getVectorOperandType()->getElementType()));
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+  ar::ZNumber element_size(
+      this->_llvm_data_layout
+          .getTypeAllocSize(inst->getVectorOperandType()->getElementType())
+          .getFixedSize());
+#endif
   ar::ZNumber offset_value = index->getZExtValue() * element_size;
   auto offset = ar::IntegerConstant::get(this->_context,
                                          size_type,
@@ -1602,8 +1651,15 @@ void FunctionImporter::translate_insertelement(
     throw ImportError("unsupported operand to llvm insertelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
   ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
       inst->getType()->getElementType()));
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+  ar::ZNumber element_size(
+      this->_llvm_data_layout
+          .getTypeAllocSize(inst->getType()->getElementType())
+          .getFixedSize());
+#endif
   ar::ZNumber offset_value = index->getZExtValue() * element_size;
   auto offset = ar::IntegerConstant::get(this->_context,
                                          size_type,
@@ -1955,7 +2011,11 @@ ar::Type* FunctionImporter::infer_default_type(llvm::Value* value) {
 
   if (auto call = llvm::dyn_cast< llvm::CallInst >(value)) {
     // Use the type of the returned value, if it's a direct call
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+    llvm::Value* called = unalias(call->getCalledOperand());
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
     llvm::Value* called = unalias(call->getCalledValue());
+#endif
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
       return _ctx.bundle_imp->translate_function(fun)->type()->return_type();
     }
@@ -2354,7 +2414,11 @@ FunctionImporter::TypeHint FunctionImporter::
 
   // Use the type of the returned value, if it's a direct call
   if (auto call = llvm::dyn_cast< llvm::CallInst >(inst)) {
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR >= 11)
+    llvm::Value* called = unalias(call->getCalledOperand());
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR < 11)
     llvm::Value* called = unalias(call->getCalledValue());
+#endif
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
       return {_ctx.bundle_imp->translate_function(fun)->type()->return_type(),
               5};

@@ -138,12 +138,23 @@ void TypeWithSignImporter::sanity_check_size(llvm::Type* llvm_type,
     return;
   }
 
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
   check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type) >=
                    this->_ar_data_layout.size_in_bits(ar_type),
                "llvm type size in bits is smaller than ar type size");
   check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type) ==
                    this->_ar_data_layout.alloc_size_in_bytes(ar_type),
                "llvm type and ar type alloc size are different");
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+  check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type)
+                       .getFixedSize() >=
+                   this->_ar_data_layout.size_in_bits(ar_type),
+               "llvm type size in bits is smaller than ar type size");
+  check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type)
+                       .getFixedSize() ==
+                   this->_ar_data_layout.alloc_size_in_bytes(ar_type),
+               "llvm type and ar type alloc size are different");
+#endif
 }
 
 ar::VoidType* TypeWithSignImporter::translate_void_type(
@@ -410,12 +421,23 @@ void TypeWithDebugInfoImporter::sanity_check_size(llvm::Type* llvm_type,
     return;
   }
 
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
   check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type) >=
                    this->_ar_data_layout.size_in_bits(ar_type),
                "llvm type size in bits is smaller than ar type size");
   check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type) ==
                    this->_ar_data_layout.alloc_size_in_bytes(ar_type),
                "llvm type and ar type alloc size are different");
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+  check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type)
+                       .getFixedSize() >=
+                   this->_ar_data_layout.size_in_bits(ar_type),
+               "llvm type size in bits is smaller than ar type size");
+  check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type)
+                       .getFixedSize() ==
+                   this->_ar_data_layout.alloc_size_in_bytes(ar_type),
+               "llvm type and ar type alloc size are different");
+#endif
 }
 
 ar::Type* TypeWithDebugInfoImporter::translate_null_di_type(llvm::Type* type) {
@@ -941,12 +963,21 @@ ar::StructType* TypeWithDebugInfoImporter::translate_struct_di_type(
 
   const llvm::StructLayout* struct_layout =
       this->_llvm_data_layout.getStructLayout(struct_type);
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
   check_match(llvm::alignTo(di_type->getSizeInBits(),
                             static_cast< uint64_t >(
                                 struct_layout->getAlignment()) *
                                 8) == struct_layout->getSizeInBits(),
               "llvm DICompositeType and llvm structure type have a different "
               "bit-width");
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+  check_match(llvm::alignTo(di_type->getSizeInBits(),
+                            static_cast< uint64_t >(
+                                struct_layout->getAlignment().value()) *
+                                8) == struct_layout->getSizeInBits(),
+              "llvm DICompositeType and llvm structure type have a different "
+              "bit-width");
+#endif
 
   // Structures can be recursive, so create it now, with an empty layout
   ar::StructType* ar_type =
@@ -994,8 +1025,13 @@ ar::StructType* TypeWithDebugInfoImporter::translate_struct_di_type(
     // llvm struct member
     llvm::Type* element_type = struct_type->getElementType(i);
     ar::ZNumber element_offset_bytes(struct_layout->getElementOffset(i));
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
     ar::ZNumber element_size_bytes(
         this->_llvm_data_layout.getTypeStoreSize(element_type));
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+    ar::ZNumber element_size_bytes(
+        this->_llvm_data_layout.getTypeStoreSize(element_type).getFixedSize());
+#endif
 
     // Find matching debug info
     di_matching_members.clear();
@@ -1186,12 +1222,21 @@ ar::Type* TypeWithDebugInfoImporter::translate_union_di_type(
 
   const llvm::StructLayout* struct_layout =
       this->_llvm_data_layout.getStructLayout(struct_type);
+#if defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR == 9)
   check_match(llvm::alignTo(di_type->getSizeInBits(),
                             static_cast< uint64_t >(
                                 struct_layout->getAlignment()) *
                                 8) == struct_layout->getSizeInBits(),
               "llvm DICompositeType and llvm structure type have a different "
               "bit-width");
+#elif defined(LLVM_VERSION_MAJOR) && (LLVM_VERSION_MAJOR > 9)
+  check_match(llvm::alignTo(di_type->getSizeInBits(),
+                            static_cast< uint64_t >(
+                                struct_layout->getAlignment().value()) *
+                                8) == struct_layout->getSizeInBits(),
+              "llvm DICompositeType and llvm structure type have a different "
+              "bit-width");
+#endif
 
   // Structures can be recursive, so create it now, with an empty layout
   ar::StructType* ar_type =
