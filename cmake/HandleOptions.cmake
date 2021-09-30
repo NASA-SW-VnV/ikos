@@ -1,5 +1,5 @@
 # Check the build type
-set(CMAKE_BUILD_TYPES "Debug;Release;RelWithDebInfo;MinSizeRel")
+set(CMAKE_BUILD_TYPES "Debug;Release;RelWithDebInfo;MinSizeRel;Gentoo")
 if (NOT (CMAKE_BUILD_TYPE IN_LIST CMAKE_BUILD_TYPES))
   message(FATAL_ERROR "Unsupported build type: ${CMAKE_BUILD_TYPE}")
 endif()
