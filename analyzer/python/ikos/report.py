@@ -51,9 +51,12 @@ import os
 import os.path
 import sqlite3
 import sys
+import attr
+import string
 
 from ikos import args
 from ikos import colors
+from ikos import settings
 from ikos.abs_int import Signedness, MachineInt, Interval, Congruence
 from ikos.colors import bold, bold_blue, bold_green, bold_magenta, bold_red, \
     bold_yellow
@@ -877,6 +880,190 @@ class JSONFormatter(Formatter):
         self.output.write('\n')
 
 
+class SARIFFormatter(Formatter):
+    ''' SARIF output formatter '''
+
+    def write_path(self, path):
+        printf('%s', format_path(path) if path else '?', file=self.output)
+
+    # write a text with some indetation first
+    def i_write (self, ind, text):
+        indented_list = [] 
+        for b in range(ind):
+            indented_list.append(' ')
+        indented_list.append(text)
+        self.output.write("".join(indented_list))
+
+    # need to optimize this by getting rid off duplicates
+    def format_artifacts(self, report):
+        unique_filenames = []
+        # list of artifacts (files)
+        self.i_write(3, '"artifacts": [')
+        cnt=0
+        for statement_report in report.statement_reports:
+            statement = statement_report.statement()
+            name = statement.file_path()
+            if name not in unique_filenames:
+                # put in the list of unique filenames
+                unique_filenames.append(name)
+                # if it's not the first filename, then add ',\n' in front
+                # format artifact
+                if cnt > 0:
+                    self.output.write(',\n')
+                else:
+                    self.output.write('\n')
+                self.i_write(4, '{\n')
+                self.i_write(5, '"location": {\n')
+                self.i_write(6, '"uri": "')
+                self.write_path(name)
+                self.output.write('"\n')
+                self.i_write(5, '}\n') # end of location
+                self.i_write(4, '}') # end of current artifact`
+                cnt += 1
+        self.output.write('\n') 
+        self.i_write(3, '],\n') # end of the list of artifacts
+
+    # the only levels in SARIF are error, warning, and note => change unreachable into note
+    def format_level (self, level):
+        if level == "unreachable":
+            return "note"
+        else:
+            return level
+
+    # some messages provided by IKOS are multi-line but it's not possible under the SARIF format:
+    # change it into some single line message
+    def single_line (self, text):
+        # 
+        if '\n\t*' in text:
+            return text.replace('\n\t*', '  +--> ')
+        else:
+            return text
+
+    def format_results (self, report):
+        self.i_write(3, '"results": [')
+        cnt=0
+        for statement_report in report.statement_reports:
+            statement = statement_report.statement()
+            path = statement.file_path()
+            # check if it's not a garbage result by checking if a filename path is provided
+            # and if the line and clumn numbers are not zero
+            if path and statement.line > 0 and statement.column > 0:
+                # start of result
+                if cnt > 0:
+                    self.output.write(',\n')
+                else:
+                    self.output.write('\n')
+                self.i_write(4, '{\n')
+                self.i_write(5, '"ruleId": "') 
+                self.output.write(CheckKind.short_name(statement_report.kind))
+                self.output.write('",\n')
+                self.i_write(5, '"level": "')
+                self.output.write(self.format_level(Result.str(statement_report.status)))
+                self.output.write('",\n')
+                self.i_write(5, '"message": {\n')
+                self.i_write(6, '"text": "')
+                self.output.write(self.single_line(generate_message(statement_report, self.verbosity)))
+                self.output.write('"\n')
+                self.i_write(5, '},\n')
+                self.i_write(5, '"locations": [\n')
+                self.i_write(6, '{\n')
+                self.i_write(7, '"physicalLocation": {\n')
+                self.i_write(8, '"artifactLocation": {\n')
+                self.i_write(9, '"uri": "')
+                self.write_path(path)
+                self.output.write('",\n')
+                self.i_write(9, '"index": 0\n')
+                self.i_write(8, '},\n') # end of artifact location
+                self.i_write(8, '"region": {\n')
+                self.i_write(9, '"startLine": ')
+                self.output.write(str(statement.line))
+                self.output.write(',\n')
+                self.i_write(9, '"startColumn": ')
+                self.output.write(str(statement.column))
+                self.output.write('\n')
+                self.i_write(8, '}\n') # end of region
+                self.i_write(7, '}\n') # end of physical location
+                self.i_write(6, '}\n') # end of a location
+                self.i_write(5, ']\n') # end of the list of locations
+                self.i_write(4, '}') # end of current result`
+                cnt += 1
+        self.output.write('\n') 
+        self.i_write(3, ']\n') # end of the list of results
+
+
+    # expresses list of IKOS checks as a list of SARIF rules
+    def format_rules (self, report):
+
+        # list of checks that IKOS can perform
+        checks = [
+            ['buffer_overflow_analysis', 'checks for buffer overflows and out-of-bound array accesses.'],
+            ['division_by_zero_analysis', 'checks for integer divisions by zero.'],
+            ['null_pointer_analysis', 'checks for null pointer dereferences.'],
+            ['assertion_prover', 'prove user-defined properties, using __ikos_assert(condition).'],
+            ['unaligned_pointer_analysis', 'checks for unaligned pointer dereferences.'],
+            ['uninitialized_variable_analysis', 'checks for read of uninitialized variables.'],
+            ['signed_integer_overflow_analysis', 'checks for signed integer overflows.'],
+            ['unsigned_integer_overflow_analysis', 'checks for unsigned integer overflows.'],
+            ['shift_count_analysis', 'checks for invalid shifts, where the amount shifted is greater or equal to the bit-width of the left operand, or less than zero.'],
+            ['pointer_overflow_analysis', 'checks for pointer arithmetic overflows.'],
+            ['pointer_comparison_analysis', 'checks for pointer comparisons between pointers referring to different objects.'],
+            ['soundness_analysis', 'checks for instructions that could make the analysis unsound, i.e miss bugs.'],
+            ['function_call_analysis', 'checks for function calls through function pointers of the wrong type.'],
+            ['dead_code_analysis', 'checks for unreachable statements.'],
+            ['double_free_analysis', 'checks for double free, invalid free, use after free and use after return.'],
+            ['debugger', 'prints debug information, using __ikos_print_values(\\\"desc\\\", x) and __ikos_print_invariant().'],
+            ['memory_watcher', 'prints memory writes at a given memory location, using __ikos_watch_mem(ptr, size)']
+        ]
+
+        self.i_write(5, '"rules": [\n')
+        for i in range(17):
+            # rule about current check
+            self.i_write(6, '{\n')
+            self.i_write(7, '"id": "')
+            self.output.write(checks[i][0])
+            self.output.write('",\n')
+            self.i_write(7, '"shortDescription": {\n')
+            self.i_write(8, '"text": "')
+            self.output.write(checks[i][1])
+            self.output.write('"\n')
+            self.i_write(7, '},\n')
+            self.i_write(7, '"helpUri": "https://github.com/NASA-SW-VnV/ikos/blob/master/analyzer/README.md#checks"\n')
+            if i < 16:
+                self.i_write(6, '},\n')  # end of rule for current check
+            else:
+                self.i_write(6, '}\n') # end of rule for current check
+        self.i_write(5, ']\n') # end of the list of rules
+
+
+    # main method to format an IKOS report into a SARIF formatted report
+    def format(self, report):
+
+        self.output.write('{\n')
+        self.i_write(1, '"version": "2.1.0",\n')
+        self.i_write(1, '"$schema": "http://json.schemastore.org/sarif-2.1.0-rtm.5",\n')
+        self.i_write(1, '"runs": [\n') # start of a list of runs
+        self.i_write(2, '{\n')
+        self.i_write(3, '"tool": {\n') # start of tool info
+        self.i_write(4, '"driver": {\n') # start of driver info
+        self.i_write(5, '"name": "IKOS",\n')
+        self.i_write(5, '"version": ')
+        self.output.write('"')
+        self.output.write(settings.VERSION)
+        self.output.write('",\n')
+        self.i_write(5, '"informationUri": "https://github.com/NASA-SW-VnV/ikos",\n')
+        # list the rules (which we call checks in IKOS)
+        self.format_rules(report)
+        self.i_write(4, '}\n') # end of driver
+        self.i_write(3, '},\n') # end of tool info
+        # list of artifacts (files)
+        self.format_artifacts(report)
+        # list of results
+        self.format_results(report)
+        self.i_write(2, '}\n') # end of a run
+        self.i_write(1, ']\n') # end of list of runs
+        self.output.write('}\n') # end of report
+
+
 class CSVFormatter(Formatter):
     ''' CSV output formatter '''
 
@@ -944,6 +1131,7 @@ class AutoFormatter(TextFormatter):
 formats = {
     'text': TextFormatter,
     'json': JSONFormatter,
+    'sarif': SARIFFormatter,
     'csv': CSVFormatter,
     'auto': AutoFormatter,
 }
