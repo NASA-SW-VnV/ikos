@@ -51,8 +51,6 @@ import os
 import os.path
 import sqlite3
 import sys
-import attr
-import string
 
 from ikos import args
 from ikos import colors

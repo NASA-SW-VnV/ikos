@@ -1,0 +1,106 @@
+/*******************************************************************************
+ *
+ * \file
+ * \brief Define base classes for passes
+ *
+ * All passes should extend one of the classes below.
+ *
+ * Contact: ikos@lists.nasa.gov
+ *
+ * Notices:
+ *
+ * Copyright (c) 2017-2019 United States Government as represented by the
+ * Administrator of the National Aeronautics and Space Administration.
+ * All Rights Reserved.
+ *
+ * Disclaimers:
+ *
+ * No Warranty: THE SUBJECT SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY OF
+ * ANY KIND, EITHER EXPRESSED, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED
+ * TO, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL CONFORM TO SPECIFICATIONS,
+ * ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+ * OR FREEDOM FROM INFRINGEMENT, ANY WARRANTY THAT THE SUBJECT SOFTWARE WILL BE
+ * ERROR FREE, OR ANY WARRANTY THAT DOCUMENTATION, IF PROVIDED, WILL CONFORM TO
+ * THE SUBJECT SOFTWARE. THIS AGREEMENT DOES NOT, IN ANY MANNER, CONSTITUTE AN
+ * ENDORSEMENT BY GOVERNMENT AGENCY OR ANY PRIOR RECIPIENT OF ANY RESULTS,
+ * RESULTING DESIGNS, HARDWARE, SOFTWARE PRODUCTS OR ANY OTHER APPLICATIONS
+ * RESULTING FROM USE OF THE SUBJECT SOFTWARE.  FURTHER, GOVERNMENT AGENCY
+ * DISCLAIMS ALL WARRANTIES AND LIABILITIES REGARDING THIRD-PARTY SOFTWARE,
+ * IF PRESENT IN THE ORIGINAL SOFTWARE, AND DISTRIBUTES IT "AS IS."
+ *
+ * Waiver and Indemnity:  RECIPIENT AGREES TO WAIVE ANY AND ALL CLAIMS AGAINST
+ * THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL
+ * AS ANY PRIOR RECIPIENT.  IF RECIPIENT'S USE OF THE SUBJECT SOFTWARE RESULTS
+ * IN ANY LIABILITIES, DEMANDS, DAMAGES, EXPENSES OR LOSSES ARISING FROM SUCH
+ * USE, INCLUDING ANY DAMAGES FROM PRODUCTS BASED ON, OR RESULTING FROM,
+ * RECIPIENT'S USE OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD
+ * HARMLESS THE UNITED STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS,
+ * AS WELL AS ANY PRIOR RECIPIENT, TO THE EXTENT PERMITTED BY LAW.
+ * RECIPIENT'S SOLE REMEDY FOR ANY SUCH MATTER SHALL BE THE IMMEDIATE,
+ * UNILATERAL TERMINATION OF THIS AGREEMENT.
+ *
+ ******************************************************************************/
+
+#pragma once
+
+#include <ikos/ar/semantic/bundle.hpp>
+#include <ikos/ar/semantic/code.hpp>
+
+namespace ikos {
+namespace ar {
+
+/// \brief Base class for passes
+class Pass {
+public:
+  /// \brief Default constructor
+  Pass() = default;
+
+  /// \brief Copy constructor
+  Pass(const Pass&) noexcept = default;
+
+  /// \brief Move constructor
+  Pass(Pass&&) noexcept = default;
+
+  /// \brief Copy assignment operator
+  Pass& operator=(const Pass&) noexcept = default;
+
+  /// \brief Move assignment operator
+  Pass& operator=(Pass&&) noexcept = default;
+
+  /// \brief Destructor
+  virtual ~Pass() = default;
+
+  /// \brief Run the pass on the given Bundle
+  ///
+  /// Returns true if the bundle has been updated
+  virtual bool run(Bundle*) = 0;
+
+  /// \brief Get the pass name
+  virtual const char* name() const = 0;
+
+  /// \brief Get the pass description
+  virtual const char* description() const = 0;
+
+}; // end class Pass
+
+/// \brief Helper class for passes that work on Codes
+class CodePass : public Pass {
+public:
+  /// \brief Default constructor
+  CodePass() = default;
+
+  /// \brief Run the pass on the given Bundle
+  ///
+  /// Returns true if the bundle has been updated
+  bool run(Bundle*) override;
+
+private:
+  /// \brief Run the pass on the given Code
+  ///
+  /// Returns true if the code has been updated
+  virtual bool run_on_code(Code*) = 0;
+
+}; // end class CodePass
+
+} // end namespace ar
+} // end namespace ikos

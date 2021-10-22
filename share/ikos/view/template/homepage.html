@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <link rel='stylesheet' href='/static/css/ikos_theme.css'>
+    <script src='/static/js/ikos_homepage.js'></script>
+    <!-- VanillaJS import -->
+
+    <title>IKOS-VIEW</title>
+  </head>
+  <body>
+
+    <!-- page header -->
+    <header>
+      <h3>
+        <a href='/'>IKOS-VIEW</a>
+      </h3>
+      <nav>
+        <a class='active' href='/'>Homepage</a>
+        <a href='/settings'>Settings</a>
+      </nav>
+    </header>
+
+    <!-- page container -->
+    <div id='page_container' class='content_homepage'>
+
+      <!-- sidebar -->
+      <div id='page_sidebar'>
+
+        <!-- checkkind list -->
+        <div class='sidebar_item'>
+          <h5>Filter by Kind</h5>
+          <ul id='check_kinds_list'>
+          </ul>
+        </div>
+      </div>
+
+      <!-- page content -->
+      <div class='page_content'>
+        <table id='table_files'>
+          <thead>
+            <tr>
+              <th>File path</th>
+              <th>
+                <span class='stats'>
+                  <span class='oks'>Ok</span>
+                  <span class='deadcodes'>Dead Codes</span>
+                  <span class='warnings'>Warnings</span>
+                  <span class='errors'>Errors</span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id='table_files_tbody'>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+var check_kinds = {check_kinds};
+var check_kinds_filter = {check_kinds_filter};
+var files = {files};
+    </script>
+  </body>
+</html>
