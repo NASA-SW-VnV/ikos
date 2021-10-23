@@ -51,8 +51,6 @@ import os
 import os.path
 import sqlite3
 import sys
-import attr
-import string
 
 from ikos import args
 from ikos import colors
@@ -888,7 +886,7 @@ class SARIFFormatter(Formatter):
 
     # write a text with some indetation first
     def i_write (self, ind, text):
-        indented_list = [] 
+        indented_list = []
         for b in range(ind):
             indented_list.append(' ')
         indented_list.append(text)
@@ -920,7 +918,7 @@ class SARIFFormatter(Formatter):
                 self.i_write(5, '}\n') # end of location
                 self.i_write(4, '}') # end of current artifact`
                 cnt += 1
-        self.output.write('\n') 
+        self.output.write('\n')
         self.i_write(3, '],\n') # end of the list of artifacts
 
     # the only levels in SARIF are error, warning, and note => change unreachable into note
@@ -933,7 +931,7 @@ class SARIFFormatter(Formatter):
     # some messages provided by IKOS are multi-line but it's not possible under the SARIF format:
     # change it into some single line message
     def single_line (self, text):
-        # 
+        #
         if '\n\t*' in text:
             return text.replace('\n\t*', '  +--> ')
         else:
@@ -954,7 +952,7 @@ class SARIFFormatter(Formatter):
                 else:
                     self.output.write('\n')
                 self.i_write(4, '{\n')
-                self.i_write(5, '"ruleId": "') 
+                self.i_write(5, '"ruleId": "')
                 self.output.write(CheckKind.short_name(statement_report.kind))
                 self.output.write('",\n')
                 self.i_write(5, '"level": "')
@@ -987,7 +985,7 @@ class SARIFFormatter(Formatter):
                 self.i_write(5, ']\n') # end of the list of locations
                 self.i_write(4, '}') # end of current result`
                 cnt += 1
-        self.output.write('\n') 
+        self.output.write('\n')
         self.i_write(3, ']\n') # end of the list of results
 
 
