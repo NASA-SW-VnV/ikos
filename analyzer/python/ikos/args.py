@@ -364,6 +364,7 @@ report_formats = (
     ('text', 'Generate a text report'),
     ('json', 'Generate a json report'),
     ('sarif', 'Generate a sarif report'),
+    ('junit', 'Generate a JUnit.xml report'),
     ('csv', 'Generate a csv report'),
     ('web', 'Generate a web report (ikos-view)'),
     ('no', 'Do not generate a report'),
