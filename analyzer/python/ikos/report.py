@@ -1,4 +1,4 @@
-###############################################################################
+##############################################################################
 #
 # Generate an analysis report from a result database
 #
@@ -51,6 +51,9 @@ import os
 import os.path
 import sqlite3
 import sys
+from xml.etree import ElementTree
+from xml.sax.saxutils import escape
+from xml.sax.saxutils import quoteattr
 
 from ikos import args
 from ikos import colors
@@ -886,7 +889,7 @@ class SARIFFormatter(Formatter):
 
     # write a text with some indetation first
     def i_write (self, ind, text):
-        indented_list = []
+        indented_list = [] 
         for b in range(ind):
             indented_list.append(' ')
         indented_list.append(text)
@@ -918,7 +921,7 @@ class SARIFFormatter(Formatter):
                 self.i_write(5, '}\n') # end of location
                 self.i_write(4, '}') # end of current artifact`
                 cnt += 1
-        self.output.write('\n')
+        self.output.write('\n') 
         self.i_write(3, '],\n') # end of the list of artifacts
 
     # the only levels in SARIF are error, warning, and note => change unreachable into note
@@ -931,7 +934,7 @@ class SARIFFormatter(Formatter):
     # some messages provided by IKOS are multi-line but it's not possible under the SARIF format:
     # change it into some single line message
     def single_line (self, text):
-        #
+        # 
         if '\n\t*' in text:
             return text.replace('\n\t*', '  +--> ')
         else:
@@ -952,7 +955,7 @@ class SARIFFormatter(Formatter):
                 else:
                     self.output.write('\n')
                 self.i_write(4, '{\n')
-                self.i_write(5, '"ruleId": "')
+                self.i_write(5, '"ruleId": "') 
                 self.output.write(CheckKind.short_name(statement_report.kind))
                 self.output.write('",\n')
                 self.i_write(5, '"level": "')
@@ -985,7 +988,7 @@ class SARIFFormatter(Formatter):
                 self.i_write(5, ']\n') # end of the list of locations
                 self.i_write(4, '}') # end of current result`
                 cnt += 1
-        self.output.write('\n')
+        self.output.write('\n') 
         self.i_write(3, ']\n') # end of the list of results
 
 
@@ -1098,6 +1101,86 @@ class CSVFormatter(Formatter):
             ])
 
 
+class JUnitFormatter(Formatter):
+    ''' JUnit.xml formatter '''
+
+    def get_timing_result(self, report):
+        ''' get the timing results ifor the analysis from the database '''
+        db = report.db
+        elapsed = 0.0
+        if db:
+            results = db.load_timing_results(True, True)
+            for result in results:
+                print(result)
+                if result[0] == 'ikos-analyzer':
+                    elapsed = result[1]
+        return elapsed
+
+    # some messages provided by IKOS are multi-line but 
+    # we want to change it into some single line message
+    def single_line (self, text):
+        # 
+        if '\n\t*' in text:
+            return text.replace('\n\t*', '  +--> ')
+        else:
+            return text
+
+    def format(self, report):
+        testname = '.ikos-analysis-results'
+        # get the time spent on analysis
+        elapsed = self.get_timing_result (report)
+        # get the summary report
+        summary = generate_summary (report.db)
+        test_count = summary.ok + summary.error + summary.warning + summary.unreachable
+        error_count = summary.error + summary.warning
+        # build the data structure to report the analysis summary
+        data = {
+            'testname': testname,
+            'test_count': test_count,
+            'error_count': error_count,
+            'time': '%.3f' % round(elapsed, 3),
+            'skip': 0,
+        }
+        print (data)
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuite
+  name="%(testname)s"
+  tests="%(test_count)d"
+  errors="0"
+  failures="%(error_count)d"
+  time="%(time)s"
+  skipped="%(skip)d"
+>
+""" % data
+
+        for statement_report in report.statement_reports:
+            statement = statement_report.statement()
+            
+            path = statement.file_path()
+            # make sure that it's not one of those unreachable statements without any info
+            if path and statement.line > 0 and statement.column > 0:
+                # report each error/warning as a failing testcase
+                data = {
+                    'quoted_name': quoteattr(
+                        '%s: %s (%s:%d)' % (
+                            Result.str(statement_report.status), 
+                            CheckKind.short_name(statement_report.kind),
+                            path, statement.line)),
+                    'testname': testname,
+                    'quoted_message': quoteattr(self.single_line(generate_message(statement_report, self.verbosity))),
+                }
+                xml += """  <testcase
+    name=%(quoted_name)s
+    classname="%(testname)s"
+  >
+      <failure message=%(quoted_message)s/>
+  </testcase>
+""" % data
+
+        xml += '</testsuite>'
+        self.output.write(xml)
+
+
 class AutoFormatter(TextFormatter):
     '''
     Automatic output formatter
@@ -1132,6 +1215,7 @@ formats = {
     'sarif': SARIFFormatter,
     'csv': CSVFormatter,
     'auto': AutoFormatter,
+    'junit': JUnitFormatter
 }
 
 
