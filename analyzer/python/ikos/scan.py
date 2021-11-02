@@ -670,8 +670,8 @@ class ScanServer(threading.Thread):
 def compile_main(mode, argv):
     progname = os.path.basename(argv[0])
 
-    if 'IKOS_SCAN_SERVER' not in os.environ and 'IKOS_SCAN_NOTIFIER_FILES' not in os.environ:
-        printf('error: %s: missing environment variable IKOS_SCAN_SERVER.\n',
+    if not ('IKOS_SCAN_SERVER' in os.environ or 'IKOS_SCAN_NOTIFIER_FILES' in os.environ):
+        printf('error: %s: missing environment variable IKOS_SCAN_SERVER or IKOS_SCAN_NOTIFIER_FILES.\n',
                progname, file=sys.stderr)
         sys.exit(1)
 
