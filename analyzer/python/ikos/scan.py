@@ -598,8 +598,8 @@ def notify_binary_built(exe_path, bc_path):
             }))
     else:
         binary = {
-            'exe': os.path.abspath(exe_path),
-            'bc': os.path.abspath(bc_path),
+            'exe': abs_exe_path,
+            'bc': abs_bc_path,
         }
         data = http.urlencode(binary).encode('utf-8')
         http.urlopen(os.environ['IKOS_SCAN_SERVER'], data)
