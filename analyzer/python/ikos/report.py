@@ -1111,9 +1111,8 @@ class JUnitFormatter(Formatter):
         if db:
             results = db.load_timing_results(True, True)
             for result in results:
-                print(result)
                 if result[0] == 'ikos-analyzer':
-                    elapsed = result[1]
+                    return result[1]
         return elapsed
 
     # some messages provided by IKOS are multi-line but 
@@ -1141,7 +1140,6 @@ class JUnitFormatter(Formatter):
             'time': '%.3f' % round(elapsed, 3),
             'skip': 0,
         }
-        print (data)
         xml = """<?xml version="1.0" encoding="UTF-8"?>
 <testsuite
   name="%(testname)s"
