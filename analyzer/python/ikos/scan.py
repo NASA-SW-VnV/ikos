@@ -594,7 +594,8 @@ def notify_binary_built(exe_path, bc_path):
         with open(indicator_path, 'w') as indicator_file:
             indicator_file.write(json.dumps({
                 'exe': abs_exe_path,
-                'bc': abs_bc_path}))
+                'bc': abs_bc_path,
+            }))
     else:
         binary = {
             'exe': os.path.abspath(exe_path),
