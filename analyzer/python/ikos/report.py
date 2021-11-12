@@ -947,6 +947,35 @@ class SARIFFormatter(Formatter):
         else:
             return text
 
+    def format_location(self, statement, message=None):
+        path = format_path(statement.file_path())
+        artifact = {'uri': path}
+        region = {'startLine': statement.line, 'startColumn': statement.column}
+        physical = {'artifactLocation': artifact, 'region': region}
+        location = {'physicalLocation': physical}
+        if message:
+            location['message'] = {'text': message}
+        return location
+
+    def format_stacks(self, statement_report):
+        call_contexts = statement_report.call_contexts()
+        stacks = []
+        for context in call_contexts:
+            frames = []
+            while not context.empty():
+                call = context.call()
+                func = call.function().pretty_name()
+                location = self.format_location(call, message="Call from %s" % func)
+                frames.append({'location': location})
+                context = context.parent()
+            if frames:
+                # The Sarif Viewer extension for VS Code ignores stacks without
+                # a message for some reason
+                message = {'text': str(context)}
+                stack = {'message': message, 'frames': frames}
+                stacks.append(stack)
+        return stacks
+
     def format_results(self, report):
         results = []
         for statement_report in report.statement_reports:
@@ -961,18 +990,11 @@ class SARIFFormatter(Formatter):
                     'message': {
                         'text': self.single_line(generate_message(statement_report, self.verbosity)),
                     },
-                    'locations': [
-                        {
-                            'physicalLocation': {
-                                'artifactLocation': {'uri': format_path(path)},
-                                'region': {
-                                    'startLine': statement.line,
-                                    'startColumn': statement.column,
-                                },
-                            },
-                        },
-                    ],
+                    'locations': [self.format_location(statement)],
                 }
+                stacks = self.format_stacks(statement_report)
+                if stacks:
+                    result['stacks'] = stacks
                 results.append(result)
         return results
 
