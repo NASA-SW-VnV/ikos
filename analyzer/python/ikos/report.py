@@ -1007,7 +1007,7 @@ class SARIFFormatter(Formatter):
         }
         log = {
             'version': '2.1.0',
-            '$schema': 'http://json.schemastore.org/sarif-2.1.0-rtm.5',
+            '$schema': 'http://json.schemastore.org/sarif-2.1.0',
             'runs': [run],
         }
         json.dump(log, self.output)
