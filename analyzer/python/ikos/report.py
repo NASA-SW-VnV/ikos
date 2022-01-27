@@ -941,7 +941,7 @@ class SARIFFormatter(Formatter):
     # some messages provided by IKOS are multi-line but it's not possible under the SARIF format:
     # change it into some single line message
     def single_line(self, text):
-        # 
+        # bundle multi-line messages into single-line messages
         if '\n\t*' in text:
             return text.replace('\n\t*', '  +--> ')
         else:
@@ -988,7 +988,7 @@ class SARIFFormatter(Formatter):
                     'ruleId': CheckKind.short_name(statement_report.kind),
                     'level': self.format_level(Result.str(statement_report.status)),
                     'message': {
-                        'text': self.single_line(generate_message(statement_report, self.verbosity)),
+                        'text': quoteattr(self.single_line(generate_message(statement_report, self.verbosity))),
                     },
                     'locations': [self.format_location(statement)],
                 }
@@ -1010,7 +1010,7 @@ class SARIFFormatter(Formatter):
             '$schema': 'http://json.schemastore.org/sarif-2.1.0',
             'runs': [run],
         }
-        json.dump(log, self.output)
+        json.dump(log, self.output, indent = 3)
         self.output.write('\n')
 
 
