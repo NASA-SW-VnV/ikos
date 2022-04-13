@@ -73,7 +73,8 @@ bool has_debug_info(llvm::Module& m) {
 // Importer
 
 ar::Bundle* Importer::import(llvm::Module& module, ImportOptions opts) {
-  ikos_assert_msg(has_debug_info(module), "no debug information");
+  // We now support analysis with no debug information, so do not assert.
+  //    ikos_assert_msg(has_debug_info(module), "no debug information");
 
   // Create the data layout
   std::unique_ptr< ar::DataLayout > data_layout =

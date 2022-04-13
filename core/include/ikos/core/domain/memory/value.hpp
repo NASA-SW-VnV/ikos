@@ -53,6 +53,7 @@
 
 #include <type_traits>
 
+#include <ikos/core/support/cast.hpp>
 #include <ikos/core/domain/lifetime/abstract_domain.hpp>
 #include <ikos/core/domain/memory/abstract_domain.hpp>
 #include <ikos/core/domain/memory/value/cell_set.hpp>
@@ -61,6 +62,7 @@
 #include <ikos/core/semantic/machine_int/variable.hpp>
 #include <ikos/core/semantic/memory/value/cell_factory.hpp>
 #include <ikos/core/semantic/memory/value/cell_variable.hpp>
+#include <unordered_set>
 
 namespace ikos {
 namespace core {
@@ -1162,6 +1164,60 @@ private:
     return updated_cells;
   }
 
+
+  /// \brief Detect Read from Uninitialized Memory
+  bool is_read_uninitialized(MemoryLocationRef base,
+                            const MachineInt& offset,
+                            const MachineInt& size) {
+    CellSetT cells = this->_cells.get(base);
+    if (cells.is_empty()) {
+      return true; // If no cells, certainly uninitialized.
+    }
+    if (!offset.fits<long>()) {
+      // Give up if we cannot manipulate the offset natively.
+      return false;
+    }
+    if (!size.fits<long>()) {
+      // Give up if we cannot manipulate the size natively.
+      return false;
+    }
+
+    // Our strategy is to define a set of byte offsets we are
+    // trying to read. Then remove from the set byte offsets
+    // covered by existing cells. If it becomes empty, then
+    // all bytes are initialized.
+    long loffset = offset.to<long>();
+    long lsize = size.to<long>();
+    std::unordered_set<long> bytes;
+    for (long i = 0; i < lsize; ++i) {
+      long byte_offset = loffset + i; // Worry about overflow?
+      bytes.insert(byte_offset);
+    }
+    for (VariableRef cell : cells) {
+      const MachineInt& other_offset = CellVariableTrait::offset(cell);
+      const MachineInt& other_size = CellVariableTrait::size(cell);
+      if (!other_offset.fits<long>()) {
+        // Give up if we cannot manipulate the offset natively.
+        return false;
+      }
+      if (!other_size.fits<long>()) {
+        // Give up if we cannot manipulate the size natively.
+        return false;
+      }
+      long l_other_offset = other_offset.to<long>();
+      long l_other_size = other_size.to<long>();
+      long l_other_max = l_other_offset + l_other_size - 1;
+      for (long j = l_other_offset; j <= l_other_max ; ++j) {
+        bytes.erase(j);
+      }
+      if (bytes.empty()) {
+        // It was completely initialized.
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// \brief Create a new cell for a read
   VariableRef read_realize_single_cell(MemoryLocationRef base,
                                        const MachineInt& offset,
@@ -1495,6 +1551,12 @@ public:
       bool first = true;
 
       for (MemoryLocationRef addr : addrs) {
+        if (is_read_uninitialized(addr, offset, size)) {
+          // No cell found for the base address, so must not be initialized.
+          this->uninit_refine(lhs.var(), Uninitialized::uninitialized());
+          return;
+        }
+
         VariableRef cell =
             this->read_realize_single_cell(addr, offset, size, sign);
 

@@ -922,9 +922,9 @@ int main(int argc, char** argv) {
     {
       analyzer::log::debug("Checking for debug information");
       if (!llvm_to_ar::has_debug_info(*module)) {
+        // We warn but allow analysis to proceed.
         llvm::errs() << progname << ": " << InputFilename
-                     << ": error: llvm bitcode has no debug information\n";
-        return 4;
+                     << ": warning: llvm bitcode has no debug information\n";
       }
     }
 
