@@ -345,6 +345,11 @@ def parse_arguments(argv):
                        help='Display the Abstract Representation as text',
                        action='store_true',
                        default=False)
+    debug.add_argument('--trace-ar-stmts',
+                       dest='trace_ar_stmts',
+                       help='Trace analysis of ar statements',
+                       action='store_true',
+                       default=False)
     debug.add_argument('--display-liveness',
                        dest='display_liveness',
                        help='Display liveness analysis results',
@@ -843,6 +848,8 @@ def ikos_analyzer(db_path, pp_path, opt):
 
     if opt.display_ar:
         cmd.append('-display-ar')
+    if opt.trace_ar_stmts:
+        cmd.append('-trace-ar-stmts')
     if opt.display_liveness:
         cmd.append('-display-liveness')
     if opt.display_function_pointer:

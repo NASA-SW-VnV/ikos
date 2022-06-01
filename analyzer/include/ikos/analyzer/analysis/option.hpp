@@ -335,6 +335,9 @@ public:
   /// \brief Wether we should perform checks or not
   bool use_checks;
 
+  /// \brief Whether to trace states during analysis
+  bool trace_ar_statements;
+
   /// \brief Policy of initialization for global variables
   GlobalsInitPolicy globals_init_policy;
 

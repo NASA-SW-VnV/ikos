@@ -123,6 +123,8 @@ public:
                    ar::CallBase* call,
                    ar::Function* callee);
 
+  virtual ~FunctionFixpoint();
+  
   /// \brief Compute the fixpoint
   void run(AbstractDomain inv) override;
 

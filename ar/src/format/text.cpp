@@ -70,7 +70,9 @@ void TextFormatter::format(std::ostream& o, Bundle* bundle) const {
   o << "target-pointer-size = " << data_layout.pointers.bit_width << " bits\n";
 
   // target triple
-  o << "target-triple = " << bundle->target_triple() << "\n";
+  if (!bundle->target_triple().empty()) {
+    o << "target-triple = " << bundle->target_triple() << "\n";
+  }
 
   if (!this->order_globals()) {
     // global variables
@@ -140,6 +142,49 @@ void TextFormatter::format(std::ostream& o, GlobalVariable* gv) const {
     this->format(o, gv->initializer());
     o << "}\n";
   }
+}
+
+void TextFormatter::format_header(std::ostream& o, const Function* f,
+                                  Namer& namer) const {
+
+  FunctionType* type = f->type(); // declare/define
+  if (f->is_declaration()) {
+    o << "declare ";
+  } else {
+    namer.init(f->body()); // initialize the namer
+    o << "define ";
+  }
+
+  // return type and name
+  format(o, type->return_type());
+  o << " @" << f->name();
+
+  // parameters
+  o << "(";
+  if (f->is_declaration()) {
+    for (auto it = type->param_begin(), et = type->param_end(); it != et;) {
+      format(o, *it);
+      ++it;
+      if (it != et) {
+        o << ", ";
+      }
+    }
+  } else {
+    for (auto it = f->param_begin(), et = f->param_end(); it != et;) {
+      format(o, *it, namer, true);
+      ++it;
+      if (it != et) {
+        o << ", ";
+      }
+    }
+  }
+  if (f->is_var_arg()) {
+    if (type->num_parameters() > 0) {
+      o << ", ";
+    }
+    o << "...";
+  }
+  o << ")";
 }
 
 void TextFormatter::format(std::ostream& o, Function* f) const {
