@@ -113,6 +113,8 @@ void AnalysisOptions::save(SettingsTable& table) {
 
   table.insert("use-checks", this->use_checks);
 
+  table.insert("trace-ar-statements", this->trace_ar_statements);
+
   table.insert("globals-init-policy",
                globals_init_policy_str(this->globals_init_policy));
 
