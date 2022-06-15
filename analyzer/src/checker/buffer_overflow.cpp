@@ -783,7 +783,7 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_mem_access(
   if (size.is_undefined() ||
       (size.is_machine_int_var() &&
        inv.normal().uninit_is_uninitialized(size.var()))) {
-    // Undefined pointer operand
+    // Undefined size operand
     if (auto msg = this->display_mem_access_check(Result::Error,
                                                   stmt,
                                                   pointer,

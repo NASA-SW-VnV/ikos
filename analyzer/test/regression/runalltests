@@ -1,0 +1,11 @@
+#!/usr/bin/sh
+for d in `find -type d`
+do
+if test -x "$d/runtest"
+then
+    echo "++++++++++++"
+    echo $d
+    $d/runtest
+fi
+echo ""
+done

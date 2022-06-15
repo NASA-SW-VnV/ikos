@@ -665,6 +665,14 @@ public:
 
   friend class QNumber;
 
+  friend ZNumber single_mask(const ZNumber& size);
+
+  friend ZNumber double_mask(const ZNumber& low, const ZNumber& high);
+
+  friend ZNumber make_clipped_mask(
+      const ZNumber& low, const ZNumber& size,
+      const ZNumber& lower_clip, const ZNumber& size_clip);
+
 }; // end class ZNumber
 
 /// \name Binary Operators
@@ -1157,6 +1165,60 @@ inline std::size_t hash_value(const ZNumber& n) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
     boost::hash_combine(result, m.get_mpz_t()[0]._mp_d[i]);
   }
+  return result;
+}
+
+/// \brief Return a mask with size bits starting at 0.
+inline ZNumber single_mask(const ZNumber& size) {
+    ZNumber pow2 = ZNumber(1) << size;
+    ZNumber mask = pow2 - 1;
+    return mask;
+}
+
+/// \brief Return a mask with bits [low, high).
+inline ZNumber double_mask(const ZNumber& low, const ZNumber& high) {
+   ZNumber high_mask = single_mask(high);
+   ZNumber low_mask = single_mask(low);
+   ZNumber result = high_mask - low_mask;
+   return result;
+}
+
+
+/// \brief return a bit mask with bits in the range
+/// [0, size_clip), with bits taken from the intersection of
+/// [low, low + size) with [low_clip, low_clip + size_clip)
+/// with the result shifted by low_clip to fit in the
+/// range [0, size_clip).
+inline ZNumber make_clipped_mask(
+    const ZNumber& low, const ZNumber& size,
+    const ZNumber& lower_clip, const ZNumber& size_clip) {
+  ZNumber upper_clip = lower_clip + size_clip;
+  ZNumber upper = low + size;
+  if ((low >= upper_clip) || (upper <= lower_clip)) {
+    // No overlap.
+    return ZNumber(0);
+  }
+  // Because of the above, we assert
+  // (low < upper_clip) && (upper > lower_clip).
+
+  ZNumber shifted_low = low - lower_clip;
+  ZNumber shifted_size = size;
+  if (shifted_low < 0) {
+    shifted_size = shifted_size + shifted_low;
+    // shifted_size = size + shifted_low
+    //              = (upper - low) + (low - lower_clip)
+    //              = upper - lower_clip
+    //              > 0   because of the above test.
+    shifted_low = 0;
+  }
+  ZNumber shifted_upper = upper - lower_clip;
+  // By the above shifted_upper > 0.
+  // But we do not want it to exceed size_clip.
+  if (shifted_upper > size_clip) {
+    shifted_upper = size_clip;
+  }
+
+  ZNumber result = double_mask(shifted_low, shifted_upper);
   return result;
 }
 

@@ -676,6 +676,19 @@ public:
     this->_integer.apply(op, x, y);
   }
 
+
+  // \brief Assert that x is initialized (throw if not), but only if the
+  // operation, op, is not logical "and" or "or" as these are used in
+  // bitfield operations which may start with uninitialized memory.
+  // Is only called if one of the operands is constant.
+  void assert_initialized_if_not_and_or(IntBinaryOperator op, VariableRef x) {
+    if ((op == IntBinaryOperator::And) || (op == IntBinaryOperator::Or)) {
+      return;
+    }
+
+    this->_uninitialized.assert_initialized(x);
+  }
+
   void int_apply(IntBinaryOperator op,
                  VariableRef x,
                  VariableRef y,
@@ -711,7 +724,7 @@ public:
       return;
     }
 
-    this->_uninitialized.assert_initialized(y);
+    this->assert_initialized_if_not_and_or(op, y);
 
     if (this->_uninitialized.is_bottom()) {
       this->set_to_bottom();
@@ -733,7 +746,7 @@ public:
       return;
     }
 
-    this->_uninitialized.assert_initialized(z);
+    this->assert_initialized_if_not_and_or(op, z);
 
     if (this->_uninitialized.is_bottom()) {
       this->set_to_bottom();

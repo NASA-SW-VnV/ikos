@@ -73,6 +73,27 @@ void UninitializedVariableChecker::check(ar::Statement* stmt,
     return;
   }
 
+  // Exempt "And" and "Or" if one operand is constant.
+  if (ar::BinaryOperation* inst = dyn_cast< ar::BinaryOperation >(stmt)) {
+    auto op = inst->op();
+    switch (op) {
+      case ar::BinaryOperation::Operator::UAnd:
+      case ar::BinaryOperation::Operator::UOr:
+      case ar::BinaryOperation::Operator::SAnd:
+      case ar::BinaryOperation::Operator::SOr: {
+        auto left = inst->left();
+        auto right = inst->right();
+        if (left->is_integer_constant() || right->is_integer_constant()) {
+          return;
+        }
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  }
+
   if (auto insert = dyn_cast< ar::InsertElement >(stmt)) {
     // InsertElement accepts undefined aggregate operands
     this->check_initialized(stmt, insert->offset(), inv, call_context);
