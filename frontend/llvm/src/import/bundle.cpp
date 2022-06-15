@@ -151,6 +151,27 @@ ar::Code* BundleImporter::translate_global_variable_initializer(
   return init;
 }
 
+// This is used in the case where there is no debug information.
+ar::Function* BundleImporter::translate_internal_function(llvm::Function* fun) {
+  ikos_assert(!fun->isDeclaration());
+
+  ar::Function* ar_fun = nullptr;
+
+  // Use int for the type since it is more common than unsigned in C
+  llvm::FunctionType* type = fun->getFunctionType();
+
+  auto ar_type = ar::cast< ar::FunctionType >(
+      _ctx.type_imp->translate_type(type, ar::Signed));
+
+  ar_fun = ar::Function::create(this->_bundle,
+                                ar_type,
+                                fun->getName().str(),
+                                /*is_definition = */ true);
+
+  ikos_assert(ar_fun);
+  return ar_fun;
+}
+
 ar::Function* BundleImporter::translate_function(llvm::Function* fun) {
   auto it = this->_functions.find(fun);
 
@@ -257,27 +278,6 @@ ar::Function* BundleImporter::translate_extern_function(llvm::Function* fun) {
   return ar_fun;
 }
 
-// This is used in the case where there is no debug information.
-ar::Function* BundleImporter::translate_internal_function(llvm::Function* fun) {
-  ikos_assert(!fun->isDeclaration());
-
-  ar::Function* ar_fun = nullptr;
-
-  // Use int for the type since it is more common than unsigned in C
-  llvm::FunctionType* type = fun->getFunctionType();
-
-  auto ar_type = ar::cast< ar::FunctionType >(
-      _ctx.type_imp->translate_type(type, ar::Signed));
-
-  ar_fun = ar::Function::create(this->_bundle,
-				ar_type,
-				fun->getName().str(),
-				/*is_definition = */ true);
-
-  ikos_assert(ar_fun);
-  return ar_fun;
-}
-
 bool BundleImporter::ignore_intrinsic(llvm::Intrinsic::ID id) {
   return id == llvm::Intrinsic::dbg_value ||
          id == llvm::Intrinsic::dbg_declare ||
@@ -354,9 +354,7 @@ ar::Function* BundleImporter::translate_library_function(llvm::Function* fun) {
       buf << "llvm function " << fun->getName().str() << " and ar intrinsic "
           << ar_fun->name() << " have a different type";
     }
-    // We no longer throw but give warning.
-    //   throw ImportError(buf.str());
-    std::cerr << "Warning:" << buf.str() << "\n";
+    std::cerr << "Warning: " << buf.str() << "\n";
     std::cerr << "LLVM function declaration\n";
     std::cerr << "ikos ar expected function declaration\n";
     std::cerr << "Expected signature will be ignored.\n";

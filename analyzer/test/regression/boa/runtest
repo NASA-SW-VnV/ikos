@@ -207,7 +207,7 @@ if __name__ == '__main__':
                             (18, 'warning'),
                             (23, 'warning'),
                             (27, 'warning')]))
-    t.add(Test('test-52.c', 'test-52.c', 'boa', 'error'))
+    t.add(Test('test-52.c', 'test-52.c', ['boa', 'uva'], 'error'))
     t.add(Test('test-53.c', 'test-53.c (interval)', 'boa', 'safe',
                expected='unsafe',
                domain='interval'))
@@ -219,7 +219,7 @@ if __name__ == '__main__':
                expected='unsafe',
                line_checks=[(2, 'ok', 'warning'),
                             (7, 'ok')]))
-    t.add(Test('test-56.cpp', 'test-56.cpp', 'boa', 'error'))
+    t.add(Test('test-56.cpp', 'test-56.cpp', ['boa','uva'], 'error'))
     t.add(Test('astree-ex.c', 'astree-ex.c', 'boa', 'safe',
                expected='unsafe',
                line_checks=[(20, 'ok', 'warning')]))
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     t.add(Test('test-65.c', 'test-65.c (interval)', 'boa', 'safe', expected='unsafe', domain='interval'))
     t.add(Test('test-65.c', 'test-65.c (var-pack-dbm)', 'boa', 'safe', domain='var-pack-dbm'))
     t.add(Test('test-65.c', 'test-65.c (dbm)', 'boa', 'safe', domain='dbm'))
-    t.add(Test('test-66.c', 'test-66.c (interval)', 'boa', 'safe', expected='unsafe', domain='interval'))
+    t.add(Test('test-66.c', 'test-66.c (interval)', ['boa', 'uva'], 'error', domain='interval'))
     t.add(Test('test-66.c', 'test-66.c (var-pack-dbm)', 'boa', 'safe', domain='var-pack-dbm'))
     t.add(Test('test-66.c', 'test-66.c (dbm)', 'boa', 'safe', domain='dbm'))
     t.add(Test('test-67.c', 'test-67.c (interval)', 'boa', 'safe', expected='unsafe', domain='interval'))
