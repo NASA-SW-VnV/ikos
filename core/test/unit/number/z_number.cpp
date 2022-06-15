@@ -606,4 +606,32 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   boost::test_tools::output_test_stream output;
   output << Z(42);
   BOOST_CHECK(output.is_equal("42"));
+
+// ZNumber single_mask(const ZNumber& size);
+
+  BOOST_CHECK(single_mask(Z(0)) == Z(0));
+  BOOST_CHECK(single_mask((Z(1) << 32) - 1) == single_mask((Z(1) << 32) - 1));
+  // On some platforms bigger values will work, but don't count on it.
+  // BOOST_CHECK(single_mask(Z(1) << 34) == single_mask(Z(1) << 34));
+  BOOST_CHECK(single_mask(Z(5)).str(2) == "11111");
+
+  //  ZNumber double_mask(const ZNumber& low, const ZNumber& high);
+  BOOST_CHECK(double_mask(Z(2), Z(5)).str(2) == "11100");
+  BOOST_CHECK(double_mask(Z(0), Z(5)).str(2) == "11111");
+
+
+  // ZNumber make_clipped_mask(
+  //      const ZNumber& low, const ZNumber& size,
+  //      const ZNumber& lower_clip, const ZNumber& size_clip);
+  BOOST_CHECK(make_clipped_mask(Z(2), Z(5), Z(2), Z(5)).str(2) == "11111");
+  BOOST_CHECK(make_clipped_mask(Z(0), Z(10), Z(2), Z(5)).str(2) == "11111");
+  BOOST_CHECK(make_clipped_mask(Z(0), Z(7), Z(2), Z(5)).str(2) == "11111");
+  BOOST_CHECK(make_clipped_mask(Z(0), Z(5), Z(2), Z(5)).str(2) == "111");
+  BOOST_CHECK(make_clipped_mask(Z(0), Z(2), Z(2), Z(5)).str(2) == "0");
+  BOOST_CHECK(make_clipped_mask(Z(0), Z(1), Z(2), Z(5)).str(2) == "0");
+  BOOST_CHECK(make_clipped_mask(Z(3), Z(2), Z(2), Z(5)).str(2) == "110");
+  BOOST_CHECK(make_clipped_mask(Z(2), Z(4), Z(2), Z(5)).str(2) == "1111");
+  BOOST_CHECK(make_clipped_mask(Z(2), Z(5), Z(2), Z(5)).str(2) == "11111");
+  BOOST_CHECK(make_clipped_mask(Z(6), Z(2), Z(2), Z(5)).str(2) == "10000");
+  BOOST_CHECK(make_clipped_mask(Z(7), Z(5), Z(2), Z(5)).str(2) == "0");
 }
