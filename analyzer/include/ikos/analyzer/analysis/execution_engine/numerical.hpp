@@ -258,8 +258,9 @@ public:
     // Update pointer, lifetime and initial value for the memory location
     this->allocate_memory(ptr, addr, nullity, lifetime, init_val);
     if (init_val == MemoryInitialValue::Uninitialized) {
-      // Writing undefined will mark it uninitialized,
-      // but then we need to set nullity and lifetime.
+      // When the size of the allocation is known (like it is here)
+      // we mark the storage as uninitialized by assigning it
+      // the undefined value.
       this->_inv.normal().mem_write(ptr,
                                     ScalarLit::undefined(),
                                     alloc_size);
