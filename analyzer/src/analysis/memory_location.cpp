@@ -65,7 +65,7 @@ LocalMemoryLocation::LocalMemoryLocation(ar::LocalVariable* var)
 }
 
 void LocalMemoryLocation::dump(std::ostream& o) const {
-  o << "LML{";
+  o << "LocalMemoryLocation{";
   this->_var->dump(o);
   o << "}";
 }
@@ -78,7 +78,7 @@ GlobalMemoryLocation::GlobalMemoryLocation(ar::GlobalVariable* var)
 }
 
 void GlobalMemoryLocation::dump(std::ostream& o) const {
-  o << "GML{";
+  o << "GlobalMemoryLocation{";
   this->_var->dump(o);
   o << "}";
 }
@@ -102,7 +102,7 @@ AggregateMemoryLocation::AggregateMemoryLocation(ar::InternalVariable* var)
 }
 
 void AggregateMemoryLocation::dump(std::ostream& o) const {
-  o << "AML{";
+  o << "AggregateMemoryLocation{";
   this->_var->dump(o);
   o << "}";
 }

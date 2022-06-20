@@ -1212,8 +1212,8 @@ private:
     ZNumber initialized_coverage = ZNumber(0);
     ZNumber uninitialized_coverage = ZNumber(0);
     for (VariableRef cell : cells) {
-      const ZNumber& other_offset = CellVariableTrait::offset(cell).to_z_number();
-      const ZNumber& other_size = CellVariableTrait::size(cell).to_z_number();
+      ZNumber other_offset = CellVariableTrait::offset(cell).to_z_number();
+      ZNumber other_size = CellVariableTrait::size(cell).to_z_number();
       ZNumber cell_mask =
           make_clipped_mask(other_offset, other_size, zoffset, zsize);
       Uninitialized cell_uninit = this->uninit_to_uninitialized(cell);
@@ -1245,57 +1245,8 @@ private:
     VariableRef new_cell = this->make_cell(base, offset, size, sign);
     this->_scalar.uninit_refine(new_cell, addr_uninit);
     CellSetT cells = this->_cells.get(base);
-
-    if (cells.is_empty()) {
-      // No cell found for the base address
-      this->_cells.set(base, CellSetT{new_cell});
-      return new_cell;
-    }
-
-    CellSetT new_cells = cells;
-    bool found = false;
-
-    IntInterval new_interval = this->cell_range(new_cell);
-    MachineInt new_lb = new_interval.lb();
-    MachineInt new_ub = new_interval.ub();
-
-    // Remove overlapping cells if uninitialized.
-    for (VariableRef cell : cells) {
-      if (cell == new_cell) {
-        found = true;
-      } else if (this->cell_overlap(cell, new_cell)) {
-        if (this->_scalar.uninit_is_uninitialized(cell)) {
-          // Make new uninitialized cells for the parts not covered
-          // by the new_cell.
-          IntInterval un_interval = this->cell_range(cell);
-          MachineInt un_lb = un_interval.lb();
-          MachineInt un_ub = un_interval.ub();
-          if (un_lb < new_lb) {
-            MachineInt low_size = new_lb - un_lb;
-            VariableRef low_cell = this->make_cell(base, un_lb, low_size, sign);
-            this->_scalar.uninit_refine(low_cell, Uninitialized::uninitialized());
-            new_cells.add(low_cell);
-          }
-          if (new_ub < un_ub) {
-            MachineInt high_size = un_ub - new_ub;
-            auto one = MachineInt(1, high_size.bit_width(), Unsigned);
-            MachineInt high_lb = new_ub + one;
-            VariableRef high_cell = this->make_cell(base, high_lb, high_size, sign);
-            this->_scalar.uninit_refine(high_cell, Uninitialized::uninitialized());
-            new_cells.add(high_cell);
-          }
-          this->_scalar.dynamic_forget(cell);
-          new_cells.remove(cell);
-        } else {
-          // Cell is at least potentially initialized, so keep it.
-        }
-      }
-    }
-
-    if (!found) {
-      new_cells.add(new_cell);
-    }
-    this->_cells.set(base, new_cells);
+    cells.add(new_cell);
+    this->_cells.set(base, cells);
     return new_cell;
   }
 

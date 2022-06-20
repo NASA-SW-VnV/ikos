@@ -263,8 +263,6 @@ public:
       this->_inv.normal().mem_write(ptr,
                                     ScalarLit::undefined(),
                                     alloc_size);
-      this->_inv.normal().nullity_set(ptr, nullity);
-      this->_inv.normal().lifetime_assign_allocated(addr);
     }
 
     if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
