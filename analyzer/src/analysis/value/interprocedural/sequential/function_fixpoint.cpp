@@ -77,14 +77,14 @@ FunctionFixpoint::FunctionFixpoint(
       _checkers(checkers),
       _exit_invariant(make_bottom_abstract_value(ctx)),
       _return_stmt(nullptr),
-      _logger(logger)
+      _logger(logger),
+      _namer(new ar::Namer(entry_point->body()))
 {
   if (_ctx.opts.trace_ar_statements) {
-    ar::TextFormatter formatter{};
-    auto& stream = analyzer::log::msg().stream();
-    stream << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
-    ar::Namer namer;
-    formatter.format_header(stream, _function, namer);
+    auto msg = analyzer::log::msg();
+    auto& stream = msg.stream();
+    msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
+    ar::TextFormatter().format_header(stream, _function, *_namer);
     stream << std::endl;
   }
 }
@@ -102,17 +102,18 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
       _checkers(caller._checkers),
       _exit_invariant(make_bottom_abstract_value(ctx)),
       _return_stmt(nullptr),
-      _logger(caller._logger)
+      _logger(caller._logger),
+      _namer(new ar::Namer(callee->body()))
 {
   if (_ctx.opts.trace_ar_statements) {
     ar::TextFormatter formatter{};
-    auto& stream = analyzer::log::msg().stream();
-    stream << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
-    ar::Namer namer;
-    formatter.format_header(stream, _function, namer);
-    stream << "\n  from caller ";
-    formatter.format_header(stream, caller._function, namer);
-    stream << "\n  from call site ";
+    auto msg = analyzer::log::msg();
+    auto& stream = msg.stream();
+    msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
+    formatter.format_header(stream, _function, *_namer);
+    msg << "\n  from caller ";
+    formatter.format_header(stream, caller._function, *_namer);
+    msg << "\n  from call site ";
     call->dump(stream);
     stream << std::endl;
   }
@@ -120,11 +121,10 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
 
 FunctionFixpoint::~FunctionFixpoint() noexcept {
   if (_ctx.opts.trace_ar_statements) {
-    ar::TextFormatter formatter{};
-    auto& stream = analyzer::log::msg().stream();
-    stream << "\n<<<<<<<<<<\nExiting Interprocedural Sequential FunctionFixpoint for ";
-    ar::Namer namer;
-    formatter.format_header(stream, _function, namer);
+    auto msg = analyzer::log::msg();
+    auto& stream = msg.stream();
+    msg << "\n<<<<<<<<<<\nExiting Interprocedural Sequential FunctionFixpoint for ";
+    ar::TextFormatter().format_header(stream, _function, *_namer);
     stream << std::endl;
   }
 }
@@ -240,26 +240,30 @@ AbstractDomain FunctionFixpoint::analyze_node(ar::BasicBlock* bb,
                                               this->_callees_cache);
   exec_engine.exec_enter(bb);
   if (_ctx.opts.trace_ar_statements) {
-    auto& stream = analyzer::log::msg().stream();
-    stream << "Entering basic block: ";
+    auto msg = analyzer::log::msg();
+    auto& stream = msg.stream();
+    msg << "Entering basic block: ";
     bb->dump(stream);
     stream << std::endl;
-    stream << "  Invariant on entry to basic block:" << std::endl;
+    msg << "  Invariant on entry to basic block:";
+    stream << std::endl;
     exec_engine.inv().dump(stream);
     stream << std::endl;
   }
 
   for (ar::Statement* stmt : *bb) {
     if (_ctx.opts.trace_ar_statements) {
-      auto& stream = analyzer::log::msg().stream();
-      stream << "Processing: ";
+      auto msg = analyzer::log::msg();
+      auto& stream = msg.stream();
+      msg << "Processing: ";
       stmt->dump(stream);
       stream << std::endl;
     }
     transfer_function(exec_engine, call_exec_engine, stmt);
     if (_ctx.opts.trace_ar_statements) {
-      auto& stream = analyzer::log::msg().stream();
-      stream << "  Invariant after: ";
+      auto msg = analyzer::log::msg();
+      auto& stream = msg.stream();
+      msg << "  Invariant after: ";
       exec_engine.inv().dump(stream);
       stream << std::endl;
     }
@@ -348,19 +352,22 @@ void FunctionFixpoint::run_checks() {
     exec_engine.exec_enter(bb);
 
     if (_ctx.opts.trace_ar_statements) {
-      auto& stream = analyzer::log::msg().stream();
-      stream << "Entering basic block in run_checks: ";
+      auto msg = analyzer::log::msg();
+      auto& stream = msg.stream();
+      msg << "Entering basic block in run_checks: ";
       bb->dump(stream);
       stream << std::endl;
-      stream << "  Invariant on entry to basic block:" << std::endl;
+      msg << "  Invariant on entry to basic block:";
+      stream << std::endl;
       exec_engine.inv().dump(stream);
       stream << std::endl;
     }
 
     for (ar::Statement* stmt : *bb) {
       if (_ctx.opts.trace_ar_statements) {
-        auto& stream = analyzer::log::msg().stream();
-        stream << "Checking: ";
+        auto msg = analyzer::log::msg();
+        auto& stream = msg.stream();
+        msg << "Checking: ";
         stmt->dump(stream);
         stream << std::endl;
       }
@@ -377,8 +384,9 @@ void FunctionFixpoint::run_checks() {
       transfer_function(exec_engine, call_exec_engine, stmt);
 
       if (_ctx.opts.trace_ar_statements) {
-        auto& stream = analyzer::log::msg().stream();
-        stream << "  In run_checks, invariant after: ";
+        auto msg = analyzer::log::msg();
+        auto& stream = msg.stream();
+        msg << "  In run_checks, invariant after: ";
         exec_engine.inv().dump(stream);
         stream << std::endl;
       }

@@ -188,47 +188,8 @@ void TextFormatter::format_header(std::ostream& o, const Function* f,
 }
 
 void TextFormatter::format(std::ostream& o, Function* f) const {
-  FunctionType* type = f->type();
   Namer namer;
-
-  // declare/define
-  if (f->is_declaration()) {
-    o << "declare ";
-  } else {
-    namer.init(f->body()); // initialize the namer
-    o << "define ";
-  }
-
-  // return type and name
-  this->format(o, type->return_type());
-  o << " @" << f->name();
-
-  // parameters
-  o << "(";
-  if (f->is_declaration()) {
-    for (auto it = type->param_begin(), et = type->param_end(); it != et;) {
-      this->format(o, *it);
-      ++it;
-      if (it != et) {
-        o << ", ";
-      }
-    }
-  } else {
-    for (auto it = f->param_begin(), et = f->param_end(); it != et;) {
-      this->format(o, *it, namer, true);
-      ++it;
-      if (it != et) {
-        o << ", ";
-      }
-    }
-  }
-  if (f->is_var_arg()) {
-    if (type->num_parameters() > 0) {
-      o << ", ";
-    }
-    o << "...";
-  }
-  o << ")";
+  this->format_header(o, f, namer);
 
   // body
   if (f->is_declaration()) {
