@@ -43,6 +43,7 @@
 
 #pragma once
 
+#include "ikos/ar/format/namer.hpp"
 #include <ikos/ar/semantic/code.hpp>
 #include <ikos/ar/semantic/function.hpp>
 
@@ -100,6 +101,8 @@ private:
 
   /// \brief Progress logger
   ProgressLogger& _logger;
+
+  std::unique_ptr<ar::Namer> _namer;
 
 public:
   /// \brief Constructor for an entry point
