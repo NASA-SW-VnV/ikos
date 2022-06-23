@@ -81,8 +81,7 @@ FunctionFixpoint::FunctionFixpoint(
       _namer()
 {
   if (_ctx.opts.trace_ar_statements) {
-    this->_namer =
-        std::unique_ptr<ar::Namer>(new ar::Namer(entry_point->body()));
+    this->_namer = std::make_unique<ar::Namer>(entry_point->body());
     auto msg = analyzer::log::msg();
     auto& stream = msg.stream();
     msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
@@ -108,8 +107,7 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
       _namer()
 {
   if (_ctx.opts.trace_ar_statements) {
-    this->_namer =
-        std::unique_ptr<ar::Namer>(new ar::Namer(callee->body()));
+    this->_namer = std::make_unique<ar::Namer>(callee->body());
     ar::TextFormatter formatter{};
     auto msg = analyzer::log::msg();
     auto& stream = msg.stream();
