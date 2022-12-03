@@ -450,10 +450,7 @@ class StatementReport:
 
     def load_info(self):
         ''' Return the info, or None '''
-        if not self.info:
-            return None
-
-        return json.loads(self.info)
+        return json.loads(self.info) if self.info else None
 
     def __repr__(self):
         s = ('StatementReport('
@@ -933,19 +930,13 @@ class SARIFFormatter(Formatter):
 
     # the only levels in SARIF are error, warning, and note => change unreachable into note
     def format_level(self, level):
-        if level == "unreachable":
-            return "note"
-        else:
-            return level
+        return "note" if level == "unreachable" else level
 
     # some messages provided by IKOS are multi-line but it's not possible under the SARIF format:
     # change it into some single line message
     def single_line(self, text):
         # bundle multi-line messages into single-line messages
-        if '\n\t*' in text:
-            return text.replace('\n\t*', '  +--> ')
-        else:
-            return text
+        return text.replace('\n\t*', ' +--> ') if '\n\t*' in text else text
 
     def format_location(self, statement, message=None):
         path = format_path(statement.file_path())

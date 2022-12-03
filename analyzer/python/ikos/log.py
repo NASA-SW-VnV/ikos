@@ -73,10 +73,7 @@ out = sys.stdout
 def setup(level):
     global LEVEL
 
-    if level in LEVELS:
-        LEVEL = LEVELS[level]
-    else:
-        LEVEL = WARNING
+    LEVEL = LEVELS[level] if level in LEVELS else WARNING
 
 
 def printf(fmt, *args, **kwargs):

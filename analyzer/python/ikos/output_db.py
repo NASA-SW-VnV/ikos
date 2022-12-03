@@ -175,24 +175,15 @@ class Function(object):
 
     def pretty_name(self):
         ''' Return a pretty name '''
-        if self.demangled:
-            return self.demangled
-        else:
-            return self.name
+        return self.demangled or self.name
 
     def file(self):
         ''' Return the source file, or None '''
-        if self.file_id is None:
-            return None
-
-        return self.db.files[self.file_id]
+        return None if self.file_id is None else self.db.files[self.file_id]
 
     def file_path(self):
         ''' Return the source file path, or None '''
-        if self.file_id is None:
-            return None
-
-        return self.db.files[self.file_id].path
+        return None if self.file_id is None else self.db.files[self.file_id].path
 
 
 class Statement(object):
@@ -223,38 +214,23 @@ class Statement(object):
 
     def file(self):
         ''' Return the source file, or None '''
-        if self.file_id is None:
-            return None
-
-        return self.db.files[self.file_id]
+        return None if self.file_id is None else self.db.files[self.file_id]
 
     def file_path(self):
         ''' Return the source file path, or None '''
-        if self.file_id is None:
-            return None
-
-        return self.db.files[self.file_id].path
+        return None if self.file_id is None else self.db.files[self.file_id].path
 
     def file_id_or(self, default):
         ''' Return the file id, or default '''
-        if self.file_id is None:
-            return default
-
-        return self.file_id
+        return default if self.file_id is None else self.file_id
 
     def line_or(self, default):
         ''' Return the line number, or default '''
-        if self.line is None:
-            return default
-
-        return self.line
+        return default if self.line is None else self.line
 
     def column_or(self, default):
         ''' Return the column number, or None '''
-        if self.column is None:
-            return default
-
-        return self.column
+        return default if self.column is None else self.column
 
 
 class Operand(object):
@@ -340,10 +316,7 @@ class MemoryLocation(object):
 
     def load_info(self):
         ''' Return the info, or None '''
-        if not self.info:
-            return None
-
-        return json.loads(self.info)
+        return json.loads(self.info) if self.info else None
 
 
 class Check(object):

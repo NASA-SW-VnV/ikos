@@ -532,10 +532,7 @@ def parse_arguments(argv):
 
     # default value for generate-dot-dir
     if opt.generate_dot and not opt.generate_dot_dir:
-        if opt.temp_dir and opt.save_temps:
-            opt.generate_dot_dir = opt.temp_dir
-        else:
-            opt.generate_dot_dir = '.'
+        opt.generate_dot_dir = opt.temp_dir if opt.temp_dir and opt.save_temps else '.'
 
     # parse --status-filter
     opt.status_filter = args.parse_argument(parser,
@@ -553,10 +550,7 @@ def parse_arguments(argv):
     return opt
 
 
-if hasattr(shlex, 'quote'):
-    sh_quote = shlex.quote
-else:
-    sh_quote = pipes.quote
+sh_quote = shlex.quote if hasattr(shlex, 'quote') else pipes.quote
 
 
 def command_string(cmd):
