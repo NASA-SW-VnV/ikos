@@ -19,7 +19,7 @@ define <2 x i64> @f(<2 x i64>) #0 !dbg !8 {
 ; CHECK: define <2 x si64> @f(<2 x si64> %1) {
 ; CHECK: #1 !entry !exit {
 ; CHECK:   <4 x si32> %2 = bitcast %1
-; CHECK:   <4 x si32> %3 = shufflevector %2, undef, aggregate_zero
+; CHECK:   <4 x si32> %3 = shufflevector %2, undef
 ; CHECK:   <2 x si64> %4 = bitcast %3
 ; CHECK:   return %4
 ; CHECK: }

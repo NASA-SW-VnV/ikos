@@ -178,7 +178,7 @@ public:
   /// \brief Return the bit width of a primitive type
   ///
   /// Returns zero for non-primitive type.
-  unsigned primitive_bit_width() const;
+  uint64_t primitive_bit_width() const;
 
 protected:
   /// \brief Get the context implementation
@@ -231,18 +231,18 @@ public:
 class IntegerType final : public ScalarType {
 private:
   // Bit width
-  unsigned _bit_width;
+  uint64_t _bit_width;
 
   // Sign
   Signedness _sign;
 
 private:
   /// \brief Private constructor
-  IntegerType(unsigned bit_width, Signedness sign);
+  IntegerType(uint64_t bit_width, Signedness sign);
 
 public:
   /// \brief Static constructor
-  static IntegerType* get(Context& ctx, unsigned bit_width, Signedness sign);
+  static IntegerType* get(Context& ctx, uint64_t bit_width, Signedness sign);
 
   /// \brief Get the signed 1 bit integer type
   static IntegerType* si1(Context& ctx);
@@ -275,7 +275,7 @@ public:
   static IntegerType* ssize_type(Bundle* bundle);
 
   /// \brief Get the bit width
-  unsigned bit_width() const { return this->_bit_width; }
+  uint64_t bit_width() const { return this->_bit_width; }
 
   /// \brief Get the sign
   Signedness sign() const { return this->_sign; }
@@ -308,21 +308,21 @@ public:
 class FloatType final : public ScalarType {
 private:
   // Bit width
-  unsigned _bit_width;
+  uint64_t _bit_width;
 
   // Float semantic
   FloatSemantic _float_sem;
 
 private:
   /// \brief Private constructor
-  FloatType(unsigned bit_width, FloatSemantic float_sem);
+  FloatType(uint64_t bit_width, FloatSemantic float_sem);
 
 public:
   /// \brief Static constructor
   static FloatType* get(Context& ctx, FloatSemantic float_sem);
 
   /// \brief Get the bit width
-  unsigned bit_width() const { return this->_bit_width; }
+  uint64_t bit_width() const { return this->_bit_width; }
 
   /// \brief Get the float semantic
   FloatSemantic float_semantic() const { return this->_float_sem; }

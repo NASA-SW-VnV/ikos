@@ -78,13 +78,13 @@ FunctionFixpoint::FunctionFixpoint(
       _exit_invariant(make_bottom_abstract_value(ctx)),
       _return_stmt(nullptr),
       _logger(logger),
-      _namer()
-{
+      _namer() {
   if (_ctx.opts.trace_ar_statements) {
-    this->_namer = std::make_unique<ar::Namer>(entry_point->body());
+    this->_namer = std::make_unique< ar::Namer >(entry_point->body());
     auto msg = analyzer::log::msg();
     auto& stream = msg.stream();
-    msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
+    msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential "
+           "FunctionFixpoint for ";
     ar::TextFormatter().format_header(stream, _function, *_namer);
     stream << std::endl;
   }
@@ -104,14 +104,14 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
       _exit_invariant(make_bottom_abstract_value(ctx)),
       _return_stmt(nullptr),
       _logger(caller._logger),
-      _namer()
-{
+      _namer() {
   if (_ctx.opts.trace_ar_statements) {
-    this->_namer = std::make_unique<ar::Namer>(callee->body());
+    this->_namer = std::make_unique< ar::Namer >(callee->body());
     ar::TextFormatter formatter{};
     auto msg = analyzer::log::msg();
     auto& stream = msg.stream();
-    msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential FunctionFixpoint for ";
+    msg << "\n>>>>>>>>>>>>>>\nEntering Interprocedural Sequential "
+           "FunctionFixpoint for ";
     formatter.format_header(stream, _function, *_namer);
     msg << "\n  from caller ";
     formatter.format_header(stream, caller._function, *_namer);
@@ -121,11 +121,12 @@ FunctionFixpoint::FunctionFixpoint(Context& ctx,
   }
 }
 
-FunctionFixpoint::~FunctionFixpoint() noexcept {
+FunctionFixpoint::~FunctionFixpoint() {
   if (_ctx.opts.trace_ar_statements) {
     auto msg = analyzer::log::msg();
     auto& stream = msg.stream();
-    msg << "\n<<<<<<<<<<\nExiting Interprocedural Sequential FunctionFixpoint for ";
+    msg << "\n<<<<<<<<<<\nExiting Interprocedural Sequential FunctionFixpoint "
+           "for ";
     ar::TextFormatter().format_header(stream, _function, *_namer);
     stream << std::endl;
   }

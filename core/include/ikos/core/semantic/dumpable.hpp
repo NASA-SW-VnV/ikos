@@ -76,11 +76,11 @@ template < typename Dumpable,
 struct IsDumpable : std::false_type {};
 
 template < typename Dumpable, typename DumpableTrait >
-struct IsDumpable< Dumpable,
-                   DumpableTrait,
-                   decltype(
-                       DumpableTrait::dump(std::declval< std::ostream& >(),
-                                           std::declval< const Dumpable& >())) >
+struct IsDumpable<
+    Dumpable,
+    DumpableTrait,
+    decltype(DumpableTrait::dump(std::declval< std::ostream& >(),
+                                 std::declval< const Dumpable& >())) >
     : std::true_type {};
 
 } // end namespace core

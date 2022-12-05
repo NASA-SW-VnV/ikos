@@ -43,8 +43,8 @@
  *
  ******************************************************************************/
 
-#include <iostream>
 #include <ikos/core/support/assert.hpp>
+#include <iostream>
 
 #include <ikos/ar/semantic/statement.hpp>
 
@@ -95,7 +95,8 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
     // Prefer signed integers, because most global variables without
     // debug information are strings (const char*)
     ar_pointee_type =
-        _ctx.type_imp->translate_type(type->getElementType(), ar::Signed);
+        _ctx.type_imp->translate_type(type->getPointerElementType(),
+                                      ar::Signed);
   } else {
     // Use debug information to build the exact type
     llvm::DIGlobalVariable* di_gv = dbgs[0]->getVariable();
@@ -103,13 +104,14 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
 
     try {
       ar_pointee_type =
-          _ctx.type_imp->translate_type(type->getElementType(), di_type);
+          _ctx.type_imp->translate_type(type->getPointerElementType(), di_type);
     } catch (const TypeDebugInfoMismatch&) {
       if (!this->_allow_debug_info_mismatch) {
         throw;
       }
       ar_pointee_type =
-          _ctx.type_imp->translate_type(type->getElementType(), ar::Signed);
+          _ctx.type_imp->translate_type(type->getPointerElementType(),
+                                        ar::Signed);
     }
   }
 

@@ -261,9 +261,7 @@ public:
       // When the size of the allocation is known (like it is here)
       // we mark the storage as uninitialized by assigning it
       // the undefined value.
-      this->_inv.normal().mem_write(ptr,
-                                    ScalarLit::undefined(),
-                                    alloc_size);
+      this->_inv.normal().mem_write(ptr, ScalarLit::undefined(), alloc_size);
     }
 
     if (this->_opts.test(ExecutionEngine::UpdateAllocSizeVar)) {
@@ -752,11 +750,11 @@ private:
       bool overflow;
       MachineInt eight(8, aggregate.size().bit_width(), Unsigned);
       MachineInt bit_width = mul(aggregate.size(), eight, overflow);
-      if (overflow || !bit_width.fits< unsigned >()) {
+      if (overflow || !bit_width.fits< uint64_t >()) {
         // Too big for a cell
         this->_inv.normal().mem_forget_reachable(ptr);
       } else if (aggregate.is_zero()) {
-        MachineInt zero(0, bit_width.to< unsigned >(), Signed);
+        MachineInt zero(0, bit_width.to< uint64_t >(), Signed);
         this->_inv.normal().mem_write(ptr,
                                       ScalarLit::machine_int(zero),
                                       aggregate.size());
@@ -1605,7 +1603,7 @@ public:
                     "unexpected base operand");
 
     // Build a linear expression of the operands
-    unsigned bit_width = this->_data_layout.pointers.bit_width;
+    uint64_t bit_width = this->_data_layout.pointers.bit_width;
     auto zero = MachineInt::zero(bit_width, Unsigned);
     auto offset_expr = IntLinearExpression(zero);
 

@@ -138,10 +138,12 @@ void TypeWithSignImporter::sanity_check_size(llvm::Type* llvm_type,
     return;
   }
 
-  check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type) >=
+  check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type)
+                       .getFixedSize() >=
                    this->_ar_data_layout.size_in_bits(ar_type),
                "llvm type size in bits is smaller than ar type size");
-  check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type) ==
+  check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type)
+                       .getFixedSize() ==
                    this->_ar_data_layout.alloc_size_in_bytes(ar_type),
                "llvm type and ar type alloc size are different");
 }
@@ -190,7 +192,7 @@ ar::PointerType* TypeWithSignImporter::translate_pointer_type(
     llvm::Type* type, ar::Signedness preferred) {
   auto ptr_type = llvm::cast< llvm::PointerType >(type);
   ar::Type* ar_pointee_type =
-      this->translate_type(ptr_type->getElementType(), preferred);
+      this->translate_type(ptr_type->getPointerElementType(), preferred);
   ar::PointerType* ar_type =
       ar::PointerType::get(this->_context, ar_pointee_type);
   this->store_translation(type, preferred, ar_type);
@@ -219,7 +221,8 @@ ar::VectorType* TypeWithSignImporter::translate_vector_type(
   ar::VectorType* ar_type =
       ar::VectorType::get(this->_context,
                           ar::cast< ar::ScalarType >(ar_element_type),
-                          ar::ZNumber(vector_type->getNumElements()));
+                          ar::ZNumber(
+                              vector_type->getElementCount().getFixedValue()));
   this->store_translation(type, preferred, ar_type);
   this->sanity_check_size(type, ar_type);
   return ar_type;
@@ -410,10 +413,12 @@ void TypeWithDebugInfoImporter::sanity_check_size(llvm::Type* llvm_type,
     return;
   }
 
-  check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type) >=
+  check_import(this->_llvm_data_layout.getTypeSizeInBits(llvm_type)
+                       .getFixedSize() >=
                    this->_ar_data_layout.size_in_bits(ar_type),
                "llvm type size in bits is smaller than ar type size");
-  check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type) ==
+  check_import(this->_llvm_data_layout.getTypeAllocSize(llvm_type)
+                       .getFixedSize() ==
                    this->_ar_data_layout.alloc_size_in_bytes(ar_type),
                "llvm type and ar type alloc size are different");
 }
@@ -550,7 +555,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_basic_di_type(
     if (tag == dwarf::DW_TAG_unspecified_type &&
         di_type->getName() == "decltype(nullptr)") {
       check_match(type->isPointerTy() && llvm::cast< llvm::PointerType >(type)
-                                             ->getElementType()
+                                             ->getPointerElementType()
                                              ->isIntegerTy(8),
                   "unexpected llvm type for llvm DIBasicType with name "
                   "'decltype(nullptr)'");
@@ -606,7 +611,7 @@ ar::PointerType* TypeWithDebugInfoImporter::translate_pointer_di_type(
               "llvm DIDerivedType with pointer tag and llvm pointer type have "
               "a different bit-width");
   auto ptr_type = llvm::cast< llvm::PointerType >(type);
-  llvm::Type* pointee_type = ptr_type->getElementType();
+  llvm::Type* pointee_type = ptr_type->getPointerElementType();
   auto di_pointee_type =
       llvm::cast_or_null< llvm::DIType >(di_type->getRawBaseType());
 
@@ -629,7 +634,7 @@ ar::PointerType* TypeWithDebugInfoImporter::translate_reference_di_type(
               "llvm DIDerivedType with reference tag and llvm pointer type "
               "have a different bit-width");
   auto ptr_type = llvm::cast< llvm::PointerType >(type);
-  llvm::Type* pointee_type = ptr_type->getElementType();
+  llvm::Type* pointee_type = ptr_type->getPointerElementType();
   auto di_referred_type =
       llvm::cast_or_null< llvm::DIType >(di_type->getRawBaseType());
 
@@ -696,7 +701,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_array_di_type(
         current_element = array_type->getElementType();
       } else if (current_element->isVectorTy()) {
         auto vector_type = llvm::cast< llvm::VectorType >(current_element);
-        check_match(vector_type->getNumElements() == count_int->getZExtValue(),
+        check_match(vector_type->getElementCount().getFixedValue() ==
+                        count_int->getZExtValue(),
                     "llvm DICompositeType with array tag and llvm vector type "
                     "have a different number of elements");
 
@@ -736,7 +742,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_array_di_type(
         auto ptr_type = llvm::cast< llvm::PointerType >(current_element);
 
         llvm_elements.push_back(ptr_type);
-        current_element = ptr_type->getElementType();
+        current_element = ptr_type->getPointerElementType();
         prev_no_count = true;
       } else if (current_element->isArrayTy()) {
         auto array_type = llvm::cast< llvm::ArrayType >(current_element);
@@ -771,7 +777,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_array_di_type(
     } else if (auto vector_type = llvm::dyn_cast< llvm::VectorType >(*it)) {
       ar_type = ar::VectorType::get(this->_context,
                                     ar::cast< ar::ScalarType >(ar_type),
-                                    ar::ZNumber(vector_type->getNumElements()));
+                                    ar::ZNumber(vector_type->getElementCount()
+                                                    .getFixedValue()));
     } else if (auto struct_type = llvm::dyn_cast< llvm::StructType >(*it)) {
       // This is the last element of di_type->getElements()
       ar::StructType::Layout ar_layout;
@@ -943,7 +950,7 @@ ar::StructType* TypeWithDebugInfoImporter::translate_struct_di_type(
       this->_llvm_data_layout.getStructLayout(struct_type);
   check_match(llvm::alignTo(di_type->getSizeInBits(),
                             static_cast< uint64_t >(
-                                struct_layout->getAlignment()) *
+                                struct_layout->getAlignment().value()) *
                                 8) == struct_layout->getSizeInBits(),
               "llvm DICompositeType and llvm structure type have a different "
               "bit-width");
@@ -995,7 +1002,7 @@ ar::StructType* TypeWithDebugInfoImporter::translate_struct_di_type(
     llvm::Type* element_type = struct_type->getElementType(i);
     ar::ZNumber element_offset_bytes(struct_layout->getElementOffset(i));
     ar::ZNumber element_size_bytes(
-        this->_llvm_data_layout.getTypeStoreSize(element_type));
+        this->_llvm_data_layout.getTypeStoreSize(element_type).getFixedSize());
 
     // Find matching debug info
     di_matching_members.clear();
@@ -1188,7 +1195,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_union_di_type(
       this->_llvm_data_layout.getStructLayout(struct_type);
   check_match(llvm::alignTo(di_type->getSizeInBits(),
                             static_cast< uint64_t >(
-                                struct_layout->getAlignment()) *
+                                struct_layout->getAlignment().value()) *
                                 8) == struct_layout->getSizeInBits(),
               "llvm DICompositeType and llvm structure type have a different "
               "bit-width");
@@ -1282,15 +1289,15 @@ static bool is_constructor_with_virtual_base(llvm::FunctionType* fun_type) {
     llvm::Type* snd = fun_type->getParamType(1);
     return fst->isPointerTy() &&
            llvm::cast< llvm::PointerType >(fst)
-               ->getElementType()
+               ->getPointerElementType()
                ->isStructTy() &&
            snd->isPointerTy() &&
            llvm::cast< llvm::PointerType >(snd)
-               ->getElementType()
+               ->getPointerElementType()
                ->isPointerTy() &&
            llvm::cast< llvm::PointerType >(
-               llvm::cast< llvm::PointerType >(snd)->getElementType())
-               ->getElementType()
+               llvm::cast< llvm::PointerType >(snd)->getPointerElementType())
+               ->getPointerElementType()
                ->isIntegerTy(8);
   }
   return false;
@@ -1420,7 +1427,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
 
         if (auto ptr_param_type =
                 llvm::dyn_cast< llvm::PointerType >(param_type)) {
-          llvm::Type* pointee_param_type = ptr_param_type->getElementType();
+          llvm::Type* pointee_param_type =
+              ptr_param_type->getPointerElementType();
           if (pointee_param_type->isStructTy()) {
             try {
               // Structure passed by pointer (see byval attribute)
@@ -1467,12 +1475,15 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
   check_match(split_struct == nullptr,
               "llvm DISubroutineType and llvm function type have a different "
               "number of parameters [2]");
+  // TODO: In c++, empty structures or classes can be entirely removed from the
+  // interface. We do not currently handle it here.
   check_match(di_param_it == di_param_et ||
                   std::all_of(di_param_it,
                               di_param_et,
                               [](llvm::DIType* di_param) {
                                 return di_param == nullptr;
-                              }),
+                              }) ||
+                  this->_is_cpp,
               "llvm DISubroutineType and llvm function type have a different "
               "number of parameters [3]");
 
@@ -1562,7 +1573,7 @@ bool TypeMatcher::match_pointer_type(llvm::Type* llvm_type,
     return false;
   }
   auto llvm_pointee_type =
-      llvm::cast< llvm::PointerType >(llvm_type)->getElementType();
+      llvm::cast< llvm::PointerType >(llvm_type)->getPointerElementType();
   auto ar_pointee_type = ar::cast< ar::PointerType >(ar_type)->pointee();
 
   return this->match_type(llvm_pointee_type, ar_pointee_type, std::move(seen));
@@ -1592,7 +1603,8 @@ bool TypeMatcher::match_vector_type(llvm::Type* llvm_type,
   auto llvm_vec_type = llvm::cast< llvm::VectorType >(llvm_type);
   auto ar_vec_type = ar::cast< ar::VectorType >(ar_type);
 
-  return llvm_vec_type->getNumElements() == ar_vec_type->num_elements() &&
+  return llvm_vec_type->getElementCount().getFixedValue() ==
+             ar_vec_type->num_elements() &&
          this->match_type(llvm_vec_type->getElementType(),
                           ar_vec_type->element_type(),
                           std::move(seen));
@@ -1696,7 +1708,7 @@ bool TypeMatcher::match_extern_function_param_type(llvm::Type* llvm_type,
       return false;
     }
     auto llvm_pointee_type =
-        llvm::cast< llvm::PointerType >(llvm_type)->getElementType();
+        llvm::cast< llvm::PointerType >(llvm_type)->getPointerElementType();
     auto ar_pointee_type = ar::cast< ar::PointerType >(ar_type)->pointee();
 
     return (llvm_pointee_type->isStructTy() && ar_pointee_type->is_opaque()) ||

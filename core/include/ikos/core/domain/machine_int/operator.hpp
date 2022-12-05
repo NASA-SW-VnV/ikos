@@ -94,7 +94,7 @@ enum class Predicate {
 template < typename T >
 T apply_unary_operator(UnaryOperator op,
                        const T& operand,
-                       unsigned result_bit_width,
+                       uint64_t result_bit_width,
                        Signedness result_sign) {
   switch (op) {
     case UnaryOperator::Trunc:

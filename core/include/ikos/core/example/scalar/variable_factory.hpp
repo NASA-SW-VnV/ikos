@@ -87,7 +87,7 @@ public:
     VariableKind _kind;
 
     /// \brief Variable bit width (if any)
-    unsigned _bit_width;
+    uint64_t _bit_width;
 
     /// \brief Variable signedness (if any)
     Signedness _sign;
@@ -100,7 +100,7 @@ public:
     Variable(std::string name,
              Index id,
              VariableKind kind,
-             unsigned bit_width,
+             uint64_t bit_width,
              Signedness sign,
              Variable* offset_var)
         : _name(std::move(name)),
@@ -113,7 +113,7 @@ public:
   public:
     static Variable make_int(std::string name,
                              Index id,
-                             unsigned bit_width,
+                             uint64_t bit_width,
                              Signedness sign) {
       return {std::move(name), id, IntVariableKind, bit_width, sign, nullptr};
     }
@@ -130,7 +130,7 @@ public:
 
     static Variable make_dynamic(std::string name,
                                  Index id,
-                                 unsigned bit_width,
+                                 uint64_t bit_width,
                                  Signedness sign,
                                  Variable* offset_var) {
       return {std::move(name),
@@ -169,7 +169,7 @@ public:
     VariableKind kind() const { return this->_kind; }
 
     /// \brief Return the bit width of the variable
-    unsigned bit_width() const {
+    uint64_t bit_width() const {
       ikos_assert(this->_kind == IntVariableKind ||
                   this->_kind == DynamicVariableKind);
       return this->_bit_width;
@@ -225,7 +225,7 @@ public:
 
   /// \brief Get or create a machine integer variable
   VariableRef get_int(const std::string& name,
-                      unsigned bit_width,
+                      uint64_t bit_width,
                       Signedness sign) {
     // This is sound because references are kept valid when using
     // std::unordered_map::emplace()
@@ -262,7 +262,7 @@ public:
 
   /// \brief Get or create a pointer variable
   VariableRef get_pointer(const std::string& name,
-                          unsigned offset_bit_width,
+                          uint64_t offset_bit_width,
                           Signedness offset_sign) {
     // This is sound because references are kept valid when using
     // std::unordered_map::emplace()
@@ -290,9 +290,9 @@ public:
 
   /// \brief Get or create a dynamically typed variable
   VariableRef get_dynamic(const std::string& name,
-                          unsigned bit_width,
+                          uint64_t bit_width,
                           Signedness sign,
-                          unsigned offset_bit_width,
+                          uint64_t offset_bit_width,
                           Signedness offset_sign) {
     // This is sound because references are kept valid when using
     // std::unordered_map::emplace()
@@ -362,7 +362,7 @@ namespace machine_int {
 /// example::scalar::VariableFactory::VariableRef
 template <>
 struct VariableTraits< example::scalar::VariableFactory::VariableRef > {
-  static unsigned bit_width(example::scalar::VariableFactory::VariableRef var) {
+  static uint64_t bit_width(example::scalar::VariableFactory::VariableRef var) {
     return var->bit_width();
   }
 

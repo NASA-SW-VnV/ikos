@@ -75,7 +75,7 @@ void ContextImpl::add_bundle(std::unique_ptr< Bundle > bundle) {
   this->_bundles.emplace_back(std::move(bundle));
 }
 
-IntegerType* ContextImpl::integer_type(unsigned bit_width, Signedness sign) {
+IntegerType* ContextImpl::integer_type(uint64_t bit_width, Signedness sign) {
   auto it = this->_integer_types.find(std::make_tuple(bit_width, sign));
   if (it == this->_integer_types.end()) {
     auto type =

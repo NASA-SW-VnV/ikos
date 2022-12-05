@@ -25,7 +25,7 @@ define <2 x i64> @f(<2 x i64>) #0 !dbg !8 {
 ; CHECK:   store $2, %1, align 16
 ; CHECK:   <2 x si64> %3 = load $2, align 16
 ; CHECK:   <4 x si32> %4 = bitcast %3
-; CHECK:   <4 x si32> %5 = shufflevector %4, undef, aggregate_zero
+; CHECK:   <4 x si32> %5 = shufflevector %4, undef
 ; CHECK:   <2 x si64> %6 = bitcast %5
 ; CHECK:   return %6
 ; CHECK: }

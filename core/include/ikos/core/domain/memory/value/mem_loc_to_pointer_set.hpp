@@ -326,7 +326,7 @@ public:
 
   /// \brief Get the pointer set for the given memory location
   PointerSetT get(MemoryLocationRef addr,
-                  unsigned bit_width,
+                  uint64_t bit_width,
                   Signedness sign) const {
     if (this->is_bottom()) {
       return PointerSetT::bottom(bit_width, sign);

@@ -49,6 +49,7 @@
 
 #include <llvm/ADT/DenseSet.h>
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/InlineAsm.h>
@@ -309,7 +310,7 @@ void FunctionImporter::translate_instruction(
   // We want to avoid a diamond shape in the graph:
   //
   //    A
-  //  /   \ 
+  //  /   \
   // B     C
   //  \   /
   //    D
@@ -384,7 +385,7 @@ void FunctionImporter::translate_instruction(
 void FunctionImporter::translate_alloca(BasicBlockTranslation* bb_translation,
                                         llvm::AllocaInst* alloca) {
   // Translate types
-  check_import(alloca->getType()->getElementType() ==
+  check_import(alloca->getType()->getPointerElementType() ==
                    alloca->getAllocatedType(),
                "unexpected allocated type in llvm alloca");
   auto var_type = ar::cast< ar::PointerType >(this->infer_type(alloca));
@@ -469,7 +470,7 @@ void FunctionImporter::translate_call(BasicBlockTranslation* bb_translation,
   // Otherwise, it's a call on a function pointer, we allow implicit casts
   // (signed/unsigned and between pointer types)
   const bool force_args_cast =
-      llvm::isa< llvm::Function >(unalias(call->getCalledValue()));
+      llvm::isa< llvm::Function >(unalias(call->getCalledOperand()));
 
   this->translate_call_helper(bb_translation,
                               call,
@@ -508,8 +509,8 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
-                                       memcpy->getParamAlignment(0),
-                                       memcpy->getParamAlignment(1),
+                                       memcpy->getDestAlignment(),
+                                       memcpy->getSourceAlignment(),
                                        memcpy->isVolatile());
     stmt->set_frontend< llvm::Value >(memcpy);
     bb_translation->add_statement(std::move(stmt));
@@ -529,8 +530,8 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
-                                       memmove->getParamAlignment(0),
-                                       memmove->getParamAlignment(1),
+                                       memmove->getDestAlignment(),
+                                       memmove->getSourceAlignment(),
                                        memmove->isVolatile());
     stmt->set_frontend< llvm::Value >(memmove);
     bb_translation->add_statement(std::move(stmt));
@@ -609,7 +610,7 @@ void FunctionImporter::translate_invoke(BasicBlockTranslation* bb_translation,
   // Otherwise, it's a call on a function pointer, we allow implicit casts
   // (signed/unsigned and between pointer types)
   const bool force_args_cast =
-      llvm::isa< llvm::Function >(unalias(invoke->getCalledValue()));
+      llvm::isa< llvm::Function >(unalias(invoke->getCalledOperand()));
 
   // Translate the invoke
   //
@@ -643,7 +644,7 @@ void FunctionImporter::translate_call_helper(
     CreateStmtFun create_stmt) {
   // Translate called value
   ar::Value* called =
-      this->translate_value(bb_translation, call->getCalledValue(), nullptr);
+      this->translate_value(bb_translation, call->getCalledOperand(), nullptr);
   auto called_type = ar::cast< ar::PointerType >(called->type());
   auto fun_type = ar::cast< ar::FunctionType >(called_type->pointee());
 
@@ -674,9 +675,9 @@ void FunctionImporter::translate_call_helper(
 
   // Translate parameters
   std::vector< ar::Value* > arguments;
-  arguments.reserve(call->getNumArgOperands());
+  arguments.reserve(call->arg_size());
 
-  for (unsigned i = 0; i < call->getNumArgOperands(); i++) {
+  for (unsigned i = 0; i < call->arg_size(); i++) {
     llvm::Value* arg = call->getArgOperand(i);
 
     if (i < fun_type->num_parameters() &&
@@ -1532,17 +1533,24 @@ ar::IntegerConstant* FunctionImporter::translate_indexes(
     if (auto struct_type = llvm::dyn_cast< llvm::StructType >(indexed_type)) {
       offset += this->_llvm_data_layout.getStructLayout(struct_type)
                     ->getElementOffset(idx);
-    } else if (auto seq_type =
-                   llvm::dyn_cast< llvm::SequentialType >(indexed_type)) {
+    } else if (auto array_type =
+                   llvm::dyn_cast< llvm::ArrayType >(indexed_type)) {
       ar::ZNumber element_size(
-          this->_llvm_data_layout.getTypeAllocSize(seq_type->getElementType()));
+          this->_llvm_data_layout.getTypeAllocSize(array_type->getElementType())
+              .getFixedSize());
+      offset += element_size * idx;
+    } else if (auto vector_type =
+                   llvm::dyn_cast< llvm::VectorType >(indexed_type)) {
+      ar::ZNumber element_size(
+          this->_llvm_data_layout
+              .getTypeAllocSize(vector_type->getElementType())
+              .getFixedSize());
       offset += element_size * idx;
     } else {
       throw ImportError("unsupported operand to llvm extractvalue");
     }
 
-    auto comp_type = llvm::cast< llvm::CompositeType >(indexed_type);
-    indexed_type = comp_type->getTypeAtIndex(idx);
+    indexed_type = llvm::GetElementPtrInst::getTypeAtIndex(indexed_type, idx);
   }
 
   auto size_type = ar::IntegerType::size_type(this->_bundle);
@@ -1570,8 +1578,10 @@ void FunctionImporter::translate_extractelement(
     throw ImportError("unsupported operand to llvm extractelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
-  ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
-      inst->getVectorOperandType()->getElementType()));
+  ar::ZNumber element_size(
+      this->_llvm_data_layout
+          .getTypeAllocSize(inst->getVectorOperandType()->getElementType())
+          .getFixedSize());
   ar::ZNumber offset_value = index->getZExtValue() * element_size;
   auto offset = ar::IntegerConstant::get(this->_context,
                                          size_type,
@@ -1602,8 +1612,10 @@ void FunctionImporter::translate_insertelement(
     throw ImportError("unsupported operand to llvm insertelement");
   }
   auto size_type = ar::IntegerType::size_type(this->_bundle);
-  ar::ZNumber element_size(this->_llvm_data_layout.getTypeAllocSize(
-      inst->getType()->getElementType()));
+  ar::ZNumber element_size(
+      this->_llvm_data_layout
+          .getTypeAllocSize(inst->getType()->getElementType())
+          .getFixedSize());
   ar::ZNumber offset_value = index->getZExtValue() * element_size;
   auto offset = ar::IntegerConstant::get(this->_context,
                                          size_type,
@@ -1636,12 +1648,10 @@ void FunctionImporter::translate_shufflevector(
   ar::Value* right =
       this->translate_value(bb_translation, inst->getOperand(1), var->type());
 
-  // Translate mask
-  ar::Value* mask =
-      this->translate_value(bb_translation, inst->getOperand(2), nullptr);
+  // We do not currently translate the shuffle mask.
 
   // Create statement
-  auto stmt = ar::ShuffleVector::create(var, left, right, mask);
+  auto stmt = ar::ShuffleVector::create(var, left, right);
   stmt->set_frontend< llvm::Value >(inst);
   bb_translation->add_statement(std::move(stmt));
 }
@@ -1955,7 +1965,7 @@ ar::Type* FunctionImporter::infer_default_type(llvm::Value* value) {
 
   if (auto call = llvm::dyn_cast< llvm::CallInst >(value)) {
     // Use the type of the returned value, if it's a direct call
-    llvm::Value* called = unalias(call->getCalledValue());
+    llvm::Value* called = unalias(call->getCalledOperand());
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
       return _ctx.bundle_imp->translate_function(fun)->type()->return_type();
     }
@@ -2078,7 +2088,7 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_invoke(
 template < typename CallInstType >
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_call_helper(
     llvm::Use& use, CallInstType* call) {
-  if (use.getOperandNo() >= call->getNumArgOperands()) {
+  if (use.getOperandNo() >= call->arg_size()) {
     // Called function pointer
     return {};
   }
@@ -2354,7 +2364,7 @@ FunctionImporter::TypeHint FunctionImporter::
 
   // Use the type of the returned value, if it's a direct call
   if (auto call = llvm::dyn_cast< llvm::CallInst >(inst)) {
-    llvm::Value* called = unalias(call->getCalledValue());
+    llvm::Value* called = unalias(call->getCalledOperand());
     if (auto fun = llvm::dyn_cast< llvm::Function >(called)) {
       return {_ctx.bundle_imp->translate_function(fun)->type()->return_type(),
               5};

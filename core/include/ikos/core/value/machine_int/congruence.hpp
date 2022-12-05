@@ -80,12 +80,12 @@ private:
 
 private:
   ZCongruence _c;
-  unsigned _bit_width;
+  uint64_t _bit_width;
   Signedness _sign;
 
 private:
   /// \brief Return 2**n
-  static ZNumber power_of_2(unsigned n) { return ZNumber(1) << n; }
+  static ZNumber power_of_2(uint64_t n) { return ZNumber(1) << n; }
 
   /// \brief Return 2**n
   static ZNumber power_of_2(const ZNumber& n) { return ZNumber(1) << n; }
@@ -146,7 +146,7 @@ private:
 
   /// \brief Wrap a congruence in Z to the given bit-width and signedness
   static ZCongruence wrap(const ZCongruence& c,
-                          unsigned bit_width,
+                          uint64_t bit_width,
                           Signedness sign) {
     if (c.is_bottom()) {
       return ZCongruence::bottom();
@@ -164,7 +164,7 @@ private:
   ///
   /// \returns weakened version of *this, does not modify *this. Returned
   /// modulus is guaranteed to be a power of 2.
-  static ZCongruence weaken(ZCongruence c, unsigned bit_width) {
+  static ZCongruence weaken(ZCongruence c, uint64_t bit_width) {
     if (c.is_bottom()) {
       return c;
     } else if (c.modulus() == 0) {
@@ -180,25 +180,25 @@ private:
   struct NormalizedTag {};
 
   /// \brief Create the top congruence for the given bit-width and signedness
-  Congruence(TopTag, unsigned bit_width, Signedness sign)
+  Congruence(TopTag, uint64_t bit_width, Signedness sign)
       : _c(ZCongruence::top()), _bit_width(bit_width), _sign(sign) {}
 
   /// \brief Create the bottom congruence for the given bit-width and signedness
-  Congruence(BottomTag, unsigned bit_width, Signedness sign)
+  Congruence(BottomTag, uint64_t bit_width, Signedness sign)
       : _c(ZCongruence::bottom()), _bit_width(bit_width), _sign(sign) {}
 
   /// \brief Create the machine integer congruence from a congruence in Z
-  Congruence(ZCongruence c, unsigned bit_width, Signedness sign, NormalizedTag)
+  Congruence(ZCongruence c, uint64_t bit_width, Signedness sign, NormalizedTag)
       : _c(std::move(c)), _bit_width(bit_width), _sign(sign) {}
 
 public:
   /// \brief Create the top congruence for the given bit-width and signedness
-  static Congruence top(unsigned bit_width, Signedness sign) {
+  static Congruence top(uint64_t bit_width, Signedness sign) {
     return Congruence(TopTag{}, bit_width, sign);
   }
 
   /// \brief Create the bottom congruence for the given bit-width and signedness
-  static Congruence bottom(unsigned bit_width, Signedness sign) {
+  static Congruence bottom(uint64_t bit_width, Signedness sign) {
     return Congruence(BottomTag{}, bit_width, sign);
   }
 
@@ -216,13 +216,13 @@ public:
   }
 
   /// \brief Create the congruence aZ + b
-  Congruence(ZNumber a, ZNumber b, unsigned bit_width, Signedness sign)
+  Congruence(ZNumber a, ZNumber b, uint64_t bit_width, Signedness sign)
       : _c(std::move(a), std::move(b)), _bit_width(bit_width), _sign(sign) {
     this->reduce();
   }
 
   /// \brief Create the machine integer congruence from a congruence in Z
-  Congruence(ZCongruence c, unsigned bit_width, Signedness sign)
+  Congruence(ZCongruence c, uint64_t bit_width, Signedness sign)
       : _c(std::move(c)), _bit_width(bit_width), _sign(sign) {
     this->reduce();
   }
@@ -243,7 +243,7 @@ public:
   ~Congruence() override = default;
 
   /// \brief Return the bit width of the congruence
-  unsigned bit_width() const { return this->_bit_width; }
+  uint64_t bit_width() const { return this->_bit_width; }
 
   /// \brief Return the signedness (Signed or Unsigned) of the congruence
   Signedness sign() const { return this->_sign; }
@@ -358,7 +358,7 @@ public:
   /// @{
 
   /// \brief Truncate the machine integer congruence to the given bit width
-  Congruence trunc(unsigned bit_width) const {
+  Congruence trunc(uint64_t bit_width) const {
     ikos_assert(this->bit_width() > bit_width);
     return Congruence(wrap(this->_c, bit_width, this->_sign),
                       bit_width,
@@ -366,7 +366,7 @@ public:
   }
 
   /// \brief Extend the machine integer congruence to the given bit width
-  Congruence ext(unsigned bit_width) const {
+  Congruence ext(uint64_t bit_width) const {
     ikos_assert(this->bit_width() < bit_width);
     return Congruence(this->_c, bit_width, this->_sign, NormalizedTag{});
   }
@@ -382,7 +382,7 @@ public:
   /// \brief Cast the machine integer congruence to the given bit width and sign
   ///
   /// This is equivalent to trunc()/ext() + sign_cast() (in this specific order)
-  Congruence cast(unsigned bit_width, Signedness sign) const {
+  Congruence cast(uint64_t bit_width, Signedness sign) const {
     return Congruence(wrap(this->_c, bit_width, sign), bit_width, sign);
   }
 
@@ -420,7 +420,7 @@ public:
   /// For instance:
   ///   from_z_congruence(ZCongruence(256), 8, Unsigned, TruncTag{}) = Bottom
   static Congruence from_z_congruence(ZCongruence c,
-                                      unsigned bit_width,
+                                      uint64_t bit_width,
                                       Signedness sign,
                                       TruncTag) {
     return Congruence(std::move(c), bit_width, sign);
@@ -433,7 +433,7 @@ public:
   /// For instance:
   ///   from_z_congruence(ZCongruence(256), 8, Unsigned, WrapTag{}) = 0Z + 0
   static Congruence from_z_congruence(const ZCongruence& c,
-                                      unsigned bit_width,
+                                      uint64_t bit_width,
                                       Signedness sign,
                                       WrapTag) {
     return Congruence(wrap(c, bit_width, sign), bit_width, sign);

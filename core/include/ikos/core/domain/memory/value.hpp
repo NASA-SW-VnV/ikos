@@ -53,7 +53,6 @@
 
 #include <type_traits>
 
-#include <ikos/core/support/cast.hpp>
 #include <ikos/core/domain/lifetime/abstract_domain.hpp>
 #include <ikos/core/domain/memory/abstract_domain.hpp>
 #include <ikos/core/domain/memory/value/cell_set.hpp>
@@ -62,6 +61,7 @@
 #include <ikos/core/semantic/machine_int/variable.hpp>
 #include <ikos/core/semantic/memory/value/cell_factory.hpp>
 #include <ikos/core/semantic/memory/value/cell_variable.hpp>
+#include <ikos/core/support/cast.hpp>
 
 namespace ikos {
 namespace core {
@@ -1027,7 +1027,7 @@ private:
         CellFactoryTrait::cell(this->_cell_factory, base, offset, size, sign);
     ikos_assert(CellVariableTrait::is_cell(c));
     ikos_assert(MachIntVariableTrait::bit_width(c) ==
-                size.to< unsigned >() * 8);
+                size.to< uint64_t >() * 8);
     return c;
   }
 
@@ -1124,15 +1124,18 @@ private:
           if (un_lb < new_lb) {
             MachineInt low_size = new_lb - un_lb;
             VariableRef low_cell = this->make_cell(base, un_lb, low_size, sign);
-            this->_scalar.uninit_refine(low_cell, Uninitialized::uninitialized());
+            this->_scalar.uninit_refine(low_cell,
+                                        Uninitialized::uninitialized());
             new_cells.add(low_cell);
           }
           if (new_ub < un_ub) {
             MachineInt high_size = un_ub - new_ub;
             auto one = MachineInt(1, high_size.bit_width(), Unsigned);
             MachineInt high_lb = new_ub + one;
-            VariableRef high_cell = this->make_cell(base, high_lb, high_size, sign);
-            this->_scalar.uninit_refine(high_cell, Uninitialized::uninitialized());
+            VariableRef high_cell =
+                this->make_cell(base, high_lb, high_size, sign);
+            this->_scalar.uninit_refine(high_cell,
+                                        Uninitialized::uninitialized());
             new_cells.add(high_cell);
           }
         }
@@ -1187,14 +1190,12 @@ private:
     return updated_cells;
   }
 
-
-
   /// \brief Detect whether the read bits are initialized, uninitialized,
   /// for possibly uninitialized.
   ikos::core::Uninitialized is_read_uninitialized(MemoryLocationRef base,
-                            const MachineInt& offset,
-                            const MachineInt& size) {
-    if (!size.fits<uint32_t>()) {
+                                                  const MachineInt& offset,
+                                                  const MachineInt& size) {
+    if (!size.fits< uint32_t >()) {
       // The ZNumber infrastructure cannot handle shifts by
       // more than the max 32-bit number, so give up in that case.
       // and assume possibly uninitialized.
@@ -1569,7 +1570,6 @@ public:
       bool first = true;
 
       for (MemoryLocationRef addr : addrs) {
-
         VariableRef cell =
             this->read_realize_single_cell(addr, offset, size, sign);
 
@@ -2177,7 +2177,7 @@ public:
     }
 
     if (auto addr = addrs.singleton()) {
-      unsigned bit_width =
+      uint64_t bit_width =
           MachIntVariableTrait::bit_width(ScalarVariableTrait::offset_var(p));
       this->_pointer_sets.set(*addr, PointerSetT::empty(bit_width, Unsigned));
     }

@@ -79,7 +79,7 @@ private:
   /// \brief Check a pointer alignment and insert the check in the database
   void check_alignment(ar::Statement* stmt,
                        ar::Value* operand,
-                       unsigned alignment_req,
+                       uint64_t alignment_req,
                        const value::AbstractDomain& inv,
                        CallContext* call_context);
 
@@ -93,7 +93,7 @@ private:
   /// \brief Check a pointer alignment and insert the check in the database
   CheckResult check_alignment(ar::Statement* stmt,
                               ar::Value* operand,
-                              unsigned alignment_req,
+                              uint64_t alignment_req,
                               const value::AbstractDomain& inv);
 
   /// \brief Check the alignment of a memory location
@@ -103,7 +103,7 @@ private:
                                          JsonDict& block_info);
 
   /// \brief Return the congruence aZ+b on pointer offsets
-  Congruence to_congruence(unsigned a, unsigned b) const;
+  Congruence to_congruence(uint64_t a, uint64_t b) const;
 
 private:
   /// \brief Dispay the pointer alignment check, if requested

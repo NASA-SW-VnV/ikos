@@ -342,11 +342,11 @@ CellVariable* VariableFactory::get_cell(MemoryLocation* address,
     bool overflow;
     MachineInt eight(8, size.bit_width(), Unsigned);
     MachineInt bit_width = mul(size, eight, overflow);
-    if (overflow || !bit_width.fits< unsigned >()) {
+    if (overflow || !bit_width.fits< uint64_t >()) {
       throw LogicError("variable factory: cell size too big");
     }
     ar::Type* type = ar::IntegerType::get(this->_ar_context,
-                                          bit_width.to< unsigned >(),
+                                          bit_width.to< uint64_t >(),
                                           sign);
     auto vn = std::make_unique< CellVariable >(type, address, offset, size);
     vn->set_offset_var(
@@ -409,7 +409,7 @@ NamedShadowVariable* VariableFactory::get_named_shadow(ar::Type* type,
     }
   }
 
-  auto vn = std::make_unique< NamedShadowVariable >(type, name);
+  auto vn = std::make_unique< NamedShadowVariable >(type, name.str());
   if (vn->type()->is_pointer() || vn->type()->is_aggregate()) {
     vn->set_offset_var(
         std::make_unique< OffsetVariable >(this->_size_type, vn.get()));

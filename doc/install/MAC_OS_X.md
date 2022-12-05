@@ -31,7 +31,7 @@ $ brew upgrade
 Now, install the following packages:
 
 ```
-$ brew install cmake gmp boost tbb llvm
+$ brew install cmake gmp boost tbb llvm@14
 ```
 
 When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
@@ -39,7 +39,8 @@ When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABL
 ```
 $ cmake \
     -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
-    -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm/bin/llvm-config" \
+    -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm@14/bin/llvm-config" \
+    -DSQLITE3_ROOT="$(brew --prefix)/opt/sqlite3"
     ..
 ```
 

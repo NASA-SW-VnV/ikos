@@ -96,7 +96,7 @@ private:
   // see https://github.com/boostorg/container/issues/97
 
   // Integer types
-  boost::container::flat_map< std::tuple< unsigned, Signedness >,
+  boost::container::flat_map< std::tuple< uint64_t, Signedness >,
                               std::unique_ptr< IntegerType > >
       _integer_types;
 
@@ -220,7 +220,7 @@ public:
   OpaqueType* libc_file_type() { return &_libc_file_ty; }
 
   /// \brief Get or create an integer type
-  IntegerType* integer_type(unsigned bit_width, Signedness sign);
+  IntegerType* integer_type(uint64_t bit_width, Signedness sign);
 
   /// \brief Get or create a pointer type
   PointerType* pointer_type(Type* pointee);

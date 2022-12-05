@@ -41,6 +41,7 @@
  *
  ******************************************************************************/
 
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
@@ -115,7 +116,7 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
       llvm::StringRef name = di_var->getName();
 
       if (!name.empty()) {
-        return {{"name", name}};
+        return {{"name", name.str()}};
       }
     }
 
@@ -134,13 +135,13 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
       llvm::StringRef name = di_var->getName();
 
       if (!name.empty()) {
-        return {{"name", name}};
+        return {{"name", name.str()}};
       }
     }
 
     // Last chance, use llvm variable name
     if (alloca->hasName()) {
-      return {{"name", alloca->getName()}};
+      return {{"name", alloca->getName().str()}};
     }
 
     return {};
@@ -158,7 +159,7 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
       llvm::StringRef name = di_gv->getName();
 
       if (!name.empty()) {
-        return {{"name", name}};
+        return {{"name", name.str()}};
       }
     }
 
@@ -169,7 +170,7 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
 
     // Last chance, use llvm variable name
     if (llvm_gv->hasName()) {
-      std::string name = llvm_gv->getName();
+      std::string name = llvm_gv->getName().str();
       if (is_mangled(name)) {
         return {{"name", name}, {"demangle", demangle(name)}};
       } else {

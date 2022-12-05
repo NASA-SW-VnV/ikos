@@ -78,18 +78,18 @@ inline ZNumber align_to(const ZNumber& value, const ZNumber& align) {
 /// \brief Information about a data type
 struct DataLayoutInfo {
   /// \brief Bit width
-  unsigned bit_width;
+  uint64_t bit_width;
 
   /// \brief ABI alignment, in bytes
-  unsigned abi_alignment;
+  uint64_t abi_alignment;
 
   /// \brief Preferred alignment, in bytes
-  unsigned pref_alignment;
+  uint64_t pref_alignment;
 
   /// \brief Default constructor
-  DataLayoutInfo(unsigned bit_width_,
-                 unsigned abi_alignment_,
-                 unsigned pref_alignment_)
+  DataLayoutInfo(uint64_t bit_width_,
+                 uint64_t abi_alignment_,
+                 uint64_t pref_alignment_)
       : bit_width(bit_width_),
         abi_alignment(abi_alignment_),
         pref_alignment(pref_alignment_) {}

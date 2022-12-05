@@ -143,7 +143,7 @@ private:
 
   /// \brief Wrap a congruence in Z to the given bit-width and signedness
   static ZCongruence wrap(const ZCongruence& c,
-                          unsigned bit_width,
+                          uint64_t bit_width,
                           Signedness sign) {
     return Congruence::wrap(c, bit_width, sign);
   }
@@ -154,24 +154,24 @@ private:
 
   /// \brief Create the top interval-congruence for the given bit-width and
   /// signedness
-  IntervalCongruence(TopTag, unsigned bit_width, Signedness sign)
+  IntervalCongruence(TopTag, uint64_t bit_width, Signedness sign)
       : _i(Interval::top(bit_width, sign)), _c(ZCongruence::top()) {}
 
   /// \brief Create the bottom interval-congruence for the given bit-width and
   /// signedness
-  IntervalCongruence(BottomTag, unsigned bit_width, Signedness sign)
+  IntervalCongruence(BottomTag, uint64_t bit_width, Signedness sign)
       : _i(Interval::bottom(bit_width, sign)), _c(ZCongruence::bottom()) {}
 
 public:
   /// \brief Create the top interval-congruence for the given bit-width and
   /// signedness
-  static IntervalCongruence top(unsigned bit_width, Signedness sign) {
+  static IntervalCongruence top(uint64_t bit_width, Signedness sign) {
     return IntervalCongruence(TopTag{}, bit_width, sign);
   }
 
   /// \brief Create the bottom interval-congruence for the given bit-width and
   /// signedness
-  static IntervalCongruence bottom(unsigned bit_width, Signedness sign) {
+  static IntervalCongruence bottom(uint64_t bit_width, Signedness sign) {
     return IntervalCongruence(BottomTag{}, bit_width, sign);
   }
 
@@ -220,7 +220,7 @@ public:
   ~IntervalCongruence() override = default;
 
   /// \brief Return the bit width of the interval-congruence
-  unsigned bit_width() const { return this->_i.bit_width(); }
+  uint64_t bit_width() const { return this->_i.bit_width(); }
 
   /// \brief Return the signedness the interval-congruence
   Signedness sign() const { return this->_i.sign(); }
@@ -384,14 +384,14 @@ public:
   /// @{
 
   /// \brief Truncate the interval-congruence to the given bit width
-  IntervalCongruence trunc(unsigned bit_width) const {
+  IntervalCongruence trunc(uint64_t bit_width) const {
     ikos_assert(this->bit_width() > bit_width);
     return IntervalCongruence(this->_i.trunc(bit_width),
                               wrap(this->_c, bit_width, this->sign()));
   }
 
   /// \brief Extend the interval-congruence to the given bit width
-  IntervalCongruence ext(unsigned bit_width) const {
+  IntervalCongruence ext(uint64_t bit_width) const {
     ikos_assert(this->bit_width() < bit_width);
     return IntervalCongruence(this->_i.ext(bit_width), this->_c);
   }
@@ -406,7 +406,7 @@ public:
   /// \brief Cast the interval-congruence to the given bit width and sign
   ///
   /// This is equivalent to trunc()/ext() + sign_cast() (in this specific order)
-  IntervalCongruence cast(unsigned bit_width, Signedness sign) const {
+  IntervalCongruence cast(uint64_t bit_width, Signedness sign) const {
     return IntervalCongruence(this->_i.cast(bit_width, sign),
                               wrap(this->_c, bit_width, sign));
   }
@@ -438,7 +438,7 @@ public:
   ///   from_z_congruence([255, 256], 1Z, 8, Unsigned, WrapTag{}) = Top
   static IntervalCongruence from_z_interval_congruence(
       const ZIntervalCongruence& ic,
-      unsigned bit_width,
+      uint64_t bit_width,
       Signedness sign,
       WrapTag) {
     if (ic.is_bottom()) {
@@ -461,7 +461,7 @@ public:
   ///   from_z_congruence([255, 256], 1Z, 8, Unsigned, WrapTag{}) = [255, 255]
   static IntervalCongruence from_z_interval_congruence(
       const ZIntervalCongruence& ic,
-      unsigned bit_width,
+      uint64_t bit_width,
       Signedness sign,
       TruncTag) {
     if (ic.is_bottom()) {

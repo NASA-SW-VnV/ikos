@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   output << Z(42);
   BOOST_CHECK(output.is_equal("42"));
 
-// ZNumber single_mask(const ZNumber& size);
+  // ZNumber single_mask(const ZNumber& size);
 
   BOOST_CHECK(single_mask(Z(0)) == Z(0));
   BOOST_CHECK(single_mask((Z(1) << 32) - 1) == single_mask((Z(1) << 32) - 1));
@@ -618,7 +618,6 @@ BOOST_AUTO_TEST_CASE(test_z_number) {
   //  ZNumber double_mask(const ZNumber& low, const ZNumber& high);
   BOOST_CHECK(double_mask(Z(2), Z(5)).str(2) == "11100");
   BOOST_CHECK(double_mask(Z(0), Z(5)).str(2) == "11111");
-
 
   // ZNumber make_clipped_mask(
   //      const ZNumber& low, const ZNumber& size,

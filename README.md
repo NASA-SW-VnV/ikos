@@ -3,7 +3,7 @@ IKOS
 
 [![Build Status](https://travis-ci.org/NASA-SW-VnV/ikos.svg?branch=master)](https://travis-ci.org/NASA-SW-VnV/ikos)
 [![License](https://img.shields.io/badge/license-NOSA%201.3-blue.svg)](LICENSE.pdf)
-[![Release](https://img.shields.io/badge/release-v3.0-orange.svg)](https://github.com/NASA-SW-VnV/ikos/releases/tag/v3.0)
+[![Release](https://img.shields.io/badge/release-v3.1-orange.svg)](https://github.com/NASA-SW-VnV/ikos/releases/tag/v3.1)
 
 IKOS (Inference Kernel for Open Static Analyzers) is a static analyzer for C/C++ based on the theory of Abstract Interpretation.
 
@@ -50,7 +50,7 @@ To build and run the analyzer, you will need the following dependencies:
 * Python 2 >= 2.7.3 or Python 3 >= 3.3
 * SQLite >= 3.6.20
 * TBB >= 2
-* LLVM and Clang 9.0.x
+* LLVM and Clang 14.0.x
 * (Optional) APRON >= 0.9.10
 * (Optional) Pygments
 

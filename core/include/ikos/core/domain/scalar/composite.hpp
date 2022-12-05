@@ -676,7 +676,6 @@ public:
     this->_integer.apply(op, x, y);
   }
 
-
   // \brief Assert that x is initialized (throw if not), but only if the
   // operation, op, is not logical "and" or "or" as these are used in
   // bitfield operations which may start with uninitialized memory.

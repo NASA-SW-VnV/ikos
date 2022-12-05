@@ -1652,7 +1652,9 @@ public:
 #endif
   }
 
-  static std::string name() { return "octagon"; }
+  static std::string name() {
+    return "octagon";
+  }
 
 }; // end class Octagon
 

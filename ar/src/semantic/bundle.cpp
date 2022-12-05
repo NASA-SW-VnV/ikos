@@ -59,8 +59,7 @@ Bundle::Bundle(Context& ctx,
                std::string triple)
     : _context(ctx),
       _data_layout(std::move(data_layout)),
-      _target_triple(std::move(triple)) {
-}
+      _target_triple(std::move(triple)) {}
 
 Bundle::~Bundle() = default;
 

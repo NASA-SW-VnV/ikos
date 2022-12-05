@@ -28,7 +28,7 @@ define i32 @main(i32, i8**) #0 !dbg !16 {
 ; CHECK:   <4 x float> %4 = insertelement %3, 4, 2.0E+0
 ; CHECK:   <4 x float> %5 = insertelement %4, 8, 3.0E+0
 ; CHECK:   <4 x float> %6 = insertelement %5, 12, 4.0E+0
-; CHECK:   <4 x float> %7 = shufflevector %6, %6, <3, 2, 5, 4>
+; CHECK:   <4 x float> %7 = shufflevector %6, %6
 ; CHECK:   call @printv(%7)
 ; CHECK:   return 0
 ; CHECK: }

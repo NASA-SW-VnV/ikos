@@ -144,9 +144,9 @@ void TextFormatter::format(std::ostream& o, GlobalVariable* gv) const {
   }
 }
 
-void TextFormatter::format_header(std::ostream& o, const Function* f,
+void TextFormatter::format_header(std::ostream& o,
+                                  const Function* f,
                                   Namer& namer) const {
-
   FunctionType* type = f->type(); // declare/define
   if (f->is_declaration()) {
     o << "declare ";
@@ -411,8 +411,6 @@ public:
     formatter.format(o, s->left(), namer, formatter.show_operand_types());
     o << ", ";
     formatter.format(o, s->right(), namer, formatter.show_operand_types());
-    o << ", ";
-    formatter.format(o, s->mask(), namer, formatter.show_operand_types());
   }
 
   void operator()(Call* s) {
