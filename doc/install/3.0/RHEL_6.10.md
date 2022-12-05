@@ -1,7 +1,9 @@
-Install IKOS on Red Hat Enterprise Linux 7.7
-============================================
+Install IKOS on Red Hat Enterprise Linux 6.10
+=============================================
 
-Here are the steps to install IKOS and its dependencies on **[Red Hat Enterprise Linux 7.7](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)**
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
+Here are the steps to install IKOS and its dependencies on **[Red Hat Enterprise Linux 6.10](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)**
 
 IKOS requires certain versions of gcc, cmake, apron, boost and llvm that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
 
@@ -17,7 +19,7 @@ Now, install the following packages using yum:
 
 ```
 $ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
-    gcc gcc-c++ make m4 gmp-devel mpfr-devel python sqlite-devel tbb-devel
+    gcc gcc-c++ make m4 python34 python34-pygments sqlite-devel tbb-devel
 ```
 
 In the next step, we will use the bootstrap script to build and install gcc, cmake, apron, boost, llvm and IKOS.
@@ -60,6 +62,10 @@ After installation, the install directory will contain the following structure:
 │   ├── lib64
 │   ├── libexec
 │   └── share
+├── gmp-6.1.2
+│   ├── include
+│   ├── lib
+│   └── share
 ├── ikos-3.0
 │   ├── bin
 │   ├── include
@@ -75,11 +81,17 @@ After installation, the install directory will contain the following structure:
 │   ├── lib
 │   ├── libexec
 │   └── share
-└── ppl-1.2
-    ├── bin
-    ├── include
-    ├── lib
-    └── share
+├── mpfr-4.0.2
+│   ├── include
+│   ├── lib
+│   └── share
+├── ppl-1.2
+│   ├── bin
+│   ├── include
+│   ├── lib
+│   └── share
+└── python-3.4.10
+    └── bin
 ```
 
 During its execution, the **bootstrap** script creates a special environment with all the required dependencies for IKOS. To enter that environment, simply run the following command (consider adding this in your `.bashrc`):
@@ -92,4 +104,4 @@ For short, it adds the necessary directories to your `PATH` and your `LD_LIBRARY
 
 For more information about the **bootstrap** script and how to run the tests, see [ROOTLESS.md](ROOTLESS.md).
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../../README.md#how-to-run-ikos) in README.md

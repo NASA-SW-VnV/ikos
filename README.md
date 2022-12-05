@@ -39,77 +39,16 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 Installation
 ------------
 
-### Dependencies
+To install IKOS on **Linux** or **macOS**, we recommend to use **[Homebrew](https://brew.sh/)**.
 
-To build and run the analyzer, you will need the following dependencies:
+First, install **Homebrew** by following [these instructions](https://docs.brew.sh/Installation).
 
-* A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
-* CMake >= 3.4.3
-* GMP >= 4.3.1
-* Boost >= 1.55
-* Python 2 >= 2.7.3 or Python 3 >= 3.3
-* SQLite >= 3.6.20
-* TBB >= 2
-* LLVM and Clang 14.0.x
-* (Optional) APRON >= 0.9.10
-* (Optional) Pygments
-
-Most of them can be installed using your package manager.
-
-Installation instructions for Arch Linux, CentOS, Debian, Fedora, Mac OS X, Red Hat, Ubuntu and Windows are available in the [doc/install](doc/install) directory. These instructions assume you have sudo or root access. If you don't, please follow the instructions in [doc/install/ROOTLESS.md](doc/install/ROOTLESS.md).
-
-Note: If you build LLVM from source, you need to enable run-time type information (RTTI).
-
-Once you have all the required dependencies, move to the next section.
-
-### Build and Install
-
-Now that you have all the dependencies on your system, you can build and install IKOS.
-
-As you open the IKOS distribution, you shall see the following directory structure:
-
+Then, simply run:
 ```
-.
-├── CMakeLists.txt
-├── LICENSE.pdf
-├── README.md
-├── RELEASE_NOTES.md
-├── TROUBLESHOOTING.md
-├── analyzer
-├── ar
-├── cmake
-├── core
-├── doc
-├── frontend
-├── script
-└── test
+$ brew install nasa-sw-vnv/core/ikos
 ```
 
-IKOS uses the CMake build system. You will need to specify an installation directory that will contain all the binaries, libraries and headers after installation. If you do not specify this directory, CMake will install everything under `install` in the root directory of the distribution. In the following steps, we will install IKOS under `/path/to/ikos-install-directory`.
-
-Here are the steps to build and install IKOS:
-
-```
-$ mkdir build
-$ cd build
-$ cmake -DCMAKE_INSTALL_PREFIX=/path/to/ikos-install-directory ..
-$ make
-$ make install
-```
-
-Then, add IKOS in your PATH (consider adding this in your .bashrc):
-
-```
-$ PATH="/path/to/ikos-install-directory/bin:$PATH"
-```
-
-### Tests
-
-To build and run the tests, simply type:
-
-```
-$ make check
-```
+For Windows, consider using [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 How to run IKOS
 ---------------
@@ -216,6 +155,80 @@ Further information:
 * [Analysis Assumptions](analyzer/README.md#analysis-assumptions)
 * [Analyze an embedded software requiring a cross-compiler](analyzer/README.md#analyze-an-embedded-software-requiring-a-cross-compiler)
 * [Model library functions to reduce warnings](analyzer/README.md#model-library-functions-to-reduce-warnings)
+
+Build from source
+-----------------
+
+Below are instructions to build IKOS from source.
+This is only for advanced users that want to either package IKOS for an operating system or to experiment with the codebase. Otherwise, please follow the instructions [above](#installation).
+
+### Dependencies
+
+To build and run the analyzer, you will need the following dependencies:
+
+* A C++ compiler that supports C++14 (gcc >= 4.9.2 or clang >= 3.4)
+* CMake >= 3.4.3
+* GMP >= 4.3.1
+* Boost >= 1.55
+* Python 2 >= 2.7.3 or Python 3 >= 3.3
+* SQLite >= 3.6.20
+* TBB >= 2
+* LLVM and Clang 14.0.x
+* (Optional) APRON >= 0.9.10
+* (Optional) Pygments
+
+Most of them can be installed using your package manager.
+
+Note: If you build LLVM from source, you need to enable run-time type information (RTTI).
+
+### Build and Install
+
+Now that you have all the dependencies on your system, you can build and install IKOS.
+
+As you open the IKOS distribution, you shall see the following directory structure:
+
+```
+.
+├── CMakeLists.txt
+├── LICENSE.pdf
+├── README.md
+├── RELEASE_NOTES.md
+├── TROUBLESHOOTING.md
+├── analyzer
+├── ar
+├── cmake
+├── core
+├── doc
+├── frontend
+├── script
+└── test
+```
+
+IKOS uses the CMake build system. You will need to specify an installation directory that will contain all the binaries, libraries and headers after installation. If you do not specify this directory, CMake will install everything under `install` in the root directory of the distribution. In the following steps, we will install IKOS under `/path/to/ikos-install-directory`.
+
+Here are the steps to build and install IKOS:
+
+```
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_INSTALL_PREFIX=/path/to/ikos-install-directory ..
+$ make
+$ make install
+```
+
+Then, add IKOS in your PATH (consider adding this in your .bashrc):
+
+```
+$ PATH="/path/to/ikos-install-directory/bin:$PATH"
+```
+
+### Tests
+
+To build and run the tests, simply type:
+
+```
+$ make check
+```
 
 Contributors
 ------------

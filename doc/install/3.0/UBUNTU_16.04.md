@@ -1,7 +1,9 @@
-Install IKOS dependencies on Ubuntu 19.04
+Install IKOS dependencies on Ubuntu 16.04
 =========================================
 
-Here are the steps to install the required dependencies of IKOS on **[Ubuntu 19.04 (Disco Dingo)](http://releases.ubuntu.com/19.04/)**.
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
+Here are the steps to install the required dependencies of IKOS on **[Ubuntu 16.04 (Xenial)](http://releases.ubuntu.com/16.04/)**.
 
 First, make sure your system is up-to-date:
 
@@ -13,7 +15,7 @@ $ sudo apt-get upgrade
 Now, you will need to add the LLVM repository to your apt `sources.list`:
 
 ```
-$ echo "deb http://apt.llvm.org/disco/ llvm-toolchain-disco-9 main" | sudo tee -a /etc/apt/sources.list
+$ echo "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main" | sudo tee -a /etc/apt/sources.list
 ```
 
 You also need to trust the LLVM repository key:
@@ -40,4 +42,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../../README.md#build-and-install) in README.md

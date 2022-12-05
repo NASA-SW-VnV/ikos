@@ -1,6 +1,8 @@
 Install IKOS dependencies on Ubuntu 20.04
 =========================================
 
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
 Here are the steps to install the required dependencies of IKOS on **[Ubuntu 20.04 LTS (Focal Fossa)](http://releases.ubuntu.com/20.04/)**.
 
 First, make sure your system is up-to-date: 
@@ -27,4 +29,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../../README.md#build-and-install) in README.md
