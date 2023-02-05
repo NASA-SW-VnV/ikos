@@ -559,11 +559,11 @@ def extract_bitcode(exe_path, bc_path):
     # first, extract the llvm bitcode paths
     cmd = [settings.llvm_objdump(), '-s']
     if sys.platform.startswith('darwin'):
-        cmd.append('-section=%s' % DARWIN_SECTION_NAME)
+        cmd.append('--section=%s' % DARWIN_SECTION_NAME)
     elif sys.platform.startswith('linux') or sys.platform.startswith('freebsd'):
-        cmd.append('-section=%s' % ELF_SECTION_NAME)
+        cmd.append('--section=%s' % ELF_SECTION_NAME)
     elif sys.platform.startswith('win'):
-        cmd.append('-section=%s' % PE_SECTION_NAME)
+        cmd.append('--section=%s' % PE_SECTION_NAME)
     else:
         assert False, 'unsupported platform'
     cmd.append(exe_path)
