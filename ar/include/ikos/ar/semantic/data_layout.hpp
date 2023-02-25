@@ -46,6 +46,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include <ikos/ar/support/assert.hpp>
 #include <ikos/ar/support/number.hpp>
