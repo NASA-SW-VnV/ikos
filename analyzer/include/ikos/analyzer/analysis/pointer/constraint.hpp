@@ -379,7 +379,7 @@ private:
         case ar::UnaryOperation::UIToPtr:
         case ar::UnaryOperation::SIToPtr: {
           // Cast from int to ptr (for instance: int x = 5; int *px = x;)
-          unsigned bit_width = this->_data_layout.pointers.bit_width;
+          uint64_t bit_width = this->_data_layout.pointers.bit_width;
           const ScalarLit& lhs = this->_lit_factory.get_scalar(s->result());
           const ScalarLit& rhs = this->_lit_factory.get_scalar(s->operand());
 
@@ -458,7 +458,7 @@ private:
         return;
       }
 
-      unsigned bit_width = this->_data_layout.pointers.bit_width;
+      uint64_t bit_width = this->_data_layout.pointers.bit_width;
       MachineIntLinearExpression offset_expr(
           MachineInt::zero(bit_width, Unsigned));
 

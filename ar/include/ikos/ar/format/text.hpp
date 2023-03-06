@@ -85,6 +85,9 @@ public:
   /// \brief Format a global variable into text format
   void format(std::ostream&, GlobalVariable*) const;
 
+  // \brief Format just the head part of a function.
+  void format_header(std::ostream&, const Function*, Namer&) const;
+
   /// \brief Format a function into text format
   void format(std::ostream&, Function*) const;
 

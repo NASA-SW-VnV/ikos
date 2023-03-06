@@ -1,9 +1,13 @@
-Install IKOS on CentOS 6.10
-===========================
+Install IKOS on Red Hat Enterprise Linux 7.7
+============================================
 
-Here are the steps to install IKOS and its dependencies on **[CentOS 6.10](https://www.centos.org/)**
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
 
-IKOS requires certain versions of cmake, apron, boost and llvm that are newer than the ones available on the CentOS Yum package manager. Hence the following describes the steps to bootstrap these dependencies on CentOS.
+Here are the steps to install IKOS and its dependencies on **[Red Hat Enterprise Linux 7.7](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux)**
+
+IKOS requires certain versions of gcc, cmake, apron, boost and llvm that are newer than the ones available on the Red Hat Yum package manager. Hence the following describes the steps to bootstrap these dependencies on Red Hat.
+
+**Warning**: You will need **at least 10 Gb** of disk space and a **few hours**.
 
 First, make sure your system is up-to-date:
 
@@ -11,32 +15,14 @@ First, make sure your system is up-to-date:
 $ sudo yum update
 ```
 
-Install the following packages using yum:
+Now, install the following packages using yum:
 
 ```
-$ sudo yum install patch bzip2 xz zlib-devel libedit-devel make m4 sqlite-devel tbb-devel
+$ sudo yum install which file patch tar bzip2 xz zlib-devel ncurses-devel \
+    gcc gcc-c++ make m4 gmp-devel mpfr-devel python sqlite-devel tbb-devel
 ```
 
-We will use [CentOS Sofware Collections (CSL)](https://wiki.centos.org/AdditionalResources/Repositories/SCL) to get a more recent version of gcc and python. Enable the CSL by running:
-
-```
-$ sudo yum install centos-release-scl
-```
-
-Now, you can install the following packages:
-
-```
-$ sudo yum install devtoolset-8-gcc devtoolset-8-gcc-c++ python27
-```
-
-You need to update your `PATH` and `LD_LIBRARY_PATH` to use devtoolset-8 and python27. Use the following commands (consider adding this in your `.bashrc`):
-
-```
-$ PATH="/opt/rh/python27/root/usr/bin:/opt/rh/devtoolset-8/root/usr/bin:$PATH"
-$ export LD_LIBRARY_PATH="/opt/rh/python27/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib64:/opt/rh/devtoolset-8/root/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-```
-
-In the next step, we will use the bootstrap script to build and install cmake, apron, boost, llvm and IKOS.
+In the next step, we will use the bootstrap script to build and install gcc, cmake, apron, boost, llvm and IKOS.
 Here, we will use `/path/to/ikos-install` as the installation directory and `/path/to/ikos-build` as the build directory. Replace it with the location where you want to put IKOS and its dependencies (for instance, `~/ikos-install` and `~/ikos-build`).
 
 In IKOS root directory, run:
@@ -69,12 +55,19 @@ After installation, the install directory will contain the following structure:
 │   ├── bin
 │   ├── doc
 │   └── share
-├── gmp-6.1.2
+├── gcc-9.2.0
+│   ├── bin
 │   ├── include
 │   ├── lib
+│   ├── lib64
+│   ├── libexec
 │   └── share
 ├── ikos-3.0
 │   ├── bin
+│   ├── include
+│   ├── lib
+│   └── share
+├── libedit-2.11
 │   ├── include
 │   ├── lib
 │   └── share
@@ -83,10 +76,6 @@ After installation, the install directory will contain the following structure:
 │   ├── include
 │   ├── lib
 │   ├── libexec
-│   └── share
-├── mpfr-4.0.2
-│   ├── include
-│   ├── lib
 │   └── share
 └── ppl-1.2
     ├── bin
@@ -105,4 +94,4 @@ For short, it adds the necessary directories to your `PATH` and your `LD_LIBRARY
 
 For more information about the **bootstrap** script and how to run the tests, see [ROOTLESS.md](ROOTLESS.md).
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../../README.md#how-to-run-ikos) in README.md

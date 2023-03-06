@@ -118,6 +118,11 @@ private:
   /// llvm.dbg.* functions)
   ar::Function* translate_extern_function(llvm::Function*);
 
+  /// \brief Translate an internal llvm::Function* into an ar::Function*
+  ///
+  /// This is used when no debug information is available.
+  ar::Function* translate_internal_function(llvm::Function*);
+
 public:
   /// \brief Return true if the given intrinsic should not be translated
   bool ignore_intrinsic(llvm::Intrinsic::ID);

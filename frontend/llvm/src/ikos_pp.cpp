@@ -52,6 +52,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>
+#include <llvm/InitializePasses.h>
 #include <llvm/LinkAllPasses.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Debug.h>
@@ -167,12 +168,10 @@ int main(int argc, char** argv) {
   llvm::initializeInstrumentation(registry);
   llvm::initializeTarget(registry);
   llvm::initializeExpandMemCmpPassPass(registry);
-  llvm::initializeScalarizeMaskedMemIntrinPass(registry);
   llvm::initializeCodeGenPreparePass(registry);
   llvm::initializeAtomicExpandPass(registry);
   llvm::initializeRewriteSymbolsLegacyPassPass(registry);
   llvm::initializeWinEHPreparePass(registry);
-  llvm::initializeDwarfEHPreparePass(registry);
   llvm::initializeSafeStackLegacyPassPass(registry);
   llvm::initializeSjLjEHPreparePass(registry);
   llvm::initializeStackProtectorPass(registry);
@@ -229,7 +228,7 @@ int main(int argc, char** argv) {
   std::unique_ptr< llvm::ToolOutputFile > output =
       std::make_unique< llvm::ToolOutputFile >(OutputFilename,
                                                ec,
-                                               llvm::sys::fs::F_None);
+                                               llvm::sys::fs::OF_None);
   if (ec) {
     llvm::errs() << progname << ": " << ec.message() << '\n';
     return 1;
@@ -259,10 +258,6 @@ int main(int argc, char** argv) {
   } else if (OptLevel == Basic) {
     // SSA (opt -mem2reg)
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
-
-    // MarkNoReturnFunctions only insert unreachable instructions if
-    // the function does not have an exit block
-    pass_manager.add(ikos_pp::create_mark_no_return_function_pass());
 
     // Global dead code elimination (opt -globaldce)
     // note: unfortunately, it removes some debug info about global variables
@@ -376,8 +371,8 @@ int main(int argc, char** argv) {
     // Remove unreachable blocks
     pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
 
-    // Dead instruction elimination (opt -die)
-    pass_manager.add(llvm::createDeadInstEliminationPass());
+    // Dead code elimination (opt -dce)
+    pass_manager.add(llvm::createDeadCodeEliminationPass());
 
     // Canonical form for loops (opt -loop-simplify)
     pass_manager.add(llvm::createLoopSimplifyPass());
@@ -399,10 +394,6 @@ int main(int argc, char** argv) {
 
     // Cleanup unnecessary blocks (opt -simplifycfg)
     pass_manager.add(llvm::createCFGSimplificationPass());
-
-    // MarkNoReturnFunctions only insert unreachable instructions if
-    // the function does not have an exit block.
-    pass_manager.add(ikos_pp::create_mark_no_return_function_pass());
 
     // Global dead code elimination (opt -globaldce)
     pass_manager.add(llvm::createGlobalDCEPass());

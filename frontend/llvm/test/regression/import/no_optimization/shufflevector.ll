@@ -75,7 +75,7 @@ define i32 @main(i32, i8**) #0 !dbg !16 {
 ; CHECK:   store $10, %19, align 16
 ; CHECK:   <4 x float> %20 = load $10, align 16
 ; CHECK:   <4 x float> %21 = load $10, align 16
-; CHECK:   <4 x float> %22 = shufflevector %20, %21, <3, 2, 5, 4>
+; CHECK:   <4 x float> %22 = shufflevector %20, %21
 ; CHECK:   store $10, %22, align 16
 ; CHECK:   <4 x float> %23 = load $10, align 16
 ; CHECK:   call @printv(%23)

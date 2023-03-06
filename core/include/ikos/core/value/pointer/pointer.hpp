@@ -101,7 +101,7 @@ private:
 public:
   /// \brief Create the top abstract value with the given bit-width and
   /// signedness for the offset
-  static PointerAbsValue top(unsigned bit_width, Signedness sign) {
+  static PointerAbsValue top(uint64_t bit_width, Signedness sign) {
     return PointerAbsValue(Uninitialized::top(),
                            Nullity::top(),
                            PointsToSetT::top(),
@@ -110,7 +110,7 @@ public:
 
   /// \brief Create the bottom abstract value with the given bit-width and
   /// signedness for the offset
-  static PointerAbsValue bottom(unsigned bit_width, Signedness sign) {
+  static PointerAbsValue bottom(uint64_t bit_width, Signedness sign) {
     return PointerAbsValue(Uninitialized::bottom(),
                            Nullity::bottom(),
                            PointsToSetT::bottom(),
@@ -119,7 +119,7 @@ public:
 
   /// \brief Create the uninitialized pointer with the given bit-width and
   /// signedness for the offset
-  static PointerAbsValue uninitialized(unsigned bit_width, Signedness sign) {
+  static PointerAbsValue uninitialized(uint64_t bit_width, Signedness sign) {
     return PointerAbsValue(Uninitialized::uninitialized(),
                            Nullity::bottom(),
                            PointsToSetT::bottom(),
@@ -128,7 +128,7 @@ public:
 
   /// \brief Create the null pointer with the given bit-width and signedness for
   /// the offset
-  static PointerAbsValue null(unsigned bit_width, Signedness sign) {
+  static PointerAbsValue null(uint64_t bit_width, Signedness sign) {
     return PointerAbsValue(Uninitialized::initialized(),
                            Nullity::null(),
                            PointsToSetT::bottom(),

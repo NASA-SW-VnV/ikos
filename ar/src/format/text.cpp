@@ -70,7 +70,9 @@ void TextFormatter::format(std::ostream& o, Bundle* bundle) const {
   o << "target-pointer-size = " << data_layout.pointers.bit_width << " bits\n";
 
   // target triple
-  o << "target-triple = " << bundle->target_triple() << "\n";
+  if (!bundle->target_triple().empty()) {
+    o << "target-triple = " << bundle->target_triple() << "\n";
+  }
 
   if (!this->order_globals()) {
     // global variables
@@ -142,11 +144,10 @@ void TextFormatter::format(std::ostream& o, GlobalVariable* gv) const {
   }
 }
 
-void TextFormatter::format(std::ostream& o, Function* f) const {
-  FunctionType* type = f->type();
-  Namer namer;
-
-  // declare/define
+void TextFormatter::format_header(std::ostream& o,
+                                  const Function* f,
+                                  Namer& namer) const {
+  FunctionType* type = f->type(); // declare/define
   if (f->is_declaration()) {
     o << "declare ";
   } else {
@@ -155,14 +156,14 @@ void TextFormatter::format(std::ostream& o, Function* f) const {
   }
 
   // return type and name
-  this->format(o, type->return_type());
+  format(o, type->return_type());
   o << " @" << f->name();
 
   // parameters
   o << "(";
   if (f->is_declaration()) {
     for (auto it = type->param_begin(), et = type->param_end(); it != et;) {
-      this->format(o, *it);
+      format(o, *it);
       ++it;
       if (it != et) {
         o << ", ";
@@ -170,7 +171,7 @@ void TextFormatter::format(std::ostream& o, Function* f) const {
     }
   } else {
     for (auto it = f->param_begin(), et = f->param_end(); it != et;) {
-      this->format(o, *it, namer, true);
+      format(o, *it, namer, true);
       ++it;
       if (it != et) {
         o << ", ";
@@ -184,6 +185,11 @@ void TextFormatter::format(std::ostream& o, Function* f) const {
     o << "...";
   }
   o << ")";
+}
+
+void TextFormatter::format(std::ostream& o, Function* f) const {
+  Namer namer;
+  this->format_header(o, f, namer);
 
   // body
   if (f->is_declaration()) {
@@ -405,8 +411,6 @@ public:
     formatter.format(o, s->left(), namer, formatter.show_operand_types());
     o << ", ";
     formatter.format(o, s->right(), namer, formatter.show_operand_types());
-    o << ", ";
-    formatter.format(o, s->mask(), namer, formatter.show_operand_types());
   }
 
   void operator()(Call* s) {

@@ -1,4 +1,4 @@
-###############################################################################
+##############################################################################
 #
 # Generate an analysis report from a result database
 #
@@ -51,9 +51,13 @@ import os
 import os.path
 import sqlite3
 import sys
+from xml.etree import ElementTree
+from xml.sax.saxutils import escape
+from xml.sax.saxutils import quoteattr
 
 from ikos import args
 from ikos import colors
+from ikos import settings
 from ikos.abs_int import Signedness, MachineInt, Interval, Congruence
 from ikos.colors import bold, bold_blue, bold_green, bold_magenta, bold_red, \
     bold_yellow
@@ -877,6 +881,139 @@ class JSONFormatter(Formatter):
         self.output.write('\n')
 
 
+class SARIFFormatter(Formatter):
+    ''' SARIF output formatter '''
+
+    checks = [
+        ('buffer_overflow_analysis', 'checks for buffer overflows and out-of-bound array accesses.'),
+        ('division_by_zero_analysis', 'checks for integer divisions by zero.'),
+        ('null_pointer_analysis', 'checks for null pointer dereferences.'),
+        ('assertion_prover', 'prove user-defined properties, using __ikos_assert(condition).'),
+        ('unaligned_pointer_analysis', 'checks for unaligned pointer dereferences.'),
+        ('uninitialized_variable_analysis', 'checks for read of uninitialized variables.'),
+        ('signed_integer_overflow_analysis', 'checks for signed integer overflows.'),
+        ('unsigned_integer_overflow_analysis', 'checks for unsigned integer overflows.'),
+        ('shift_count_analysis', 'checks for invalid shifts, where the amount shifted is greater or equal to the bit-width of the left operand, or less than zero.'),
+        ('pointer_overflow_analysis', 'checks for pointer arithmetic overflows.'),
+        ('pointer_comparison_analysis', 'checks for pointer comparisons between pointers referring to different objects.'),
+        ('soundness_analysis', 'checks for instructions that could make the analysis unsound, i.e miss bugs.'),
+        ('function_call_analysis', 'checks for function calls through function pointers of the wrong type.'),
+        ('dead_code_analysis', 'checks for unreachable statements.'),
+        ('double_free_analysis', 'checks for double free, invalid free, use after free and use after return.'),
+        ('debugger', 'prints debug information, using __ikos_print_values("desc", x) and __ikos_print_invariant().'),
+        ('memory_watcher', 'prints memory writes at a given memory location, using __ikos_watch_mem(ptr, size)')
+    ]
+
+    rules = [
+        {
+            'id': name,
+            'shortDescription': {'text': text},
+            'helpUri': 'https://github.com/NASA-SW-VnV/ikos/blob/master/analyzer/README.md#checks'
+        }
+        for (name, text) in checks
+    ]
+
+    tool = {
+        'driver': {
+            'name': 'IKOS',
+            'version': settings.VERSION,
+            'informationUri': 'https://github.com/NASA-SW-VnV/ikos',
+            'rules': rules,
+        },
+    }
+
+    def format_artifacts(self, report):
+        files = set()
+        for statement_report in report.statement_reports:
+            statement = statement_report.statement()
+            name = statement.file_path()
+            if name:
+                files.add(name)
+        return [{'location': {'uri': format_path(file)}} for file in files]
+
+    # the only levels in SARIF are error, warning, and note => change unreachable into note
+    def format_level(self, level):
+        if level == "unreachable":
+            return "note"
+        else:
+            return level
+
+    # some messages provided by IKOS are multi-line but it's not possible under the SARIF format:
+    # change it into some single line message
+    def single_line(self, text):
+        # bundle multi-line messages into single-line messages
+        if '\n\t*' in text:
+            return text.replace('\n\t*', '  +--> ')
+        else:
+            return text
+
+    def format_location(self, statement, message=None):
+        path = format_path(statement.file_path())
+        artifact = {'uri': path}
+        region = {'startLine': statement.line, 'startColumn': statement.column}
+        physical = {'artifactLocation': artifact, 'region': region}
+        location = {'physicalLocation': physical}
+        if message:
+            location['message'] = {'text': message}
+        return location
+
+    def format_stacks(self, statement_report):
+        call_contexts = statement_report.call_contexts()
+        stacks = []
+        for context in call_contexts:
+            frames = []
+            while not context.empty():
+                call = context.call()
+                func = call.function().pretty_name()
+                location = self.format_location(call, message="Call from %s" % func)
+                frames.append({'location': location})
+                context = context.parent()
+            if frames:
+                # The Sarif Viewer extension for VS Code ignores stacks without
+                # a message for some reason
+                message = {'text': str(context)}
+                stack = {'message': message, 'frames': frames}
+                stacks.append(stack)
+        return stacks
+
+    def format_results(self, report):
+        results = []
+        for statement_report in report.statement_reports:
+            statement = statement_report.statement()
+            path = statement.file_path()
+            # check if it's not a garbage result by checking if a filename path is provided
+            # and if the line and column numbers are not zero
+            if path and statement.line > 0 and statement.column > 0:
+                result = {
+                    'ruleId': CheckKind.short_name(statement_report.kind),
+                    'level': self.format_level(Result.str(statement_report.status)),
+                    'message': {
+                        'text': quoteattr(self.single_line(generate_message(statement_report, self.verbosity))),
+                    },
+                    'locations': [self.format_location(statement)],
+                }
+                stacks = self.format_stacks(statement_report)
+                if stacks:
+                    result['stacks'] = stacks
+                results.append(result)
+        return results
+
+    # main method to format an IKOS report into a SARIF formatted report
+    def format(self, report):
+        run = {
+            'tool': self.tool,
+            'artifacts': self.format_artifacts(report),
+            'results': self.format_results(report),
+        }
+        log = {
+            'version': '2.1.0',
+            '$schema': 'http://json.schemastore.org/sarif-2.1.0',
+            'runs': [run],
+        }
+        json.dump(log, self.output, indent = 3)
+        self.output.write('\n')
+
+
 class CSVFormatter(Formatter):
     ''' CSV output formatter '''
 
@@ -913,6 +1050,84 @@ class CSVFormatter(Formatter):
             ])
 
 
+class JUnitFormatter(Formatter):
+    ''' JUnit.xml formatter '''
+
+    def get_timing_result(self, report):
+        ''' get the timing results ifor the analysis from the database '''
+        db = report.db
+        elapsed = 0.0
+        if db:
+            results = db.load_timing_results(True, True)
+            for result in results:
+                if result[0] == 'ikos-analyzer':
+                    return result[1]
+        return elapsed
+
+    # some messages provided by IKOS are multi-line but 
+    # we want to change it into some single line message
+    def single_line (self, text):
+        # 
+        if '\n\t*' in text:
+            return text.replace('\n\t*', '  +--> ')
+        else:
+            return text
+
+    def format(self, report):
+        testname = '.ikos-analysis-results'
+        # get the time spent on analysis
+        elapsed = self.get_timing_result (report)
+        # get the summary report
+        summary = generate_summary (report.db)
+        test_count = summary.ok + summary.error + summary.warning + summary.unreachable
+        error_count = summary.error + summary.warning
+        # build the data structure to report the analysis summary
+        data = {
+            'testname': testname,
+            'test_count': test_count,
+            'error_count': error_count,
+            'time': '%.3f' % round(elapsed, 3),
+            'skip': 0,
+        }
+        xml = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuite
+  name="%(testname)s"
+  tests="%(test_count)d"
+  errors="0"
+  failures="%(error_count)d"
+  time="%(time)s"
+  skipped="%(skip)d"
+>
+""" % data
+
+        for statement_report in report.statement_reports:
+            statement = statement_report.statement()
+            
+            path = statement.file_path()
+            # make sure that it's not one of those unreachable statements without any info
+            if path and statement.line > 0 and statement.column > 0:
+                # report each error/warning as a failing testcase
+                data = {
+                    'quoted_name': quoteattr(
+                        '%s: %s (%s:%d)' % (
+                            Result.str(statement_report.status), 
+                            CheckKind.short_name(statement_report.kind),
+                            path, statement.line)),
+                    'testname': testname,
+                    'quoted_message': quoteattr(self.single_line(generate_message(statement_report, self.verbosity))),
+                }
+                xml += """  <testcase
+    name=%(quoted_name)s
+    classname="%(testname)s"
+  >
+      <failure message=%(quoted_message)s/>
+  </testcase>
+""" % data
+
+        xml += '</testsuite>'
+        self.output.write(xml)
+
+
 class AutoFormatter(TextFormatter):
     '''
     Automatic output formatter
@@ -944,8 +1159,10 @@ class AutoFormatter(TextFormatter):
 formats = {
     'text': TextFormatter,
     'json': JSONFormatter,
+    'sarif': SARIFFormatter,
     'csv': CSVFormatter,
     'auto': AutoFormatter,
+    'junit': JUnitFormatter
 }
 
 

@@ -87,21 +87,21 @@ private:
 public:
   /// \brief Create the top pointer set with the given bit-width and signedness
   /// for the offsets
-  static PointerSet top(unsigned bit_width, Signedness sign) {
+  static PointerSet top(uint64_t bit_width, Signedness sign) {
     return PointerSet(PointsToSetT::top(),
                       MachineIntInterval::top(bit_width, sign));
   }
 
   /// \brief Create the bottom pointer set with the given bit-width and
   /// signedness for the offsets
-  static PointerSet bottom(unsigned bit_width, Signedness sign) {
+  static PointerSet bottom(uint64_t bit_width, Signedness sign) {
     return PointerSet(PointsToSetT::bottom(),
                       MachineIntInterval::bottom(bit_width, sign));
   }
 
   /// \brief Create the empty pointer set with the given bit-width and
   /// signedness for the offsets
-  static PointerSet empty(unsigned bit_width, Signedness sign) {
+  static PointerSet empty(uint64_t bit_width, Signedness sign) {
     return PointerSet(PointsToSetT::empty(),
                       MachineIntInterval::bottom(bit_width, sign));
   }

@@ -297,7 +297,7 @@ GlobalVariable::GlobalVariable(Bundle* bundle,
                                PointerType* type,
                                std::string name,
                                bool is_definition,
-                               unsigned alignment)
+                               uint64_t alignment)
     : Variable(GlobalVariableKind, type),
       _parent(bundle),
       _initializer(nullptr),
@@ -320,7 +320,7 @@ GlobalVariable* GlobalVariable::create(Bundle* bundle,
                                        PointerType* type,
                                        std::string name,
                                        bool is_definition,
-                                       unsigned alignment) {
+                                       uint64_t alignment) {
   GlobalVariable* gv = new GlobalVariable(bundle,
                                           type,
                                           std::move(name),
@@ -353,7 +353,7 @@ void GlobalVariable::dump(std::ostream& o) const {
 
 LocalVariable::LocalVariable(Function* function,
                              PointerType* type,
-                             unsigned alignment)
+                             uint64_t alignment)
     : Variable(LocalVariableKind, type),
       _parent(function),
       _alignment(alignment) {
@@ -362,7 +362,7 @@ LocalVariable::LocalVariable(Function* function,
 
 LocalVariable* LocalVariable::create(Function* function,
                                      PointerType* type,
-                                     unsigned alignment) {
+                                     uint64_t alignment) {
   auto lv = std::unique_ptr< LocalVariable >(
       new LocalVariable(function, type, alignment));
   return function->add_local_variable(std::move(lv));

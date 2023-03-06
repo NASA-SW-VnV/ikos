@@ -1,6 +1,8 @@
 Install IKOS dependencies on Windows
 ====================================
 
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
 Here are the steps to install the required dependencies of IKOS on **[Windows](https://www.microsoft.com/en-us/windows)** using **[MSYS2](https://www.msys2.org/)**.
 
 First, install **MSYS2** by following the instructions at https://www.msys2.org/
@@ -40,4 +42,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../../README.md#build-and-install) in README.md

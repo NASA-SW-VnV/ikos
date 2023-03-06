@@ -58,7 +58,7 @@
 #include <ikos/analyzer/util/progress.hpp>
 #include <ikos/analyzer/util/timer.hpp>
 
-#include <tbb/task_scheduler_init.h>
+#include <tbb/global_control.h>
 
 namespace ikos {
 namespace analyzer {
@@ -83,9 +83,10 @@ void Analysis::run() {
   }
 
   // Initialize the task scheduler
-  tbb::task_scheduler_init init(_ctx.opts.num_threads > 0
-                                    ? _ctx.opts.num_threads
-                                    : tbb::task_scheduler_init::automatic);
+  if (_ctx.opts.num_threads > 0) {
+    tbb::global_control init(tbb::global_control::max_allowed_parallelism,
+                             static_cast< std::size_t >(_ctx.opts.num_threads));
+  }
 
   // Initial invariant
   AbstractDomain init_inv = make_initial_abstract_value(_ctx);

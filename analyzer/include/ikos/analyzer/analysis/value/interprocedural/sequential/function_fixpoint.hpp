@@ -45,6 +45,7 @@
 
 #include <ikos/ar/semantic/code.hpp>
 #include <ikos/ar/semantic/function.hpp>
+#include "ikos/ar/format/namer.hpp"
 
 #include <ikos/core/fixpoint/fwd_fixpoint_iterator.hpp>
 
@@ -101,6 +102,8 @@ private:
   /// \brief Progress logger
   ProgressLogger& _logger;
 
+  std::unique_ptr< ar::Namer > _namer;
+
 public:
   /// \brief Constructor for an entry point
   ///
@@ -122,6 +125,8 @@ public:
                    const FunctionFixpoint& caller,
                    ar::CallBase* call,
                    ar::Function* callee);
+
+  virtual ~FunctionFixpoint() override;
 
   /// \brief Compute the fixpoint
   void run(AbstractDomain inv) override;

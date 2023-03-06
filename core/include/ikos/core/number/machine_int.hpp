@@ -61,7 +61,7 @@ private:
     uint64_t i; /// Used to store the <= 64 bits integer value.
     ZNumber* p; /// Used to store the >64 bits integer value.
   } _n;
-  unsigned _bit_width;
+  uint64_t _bit_width;
   Signedness _sign;
 
 private:
@@ -76,7 +76,7 @@ private:
   bool is_large() const { return !this->is_small(); }
 
   /// \brief Return 2**n
-  static ZNumber power_of_2(unsigned n) { return ZNumber(1) << n; }
+  static ZNumber power_of_2(uint64_t n) { return ZNumber(1) << n; }
 
   /// \brief Return 2**n
   static ZNumber power_of_2(const ZNumber& n) { return ZNumber(1) << n; }
@@ -113,7 +113,7 @@ public:
   /// \brief Create a machine integer from an integral type
   template < typename T,
              class = std::enable_if_t< IsSupportedIntegral< T >::value > >
-  MachineInt(T n, unsigned bit_width, Signedness sign)
+  MachineInt(T n, uint64_t bit_width, Signedness sign)
       : _bit_width(bit_width), _sign(sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
@@ -127,7 +127,7 @@ public:
   }
 
   /// \brief Create a machine integer from a ZNumber
-  MachineInt(const ZNumber& n, unsigned bit_width, Signedness sign)
+  MachineInt(const ZNumber& n, uint64_t bit_width, Signedness sign)
       : _bit_width(bit_width), _sign(sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
@@ -145,7 +145,7 @@ private:
   struct NormalizedTag {};
 
   /// \brief Private constructor for normalized integers
-  MachineInt(uint64_t n, unsigned bit_width, Signedness sign, NormalizedTag)
+  MachineInt(uint64_t n, uint64_t bit_width, Signedness sign, NormalizedTag)
       : _bit_width(bit_width), _sign(sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
@@ -158,7 +158,7 @@ private:
 
   /// \brief Private constructor for normalized integers
   MachineInt(const ZNumber& n,
-             unsigned bit_width,
+             uint64_t bit_width,
              Signedness sign,
              NormalizedTag)
       : _bit_width(bit_width), _sign(sign) {
@@ -195,7 +195,7 @@ public:
   }
 
   /// \brief Create the minimum machine integer for the given bit width and sign
-  static MachineInt min(unsigned bit_width, Signedness sign) {
+  static MachineInt min(uint64_t bit_width, Signedness sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
     if (sign == Signed) {
@@ -216,7 +216,7 @@ public:
   }
 
   /// \brief Create the maximum machine integer for the given bit width and sign
-  static MachineInt max(unsigned bit_width, Signedness sign) {
+  static MachineInt max(uint64_t bit_width, Signedness sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
     if (sign == Signed) {
@@ -249,7 +249,7 @@ public:
   }
 
   /// \brief Create the null machine integer for the given bit width and sign
-  static MachineInt zero(unsigned bit_width, Signedness sign) {
+  static MachineInt zero(uint64_t bit_width, Signedness sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
     return MachineInt(0, bit_width, sign, NormalizedTag{});
@@ -257,7 +257,7 @@ public:
 
   /// \brief Create the machine integer with all bits set to 1 for the given bit
   /// width and sign
-  static MachineInt all_ones(unsigned bit_width, Signedness sign) {
+  static MachineInt all_ones(uint64_t bit_width, Signedness sign) {
     ikos_assert_msg(bit_width > 0, "invalid bit width");
 
     if (ikos_likely(bit_width <= 64)) {
@@ -390,7 +390,7 @@ public:
   /// @{
 
   /// \brief Return the bit width of the integer
-  unsigned bit_width() const { return this->_bit_width; }
+  uint64_t bit_width() const { return this->_bit_width; }
 
   /// \brief Return the signedness (Signed or Unsigned) of the integer
   Signedness sign() const { return this->_sign; }
@@ -500,7 +500,7 @@ public:
 
 private:
   /// \brief Return the number of leading '0' bits in a uint64_t
-  static unsigned leading_zeros(uint64_t n) {
+  static uint64_t leading_zeros(uint64_t n) {
     if (n == 0) {
       return 64;
     }
@@ -508,13 +508,13 @@ private:
 #if __has_builtin(__builtin_clzll) || IKOS_GNUC_PREREQ(4, 0, 0)
     // NOLINTNEXTLINE(google-runtime-int)
     if (std::is_same< uint64_t, unsigned long long >::value) {
-      return static_cast< unsigned >(__builtin_clzll(n));
+      return static_cast< uint64_t >(__builtin_clzll(n));
     }
 #endif
 
     // Use bisection
-    unsigned zeros = 0;
-    for (unsigned shift = 64U >> 1U; shift != 0U; shift >>= 1U) {
+    uint64_t zeros = 0;
+    for (uint64_t shift = 64U >> 1U; shift != 0U; shift >>= 1U) {
       uint64_t tmp = n >> shift;
       if (tmp != 0) {
         n = tmp;
@@ -526,7 +526,7 @@ private:
   }
 
   /// \brief Return the number of leading '0' bits in a ZNumber
-  static unsigned leading_zeros(ZNumber n, unsigned bit_width) {
+  static uint64_t leading_zeros(ZNumber n, uint64_t bit_width) {
     if (n == 0) {
       return bit_width;
     } else if (n < 0) {
@@ -534,8 +534,8 @@ private:
     }
 
     // Use bisection
-    unsigned zeros = 0;
-    for (unsigned shift = bit_width >> 1U; shift != 0U; shift >>= 1U) {
+    uint64_t zeros = 0;
+    for (uint64_t shift = bit_width >> 1U; shift != 0U; shift >>= 1U) {
       ZNumber tmp = n >> shift;
       if (tmp != 0) {
         n = tmp;
@@ -547,10 +547,12 @@ private:
   }
 
   /// \brief Return the number of leading '1' bits in a uint64_t
-  static unsigned leading_ones(uint64_t n) { return leading_zeros(~n); }
+  static uint64_t leading_ones(uint64_t n) {
+    return leading_zeros(~n);
+  }
 
   /// \brief Return the number of leading '1' bits in a ZNumber
-  static unsigned leading_ones(ZNumber n, unsigned bit_width) {
+  static uint64_t leading_ones(ZNumber n, uint64_t bit_width) {
     n = mod(n, power_of_2(bit_width));
     n = n ^ (power_of_2(bit_width) - 1);
     return leading_zeros(n, bit_width);
@@ -558,9 +560,9 @@ private:
 
 public:
   /// \brief Return the number of leading '0' bits
-  unsigned leading_zeros() const {
+  uint64_t leading_zeros() const {
     if (this->is_small()) {
-      unsigned unused_bits = 64 - this->_bit_width;
+      uint64_t unused_bits = 64 - this->_bit_width;
       return leading_zeros(this->_n.i) - unused_bits;
     } else {
       return leading_zeros(*this->_n.p, this->_bit_width);
@@ -568,7 +570,7 @@ public:
   }
 
   /// \brief Return the number of leading '1' bits
-  unsigned leading_ones() const {
+  uint64_t leading_ones() const {
     if (this->is_small()) {
       return leading_ones(this->_n.i << (64 - this->_bit_width));
     } else {
@@ -579,7 +581,7 @@ public:
 private:
   /// Sign-extend the number in the bottom `bit-width` bits of `n` to a 64-bit
   /// signed integer
-  static int64_t sign_extend_64(uint64_t n, unsigned bit_width) {
+  static int64_t sign_extend_64(uint64_t n, uint64_t bit_width) {
     ikos_assert_msg(bit_width > 0 && bit_width <= 64, "invalid bit-width");
 
     // TODO(marthaud): this is implementation-defined.
@@ -718,7 +720,9 @@ public:
   }
 
   /// \brief Unary plus
-  const MachineInt& operator+() const { return *this; }
+  const MachineInt& operator+() const {
+    return *this;
+  }
 
   /// \brief Prefix increment
   MachineInt& operator++() {
@@ -807,7 +811,7 @@ public:
   }
 
   /// \brief Truncate the machine integer to the given bit width
-  MachineInt trunc(unsigned bit_width) const {
+  MachineInt trunc(uint64_t bit_width) const {
     ikos_assert(this->_bit_width > bit_width);
 
     if (this->is_small()) {
@@ -818,7 +822,7 @@ public:
   }
 
   /// \brief Extend the machine integer to the given bit width
-  MachineInt ext(unsigned bit_width) const {
+  MachineInt ext(uint64_t bit_width) const {
     ikos_assert(this->_bit_width < bit_width);
 
     if (this->is_small()) {
@@ -848,7 +852,7 @@ public:
   /// \brief Cast the machine integer to the given bit width and sign
   ///
   /// This is equivalent to trunc()/ext() + sign_cast() (in this specific order)
-  MachineInt cast(unsigned bit_width, Signedness sign) const {
+  MachineInt cast(uint64_t bit_width, Signedness sign) const {
     if (this->is_small()) {
       if (this->is_signed()) {
         return MachineInt(sign_extend_64(this->_n.i, this->_bit_width),
@@ -869,7 +873,7 @@ private:
 
   /// \brief Check if an overflow occurred
   static bool check_overflow(const ZNumber& n,
-                             unsigned bit_width,
+                             uint64_t bit_width,
                              Signedness sign) {
     if (sign == Signed) {
       return n >= power_of_2(bit_width - 1);
@@ -880,7 +884,7 @@ private:
 
   /// \brief Check if an underflow occurred
   static bool check_underflow(const ZNumber& n,
-                              unsigned bit_width,
+                              uint64_t bit_width,
                               Signedness sign) {
     if (sign == Signed) {
       return n < -power_of_2(bit_width - 1);
@@ -985,7 +989,7 @@ public:
 /// @{
 
 /// \brief Assert that the shift count is between 0 and bit_width - 1
-inline void assert_shift(const MachineInt& n, unsigned bit_width) {
+inline void assert_shift(const MachineInt& n, uint64_t bit_width) {
   ikos_assert_msg(n.is_non_negative(), "shift count is negative");
   ikos_assert_msg(n.to_z_number() < bit_width, "shift count is too big");
   ikos_ignore(n);

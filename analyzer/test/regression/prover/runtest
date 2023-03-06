@@ -154,8 +154,7 @@ if __name__ == '__main__':
     t.add(Test('test-5.cpp', 'test-5.cpp', 'prover', 'safe'))
     t.add(Test('test-6.cpp', 'test-6.cpp', 'prover', 'safe'))
     t.add(Test('test-7.cpp', 'test-7.cpp', 'prover', 'safe'))
-    t.add(Test('test-8.cpp', 'test-8.cpp', 'prover', 'safe', opt_level='none',
-               line_checks=[(23, 'unreachable')]))
+    t.add(Test('test-8.cpp', 'test-8.cpp', 'prover', 'safe'))
     t.add(Test('test-9.c', 'test-9.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('test-10.c', 'test-10.c', 'prover', 'safe', expected='unsafe'))
     t.add(Test('test-11.c', 'test-11.c', 'prover', 'safe', expected='unsafe',

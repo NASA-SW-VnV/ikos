@@ -228,7 +228,7 @@ public:
 
 private:
   /// \brief Return 2**n
-  static ZNumber power_of_2(unsigned n) { return ZNumber(1) << n; }
+  static ZNumber power_of_2(uint64_t n) { return ZNumber(1) << n; }
 
   /// \brief Return 2**n
   static ZNumber power_of_2(const ZNumber& n) { return ZNumber(1) << n; }
@@ -253,7 +253,7 @@ private:
   ///
   /// Apply the wrap-around semantic for machine integers of the given bit-width
   /// and sign.
-  void wrap(VariableRef x, VariableRef y, unsigned bit_width, Signedness sign) {
+  void wrap(VariableRef x, VariableRef y, uint64_t bit_width, Signedness sign) {
     if (sign == Signed) {
       ZNumber n = power_of_2(bit_width);
       ZNumber m = power_of_2(bit_width - 1);
@@ -278,7 +278,7 @@ private:
   /// \brief Apply `x = trunc(x, bit-width, sign)`
   ///
   /// This truncate the value of `x`, basically ignoring overflows.
-  void trunc(VariableRef x, unsigned bit_width, Signedness sign) {
+  void trunc(VariableRef x, uint64_t bit_width, Signedness sign) {
     this->_inv.refine(x, MachIntInterval::top(bit_width, sign).to_z_interval());
   }
 
@@ -360,7 +360,7 @@ public:
       } break;
       case MachIntBinaryOperator::Shl: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -369,7 +369,7 @@ public:
       } break;
       case MachIntBinaryOperator::ShlNoWrap: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -378,7 +378,7 @@ public:
       } break;
       case MachIntBinaryOperator::LShr: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -399,7 +399,7 @@ public:
       } break;
       case MachIntBinaryOperator::AShr: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -478,7 +478,7 @@ public:
       } break;
       case MachIntBinaryOperator::Shl: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         ZNumber zz = z.to_z_number();
         if (!(0 <= zz && zz < bit_width)) {
           this->set_to_bottom();
@@ -490,7 +490,7 @@ public:
       } break;
       case MachIntBinaryOperator::ShlNoWrap: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         ZNumber zz = z.to_z_number();
         if (!(0 <= zz && zz < bit_width)) {
           this->set_to_bottom();
@@ -502,7 +502,7 @@ public:
       } break;
       case MachIntBinaryOperator::LShr: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         ZNumber zz = z.to_z_number();
         if (!(0 <= zz && zz < bit_width)) {
           this->set_to_bottom();
@@ -522,7 +522,7 @@ public:
       } break;
       case MachIntBinaryOperator::AShr: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         ZNumber zz = z.to_z_number();
         if (!(0 <= zz && zz < bit_width)) {
           this->set_to_bottom();
@@ -600,7 +600,7 @@ public:
       } break;
       case MachIntBinaryOperator::Shl: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -609,7 +609,7 @@ public:
       } break;
       case MachIntBinaryOperator::ShlNoWrap: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -618,7 +618,7 @@ public:
       } break;
       case MachIntBinaryOperator::LShr: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 
@@ -637,7 +637,7 @@ public:
       } break;
       case MachIntBinaryOperator::AShr: {
         // z has to be between [0, bit_width - 1]
-        unsigned bit_width = VariableTrait::bit_width(x);
+        uint64_t bit_width = VariableTrait::bit_width(x);
         this->_inv.refine(z,
                           ZInterval(ZBound(0), ZBound(ZNumber(bit_width - 1))));
 

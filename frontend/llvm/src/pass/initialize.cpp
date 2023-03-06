@@ -47,7 +47,6 @@ void ikos::frontend::pass::initialize_ikos_passes(llvm::PassRegistry& PR) {
   llvm::initializeLowerCstExprPassPass(PR);
   llvm::initializeLowerSelectPassPass(PR);
   llvm::initializeMarkInternalInlinePassPass(PR);
-  llvm::initializeMarkNoReturnFunctionPassPass(PR);
   llvm::initializeNameValuesPassPass(PR);
   llvm::initializeRemovePrintfCallsPassPass(PR);
   llvm::initializeRemoveUnreachableBlocksPassPass(PR);

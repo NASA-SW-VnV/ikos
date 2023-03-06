@@ -1,6 +1,8 @@
 Install IKOS dependencies on Fedora 29
 ======================================
 
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
 Here are the steps to install IKOS and its dependencies on **[Fedora 29](https://getfedora.org/)**.
 
 IKOS requires a specific version of llvm and clang that are not available on the Fedora package manager. Hence the following describes the steps to bootstrap these dependencies.
@@ -68,4 +70,4 @@ For short, it adds the necessary directories to your `PATH` and your `LD_LIBRARY
 
 For more information about the **bootstrap** script and how to run the tests, see [ROOTLESS.md](ROOTLESS.md).
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../../README.md#how-to-run-ikos) in README.md

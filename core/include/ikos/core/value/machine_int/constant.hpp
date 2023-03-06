@@ -66,21 +66,21 @@ private:
   struct BottomTag {};
 
   /// \brief Create the top constant for the given bit-width and signedness
-  Constant(TopTag, unsigned bit_width, Signedness sign)
+  Constant(TopTag, uint64_t bit_width, Signedness sign)
       : _kind(TopKind), _n(0, bit_width, sign) {}
 
   /// \brief Create the bottom constant for the given bit-width and signedness
-  Constant(BottomTag, unsigned bit_width, Signedness sign)
+  Constant(BottomTag, uint64_t bit_width, Signedness sign)
       : _kind(BottomKind), _n(0, bit_width, sign) {}
 
 public:
   /// \brief Create the top constant for the given bit-width and signedness
-  static Constant top(unsigned bit_width, Signedness sign) {
+  static Constant top(uint64_t bit_width, Signedness sign) {
     return Constant(TopTag{}, bit_width, sign);
   }
 
   /// \brief Create the bottom constant for the given bit-width and signedness
-  static Constant bottom(unsigned bit_width, Signedness sign) {
+  static Constant bottom(uint64_t bit_width, Signedness sign) {
     return Constant(BottomTag{}, bit_width, sign);
   }
 
@@ -103,7 +103,7 @@ public:
   ~Constant() override = default;
 
   /// \brief Return the bit width of the constant
-  unsigned bit_width() const { return this->_n.bit_width(); }
+  uint64_t bit_width() const { return this->_n.bit_width(); }
 
   /// \brief Return the signedness (Signed or Unsigned) of the constant
   Signedness sign() const { return this->_n.sign(); }
@@ -227,7 +227,7 @@ public:
   /// @{
 
   /// \brief Truncate the constant to the given bit width
-  Constant trunc(unsigned bit_width) {
+  Constant trunc(uint64_t bit_width) {
     ikos_assert(this->bit_width() > bit_width);
     if (this->is_bottom()) {
       return bottom(bit_width, this->sign());
@@ -239,7 +239,7 @@ public:
   }
 
   /// \brief Extend the constant to the given bit width
-  Constant ext(unsigned bit_width) {
+  Constant ext(uint64_t bit_width) {
     ikos_assert(this->bit_width() < bit_width);
     if (this->is_bottom()) {
       return bottom(bit_width, this->sign());
@@ -263,7 +263,7 @@ public:
   }
 
   /// \brief Cast the constant to the given bit width and sign
-  Constant cast(unsigned bit_width, Signedness sign) const {
+  Constant cast(uint64_t bit_width, Signedness sign) const {
     if (this->is_bottom()) {
       return bottom(bit_width, sign);
     } else if (this->is_top()) {

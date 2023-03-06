@@ -56,7 +56,7 @@ namespace machine_int {
 ///
 /// Elements to provide:
 ///
-/// static unsigned bit_width(VariableRef)
+/// static uint64_t bit_width(VariableRef)
 ///   Return the bit width of the given variable
 ///
 /// static Signedness sign(VariableRef)
@@ -75,7 +75,7 @@ struct IsVariable<
     VariableRef,
     VariableTrait,
     void_t< std::enable_if_t<
-                std::is_same< unsigned,
+                std::is_same< uint64_t,
                               decltype(VariableTrait::bit_width(
                                   std::declval< VariableRef >())) >::value >,
             std::enable_if_t<

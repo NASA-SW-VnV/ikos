@@ -378,7 +378,7 @@ public:
   IntervalCongruence to_interval_congruence(
       const LinearExpressionT& e) const override {
     // Result type
-    unsigned bit_width = e.constant().bit_width();
+    uint64_t bit_width = e.constant().bit_width();
     Signedness sign = e.constant().sign();
 
     if (this->is_bottom()) {

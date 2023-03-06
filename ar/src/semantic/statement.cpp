@@ -619,7 +619,7 @@ std::unique_ptr< Statement > PointerShift::clone() const {
 
 Load::Load(InternalVariable* result,
            Value* operand,
-           unsigned alignment,
+           uint64_t alignment,
            bool is_volatile)
     : Statement(LoadKind, result, {operand}),
       _alignment(alignment),
@@ -630,7 +630,7 @@ Load::Load(InternalVariable* result,
 
 std::unique_ptr< Load > Load::create(InternalVariable* result,
                                      Value* operand,
-                                     unsigned alignment,
+                                     uint64_t alignment,
                                      bool is_volatile) {
   return std::unique_ptr< Load >(
       new Load(result, operand, alignment, is_volatile));
@@ -659,7 +659,7 @@ std::unique_ptr< Statement > Load::clone() const {
 
 // Store
 
-Store::Store(Value* pointer, Value* value, unsigned alignment, bool is_volatile)
+Store::Store(Value* pointer, Value* value, uint64_t alignment, bool is_volatile)
     : Statement(StoreKind, nullptr, {pointer, value}),
       _alignment(alignment),
       _is_volatile(is_volatile) {
@@ -669,7 +669,7 @@ Store::Store(Value* pointer, Value* value, unsigned alignment, bool is_volatile)
 
 std::unique_ptr< Store > Store::create(Value* pointer,
                                        Value* value,
-                                       unsigned alignment,
+                                       uint64_t alignment,
                                        bool is_volatile) {
   return std::unique_ptr< Store >(
       new Store(pointer, value, alignment, is_volatile));
@@ -773,21 +773,18 @@ std::unique_ptr< Statement > InsertElement::clone() const {
 
 ShuffleVector::ShuffleVector(InternalVariable* result,
                              Value* left,
-                             Value* right,
-                             Value* mask)
-    : Statement(ShuffleVectorKind, result, {left, right, mask}) {
+                             Value* right)
+    : Statement(ShuffleVectorKind, result, {left, right}) {
   ikos_assert_msg(result, "result is null");
   ikos_assert_msg(left, "left is null");
   ikos_assert_msg(right, "right is null");
-  ikos_assert_msg(mask, "mask is null");
 }
 
 std::unique_ptr< ShuffleVector > ShuffleVector::create(InternalVariable* result,
                                                        Value* left,
-                                                       Value* right,
-                                                       Value* mask) {
+                                                       Value* right) {
   return std::unique_ptr< ShuffleVector >(
-      new ShuffleVector(result, left, right, mask));
+      new ShuffleVector(result, left, right));
 }
 
 void ShuffleVector::dump(std::ostream& o) const {
@@ -796,15 +793,11 @@ void ShuffleVector::dump(std::ostream& o) const {
   this->left()->dump(o);
   o << ", ";
   this->right()->dump(o);
-  o << ", ";
-  this->mask()->dump(o);
 }
 
 std::unique_ptr< Statement > ShuffleVector::clone() const {
-  std::unique_ptr< Statement > stmt(new ShuffleVector(this->result(),
-                                                      this->left(),
-                                                      this->right(),
-                                                      this->mask()));
+  std::unique_ptr< Statement > stmt(
+      new ShuffleVector(this->result(), this->left(), this->right()));
   stmt->set_frontend(*this);
   return stmt;
 }
@@ -959,7 +952,7 @@ std::unique_ptr< Statement > Invoke::clone() const {
 }
 
 // Helper for alignment constant
-static IntegerConstant* alignment_constant(Bundle* bundle, unsigned value) {
+static IntegerConstant* alignment_constant(Bundle* bundle, uint64_t value) {
   return IntegerConstant::get(bundle->context(),
                               IntegerType::ui32(bundle->context()),
                               MachineInt(value, 32, Unsigned));
@@ -978,8 +971,8 @@ MemoryCopy::MemoryCopy(Bundle* bundle,
                        Value* destination,
                        Value* source,
                        Value* length,
-                       unsigned destination_alignment,
-                       unsigned source_alignment,
+                       uint64_t destination_alignment,
+                       uint64_t source_alignment,
                        bool is_volatile)
     : IntrinsicCall(nullptr,
                     bundle->intrinsic_function(Intrinsic::MemoryCopy),
@@ -998,8 +991,8 @@ std::unique_ptr< MemoryCopy > MemoryCopy::create(Bundle* bundle,
                                                  Value* destination,
                                                  Value* source,
                                                  Value* length,
-                                                 unsigned destination_alignment,
-                                                 unsigned source_alignment,
+                                                 uint64_t destination_alignment,
+                                                 uint64_t source_alignment,
                                                  bool is_volatile) {
   return std::unique_ptr< MemoryCopy >(new MemoryCopy(bundle,
                                                       destination,
@@ -1016,8 +1009,8 @@ MemoryMove::MemoryMove(Bundle* bundle,
                        Value* destination,
                        Value* source,
                        Value* length,
-                       unsigned destination_alignment,
-                       unsigned source_alignment,
+                       uint64_t destination_alignment,
+                       uint64_t source_alignment,
                        bool is_volatile)
     : IntrinsicCall(nullptr,
                     bundle->intrinsic_function(Intrinsic::MemoryMove),
@@ -1036,8 +1029,8 @@ std::unique_ptr< MemoryMove > MemoryMove::create(Bundle* bundle,
                                                  Value* destination,
                                                  Value* source,
                                                  Value* length,
-                                                 unsigned destination_alignment,
-                                                 unsigned source_alignment,
+                                                 uint64_t destination_alignment,
+                                                 uint64_t source_alignment,
                                                  bool is_volatile) {
   return std::unique_ptr< MemoryMove >(new MemoryMove(bundle,
                                                       destination,
@@ -1054,7 +1047,7 @@ MemorySet::MemorySet(Bundle* bundle,
                      Value* pointer,
                      Value* value,
                      Value* length,
-                     unsigned alignment,
+                     uint64_t alignment,
                      bool is_volatile)
     : IntrinsicCall(nullptr,
                     bundle->intrinsic_function(Intrinsic::MemorySet),
@@ -1072,7 +1065,7 @@ std::unique_ptr< MemorySet > MemorySet::create(Bundle* bundle,
                                                Value* pointer,
                                                Value* value,
                                                Value* length,
-                                               unsigned alignment,
+                                               uint64_t alignment,
                                                bool is_volatile) {
   return std::unique_ptr< MemorySet >(
       new MemorySet(bundle, pointer, value, length, alignment, is_volatile));

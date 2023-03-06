@@ -15,7 +15,7 @@ declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture r
 ; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define void @f(%struct.my_struct* noalias sret, %struct.my_struct*) #0 !dbg !8 {
+define void @f(%struct.my_struct* noalias sret(%struct.my_struct), %struct.my_struct*) #0 !dbg !8 {
   %3 = alloca %struct.my_struct*, align 8
   store %struct.my_struct* %1, %struct.my_struct** %3, align 8
   call void @llvm.dbg.declare(metadata %struct.my_struct** %3, metadata !22, metadata !DIExpression()), !dbg !23
@@ -42,7 +42,7 @@ define void @f(%struct.my_struct* noalias sret, %struct.my_struct*) #0 !dbg !8 {
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
 ; Function Attrs: noinline nounwind ssp uwtable
-define void @g(%struct.my_struct* noalias sret, %struct.my_struct* byval(%struct.my_struct) align 8) #0 !dbg !27 {
+define void @g(%struct.my_struct* noalias sret(%struct.my_struct), %struct.my_struct* byval(%struct.my_struct) align 8) #0 !dbg !27 {
   call void @llvm.dbg.declare(metadata %struct.my_struct* %1, metadata !30, metadata !DIExpression()), !dbg !31
   %3 = bitcast %struct.my_struct* %0 to i8*, !dbg !32
   %4 = bitcast %struct.my_struct* %1 to i8*, !dbg !32

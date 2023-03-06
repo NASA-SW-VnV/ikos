@@ -58,6 +58,7 @@ if __name__ == '__main__':
     t.add(Test('test-2-error-2.c', 'test-2-error-2.c', 'uva', 'error', expected='safe'))
     t.add(Test('test-8-safe.c', 'test-8-safe.c', 'uva', 'safe'))
     t.add(Test('test-8-warning.c', 'test-8-warning.c', 'uva', 'unsafe', expected='safe'))
+    t.add(Test('test-8-warning.c', 'test-8-warning.c (opt_level=none)', 'uva', 'unsafe', opt_level='none'))
     t.add(Test('test-14-safe.c', 'test-14-safe.c', 'uva', 'safe'))
     t.add(Test('test-15-error.c', 'test-15-error.c', 'uva', 'error'))
     t.add(Test('test-16-error.c', 'test-16-error.c', 'uva', 'error'))
@@ -68,4 +69,28 @@ if __name__ == '__main__':
     t.add(Test('test-20-safe.c', 'test-20-safe.c', 'uva', 'safe', opt_level='aggressive'))
     t.add(Test('test-21-safe.cpp', 'test-21-safe.cpp', 'uva', 'safe'))
     t.add(Test('test-21-safe.cpp', 'test-21-safe.cpp', 'uva', 'safe', opt_level='aggressive'))
+    t.add(Test('test-22-error.c', 'test-22-error.c', 'uva', 'error'))
+    t.add(Test('test-23-warning.c', 'test-23-warning.c', 'uva', 'unsafe'))
+    t.add(Test('test-24-error.cpp', 'test-24-error.cpp', 'uva', 'error'))
+    t.add(Test('test-25-warning.c', 'test-25-warning.c', 'uva', 'unsafe', expected='safe'))
+    t.add(Test('test-25-warning.c', 'test-25-warning.c (opt_level=none)', 'uva', 'unsafe', opt_level='none'))
+    t.add(Test('test-26-error.cpp', 'test-26-error.cpp', 'uva', 'error'))
+    t.add(Test('test-27-error.c', 'test-27-error.c', 'uva', 'error'))
+    t.add(Test('test-28-error.cpp', 'test-28-error.cpp', 'uva', 'error'))
+    t.add(Test('test-29-safe.cpp', 'test-29-safe.cpp', 'uva', 'safe', expected='unsafe'))
+    t.add(Test('test-30-safe.c', 'test-30-safe.c', 'uva', 'safe'))
+    t.add(Test('test-31-error.cpp', 'test-31-error.cpp', 'uva', 'error'))
+    t.add(Test('test-32-error.cpp', 'test-32-error.cpp', 'uva', 'error'))
+    # The following test seems to have some debug information mismatch so ignore that.
+    t.add(Test('test-33-error.cpp', 'test-33-error.cpp', 'uva', 'error', options=['-allow-dbg-mismatch']))
+    # In the following 2 test there are warnings coming from the standard library.
+    # A future PR to IKOS may contain the ability to filter these out so that
+    # the focus is on the user code. This test has no warnings in user code.
+    t.add(Test('test-34-safe.cpp', 'test-34-safe.cpp', 'uva', 'safe', expected='unsafe'))
+    t.add(Test('test-35-safe.cpp', 'test-35-safe.cpp', 'uva', 'safe', expected='unsafe'))
+    # The following test is really an error but current analysis is only giving warning.
+    t.add(Test('test-36-error.cpp', 'test-36-error.cpp', 'uva', 'error', expected='unsafe'))
+    t.add(Test('test-37-error.cpp', 'test-37-error.cpp', 'uva', 'error'))
+    t.add(Test('test-38-safe.cpp', 'test-38-safe.cpp', 'uva', 'safe'))
+    t.add(Test('test-39-error.cpp', 'test-39-error.cpp', 'uva', 'error'))
     t.run()

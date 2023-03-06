@@ -658,7 +658,7 @@ private:
   std::unique_ptr< Code > _initializer;
 
   // Alignment of the global variable, in bytes (0 if unspecified)
-  unsigned _alignment;
+  uint64_t _alignment;
 
 private:
   /// \brief Private constructor
@@ -666,7 +666,7 @@ private:
                  PointerType* type,
                  std::string name,
                  bool is_definition,
-                 unsigned alignment);
+                 uint64_t alignment);
 
 public:
   /// \brief Static constructor
@@ -680,7 +680,7 @@ public:
                                 PointerType* type,
                                 std::string name,
                                 bool is_definition,
-                                unsigned alignment);
+                                uint64_t alignment);
 
   /// \brief Get the parent context
   Context& context() const { return this->bundle()->context(); }
@@ -712,7 +712,7 @@ public:
   /// \brief Get the alignment of the global variable in memory, in bytes
   ///
   /// Returns 0 if the alignment is unspecified.
-  unsigned alignment() const { return this->_alignment; }
+  uint64_t alignment() const { return this->_alignment; }
 
   /// \brief Return true if the global variable has a specified alignment
   bool has_alignment() const { return this->alignment() > 0; }
@@ -734,11 +734,11 @@ private:
   Function* _parent;
 
   // Alignment of the local variable, in bytes (0 if unspecified)
-  unsigned _alignment;
+  uint64_t _alignment;
 
 private:
   /// \brief Private constructor
-  LocalVariable(Function* function, PointerType* type, unsigned alignment);
+  LocalVariable(Function* function, PointerType* type, uint64_t alignment);
 
 public:
   /// \brief Static constructor
@@ -748,7 +748,7 @@ public:
   /// \param alignment Explicit alignment in bytes, or 0 if unspecified
   static LocalVariable* create(Function* function,
                                PointerType* type,
-                               unsigned alignment);
+                               uint64_t alignment);
 
   /// \brief Get the parent context
   Context& context() const;
@@ -765,7 +765,7 @@ public:
   /// \brief Get the alignment of the local variable in memory, in bytes
   ///
   /// Returns 0 if the alignment is unspecified.
-  unsigned alignment() const { return this->_alignment; }
+  uint64_t alignment() const { return this->_alignment; }
 
   /// \brief Return true if the local variable has a specified alignment
   bool has_alignment() const { return this->alignment() > 0; }

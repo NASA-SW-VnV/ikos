@@ -80,7 +80,7 @@ bool Type::is_primitive() const {
   }
 }
 
-unsigned Type::primitive_bit_width() const {
+uint64_t Type::primitive_bit_width() const {
   switch (this->_kind) {
     case IntegerKind:
       return cast< IntegerType >(this)->bit_width();
@@ -88,7 +88,7 @@ unsigned Type::primitive_bit_width() const {
       return cast< FloatType >(this)->bit_width();
     case VectorKind: {
       auto vector = cast< VectorType >(this);
-      return vector->num_elements().to< unsigned >() *
+      return vector->num_elements().to< uint64_t >() *
              vector->element_type()->primitive_bit_width();
     }
     default:
@@ -118,13 +118,13 @@ ScalarType::ScalarType(TypeKind kind) : Type(kind) {}
 
 // IntegerType
 
-IntegerType::IntegerType(unsigned bit_width, Signedness sign)
+IntegerType::IntegerType(uint64_t bit_width, Signedness sign)
     : ScalarType(IntegerKind), _bit_width(bit_width), _sign(sign) {
   ikos_assert_msg(bit_width >= 1, "invalid bit width");
 }
 
 IntegerType* IntegerType::get(Context& ctx,
-                              unsigned bit_width,
+                              uint64_t bit_width,
                               Signedness sign) {
   if (bit_width == 1) {
     if (sign == Unsigned) {
@@ -195,13 +195,15 @@ IntegerType* IntegerType::ui64(Context& ctx) {
 
 IntegerType* IntegerType::size_type(Bundle* bundle) {
   return IntegerType::get(bundle->context(),
-                          bundle->data_layout().pointers.bit_width,
+                          static_cast< uint64_t >(
+                              bundle->data_layout().pointers.bit_width),
                           Unsigned);
 }
 
 IntegerType* IntegerType::ssize_type(Bundle* bundle) {
   return IntegerType::get(bundle->context(),
-                          bundle->data_layout().pointers.bit_width,
+                          static_cast< uint64_t >(
+                              bundle->data_layout().pointers.bit_width),
                           Signed);
 }
 
@@ -224,7 +226,7 @@ void IntegerType::dump(std::ostream& o) const {
 
 // FloatType
 
-FloatType::FloatType(unsigned bit_width, FloatSemantic float_sem)
+FloatType::FloatType(uint64_t bit_width, FloatSemantic float_sem)
     : ScalarType(FloatKind), _bit_width(bit_width), _float_sem(float_sem) {
   ikos_assert_msg(bit_width >= 1, "invalid bit width");
 }

@@ -103,8 +103,8 @@ include_directories(${AR_INCLUDE_DIR})
 find_package(LLVM REQUIRED)
 include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
 
-if ((LLVM_VERSION VERSION_LESS "9") OR (NOT (LLVM_VERSION VERSION_LESS "10")))
-  message(FATAL_ERROR "LLVM 9 is required.")
+if ((LLVM_VERSION VERSION_LESS "14") OR (NOT (LLVM_VERSION VERSION_LESS "15")))
+  message(FATAL_ERROR "LLVM 14 is required.")
 endif()
 
 # Add path to llvm cmake modules
@@ -165,7 +165,6 @@ add_library(ikos-pp-lib
   src/pass/lower_cst_expr.cpp
   src/pass/lower_select.cpp
   src/pass/mark_internal_inline.cpp
-  src/pass/mark_no_return_function.cpp
   src/pass/name_values.cpp
   src/pass/remove_printf_calls.cpp
   src/pass/remove_unreachable_blocks.cpp

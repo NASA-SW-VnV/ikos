@@ -49,13 +49,13 @@ import sys
 
 
 # Expected clang-format version
-CLANG_FORMAT_VERSION = '9.0.0'
+CLANG_FORMAT_VERSION = '14.0.6'
 
 # Extensions to format
 SOURCE_EXTENSIONS = ('.c', '.cpp', '.h', '.hpp')
 
 # Directories to ignore
-IGNORE_DIRECTORIES = ('.git', 'build')
+IGNORE_DIRECTORIES = ('.git', 'build', 'analyzer/test/regression')
 
 
 def printf(fmt, *args, **kwargs):
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     # Check clang-format version
     output = subprocess.check_output([clang_format, '--version'])
     output = output.decode('utf-8')
-    r = re.match(r'^clang-format version ([0-9\.]+) \(.*\)\s*$', output)
+    r = re.match(r'^(Homebrew )?clang-format version ([0-9\.]+)( \(.*\))?\s*$', output)
     if not r:
         printf("%s: error: unexpected output of '%s --version'\n",
                progname,
@@ -135,7 +135,7 @@ if __name__ == '__main__':
                file=sys.stderr)
         sys.exit(1)
 
-    version = r.group(1)
+    version = r.group(2)
     if version != CLANG_FORMAT_VERSION:
         printf("%s: error: trying to use clang-format %s, expecting %s\n",
                progname,

@@ -1291,7 +1291,9 @@ public:
 #endif
   }
 
-  static std::string name() { return apron::domain_name(Domain); }
+  static std::string name() {
+    return apron::domain_name(Domain);
+  }
 
 }; // end class ApronDomain
 

@@ -49,9 +49,9 @@ namespace import {
 
 static ar::DataLayoutInfo translate_data_layout_info(
     const llvm::DataLayout& data_layout, llvm::Type* type) {
-  unsigned bit_width = type->getPrimitiveSizeInBits();
-  unsigned abi_alignment = data_layout.getABITypeAlignment(type);
-  unsigned pref_alignment = data_layout.getPrefTypeAlignment(type);
+  uint64_t bit_width = type->getPrimitiveSizeInBits();
+  uint64_t abi_alignment = data_layout.getABITypeAlignment(type);
+  uint64_t pref_alignment = data_layout.getPrefTypeAlignment(type);
   return {bit_width, abi_alignment, pref_alignment};
 }
 
@@ -62,9 +62,10 @@ std::unique_ptr< ar::DataLayout > translate_data_layout(
       llvm_data_layout.isLittleEndian() ? ar::LittleEndian : ar::BigEndian;
 
   // Translate pointer size and alignments
-  ar::DataLayoutInfo pointers(llvm_data_layout.getPointerSizeInBits(),
-                              llvm_data_layout.getPointerABIAlignment(0),
-                              llvm_data_layout.getPointerPrefAlignment());
+  ar::DataLayoutInfo
+      pointers(llvm_data_layout.getPointerSizeInBits(),
+               llvm_data_layout.getPointerABIAlignment(0).value(),
+               llvm_data_layout.getPointerPrefAlignment().value());
 
   // Create ar::DataLayout
   std::unique_ptr< ar::DataLayout > ar_data_layout =

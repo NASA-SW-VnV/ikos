@@ -112,8 +112,8 @@ static void update_data_layout_infos(std::vector< DataLayoutInfo >& v,
 }
 
 /// \brief Find the best alignment for a bit width
-static unsigned find_alignment_info(const std::vector< DataLayoutInfo >& v,
-                                    unsigned bit_width,
+static uint64_t find_alignment_info(const std::vector< DataLayoutInfo >& v,
+                                    uint64_t bit_width,
                                     bool abi) {
   ikos_assert(!v.empty());
 

@@ -45,6 +45,7 @@
  *
  ******************************************************************************/
 
+#include <array>
 #include <unordered_set>
 
 #include <ikos/ar/pass/add_partitioning_variables.hpp>

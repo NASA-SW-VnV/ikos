@@ -384,7 +384,7 @@ public:
   /// `e.constant()`.
   Value project(const LinearExpressionT& e) const {
     // Result type
-    unsigned bit_width = e.constant().bit_width();
+    uint64_t bit_width = e.constant().bit_width();
     Signedness sign = e.constant().sign();
 
     if (this->is_bottom()) {

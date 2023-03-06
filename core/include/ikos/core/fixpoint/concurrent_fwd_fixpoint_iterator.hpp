@@ -50,14 +50,14 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
 
-#include <tbb/atomic.h>
 #include <tbb/cache_aligned_allocator.h>
-#include <tbb/parallel_do.h>
+#include <tbb/parallel_for_each.h>
 
 #include <ikos/core/fixpoint/fixpoint_iterator.hpp>
 #include <ikos/core/fixpoint/wpo.hpp>
@@ -255,7 +255,7 @@ private:
     InterleavedConcurrentFwdFixpointIterator& _iterator;
 
     // Reference count of number of inputs that are not yet updated
-    tbb::atomic< std::size_t > _ref_count;
+    std::atomic< std::size_t > _ref_count;
     WorkNodeVector _successors;
 
     // For head nodes
@@ -284,13 +284,12 @@ private:
           _node(node),
           _index(index),
           _iterator(iterator),
+          _ref_count(ref_count),
           _iteration_kind(FixpointIterationKind::Increasing),
           _iteration_count(0),
           _pre(std::move(pre)),
           _post(std::move(post)),
           _head(nullptr) {
-      // Required by old versions of TBB
-      this->_ref_count = ref_count;
       this->_pre.normalize();
     }
 
@@ -302,7 +301,7 @@ private:
           _node(other._node),
           _index(other._index),
           _iterator(other._iterator),
-          _ref_count(other._ref_count),
+          _ref_count(other._ref_count.load()),
           _successors(other._successors),
           _iteration_kind(other._iteration_kind),
           _iteration_count(other._iteration_count),
@@ -317,7 +316,7 @@ private:
           _node(other._node),
           _index(other._index),
           _iterator(other._iterator),
-          _ref_count(other._ref_count),
+          _ref_count(other._ref_count.load()),
           _successors(std::move(other._successors)),
           _iteration_kind(other._iteration_kind),
           _iteration_count(other._iteration_count),
@@ -561,10 +560,10 @@ private:
 
   }; // end class WorkNode
 
-  /// \brief Worker on a node for tbb::parallel_do
+  /// \brief Worker on a node for tbb::parallel_for_each
   class Worker {
   public:
-    // Required by tbb::parallel_do
+    // Required by tbb::parallel_for_each
     using argument_type = WorkNode*;
 
   public:
@@ -588,7 +587,7 @@ private:
 
     /// \brief Process a work node
     void operator()(WorkNode* work_node,
-                    tbb::parallel_do_feeder< argument_type >& feeder) const {
+                    tbb::feeder< argument_type >& feeder) const {
       const auto& successors = work_node->update();
 
       for (WorkNode* successor : successors) {
@@ -661,7 +660,7 @@ public:
 
     // Run the analysis
     std::array< WorkNode*, 1 > root = {this->_node_to_work[this->_entry]};
-    tbb::parallel_do(std::begin(root), std::end(root), Worker());
+    tbb::parallel_for_each(std::begin(root), std::end(root), Worker());
     this->_converged = true;
 
     // Call process_pre/process_post methods

@@ -75,12 +75,12 @@ public:
   private:
     std::string _name;
     Index _id;
-    unsigned _bit_width;
+    uint64_t _bit_width;
     Signedness _sign;
 
   private:
     /// \brief Private constructor
-    Variable(std::string name, Index id, unsigned bit_width, Signedness sign)
+    Variable(std::string name, Index id, uint64_t bit_width, Signedness sign)
         : _name(std::move(name)), _id(id), _bit_width(bit_width), _sign(sign) {}
 
   public:
@@ -109,7 +109,7 @@ public:
     Index index() const { return this->_id; }
 
     /// \brief Return the bit-width of the variable
-    unsigned bit_width() const { return this->_bit_width; }
+    uint64_t bit_width() const { return this->_bit_width; }
 
     /// \brief Return the sign of the variable
     Signedness sign() const { return this->_sign; }
@@ -150,7 +150,7 @@ public:
 
   /// \brief Get or create a variable with the given name, bit width and sign
   VariableRef get(const std::string& name,
-                  unsigned bit_width,
+                  uint64_t bit_width,
                   Signedness sign) {
     // This is sound because references are kept valid when using
     // std::unordered_map::emplace()
@@ -208,7 +208,7 @@ namespace machine_int {
 /// example::machine_int::VariableFactory::VariableRef
 template <>
 struct VariableTraits< example::machine_int::VariableFactory::VariableRef > {
-  static unsigned bit_width(
+  static uint64_t bit_width(
       example::machine_int::VariableFactory::VariableRef var) {
     return var->bit_width();
   }

@@ -605,7 +605,7 @@ namespace machine_int {
 template <>
 struct VariableTraits< analyzer::Variable* > {
   /// \brief Return the bit width of the given variable
-  static unsigned bit_width(const analyzer::Variable* v) {
+  static uint64_t bit_width(const analyzer::Variable* v) {
     ikos_assert_msg(v->type()->is_integer(), "variable is not an integer");
     return ar::cast< ar::IntegerType >(v->type())->bit_width();
   }

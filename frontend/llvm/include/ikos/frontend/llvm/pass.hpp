@@ -61,9 +61,6 @@ llvm::FunctionPass* create_lower_select_pass();
 /// \brief Mark all internal functions with the AlwaysInline attribute
 llvm::ModulePass* create_mark_internal_inline_pass();
 
-/// \brief Mark as unreachable any non side-effect function that does not return
-llvm::ModulePass* create_mark_no_return_function_pass();
-
 /// \brief Name all unnamed values
 llvm::ModulePass* create_name_values_pass();
 
@@ -90,9 +87,6 @@ void initializeLowerSelectPassPass(llvm::PassRegistry&);
 
 /// \brief Initialize the MarkInternalInlinePass
 void initializeMarkInternalInlinePassPass(llvm::PassRegistry&);
-
-/// \brief Initialize the MarkNoReturnFunctionPass
-void initializeMarkNoReturnFunctionPassPass(llvm::PassRegistry&);
 
 /// \brief Initialize the NameValuesPass
 void initializeNameValuesPassPass(llvm::PassRegistry&);

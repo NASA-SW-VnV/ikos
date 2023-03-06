@@ -251,7 +251,9 @@ private:
 
 public:
   /// \brief Get the variable
-  VariableRef var() const { return boost::apply_visitor(GetVar(), this->_lit); }
+  VariableRef var() const {
+    return boost::apply_visitor(GetVar(), this->_lit);
+  }
 
 public:
   /// \brief Aggregate literal visitor

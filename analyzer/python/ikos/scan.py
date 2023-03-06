@@ -43,6 +43,7 @@ import argparse
 import codecs
 import collections
 import itertools
+import json
 import os
 import os.path
 import random
@@ -558,11 +559,11 @@ def extract_bitcode(exe_path, bc_path):
     # first, extract the llvm bitcode paths
     cmd = [settings.llvm_objdump(), '-s']
     if sys.platform.startswith('darwin'):
-        cmd.append('-section=%s' % DARWIN_SECTION_NAME)
+        cmd.append('--section=%s' % DARWIN_SECTION_NAME)
     elif sys.platform.startswith('linux') or sys.platform.startswith('freebsd'):
-        cmd.append('-section=%s' % ELF_SECTION_NAME)
+        cmd.append('--section=%s' % ELF_SECTION_NAME)
     elif sys.platform.startswith('win'):
-        cmd.append('-section=%s' % PE_SECTION_NAME)
+        cmd.append('--section=%s' % PE_SECTION_NAME)
     else:
         assert False, 'unsupported platform'
     cmd.append(exe_path)
@@ -584,12 +585,24 @@ def extract_bitcode(exe_path, bc_path):
 
 def notify_binary_built(exe_path, bc_path):
     ''' Notify the scan server that a binary was built '''
-    binary = {
-        'exe': os.path.abspath(exe_path),
-        'bc': os.path.abspath(bc_path),
-    }
-    data = http.urlencode(binary).encode('utf-8')
-    http.urlopen(os.environ['IKOS_SCAN_SERVER'], data)
+    abs_bc_path = os.path.abspath(bc_path)
+    abs_exe_path = os.path.abspath(exe_path)
+
+    if 'IKOS_SCAN_NOTIFIER_FILES' in os.environ:
+        bc_base_path, _ = os.path.splitext(abs_bc_path)
+        indicator_path = bc_base_path + '.ikosbin'
+        with open(indicator_path, 'w') as indicator_file:
+            indicator_file.write(json.dumps({
+                'exe': abs_exe_path,
+                'bc': abs_bc_path,
+            }))
+    else:
+        binary = {
+            'exe': abs_exe_path,
+            'bc': abs_bc_path,
+        }
+        data = http.urlencode(binary).encode('utf-8')
+        http.urlopen(os.environ['IKOS_SCAN_SERVER'], data)
 
 
 class ScanServerRequestHandler(http.BaseHTTPRequestHandler):
@@ -657,8 +670,8 @@ class ScanServer(threading.Thread):
 def compile_main(mode, argv):
     progname = os.path.basename(argv[0])
 
-    if 'IKOS_SCAN_SERVER' not in os.environ:
-        printf('error: %s: missing environment variable IKOS_SCAN_SERVER.\n',
+    if not ('IKOS_SCAN_SERVER' in os.environ or 'IKOS_SCAN_NOTIFIER_FILES' in os.environ):
+        printf('error: %s: missing environment variable IKOS_SCAN_SERVER or IKOS_SCAN_NOTIFIER_FILES.\n',
                progname, file=sys.stderr)
         sys.exit(1)
 

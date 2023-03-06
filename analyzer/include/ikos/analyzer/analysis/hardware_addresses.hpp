@@ -116,7 +116,7 @@ public:
 
 private:
   /// \brief Line number if it applies
-  unsigned _n_line;
+  uint64_t _n_line;
 
   /// \brief Explanatory string
   std::shared_ptr< const std::string > _errstr;
@@ -139,7 +139,7 @@ public:
   /// \param kind Kind of exception
   explicit HardwareAddressesException(StringRef pattern,
                                       HardwareAddressesExceptionKind kind,
-                                      unsigned n_line);
+                                      uint64_t n_line);
 
   /// \brief No default constructor
   HardwareAddressesException() = delete;

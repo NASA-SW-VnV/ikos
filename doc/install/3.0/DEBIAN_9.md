@@ -1,6 +1,8 @@
 Install IKOS dependencies on Debian Stretch
 ===========================================
 
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
 Here are the steps to install the required dependencies of IKOS on **[Debian 9 (Stretch)](https://wiki.debian.org/DebianStretch)**.
 
 First, make sure your system is up-to-date:
@@ -40,4 +42,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../../README.md#build-and-install) in README.md

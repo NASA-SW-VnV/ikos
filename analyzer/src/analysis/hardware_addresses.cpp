@@ -65,8 +65,8 @@ const std::regex& range_regex() {
 }
 
 Interval parse_range(StringRef buffer,
-                     unsigned n_line,
-                     unsigned ptr_bit_width) {
+                     uint64_t n_line,
+                     uint64_t ptr_bit_width) {
   uint64_t lbound;
   uint64_t ubound;
   std::cmatch rmatch;
@@ -140,7 +140,7 @@ void HardwareAddresses::add_range_from_file(const std::string& filepath) {
   }
   // parse each line
   std::string line;
-  unsigned n_line = 1;
+  uint64_t n_line = 1;
   for (; std::getline(stream, line); n_line++) {
     if (line.empty()) {
       continue;
@@ -198,7 +198,7 @@ HardwareAddressesException::HardwareAddressesException(
 HardwareAddressesException::HardwareAddressesException(
     StringRef pattern,
     HardwareAddressesException::HardwareAddressesExceptionKind kind,
-    unsigned n_line)
+    uint64_t n_line)
     : _n_line(n_line), _kind(kind) {
   this->create_errstr(pattern);
 }

@@ -1,7 +1,9 @@
-Install IKOS dependencies on Debian Buster
-==========================================
+Install IKOS dependencies on Ubuntu 18.04
+=========================================
 
-Here are the steps to install the required dependencies of IKOS on **[Debian 10 (Buster)](https://wiki.debian.org/DebianBuster)**.
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
+Here are the steps to install the required dependencies of IKOS on **[Ubuntu 18.04 (Bionic Beaver)](http://releases.ubuntu.com/18.04/)**.
 
 First, make sure your system is up-to-date:
 
@@ -13,7 +15,7 @@ $ sudo apt-get upgrade
 Now, you will need to add the LLVM repository to your apt `sources.list`:
 
 ```
-$ echo "deb http://apt.llvm.org/buster/ llvm-toolchain-buster-9 main" | sudo tee -a /etc/apt/sources.list
+$ echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main" | sudo tee -a /etc/apt/sources.list
 ```
 
 You also need to trust the LLVM repository key:
@@ -40,4 +42,4 @@ $ cmake \
     ..
 ```
 
-You are now ready to build IKOS. Go to the section [Build and Install](../../README.md#build-and-install) in README.md
+You are now ready to build IKOS. Go to the section [Build and Install](../../../README.md#build-and-install) in README.md

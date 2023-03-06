@@ -434,7 +434,7 @@ private:
   MemoryMap _memory;
 
   // Bit-width of pointer offsets (e.g, 32 or 64)
-  unsigned _offsets_bit_width;
+  uint64_t _offsets_bit_width;
 
   // Signedness of pointer offsets (usually Unsigned)
   Signedness _offsets_sign;
@@ -447,7 +447,7 @@ private:
 
 public:
   /// \brief Default constructor
-  ConstraintSystem(unsigned offsets_bit_width, Signedness offsets_sign)
+  ConstraintSystem(uint64_t offsets_bit_width, Signedness offsets_sign)
       : _offsets_bit_width(offsets_bit_width), _offsets_sign(offsets_sign) {}
 
   /// \brief No copy constructor

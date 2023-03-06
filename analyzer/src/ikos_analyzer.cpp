@@ -581,6 +581,11 @@ static llvm::cl::opt< bool > DisplayAR(
     llvm::cl::desc("Display the Abstract Representation as text"),
     llvm::cl::cat(DebugCategory));
 
+static llvm::cl::opt< bool > TraceARStmts(
+    "trace-ar-stmts",
+    llvm::cl::desc("Trace Abstract Representation statements during analysis"),
+    llvm::cl::cat(DebugCategory));
+
 static llvm::cl::opt< bool > GenerateDot(
     "generate-dot",
     llvm::cl::desc("Generate a .dot file for each function"),
@@ -807,6 +812,7 @@ static analyzer::AnalysisOptions make_analysis_options(ar::Bundle* bundle) {
       .use_partitioning_domain = EnablePartitioningDomain,
       .use_fixpoint_cache = !NoFixpointCache,
       .use_checks = !NoChecks,
+      .trace_ar_statements = TraceARStmts,
       .globals_init_policy = GlobalsInitPolicy,
       .progress = Progress,
       .display_invariants = DisplayInvariants,
@@ -922,9 +928,9 @@ int main(int argc, char** argv) {
     {
       analyzer::log::debug("Checking for debug information");
       if (!llvm_to_ar::has_debug_info(*module)) {
+        // We warn but allow analysis to proceed.
         llvm::errs() << progname << ": " << InputFilename
-                     << ": error: llvm bitcode has no debug information\n";
-        return 4;
+                     << ": warning: llvm bitcode has no debug information\n";
       }
     }
 

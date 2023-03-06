@@ -1,6 +1,8 @@
 Install IKOS without root access
 ================================
 
+**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+
 Here are instructions to install IKOS and its dependencies without sudo or root access.
 
 IKOS provides a **bootstrap** script that is able to detect your current configuration. It will check for all IKOS dependencies. All missing dependencies are automatically downloaded, built and installed.
@@ -87,7 +89,7 @@ For short, it adds the necessary directories to your `PATH` and your `[DY]LD_LIB
 
 The difference between `activate-minimal` and `activate-full` is that `activate-minimal` only adds the necessary directories to run IKOS. `activate-full` also adds the directories required to build IKOS (for instance, cmake).
 
-You are now ready to use IKOS. Go to the section [How to Run IKOS](../../README.md#how-to-run-ikos) in README.md
+You are now ready to use IKOS. Go to the section [How to Run IKOS](../../../README.md#how-to-run-ikos) in README.md
 
 How to run the tests
 --------------------

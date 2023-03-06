@@ -70,13 +70,13 @@ private:
 
 public:
   /// \brief Create the top interval for the given bit-width and signedness
-  static Interval top(unsigned bit_width, Signedness sign) {
+  static Interval top(uint64_t bit_width, Signedness sign) {
     return Interval(MachineInt::min(bit_width, sign),
                     MachineInt::max(bit_width, sign));
   }
 
   /// \brief Create the bottom interval for the given bit-width and signedness
-  static Interval bottom(unsigned bit_width, Signedness sign) {
+  static Interval bottom(uint64_t bit_width, Signedness sign) {
     return Interval(MachineInt::max(bit_width, sign),
                     MachineInt::min(bit_width, sign));
   }
@@ -108,7 +108,7 @@ public:
   ~Interval() override = default;
 
   /// \brief Return the bit width of the interval
-  unsigned bit_width() const { return this->_lb.bit_width(); }
+  uint64_t bit_width() const { return this->_lb.bit_width(); }
 
   /// \brief Return the signedness (Signed or Unsigned) of the interval
   Signedness sign() const { return this->_lb.sign(); }
@@ -310,7 +310,7 @@ public:
   /// @{
 
   /// \brief Truncate the machine integer interval to the given bit width
-  Interval trunc(unsigned bit_width) const {
+  Interval trunc(uint64_t bit_width) const {
     ikos_assert(this->bit_width() > bit_width);
     if (this->is_bottom()) {
       return bottom(bit_width, this->sign());
@@ -333,7 +333,7 @@ public:
   }
 
   /// \brief Extend the machine integer interval to the given bit width
-  Interval ext(unsigned bit_width) const {
+  Interval ext(uint64_t bit_width) const {
     ikos_assert(this->bit_width() < bit_width);
     if (this->is_bottom()) {
       return bottom(bit_width, this->sign());
@@ -364,7 +364,7 @@ public:
   /// \brief Cast the machine integer interval to the given bit width and sign
   ///
   /// This is equivalent to trunc()/ext() + sign_cast() (in this specific order)
-  Interval cast(unsigned bit_width, Signedness sign) const {
+  Interval cast(uint64_t bit_width, Signedness sign) const {
     if (this->bit_width() == bit_width) {
       if (this->sign() == sign) {
         return *this;
@@ -410,7 +410,7 @@ public:
   /// For instance:
   ///   from_z_interval([255, 256], 8, Unsigned, WrapTag{}) = Top
   static Interval from_z_interval(const ZInterval& i,
-                                  unsigned bit_width,
+                                  uint64_t bit_width,
                                   Signedness sign,
                                   WrapTag) {
     if (i.is_bottom()) {
@@ -444,7 +444,7 @@ public:
   /// For instance:
   ///  from_z_interval([255, 256], 8, Unsigned, TruncTag{}) = [255, 255]
   static Interval from_z_interval(const ZInterval& i,
-                                  unsigned bit_width,
+                                  uint64_t bit_width,
                                   Signedness sign,
                                   TruncTag) {
     if (i.is_bottom()) {
@@ -912,7 +912,7 @@ inline Interval or_(const Interval& lhs, const Interval& rhs) {
           .sign_cast(Signed);
     } else {
       // Unsigned OR
-      unsigned lead_zeros =
+      uint64_t lead_zeros =
           std::min(lhs._ub.leading_zeros(), rhs._ub.leading_zeros());
       ikos_assert(lead_zeros < lhs.bit_width());
       MachineInt zero = MachineInt::zero(lhs.bit_width(), lhs.sign());
@@ -949,7 +949,7 @@ inline Interval xor_(const Interval& lhs, const Interval& rhs) {
           .sign_cast(Signed);
     } else {
       // Unsigned XOR
-      unsigned lead_zeros =
+      uint64_t lead_zeros =
           std::min(lhs._ub.leading_zeros(), rhs._ub.leading_zeros());
       ikos_assert(lead_zeros < lhs.bit_width());
       MachineInt zero = MachineInt::zero(lhs.bit_width(), lhs.sign());

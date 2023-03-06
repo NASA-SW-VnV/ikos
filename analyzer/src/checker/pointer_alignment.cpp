@@ -109,7 +109,7 @@ void PointerAlignmentChecker::check(ar::Statement* stmt,
 
 void PointerAlignmentChecker::check_alignment(ar::Statement* stmt,
                                               ar::Value* operand,
-                                              unsigned alignment_req,
+                                              uint64_t alignment_req,
                                               const value::AbstractDomain& inv,
                                               CallContext* call_context) {
   CheckResult check = this->check_alignment(stmt, operand, alignment_req, inv);
@@ -126,7 +126,7 @@ void PointerAlignmentChecker::check_alignment(ar::Statement* stmt,
 PointerAlignmentChecker::CheckResult PointerAlignmentChecker::check_alignment(
     ar::Statement* stmt,
     ar::Value* operand,
-    unsigned alignment_req,
+    uint64_t alignment_req,
     const value::AbstractDomain& inv) {
   if (inv.is_normal_flow_bottom()) {
     // Statement unreachable
@@ -369,7 +369,7 @@ Result PointerAlignmentChecker::check_memory_location_alignment(
 }
 
 core::machine_int::Congruence PointerAlignmentChecker::to_congruence(
-    unsigned a, unsigned b) const {
+    uint64_t a, uint64_t b) const {
   return Congruence(ZNumber(a),
                     ZNumber(b),
                     this->_data_layout.pointers.bit_width,
