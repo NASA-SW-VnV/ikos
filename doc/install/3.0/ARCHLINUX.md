@@ -39,8 +39,8 @@ Now, install the following packages using **pacman**:
 $ sudo pacman -S base-devel cmake gmp boost boost-libs python python-pygments sqlite intel-tbb llvm llvm-libs clang
 ```
 
-Then, install the *apron-ppl-svn* **[AUR](https://aur.archlinux.org/)** package:
+Then, install the *apron-git* **[AUR](https://aur.archlinux.org/)** package:
 
-* https://aur.archlinux.org/packages/apron-ppl-svn
+* https://aur.archlinux.org/packages/apron-git
 
 You are now ready to build IKOS. Go to the section [Build and Install](../../../README.md#build-and-install) in README.md
