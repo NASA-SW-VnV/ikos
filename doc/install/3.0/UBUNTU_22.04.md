@@ -1,9 +1,8 @@
-Install IKOS dependencies on Ubuntu 20.04
+Install IKOS dependencies on Ubuntu 22.04
 =========================================
 
-**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
 
-Here are the steps to install the required dependencies of IKOS on **[Ubuntu 20.04 LTS (Focal Fossa)](http://releases.ubuntu.com/20.04/)**.
+Here are the steps to install the required dependencies of IKOS on **[Ubuntu 22.04 LTS (Jammy Jellyfish)](http://releases.ubuntu.com/22.04/)**.
 
 First, make sure your system is up-to-date: 
 
@@ -17,7 +16,7 @@ Then, run the following commands:
 ```
 $ sudo apt-get install gcc g++ cmake libgmp-dev libboost-dev libboost-filesystem-dev \
     libboost-thread-dev libboost-test-dev python3 python3-pygments libsqlite3-dev libtbb-dev \
-    libz-dev libedit-dev llvm-9 llvm-9-dev llvm-9-tools clang-9
+    2ibz-dev libedit-dev llvm-14 llvm-14-dev llvm-14-tools clang-14
 ```
 
 When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABLE`:
@@ -25,7 +24,7 @@ When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABL
 ```
 $ cmake \
     -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
-    -DLLVM_CONFIG_EXECUTABLE="/usr/bin/llvm-config-9" \
+    -DLLVM_CONFIG_EXECUTABLE="/usr/bin/llvm-config-14" \
     ..
 ```
 
