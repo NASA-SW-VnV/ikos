@@ -11,10 +11,12 @@ First, make sure your system is up-to-date:
 $ sudo pacman -Syu
 ```
 
-Then, install the *apron* and *ikos* **[AUR](https://aur.archlinux.org/)** packages. See **[Installing packages](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages)** for detailed instructions.
+Then, install the IKOS dependency apron *apron*, and either the *ikos* package containing a recent IKOS release or the *ikos-git* package to build the latest development version of IKOS from the **[AUR](https://aur.archlinux.org/)**. See **[Installing packages](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages)** for detailed instructions.
+
+If the [*ikos* AUR package](https://aur.archlinux.org/packages/ikos) is out of date, you can flag it to notify the maintainer.
 
 * https://aur.archlinux.org/packages/apron
-* https://aur.archlinux.org/packages/ikos
+* https://aur.archlinux.org/packages/ikos or https://aur.archlinux.org/packages/ikos-git
 
 To be informed on updates by email, click on "Enable notifications" in "Package actions" on the AUR website.
 
