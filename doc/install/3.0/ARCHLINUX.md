@@ -1,7 +1,7 @@
 Install IKOS on Arch Linux
 ==========================
 
-**NOTE: These instructions are for IKOS 3.0 with LLVM 9 and are not actively maintained. Please see the main [README.md](../../../README.md)**
+**NOTE: These instructions are for IKOS 3.x with LLVM 14 and are not actively maintained. Please see the main [README.md](../../../README.md)**
 
 Here are the steps to install IKOS on **[Arch Linux](https://www.archlinux.org/)** using **[AUR](https://aur.archlinux.org/)** (Arch User Repository).
 
