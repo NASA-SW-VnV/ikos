@@ -295,8 +295,16 @@ def format_path(path):
         return None
 
     abs_path = os.path.realpath(path)
-    rel_path = os.path.relpath(os.path.realpath(path), os.getcwd())
-    return min(abs_path, rel_path, key=len)
+
+    # Check the drives to make sure a relpath can be obtained
+    path_drive_split = os.path.splitdrive(abs_path)
+    cur_drive_split  = os.path.splitdrive(os.getcwd())
+
+    if path_drive_split and (path_drive_split[0] != cur_drive_split[0]):
+        return abs_path
+    else:
+        rel_path = os.path.relpath(os.path.realpath(path), os.getcwd())
+        return min(abs_path, rel_path, key=len)
 
 
 def format_status(status):
