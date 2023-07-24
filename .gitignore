@@ -1,5 +1,6 @@
 build/
 install/
+!doc/install/
 
 # Editors
 *.swp
