@@ -243,7 +243,7 @@ The list of available checks are:
 * **division by zero analysis**, `-a=dbz`: checks for integer divisions by zero.
 * **null pointer analysis**, `-a=nullity`: checks for null pointer dereferences.
 * **assertion prover**, `-a=prover`: prove user-defined properties, using `__ikos_assert(condition)`.
-* **unaligned pointer analysis**, `-a=upav`: checks for unaligned pointer dereferences.
+* **unaligned pointer analysis**, `-a=upa`: checks for unaligned pointer dereferences.
 * **uninitialized variable analysis**, `-a=uva`: checks for read of uninitialized variables.
 * **signed integer overflow analysis**, `-a=sio`: checks for signed integer overflows.
 * **unsigned integer overflow analysis**, `-a=uio`: checks for unsigned integer overflows.
