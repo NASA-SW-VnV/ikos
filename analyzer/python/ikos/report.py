@@ -1062,7 +1062,7 @@ class JUnitFormatter(Formatter):
     ''' JUnit.xml formatter '''
 
     def get_timing_result(self, report):
-        ''' get the timing results ifor the analysis from the database '''
+        ''' get the timing results for the analysis from the database '''
         db = report.db
         elapsed = 0.0
         if db:
