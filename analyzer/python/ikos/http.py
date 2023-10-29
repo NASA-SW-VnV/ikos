@@ -50,3 +50,36 @@ except ImportError:
     from urlparse import parse_qs
     from urllib import urlencode
     from urllib2 import urlopen
+
+from errno import EAFNOSUPPORT
+from socket import AF_INET, AF_INET6
+import os
+
+class HTTPServerIPv6(HTTPServer):
+    '''
+    HTTP server that listens on IPv6 when available.
+
+    In systems with dual stack, this also listens on IPv4.
+
+    This class tries to listen on IPv6 first (and IPv4 if available). If that
+    is not supported, then it tries IPv4 only.
+    '''
+
+    address_family = AF_INET6
+
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
+        try:
+            # Initially try to open the server with IPv6. This will also select
+            # IPv4 on systems with dual stack.
+            super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+
+        except OSError as e:
+            if e.errno == EAFNOSUPPORT:
+                # If the exception is due to IPv6 not being supported, we
+                # select IPv4 only and try to re-open the server again.
+                self.address_family = AF_INET
+                super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+            else:
+                # If the exception is for any other reason other than IPv6 not
+                # being supported, then we cannot do anything about it.
+                raise e
