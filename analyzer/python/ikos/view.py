@@ -62,7 +62,7 @@ from ikos import report
 from ikos import settings
 from ikos.enums import Result, CheckKind
 from ikos.highlight import CppLexer, HtmlFormatter, highlight
-from ikos.http import HTTPServer, BaseHTTPRequestHandler
+from ikos.http import HTTPServerIPv6, BaseHTTPRequestHandler
 from ikos.log import printf
 from ikos.output_db import OutputDatabase
 
@@ -337,7 +337,7 @@ class View:
         self.report = ViewReport(self.db)
 
         try:
-            self.httpd = HTTPServer(('', self.port), RequestHandler)
+            self.httpd = HTTPServerIPv6(('', self.port), RequestHandler)
         except (OSError, IOError) as e:
             log.error("Could not start the HTTP server: %s" % e)
             sys.exit(1)

@@ -641,8 +641,8 @@ class ScanServer(threading.Thread):
             try:
                 # try to start the http server on a random port
                 self.port = random.randint(8000, 9000)
-                self.httpd = http.HTTPServer(('', self.port),
-                                             ScanServerRequestHandler)
+                self.httpd = http.HTTPServerIPv6(('', self.port),
+                                                 ScanServerRequestHandler)
             except (OSError, IOError):
                 self.port = None  # port already in use
 
