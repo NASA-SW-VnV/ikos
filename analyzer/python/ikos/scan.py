@@ -571,7 +571,9 @@ def extract_bitcode(exe_path, bc_path):
     output = check_output(cmd)
     section_content = b''
 
-    for line in itertools.islice(output.splitlines(), 4, None):
+    for line in output.splitlines():
+        if not line.startswith(b' '):
+            continue
         n = line.find(b' ', 1)
         line = line[n + 1:n + 36]
         for item in line.split(b' '):
