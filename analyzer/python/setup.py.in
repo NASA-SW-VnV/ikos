@@ -39,7 +39,7 @@
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
 ################################################################################
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='ikos',
       version='@PACKAGE_VERSION@',
