@@ -63,7 +63,12 @@ if (NOT SQLITE3_FOUND)
       #include <sqlite3.h>
 
       int main() {
+      // The following assertion does not always hold on macs, due to a bug in
+      // the sqlite3 setup shipped on Mac. So, we only check if the OS is not
+      // Apple.
+      #ifndef __APPLE__
         assert(strcmp(SQLITE_VERSION, sqlite3_libversion()) == 0);
+      #endif
         printf(\"%s\", sqlite3_libversion());
         return 0;
       }
