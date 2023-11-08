@@ -30,7 +30,7 @@ ikos@lists.nasa.gov
 Release notes
 -------------
 
-See [RELEASE_NOTES.md](RELEASE_NOTES.md)
+See [Releases](https://github.com/NASA-SW-VnV/ikos/releases).
 
 Troubleshooting
 ---------------
