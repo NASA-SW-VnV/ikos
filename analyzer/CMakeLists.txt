@@ -361,16 +361,16 @@ add_custom_target(ikos-python ALL
 )
 
 install(CODE "
-  set(PYTHON_SETUP_INSTALL
-    \"${PYTHON_EXECUTABLE}\"
-    \"setup.py\"
+  set(PIP_INSTALL
+    \"pip\"
     \"install\"
-    \"--prefix=${CMAKE_INSTALL_PREFIX}\"
   )
   if (DEFINED ENV{DESTDIR})
-    list(APPEND PYTHON_SETUP_INSTALL \"--root=\$ENV{DESTDIR}\")
+    list(APPEND PIP_INSTALL \"--target=\$ENV{DESTDIR}\")
   endif()
-  execute_process(COMMAND \${PYTHON_SETUP_INSTALL}
+  list(APPEND PIP_INSTALL \".\")
+
+  execute_process(COMMAND \${PIP_INSTALL}
                   WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/python\")
 ")
 
