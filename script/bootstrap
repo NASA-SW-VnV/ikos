@@ -2075,8 +2075,9 @@ if (( ! found_tbb )); then
         progress "Installing ${cgreen}tbb $tbb_install_version"
 
         download "https://github.com/intel/tbb/archive/2019_U9.tar.gz"
-        mv "$download_dir/2019_U9.tar.gz" "$download_dir/tbb-2019_U9.tar.gz"
-        extract "$download_dir/tbb-2019_U9.tar.gz" "$build_dir/tbb-$tbb_install_version"
+        # Rename downloaded file to match contained directory.
+        mv "$download_dir/2019_U9.tar.gz" "$download_dir/oneTBB-2019_U9.tar.gz"
+        extract "$download_dir/oneTBB-2019_U9.tar.gz" "$build_dir/tbb-$tbb_install_version"
 
         cd "$build_dir/tbb-$tbb_install_version"
 
