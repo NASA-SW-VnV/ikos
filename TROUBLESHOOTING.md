@@ -63,6 +63,10 @@ Your LLVM library was built as one single shared library `libLLVM.so` (`LLVM_BUI
 
 Compiling IKOS with both `-DBUILD_SHARED_LIBS=ON` and `-DIKOS_LINK_LLVM_DYLIB=ON` should fix the issue by linking against the single libLLVM shared library.
 
+### `memory access violation at address: 0x00000088: no mapping at fault address` while running tests
+
+This is a bug in the APRON library. Some OS distributions provide outdated versions of APRON. Building APRON from source (https://github.com/antoinemine/apron), instead of relying on a version made available via the OS' package repository, should fix the issue.
+
 Analysis issues
 ---------------
 
