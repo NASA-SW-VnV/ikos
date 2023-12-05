@@ -571,7 +571,14 @@ def extract_bitcode(exe_path, bc_path):
     output = check_output(cmd)
     section_content = b''
 
-    for line in itertools.islice(output.splitlines(), 4, None):
+    # The output of llvm-objdump is prefixed by three lines: an empty one, one
+    # that specifies the format, and one that describes what comes next (the
+    # contents of the section requested). After that, lines have an address,
+    # the hex representation (36 characters plus spaces), and the ASCII
+    # representation, with some spaces in between sections or columns. The
+    # following obtains only the hex code, ignoring the ASCII and the
+    # addresses.
+    for line in itertools.islice(output.splitlines(), 3, None):
         n = line.find(b' ', 1)
         line = line[n + 1:n + 36]
         for item in line.split(b' '):
