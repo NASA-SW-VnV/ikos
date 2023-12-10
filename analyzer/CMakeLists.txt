@@ -362,6 +362,8 @@ add_custom_target(ikos-python ALL
 
 install(CODE "
   set(PIP_INSTALL
+    \"${PYTHON_EXECUTABLE}\"
+    \"-m\"
     \"pip\"
     \"install\"
   )
