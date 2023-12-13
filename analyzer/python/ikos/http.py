@@ -39,21 +39,13 @@
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
 ###############################################################################
-try:
-    # Python 3
-    from http.server import HTTPServer, BaseHTTPRequestHandler
-    from urllib.parse import parse_qs, urlencode
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-    from urlparse import parse_qs
-    from urllib import urlencode
-    from urllib2 import urlopen
 
-from errno import EAFNOSUPPORT
-from socket import AF_INET, AF_INET6
 import os
+from errno import EAFNOSUPPORT
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from socket import AF_INET, AF_INET6
+from urllib.parse import parse_qs, urlencode
+from urllib.request import urlopen
 
 class HTTPServerIPv6(HTTPServer):
     '''
