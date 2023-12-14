@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!@PYTHON_VENV_EXECUTABLE@
 ###############################################################################
 #
 # ikos-scan: tool to analyze a whole project
@@ -44,16 +44,6 @@ import os.path
 import sys
 
 if __name__ == '__main__':
-    # Add ../lib/pythonX.Y/site-packages at the beginning of the python path
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    site_pkg_dir = os.path.join(
-        root_dir,
-        'lib',
-        'python%d.%d' % (sys.version_info.major, sys.version_info.minor),
-        'site-packages',
-    )
-    sys.path.insert(1, site_pkg_dir)
-
     try:
         import ikos.scan
     except ImportError:

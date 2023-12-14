@@ -333,48 +333,37 @@ else()
       "${CMAKE_CURRENT_SOURCE_DIR}/python/ikos/settings.py.in"
     VERBATIM)
 endif()
+add_custom_target(ikos-python-settings ALL
+  DEPENDS "python/ikos/settings/__init__.py"
+)
 
 # setup.py
 configure_file(python/setup.py.in python/setup.py @ONLY)
 
-file(GLOB PYTHON_FILES python/ikos/*.py)
+option(INSTALL_PYTHON_VIRTUALENV "Install a python virtual environment for ikos" ON)
+option(PYTHON_VENV_EXECUTABLE "Path to the python executable of an existing virtual environment")
+if (INSTALL_PYTHON_VIRTUALENV)
+  install(CODE "
+    message(STATUS \"Running python -m venv ${CMAKE_INSTALL_PREFIX}/libexec\")
+    execute_process(COMMAND \"${PYTHON_EXECUTABLE}\" -m venv \"${CMAKE_INSTALL_PREFIX}/libexec\")
 
-# python module
-add_custom_command(
-  OUTPUT
-    "python/build/lib/ikos/__init__.py"
-  COMMAND
-    ${PYTHON_EXECUTABLE} setup.py -q build
-      --build-base=build
-      --build-purelib=build/lib
-  COMMAND
-    ${CMAKE_COMMAND} -E touch "build/lib/ikos/__init__.py" # udpate timestamp
-  WORKING_DIRECTORY
-    "${CMAKE_CURRENT_BINARY_DIR}/python"
-  DEPENDS
-    "${CMAKE_CURRENT_BINARY_DIR}/python/setup.py"
-    "${CMAKE_CURRENT_BINARY_DIR}/python/ikos/settings/__init__.py"
-    ${PYTHON_FILES}
-)
-add_custom_target(ikos-python ALL
-  DEPENDS "python/build/lib/ikos/__init__.py"
-)
+    message(STATUS \"Running ${CMAKE_INSTALL_PREFIX}/libexec/bin/python -m pip install -U pip\")
+    execute_process(COMMAND \"${CMAKE_INSTALL_PREFIX}/libexec/bin/python\" -m pip install -U pip)
 
-install(CODE "
-  set(PIP_INSTALL
-    \"${PYTHON_EXECUTABLE}\"
-    \"-m\"
-    \"pip\"
-    \"install\"
-  )
-  if (DEFINED ENV{DESTDIR})
-    list(APPEND PIP_INSTALL \"--target=\$ENV{DESTDIR}\")
+    message(STATUS \"Running ${CMAKE_INSTALL_PREFIX}/libexec/bin/python -m pip install -U pygments setuptools\")
+    execute_process(COMMAND \"${CMAKE_INSTALL_PREFIX}/libexec/bin/python\" -m pip install pygments setuptools)
+
+    message(STATUS \"Running ${CMAKE_INSTALL_PREFIX}/libexec/bin/python -m pip install .\")
+    execute_process(COMMAND \"${CMAKE_INSTALL_PREFIX}/libexec/bin/python\" -m pip install .
+                    WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/python\")
+  ")
+  set(PYTHON_VENV_EXECUTABLE "${CMAKE_INSTALL_PREFIX}/libexec/bin/python")
+else()
+  # This can be used by the Homebrew formula or by package maintainers.
+  if (NOT PYTHON_VENV_EXECUTABLE)
+    message(FATAL_ERROR "Please specify -DPYTHON_VENV_EXECUTABLE=<path> when using -DINSTALL_PYTHON_VIRTUALENV=OFF")
   endif()
-  list(APPEND PIP_INSTALL \".\")
-
-  execute_process(COMMAND \${PIP_INSTALL}
-                  WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}/python\")
-")
+endif()
 
 # python web resources
 install(DIRECTORY python/ikos/view DESTINATION share/ikos)

@@ -43,6 +43,7 @@
 ###############################################################################
 import argparse
 import collections
+import html
 import io
 import json
 import operator
@@ -56,7 +57,6 @@ import webbrowser
 
 from ikos import args
 from ikos import colors
-from ikos import html
 from ikos import log
 from ikos import report
 from ikos import settings

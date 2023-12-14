@@ -171,12 +171,11 @@ To build and run the analyzer, you will need the following dependencies:
 * CMake >= 3.4.3
 * GMP >= 4.3.1
 * Boost >= 1.55
-* Python 2 >= 2.7.3 or Python 3 >= 3.3
+* Python >= 3.3
 * SQLite >= 3.6.20
 * TBB >= 2
 * LLVM and Clang 14.0.x
 * (Optional) APRON >= 0.9.10
-* (Optional) Pygments
 
 Most of them can be installed using your package manager.
 

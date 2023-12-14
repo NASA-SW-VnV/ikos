@@ -95,9 +95,8 @@ boost_required_version="1.55.0"
 boost_install_version="1.70.0"
 tbb_required_version="2"
 tbb_install_version="11009"
-python2_required_version="2.7.3"
 python3_required_version="3.3"
-python_install_version="2.7.16"
+python_install_version="3.3"
 llvm_required_version="9"
 llvm_install_version="9.0.0"
 
@@ -775,8 +774,7 @@ function python_parse_version() {
 function python_satisfies_requirements() {
     local version=$1
 
-    ([[ ${version:0:1} = 2 ]] && version_ge "$version" "$python2_required_version") ||
-        ([[ ${version:0:1} = 3 ]] && version_ge "$version" "$python3_required_version")
+    ([[ ${version:0:1} = 3 ]] && version_ge "$version" "$python3_required_version")
 }
 
 # Parse and detect the version of llvm-config, given the command name
@@ -2167,7 +2165,7 @@ fi
 ###############################
 
 if (( ! found_python )); then
-    progress "Could NOT find Python >= $python2_required_version or >= $python3_required_version"
+    progress "Could NOT find Python >= $python3_required_version"
 
     if [[ -x "$install_dir/python-$python_install_version/bin/python" ]]; then
         progress "Using already built ${cgreen}python $python_install_version"

@@ -39,7 +39,8 @@
 # UNILATERAL TERMINATION OF THIS AGREEMENT.
 #
 ###############################################################################
-from ikos import html
+import html
+
 from ikos import log
 
 
