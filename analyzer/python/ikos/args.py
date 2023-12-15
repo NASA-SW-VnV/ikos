@@ -126,7 +126,7 @@ def parse_argument(parser, name, choices, groups, default, value):
 class VersionAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         print('ikos %s' % settings.VERSION)
-        print('Copyright (c) 2011-2019 United States Government as represented'
+        print('Copyright (c) 2011-2023 United States Government as represented'
               ' by the')
         print('Administrator of the National Aeronautics and Space '
               'Administration.')
