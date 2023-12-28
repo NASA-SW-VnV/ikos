@@ -2,7 +2,7 @@ IKOS
 ====
 
 [![License](https://img.shields.io/badge/license-NOSA%201.3-blue.svg)](LICENSE.pdf)
-[![Release](https://img.shields.io/badge/release-v3.1-orange.svg)](https://github.com/NASA-SW-VnV/ikos/releases/tag/v3.1)
+[![Release](https://img.shields.io/badge/release-v3.2-orange.svg)](https://github.com/NASA-SW-VnV/ikos/releases/tag/v3.2)
 [![Linux Build](https://github.com/NASA-SW-VnV/ikos/actions/workflows/build-linux.yml/badge.svg)](https://github.com/NASA-SW-VnV/ikos/actions/workflows/build-linux.yml)
 [![MacOS Build](https://github.com/NASA-SW-VnV/ikos/actions/workflows/build-macos.yml/badge.svg)](https://github.com/NASA-SW-VnV/ikos/actions/workflows/build-macos.yml)
 
