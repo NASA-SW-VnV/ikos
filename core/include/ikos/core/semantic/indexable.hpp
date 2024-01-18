@@ -44,6 +44,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #include <ikos/core/support/mpl.hpp>
 
