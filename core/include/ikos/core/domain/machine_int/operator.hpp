@@ -43,6 +43,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include <ikos/core/number/signedness.hpp>
 #include <ikos/core/support/assert.hpp>
 
