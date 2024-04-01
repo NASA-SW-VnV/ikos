@@ -266,11 +266,11 @@ int main(int argc, char** argv) {
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
 
-    // Remove unreachable blocks also dead cycles
-    pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
-
     // Remove switch constructions (opt -lowerswitch)
     pass_manager.add(llvm::createLowerSwitchPass());
+
+    // Remove unreachable blocks also dead cycles
+    pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
 
     // Lower down atomic instructions (opt -loweratomic)
     pass_manager.add(llvm::createLowerAtomicPass());
