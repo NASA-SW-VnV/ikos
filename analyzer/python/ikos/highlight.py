@@ -56,14 +56,14 @@ class DummyHtmlFormatter(object):
     def get_style_defs(self, cl):
         return ''
 
-    def wrap(self, src, out):
+    def wrap(self, src):
         pass
 
 
 def dummy_highlight(data, lexer, formatter):
     lines = ((1, html.escape(line)) for line in data.split('\n'))
     code = ''
-    for _, line in formatter.wrap(lines, None):
+    for _, line in formatter.wrap(lines):
         code += line
     return code
 
