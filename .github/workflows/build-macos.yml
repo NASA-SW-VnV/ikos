@@ -6,8 +6,8 @@ jobs:
   build:
     runs-on: macos-latest
     env:
-      LDFLAGS:  "-L/usr/local/opt/llvm@14/lib"
-      CPPFLAGS: "-I/usr/local/opt/llvm@14/include"
+      LDFLAGS:  "-L/opt/homebrew/opt/llvm@14/lib"
+      CPPFLAGS: "-I/opt/homebrew/opt/llvm@14/include"
 
     steps:
       - name: Checkout
@@ -18,7 +18,7 @@ jobs:
           brew install cmake gmp boost tbb llvm@14 apron sqlite
       - name: Adjust path
         run:
-          echo "/usr/local/opt/llvm@14/bin" >> $GITHUB_PATH
+          echo "/opt/homebrew/opt/llvm@14/bin" >> $GITHUB_PATH
       - name: Test LLVM
         run: |
           which llvm-config
@@ -27,7 +27,7 @@ jobs:
           mkdir build
           cd build
           cmake \
-            -DCMAKE_INSTALL_PREFIX="/usr/local/opt/ikos" \
+            -DCMAKE_INSTALL_PREFIX="$HOME/ikos" \
             -DCMAKE_BUILD_TYPE="Debug" \
             -DLLVM_CONFIG_EXECUTABLE="$(which llvm-config)" \
             -DPYTHON_EXECUTABLE:FILEPATH="$(which python3)" \
@@ -36,7 +36,7 @@ jobs:
           make install
       - name: Add IKOS to the path
         run: |
-          echo "/usr/local/opt/ikos/bin" >> $GITHUB_PATH
+          echo "$HOME/ikos/bin" >> $GITHUB_PATH
       - name: Confirm that it runs
         run: |
           ikos --version
