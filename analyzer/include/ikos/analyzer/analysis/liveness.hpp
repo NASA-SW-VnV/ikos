@@ -47,6 +47,7 @@
 
 #include <iosfwd>
 #include <vector>
+#include <cstdint>
 
 #include <boost/optional.hpp>
 
