@@ -473,16 +473,25 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
       return checks;
     }
     case ar::Intrinsic::LibcSnprintf: {
-      std::vector< CheckResult > checks =
-          {this->check_mem_access(call,
-                                  call->argument(0),
-                                  call->argument(1),
-                                  /* if_null = */ Result::Error,
-                                  inv),
-           this->check_string_access(call,
-                                     call->argument(2),
-                                     /* if_null = */ Result::Error,
-                                     inv)};
+      std::vector< CheckResult > checks = {};
+
+      // Calling snprintf with zero bufsz and null pointer buffer can be used
+      // to determine the buffer size needed to contain the output. That case
+      // is allowed. Otherwise, check first argument.
+      auto bufsz = this->_lit_factory.get_scalar(call->argument(1));
+      if (!(bufsz.is_machine_int() && bufsz.machine_int().is_zero())) {
+        checks.push_back(this->check_mem_access(call,
+                                                call->argument(0),
+                                                call->argument(1),
+                                                /* if_null = */ Result::Error,
+                                                inv));
+      }
+
+      checks.push_back(this->check_string_access(call,
+                                                 call->argument(2),
+                                                 /* if_null = */ Result::Error,
+                                                 inv));
+
       for (auto it = call->arg_begin() + 3, et = call->arg_end(); it != et;
            ++it) {
         ar::Value* arg = *it;
