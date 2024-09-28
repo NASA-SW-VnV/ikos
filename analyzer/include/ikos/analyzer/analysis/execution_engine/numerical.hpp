@@ -3196,20 +3196,29 @@ private:
     const ScalarLit& ptr = this->_lit_factory.get_scalar(call->argument(0));
     const ScalarLit& size = this->_lit_factory.get_scalar(call->argument(1));
 
-    if (!this->prepare_mem_access(ptr)) {
-      return;
-    }
+    // Calling snprintf with zero bufsz and null pointer buffer can be used to
+    // determine the buffer size needed to contain the output. That case is
+    // allowed. Otherwise, check first argument.
+    bool checkPointer =
+        !(size.is_machine_int() && size.machine_int().is_zero());
 
-    if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
-      // Ignore snprintf, analysis could be unsound.
-      // See CheckKind::IgnoredCallSideEffectOnPointerParameter
-    } else if (size.is_machine_int()) {
-      this->_inv.normal().mem_abstract_reachable(ptr.var(), size.machine_int());
-    } else if (size.is_machine_int_var()) {
-      IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
-      this->_inv.normal().mem_abstract_reachable(ptr.var(), size_intv.ub());
-    } else {
-      ikos_unreachable("unreachable");
+    if (checkPointer) {
+      if (!this->prepare_mem_access(ptr)) {
+        return;
+      }
+
+      if (this->_inv.normal().pointer_to_points_to(ptr.var()).is_top()) {
+        // Ignore snprintf, analysis could be unsound.
+        // See CheckKind::IgnoredCallSideEffectOnPointerParameter
+      } else if (size.is_machine_int()) {
+        this->_inv.normal().mem_abstract_reachable(ptr.var(),
+                                                   size.machine_int());
+      } else if (size.is_machine_int_var()) {
+        IntInterval size_intv = this->_inv.normal().int_to_interval(size.var());
+        this->_inv.normal().mem_abstract_reachable(ptr.var(), size_intv.ub());
+      } else {
+        ikos_unreachable("unreachable");
+      }
     }
 
     if (call->has_result()) {

@@ -333,8 +333,19 @@ std::vector< NullDereferenceChecker::CheckResult > NullDereferenceChecker::
               this->check_null(call, call->argument(1), inv)};
     }
     case ar::Intrinsic::LibcSnprintf: {
-      return {this->check_null(call, call->argument(0), inv),
-              this->check_null(call, call->argument(2), inv)};
+      std::vector< CheckResult > checks = {};
+
+      // Calling snprintf with zero bufsz and null pointer buffer can be used
+      // to determine the buffer size needed to contain the output. That case
+      // is allowed. Otherwise, check first argument.
+      auto bufsz = this->_lit_factory.get_scalar(call->argument(1));
+      if (!(bufsz.is_machine_int() && bufsz.machine_int().is_zero())) {
+        checks.push_back(this->check_null(call, call->argument(0), inv));
+      }
+
+      checks.push_back(this->check_null(call, call->argument(2), inv));
+
+      return checks;
     }
     case ar::Intrinsic::LibcScanf:
     case ar::Intrinsic::LibcFscanf:
