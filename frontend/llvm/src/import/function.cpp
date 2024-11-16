@@ -394,7 +394,7 @@ void FunctionImporter::translate_alloca(BasicBlockTranslation* bb_translation,
   // Translate local variable
   ar::LocalVariable* var = ar::LocalVariable::create(this->_ar_fun,
                                                      var_type,
-                                                     alloca->getAlignment());
+                                                     alloca->getAlign().value());
   this->mark_variable_mapping(alloca, var);
 
   // Translate array size
@@ -423,7 +423,7 @@ void FunctionImporter::translate_store(BasicBlockTranslation* bb_translation,
 
   auto stmt = ar::Store::create(pointer,
                                 value,
-                                store->getAlignment(),
+                                store->getAlign().value(),
                                 store->isVolatile());
   stmt->set_frontend< llvm::Value >(store);
   bb_translation->add_statement(std::move(stmt));
@@ -443,7 +443,7 @@ void FunctionImporter::translate_load(BasicBlockTranslation* bb_translation,
                                              ptr_type);
 
   auto stmt =
-      ar::Load::create(var, pointer, load->getAlignment(), load->isVolatile());
+      ar::Load::create(var, pointer, load->getAlign().value(), load->isVolatile());
   stmt->set_frontend< llvm::Value >(load);
   bb_translation->add_statement(std::move(stmt));
 }
