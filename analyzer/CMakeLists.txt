@@ -119,7 +119,7 @@ include_directories(${AR_INCLUDE_DIR})
 find_package(FrontendLLVM REQUIRED)
 include_directories(${FRONTEND_LLVM_INCLUDE_DIR})
 
-find_package(LLVM 14.0.0...<15.0.0 REQUIRED)
+find_package(LLVM REQUIRED)
 include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
 
 if ((LLVM_VERSION VERSION_LESS "14") OR (NOT (LLVM_VERSION VERSION_LESS "15")))
