@@ -80,9 +80,6 @@ endif()
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
-# Arch-specific llvm14 cmake path
-list(APPEND CMAKE_PREFIX_PATH "/usr/lib/llvm14/lib/cmake/llvm")
-
 find_package(Threads REQUIRED)
 
 set(CUSTOM_BOOST_ROOT "" CACHE PATH "Path to custom boost installation")
