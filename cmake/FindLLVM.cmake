@@ -41,7 +41,7 @@
 ###############################################################################
 
 if (NOT LLVM_FOUND)
-  find_program(LLVM_CONFIG_EXECUTABLE CACHE NAMES llvm-config DOC "Path to llvm-config binary")
+  find_program(LLVM_CONFIG_EXECUTABLE CACHE NAMES llvm-config-14 llvm-config DOC "Path to llvm-config binary")
 
   if (LLVM_CONFIG_EXECUTABLE)
     function(run_llvm_config FLAG OUTPUT_VAR)
