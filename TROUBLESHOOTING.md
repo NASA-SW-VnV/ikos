@@ -74,7 +74,7 @@ Analysis issues
 
 IKOS probably ran out of memory.
 
-See [Running ouf of memory](#running-out-of-memory)
+See [Running out of memory](#running-out-of-memory)
 
 ### Running out of memory
 
