@@ -375,6 +375,16 @@ void FunctionImporter::translate_instruction(
   } else if (llvm::isa< llvm::SwitchInst >(inst)) {
     // The preprocessor should use the -lowerswitch pass
     throw ImportError("llvm switch instructions are not supported");
+  } else if (inst->getOpcode() == llvm::Instruction::FNeg) {
+    auto* binary_inst =
+        llvm::BinaryOperator::Create(llvm::BinaryOperator::FMul,
+                                     llvm::ConstantFP::get(inst->getOperand(0)
+                                                               ->getType(),
+                                                           -1.0),
+                                     inst->getOperand(0));
+    inst->replaceAllUsesWith(binary_inst);
+    binary_inst->setDebugLoc(inst->getDebugLoc());
+    this->translate_binary_operator(bb_translation, binary_inst);
   } else {
     std::ostringstream buf;
     buf << "unsupported llvm instruction: " << inst->getOpcodeName() << " [1]";
@@ -2022,6 +2032,10 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use(
   } else if (llvm::isa< llvm::ShuffleVectorInst >(user)) {
     return {}; // no hint
   } else if (llvm::isa< llvm::ResumeInst >(user)) {
+    return {}; // no hint
+  } else if (llvm::isa< llvm::Instruction >(user) &&
+             llvm::cast< llvm::Instruction >(user)->getOpcode() ==
+                 llvm::Instruction::FNeg) {
     return {}; // no hint
   } else if (llvm::isa< llvm::SelectInst >(user)) {
     // The preprocessor should use the -lower-select pass
