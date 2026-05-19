@@ -40,6 +40,9 @@ When running cmake to build IKOS, you will need to define `LLVM_CONFIG_EXECUTABL
 
 ```
 $ cmake \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    -DCMAKE_CXX_STANDARD=17 \
+    -DCMAKE_CXX_FLAGS="-include algorithm" \
     -DCMAKE_INSTALL_PREFIX="/path/to/ikos-install-directory" \
     -DLLVM_CONFIG_EXECUTABLE="$(brew --prefix)/opt/llvm@14/bin/llvm-config" \
     -DSQLITE3_ROOT="$(brew --prefix)/opt/sqlite3"

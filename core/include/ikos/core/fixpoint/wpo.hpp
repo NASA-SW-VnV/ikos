@@ -225,15 +225,15 @@ private:
   }
 
   /// \brief Add a successor of lifted forward arrow
-  void add_successor_lifted(WpoIndex idx) {
+  void add_successors_lifted(WpoIndex idx) {
     this->_successors_lifted.push_back(idx);
   }
 
   /// \brief Check if the given node is a successor of lifted forward arrow
-  bool is_successor_lifted(WpoIndex idx) const {
-    return std::find(this->_successor_lifted.begin(),
-                     this->_successor_lifted.end(),
-                     idx) != this->_successor_lifted.end();
+  bool is_successors_lifted(WpoIndex idx) const {
+    return std::find(_successors_lifted.begin(),
+                     _successors_lifted.end(),
+                     idx) != _successors_lifted.end();
   }
 
   /// \brief Increment the number of irreducibles that is directing to idx

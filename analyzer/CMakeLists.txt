@@ -38,7 +38,7 @@
 #
 #*****************************************************************************/
 
-cmake_minimum_required(VERSION 3.4.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
@@ -89,7 +89,7 @@ if (CUSTOM_BOOST_ROOT)
 endif()
 
 find_package(Boost 1.55.0 REQUIRED
-             COMPONENTS filesystem system thread)
+             COMPONENTS filesystem thread)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 find_package(GMP REQUIRED)
