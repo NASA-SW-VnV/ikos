@@ -301,6 +301,10 @@ private:
   void translate_intrinsic_call(BasicBlockTranslation* bb_translation,
                                 llvm::IntrinsicInst* call);
 
+  /// \brief Translate a llvm::VAArgInst
+  void translate_va_arg(BasicBlockTranslation* bb_translation,
+                        llvm::VAArgInst* inst);
+
   /// \brief Translate a llvm::InvokeInst
   void translate_invoke(BasicBlockTranslation* bb_translation,
                         llvm::InvokeInst* invoke);
