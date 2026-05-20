@@ -180,6 +180,10 @@ private:
   // AR context
   ar::Context& _context;
 
+  // LLVM module - used to recover llvm::StructType pointees by name when
+  // opaque pointers hide them.
+  llvm::Module& _module;
+
   // LLVM data layout
   const llvm::DataLayout& _llvm_data_layout;
 
@@ -215,6 +219,7 @@ private:
 private:
   /// \brief Private constructor
   TypeWithDebugInfoImporter(ar::Context& context,
+                            llvm::Module& module,
                             const llvm::DataLayout& llvm_data_layout,
                             const ar::DataLayout& ar_data_layout,
                             bool is_c,
@@ -300,6 +305,13 @@ private:
   /// pointee is no longer accessible. Best-effort: unsupported DI shapes
   /// produce an ar::OpaqueType.
   ar::Type* translate_di_only(llvm::DIType* di_type);
+
+  /// \brief Look up the llvm::StructType corresponding to a DICompositeType
+  ///
+  /// Tries `struct.<name>`, `class.<name>`, `union.<name>`, then a
+  /// suffix-matching scan over the module's identified struct types. Returns
+  /// nullptr when no candidate matches.
+  llvm::StructType* lookup_struct_by_di(llvm::DICompositeType* di_type) const;
 
   /// \brief Translate (llvm::DICompositeType*, llvm::Type*) into an ar::Type
   ar::Type* translate_composite_di_type(llvm::DICompositeType*, llvm::Type*);

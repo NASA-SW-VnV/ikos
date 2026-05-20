@@ -43,7 +43,11 @@
  *
  ******************************************************************************/
 
+#include <cstring>
+
 #include <llvm/BinaryFormat/Dwarf.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Module.h>
 
 #include <ikos/core/support/assert.hpp>
 
@@ -295,6 +299,7 @@ ar::FunctionType* TypeWithSignImporter::translate_function_type(
 
 TypeWithDebugInfoImporter::TypeWithDebugInfoImporter(
     ar::Context& context,
+    llvm::Module& module,
     const llvm::DataLayout& llvm_data_layout,
     const ar::DataLayout& ar_data_layout,
     bool is_c,
@@ -303,6 +308,7 @@ TypeWithDebugInfoImporter::TypeWithDebugInfoImporter(
     TypeWithSignImporter& type_sign_imp,
     const TypeWithDebugInfoImporter* parent)
     : _context(context),
+      _module(module),
       _llvm_data_layout(llvm_data_layout),
       _ar_data_layout(ar_data_layout),
       _is_c(is_c),
@@ -314,6 +320,7 @@ TypeWithDebugInfoImporter::TypeWithDebugInfoImporter(
 TypeWithDebugInfoImporter::TypeWithDebugInfoImporter(
     ImportContext& ctx, TypeWithSignImporter& type_sign_imp)
     : _context(ctx.ar_context),
+      _module(ctx.module),
       _llvm_data_layout(ctx.llvm_data_layout),
       _ar_data_layout(ctx.ar_data_layout),
       _translation_depth(0),
@@ -387,6 +394,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_type(llvm::Type* type,
 
 TypeWithDebugInfoImporter TypeWithDebugInfoImporter::fork() const {
   return TypeWithDebugInfoImporter(this->_context,
+                                   this->_module,
                                    this->_llvm_data_layout,
                                    this->_ar_data_layout,
                                    this->_is_c,
@@ -715,9 +723,57 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
                                   static_cast< unsigned >(bits),
                                   ar::Unsigned);
     }
+    if (tag == dwarf::DW_TAG_structure_type ||
+        tag == dwarf::DW_TAG_class_type ||
+        tag == dwarf::DW_TAG_union_type) {
+      // Opaque pointers hide the llvm::StructType pointee. Recover it by
+      // matching the DI name against the module's identified struct types,
+      // then run the full two-sided translator so AR gets a real struct layout.
+      if (llvm::StructType* struct_type = this->lookup_struct_by_di(comp)) {
+        return this->translate_type(struct_type, di_type);
+      }
+    }
     return ar::OpaqueType::create(this->_context);
   }
   return ar::OpaqueType::create(this->_context);
+}
+
+llvm::StructType* TypeWithDebugInfoImporter::lookup_struct_by_di(
+    llvm::DICompositeType* di_type) const {
+  llvm::StringRef name = di_type->getName();
+  if (name.empty()) {
+    return nullptr;
+  }
+  auto& llvm_ctx = this->_module.getContext();
+  for (const char* prefix : {"struct.", "class.", "union."}) {
+    std::string candidate = prefix + name.str();
+    if (auto* st = llvm::StructType::getTypeByName(llvm_ctx, candidate)) {
+      return st;
+    }
+  }
+  // Fallback: Clang appends ".N" disambiguators for shadowed types
+  // (e.g. struct.Foo.0). Scan identified structs and match on the suffix.
+  for (llvm::StructType* st : this->_module.getIdentifiedStructTypes()) {
+    if (!st->hasName()) {
+      continue;
+    }
+    llvm::StringRef st_name = st->getName();
+    for (const char* prefix : {"struct.", "class.", "union."}) {
+      if (!st_name.starts_with(prefix)) {
+        continue;
+      }
+      llvm::StringRef tail = st_name.drop_front(std::strlen(prefix));
+      // Accept exact match or "<name>.<digits>" disambiguator suffix.
+      if (tail == name) {
+        return st;
+      }
+      if (tail.starts_with(name) && tail.size() > name.size() &&
+          tail[name.size()] == '.') {
+        return st;
+      }
+    }
+  }
+  return nullptr;
 }
 
 ar::Type* TypeWithDebugInfoImporter::translate_composite_di_type(
