@@ -141,7 +141,7 @@ private:
                                             const value::AbstractDomain& inv);
 
   /// \brief Dispay a soundness check, if requested
-  llvm::Optional< LogMessage > display_soundness_check(
+  std::optional< LogMessage > display_soundness_check(
       Result result, ar::Statement* stmt) const;
 
 }; // end class SoundnessChecker

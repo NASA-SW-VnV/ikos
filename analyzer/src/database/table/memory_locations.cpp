@@ -102,12 +102,12 @@ JsonDict MemoryLocationsTable::info(MemoryLocation* mem_loc) {
     auto alloca = llvm::cast< llvm::AllocaInst >(value);
 
     // Check for llvm.dbg.declare and llvm.dbg.addr
-    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
-        llvm::FindDbgAddrUses(alloca);
+    llvm::TinyPtrVector< llvm::DbgDeclareInst* > dbg_addrs =
+        llvm::findDbgDeclares(alloca);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgVariableIntrinsic* dbg) {
+                     [](llvm::DbgDeclareInst* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 

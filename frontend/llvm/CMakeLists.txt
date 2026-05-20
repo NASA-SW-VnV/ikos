@@ -103,8 +103,8 @@ include_directories(${AR_INCLUDE_DIR})
 find_package(LLVM REQUIRED)
 include_directories(SYSTEM ${LLVM_INCLUDE_DIR})
 
-if ((LLVM_VERSION VERSION_LESS "14") OR (NOT (LLVM_VERSION VERSION_LESS "15")))
-  message(FATAL_ERROR "LLVM 14 is required.")
+if ((LLVM_VERSION VERSION_LESS "18") OR (NOT (LLVM_VERSION VERSION_LESS "19")))
+  message(FATAL_ERROR "LLVM 18 is required.")
 endif()
 
 # Add path to llvm cmake modules
@@ -130,7 +130,7 @@ option(IKOS_LINK_LLVM_DYLIB "Link IKOS against the libLLVM dynamic library" OFF)
 #
 
 include(AddFlagUtils)
-add_compiler_flag(REQUIRED "CXX14" "-std=c++1y")
+add_compiler_flag(REQUIRED "CXX17" "-std=c++17")
 add_compiler_flag(REQUIRED "FVISIBILITY_INLINES_HIDDEN" "-fvisibility-inlines-hidden")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")

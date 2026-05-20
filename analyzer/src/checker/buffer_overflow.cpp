@@ -1413,7 +1413,7 @@ boost::optional< MachineInt > BufferOverflowChecker::is_array_access(
   return std::move(element_size);
 }
 
-llvm::Optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
+std::optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
     Result result, ar::Statement* stmt) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {
@@ -1424,7 +1424,7 @@ llvm::Optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
   return msg;
 }
 
-llvm::Optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
+std::optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
     Result result,
     ar::Statement* stmt,
     ar::Value* pointer,
@@ -1440,7 +1440,7 @@ llvm::Optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
   return msg;
 }
 
-llvm::Optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
+std::optional< LogMessage > BufferOverflowChecker::display_mem_access_check(
     Result result,
     ar::Statement* stmt,
     ar::Value* pointer,

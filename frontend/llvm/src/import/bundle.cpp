@@ -82,7 +82,8 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
     name = "ar." + name.substr(5);
   }
 
-  llvm::PointerType* type = gv->getType();
+  // With opaque pointers the pointee comes from GlobalVariable::getValueType().
+  llvm::Type* pointee = gv->getValueType();
 
   // Extract the DWARF type from debug information
   llvm::SmallVector< llvm::DIGlobalVariableExpression*, 1 > dbgs;
@@ -94,24 +95,19 @@ ar::GlobalVariable* BundleImporter::translate_global_variable(
 
     // Prefer signed integers, because most global variables without
     // debug information are strings (const char*)
-    ar_pointee_type =
-        _ctx.type_imp->translate_type(type->getPointerElementType(),
-                                      ar::Signed);
+    ar_pointee_type = _ctx.type_imp->translate_type(pointee, ar::Signed);
   } else {
     // Use debug information to build the exact type
     llvm::DIGlobalVariable* di_gv = dbgs[0]->getVariable();
     auto di_type = llvm::cast_or_null< llvm::DIType >(di_gv->getRawType());
 
     try {
-      ar_pointee_type =
-          _ctx.type_imp->translate_type(type->getPointerElementType(), di_type);
+      ar_pointee_type = _ctx.type_imp->translate_type(pointee, di_type);
     } catch (const TypeDebugInfoMismatch&) {
       if (!this->_allow_debug_info_mismatch) {
         throw;
       }
-      ar_pointee_type =
-          _ctx.type_imp->translate_type(type->getPointerElementType(),
-                                        ar::Signed);
+      ar_pointee_type = _ctx.type_imp->translate_type(pointee, ar::Signed);
     }
   }
 
@@ -376,7 +372,7 @@ bool BundleImporter::is_clang_generated_function(llvm::Function* fun) {
     return true;
   }
 
-  if (fun->getName().startswith("_ZTW")) {
+  if (fun->getName().starts_with("_ZTW")) {
     // Thread-local wrapper function
     return true;
   }

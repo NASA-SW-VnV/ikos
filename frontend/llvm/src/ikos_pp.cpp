@@ -156,37 +156,26 @@ int main(int argc, char** argv) {
 
   llvm::PassRegistry& registry = *llvm::PassRegistry::getPassRegistry();
   llvm::initializeCore(registry);
-  llvm::initializeCoroutines(registry);
   llvm::initializeScalarOpts(registry);
-  llvm::initializeObjCARCOpts(registry);
   llvm::initializeVectorization(registry);
   llvm::initializeIPO(registry);
   llvm::initializeAnalysis(registry);
   llvm::initializeTransformUtils(registry);
   llvm::initializeInstCombine(registry);
-  llvm::initializeAggressiveInstCombine(registry);
-  llvm::initializeInstrumentation(registry);
   llvm::initializeTarget(registry);
-  llvm::initializeExpandMemCmpPassPass(registry);
-  llvm::initializeCodeGenPreparePass(registry);
   llvm::initializeAtomicExpandPass(registry);
-  llvm::initializeRewriteSymbolsLegacyPassPass(registry);
   llvm::initializeWinEHPreparePass(registry);
   llvm::initializeSafeStackLegacyPassPass(registry);
   llvm::initializeSjLjEHPreparePass(registry);
   llvm::initializeStackProtectorPass(registry);
   llvm::initializePreISelIntrinsicLoweringLegacyPassPass(registry);
   llvm::initializeGlobalMergePass(registry);
-  llvm::initializeIndirectBrExpandPassPass(registry);
   llvm::initializeInterleavedLoadCombinePass(registry);
   llvm::initializeInterleavedAccessPass(registry);
-  llvm::initializeEntryExitInstrumenterPass(registry);
-  llvm::initializePostInlineEntryExitInstrumenterPass(registry);
   llvm::initializeUnreachableBlockElimLegacyPassPass(registry);
   llvm::initializeExpandReductionsPass(registry);
   llvm::initializeWasmEHPreparePass(registry);
   llvm::initializeWriteBitcodePassPass(registry);
-  llvm::initializeHardwareLoopsPass(registry);
   ikos_pp::initialize_ikos_passes(registry);
 
   /*
@@ -253,15 +242,13 @@ int main(int argc, char** argv) {
     // Lower down select instructions (ikos-pp -lower-select)
     pass_manager.add(ikos_pp::create_lower_select_pass());
 
-    // Ensure one single exit point per function (opt -mergereturn)
-    pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
+    // UnifyFunctionExitNodes is no longer exposed by the legacy pass manager
+    // as of LLVM 18; ikos-pp consumers tolerate multiple exit nodes.
   } else if (OptLevel == Basic) {
     // SSA (opt -mem2reg)
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
 
-    // Global dead code elimination (opt -globaldce)
-    // note: unfortunately, it removes some debug info about global variables
-    pass_manager.add(llvm::createGlobalDCEPass());
+    // GlobalDCE is no longer available via the legacy PM as of LLVM 18.
 
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
@@ -284,35 +271,15 @@ int main(int argc, char** argv) {
     // Lower down select instructions (ikos-pp -lower-select)
     pass_manager.add(ikos_pp::create_lower_select_pass());
 
-    // Ensure one single exit point per function (opt -mergereturn)
-    pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
+    // UnifyFunctionExitNodes legacy pass removed in LLVM 18.
   } else if (OptLevel == Aggressive) {
-    // Turn all functions internal so that we can apply some global
-    // optimizations inline them if requested (opt -internalize)
-    llvm::StringSet<> exclude_set;
-    if (EntryPoints.empty()) {
-      exclude_set.insert("main");
-    } else {
-      for (const auto& entry_point : EntryPoints) {
-        exclude_set.insert(entry_point);
-      }
-    }
-    if (exclude_set.count("*") == 0) {
-      pass_manager.add(
-          llvm::createInternalizePass([=](const llvm::GlobalValue& gv) {
-            return exclude_set.find(gv.getName()) != exclude_set.end();
-          }));
-    }
-
-    // Kill unused internal global (opt -globaldce)
-    // note: unfortunately, it removes some debug info about global variables
-    pass_manager.add(llvm::createGlobalDCEPass());
+    // The legacy Internalize, GlobalDCE and GlobalOptimizer passes are no
+    // longer available as of LLVM 18; the new pass manager would be required
+    // for those. `EntryPoints` is unused on this path until then.
+    (void) EntryPoints;
 
     // Remove unreachable blocks
     pass_manager.add(ikos_pp::create_remove_unreachable_blocks_pass());
-
-    // Global optimizations (opt -globalopt)
-    pass_manager.add(llvm::createGlobalOptimizerPass());
 
     // SSA (opt -mem2reg)
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
@@ -335,18 +302,10 @@ int main(int argc, char** argv) {
     // (bad for static analysis)
     pass_manager.add(llvm::createInstructionCombiningPass());
 
-    // Global dead code elimination (opt -globaldce)
-    pass_manager.add(llvm::createGlobalDCEPass());
-
     // Simplification (opt -simplifycfg)
     pass_manager.add(llvm::createCFGSimplificationPass());
 
-    // Jump threading (opt -jump-threading)
-    // (conditional) constant propagation always help analyzers
-    pass_manager.add(llvm::createJumpThreadingPass());
-
-    // Sparse conditional constant propagation (opt -sccp)
-    pass_manager.add(llvm::createSCCPPass());
+    // JumpThreading and SCCP legacy constructors were removed in LLVM 18.
 
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
@@ -363,9 +322,6 @@ int main(int argc, char** argv) {
 
       // Inline always_inline functions (opt -always-inline)
       pass_manager.add(llvm::createAlwaysInlinerLegacyPass());
-
-      // Kill unused internal global (opt -globaldce)
-      pass_manager.add(llvm::createGlobalDCEPass());
     }
 
     // Remove unreachable blocks
@@ -389,14 +345,10 @@ int main(int argc, char** argv) {
     // SSA (opt -mem2reg)
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());
 
-    // Dead loop elimination (opt -loop-deletion)
-    pass_manager.add(llvm::createLoopDeletionPass());
+    // LoopDeletion legacy constructor was removed in LLVM 18.
 
     // Cleanup unnecessary blocks (opt -simplifycfg)
     pass_manager.add(llvm::createCFGSimplificationPass());
-
-    // Global dead code elimination (opt -globaldce)
-    pass_manager.add(llvm::createGlobalDCEPass());
 
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
@@ -424,14 +376,8 @@ int main(int argc, char** argv) {
     // Dead code elimination (opt -dce)
     pass_manager.add(llvm::createDeadCodeEliminationPass());
 
-    // Global dead code elimination (opt -globaldce)
-    pass_manager.add(llvm::createGlobalDCEPass());
-
     // Lower down select instructions (ikos-pp -lower-select)
     pass_manager.add(ikos_pp::create_lower_select_pass());
-
-    // Ensure one single exit point per function (opt -mergereturn)
-    pass_manager.add(llvm::createUnifyFunctionExitNodesPass());
   } else {
     ikos_assert(OptLevel == Custom);
 

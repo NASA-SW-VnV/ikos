@@ -394,10 +394,9 @@ void FunctionImporter::translate_instruction(
 
 void FunctionImporter::translate_alloca(BasicBlockTranslation* bb_translation,
                                         llvm::AllocaInst* alloca) {
-  // Translate types
-  check_import(alloca->getType()->getPointerElementType() ==
-                   alloca->getAllocatedType(),
-               "unexpected allocated type in llvm alloca");
+  // With opaque pointers the alloca's pointer type carries no pointee, so the
+  // historical sanity check `ptr->getPointerElementType() == getAllocatedType()`
+  // becomes tautological; the allocated type is now the authoritative source.
   auto var_type = ar::cast< ar::PointerType >(this->infer_type(alloca));
   ar::Type* allocated_type = var_type->pointee();
 
@@ -421,16 +420,18 @@ void FunctionImporter::translate_alloca(BasicBlockTranslation* bb_translation,
 
 void FunctionImporter::translate_store(BasicBlockTranslation* bb_translation,
                                        llvm::StoreInst* store) {
-  // Translate pointer
-  ar::Value* pointer = this->translate_value(bb_translation,
-                                             store->getPointerOperand(),
-                                             nullptr);
-  auto ptr_type = ar::cast< ar::PointerType >(pointer->type());
-
-  // Translate stored value
+  // Translate the stored value at its natural type first; with opaque pointers
+  // the pointer carries no pointee hint, so we let the value drive.
   ar::Value* value = this->translate_value(bb_translation,
                                            store->getValueOperand(),
-                                           ptr_type->pointee());
+                                           nullptr);
+
+  // Translate the pointer so its pointee matches the value's type.
+  ar::PointerType* expected_ptr =
+      ar::PointerType::get(this->_context, value->type());
+  ar::Value* pointer = this->translate_value(bb_translation,
+                                             store->getPointerOperand(),
+                                             expected_ptr);
 
   auto stmt = ar::Store::create(pointer,
                                 value,
@@ -442,12 +443,15 @@ void FunctionImporter::translate_store(BasicBlockTranslation* bb_translation,
 
 void FunctionImporter::translate_load(BasicBlockTranslation* bb_translation,
                                       llvm::LoadInst* load) {
-  // Translate result variable
+  // Translate result variable. With opaque pointers we trust the load's own
+  // result type rather than inferred pointee data.
   ar::InternalVariable* var =
       ar::InternalVariable::create(this->_body, this->infer_type(load));
   this->mark_variable_mapping(load, var);
 
-  // Translate pointer
+  // Translate pointer so its pointee matches the loaded value type. Any
+  // mismatch with the pointer operand's AR pointee becomes a pointer-to-pointer
+  // bitcast (always valid).
   ar::PointerType* ptr_type = ar::PointerType::get(this->_context, var->type());
   ar::Value* pointer = this->translate_value(bb_translation,
                                              load->getPointerOperand(),
@@ -1546,19 +1550,20 @@ ar::IntegerConstant* FunctionImporter::translate_indexes(
 
     if (auto struct_type = llvm::dyn_cast< llvm::StructType >(indexed_type)) {
       offset += this->_llvm_data_layout.getStructLayout(struct_type)
-                    ->getElementOffset(idx);
+                    ->getElementOffset(idx)
+                    .getFixedValue();
     } else if (auto array_type =
                    llvm::dyn_cast< llvm::ArrayType >(indexed_type)) {
       ar::ZNumber element_size(
           this->_llvm_data_layout.getTypeAllocSize(array_type->getElementType())
-              .getFixedSize());
+              .getFixedValue());
       offset += element_size * idx;
     } else if (auto vector_type =
                    llvm::dyn_cast< llvm::VectorType >(indexed_type)) {
       ar::ZNumber element_size(
           this->_llvm_data_layout
               .getTypeAllocSize(vector_type->getElementType())
-              .getFixedSize());
+              .getFixedValue());
       offset += element_size * idx;
     } else {
       throw ImportError("unsupported operand to llvm extractvalue");
@@ -1595,7 +1600,7 @@ void FunctionImporter::translate_extractelement(
   ar::ZNumber element_size(
       this->_llvm_data_layout
           .getTypeAllocSize(inst->getVectorOperandType()->getElementType())
-          .getFixedSize());
+          .getFixedValue());
   ar::ZNumber offset_value = index->getZExtValue() * element_size;
   auto offset = ar::IntegerConstant::get(this->_context,
                                          size_type,
@@ -1629,7 +1634,7 @@ void FunctionImporter::translate_insertelement(
   ar::ZNumber element_size(
       this->_llvm_data_layout
           .getTypeAllocSize(inst->getType()->getElementType())
-          .getFixedSize());
+          .getFixedValue());
   ar::ZNumber offset_value = index->getZExtValue() * element_size;
   auto offset = ar::IntegerConstant::get(this->_context,
                                          size_type,
@@ -1763,7 +1768,11 @@ ar::InternalVariable* FunctionImporter::add_bitcast(
     ar::InternalVariable* result,
     ar::Variable* operand) {
   if (!is_valid_bitcast(operand->type(), result->type())) {
-    throw ImportError("invalid ar bitcast");
+    std::ostringstream buf;
+    buf << "invalid ar bitcast: from kind="
+        << static_cast< int >(operand->type()->kind())
+        << " to kind=" << static_cast< int >(result->type()->kind());
+    throw ImportError(buf.str());
   }
 
   auto stmt =
@@ -1897,14 +1906,14 @@ ar::Type* FunctionImporter::infer_type(llvm::Value* value) {
 }
 
 ar::Type* FunctionImporter::infer_type_from_dbg(llvm::Value* value) {
-  // Check for llvm.dbg.declare and llvm.dbg.addr
+  // Check for llvm.dbg.declare (llvm.dbg.addr was removed in LLVM 17).
   if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(value)) {
-    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
-        llvm::FindDbgAddrUses(alloca);
+    llvm::TinyPtrVector< llvm::DbgDeclareInst* > dbg_addrs =
+        llvm::findDbgDeclares(alloca);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgVariableIntrinsic* dbg) {
+                     [](llvm::DbgDeclareInst* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 
@@ -2069,6 +2078,16 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_store(
     TypeHint hint = this->infer_type_hint_operand(store->getPointerOperand());
     if (!hint.ignore()) {
       hint.type = ar::cast< ar::PointerType >(hint.type)->pointee();
+      // With opaque pointers, the pointer's pointee may not match the value's
+      // actual LLVM type (type-punned store). Drop the hint when the kinds
+      // disagree, otherwise we'd later try to bitcast e.g. an i32 to a struct.
+      llvm::Type* val_ty = store->getValueOperand()->getType();
+      bool val_scalar = val_ty->isIntegerTy() || val_ty->isFloatingPointTy();
+      bool val_ptr = val_ty->isPointerTy();
+      if ((val_scalar && !hint.type->is_primitive()) ||
+          (val_ptr && !hint.type->is_pointer())) {
+        return {};
+      }
     }
     return hint;
   } else if (use.getOperandNo() == 1) {

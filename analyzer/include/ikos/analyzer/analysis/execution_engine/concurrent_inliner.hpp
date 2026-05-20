@@ -51,7 +51,7 @@
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
 
-#include <llvm/ADT/Optional.h>
+#include <optional>
 
 #include <ikos/ar/semantic/function.hpp>
 #include <ikos/ar/semantic/statement.hpp>
@@ -200,7 +200,7 @@ private:
     std::vector< CalleeAnalysis >& _callee_analyses;
 
     /// \brief Post invariant
-    llvm::Optional< AbstractDomain > _post;
+    std::optional< AbstractDomain > _post;
 
   public:
     /// \brief Constructor
@@ -227,7 +227,7 @@ private:
           _callees_cache(parent._callees_cache),
           _call(parent._call),
           _callee_analyses(parent._callee_analyses),
-          _post(llvm::None) {}
+          _post(std::nullopt) {}
 
     /// \brief No copy constructor
     CalleeWorker(const CalleeWorker&) = delete;

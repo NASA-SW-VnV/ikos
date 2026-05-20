@@ -294,6 +294,13 @@ private:
   ar::PointerType* translate_reference_di_type(llvm::DIDerivedType*,
                                                llvm::Type*);
 
+  /// \brief Translate a llvm::DIType* alone into an ar::Type
+  ///
+  /// Used to build the AR pointee of an opaque LLVM pointer, where the LLVM
+  /// pointee is no longer accessible. Best-effort: unsupported DI shapes
+  /// produce an ar::OpaqueType.
+  ar::Type* translate_di_only(llvm::DIType* di_type);
+
   /// \brief Translate (llvm::DICompositeType*, llvm::Type*) into an ar::Type
   ar::Type* translate_composite_di_type(llvm::DICompositeType*, llvm::Type*);
 

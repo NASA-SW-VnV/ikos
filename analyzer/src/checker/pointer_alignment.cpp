@@ -376,7 +376,7 @@ core::machine_int::Congruence PointerAlignmentChecker::to_congruence(
                     Unsigned);
 }
 
-llvm::Optional< LogMessage > PointerAlignmentChecker::display_alignment_check(
+std::optional< LogMessage > PointerAlignmentChecker::display_alignment_check(
     Result result, ar::Statement* stmt, ar::Value* operand) const {
   auto msg = this->display_check(result, stmt);
   if (msg) {

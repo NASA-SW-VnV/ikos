@@ -46,8 +46,11 @@
 
 #include <boost/container/flat_set.hpp>
 
+#include <llvm/ADT/SmallString.h>
+#include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/InlineAsm.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
@@ -352,8 +355,9 @@ std::string repr(llvm::Type* type, TypeSet seen) {
     } else {
       throw FrontendError("unsupported llvm floating point type");
     }
-  } else if (auto ptr_type = llvm::dyn_cast< llvm::PointerType >(type)) {
-    return repr(ptr_type->getPointerElementType(), seen) + "*";
+  } else if (llvm::isa< llvm::PointerType >(type)) {
+    // Opaque pointer: pointee type is no longer carried by the LLVM type.
+    return std::string("ptr");
   } else if (auto array_type = llvm::dyn_cast< llvm::ArrayType >(type)) {
     return repr(array_type->getElementType(), seen) + "[" +
            std::to_string(array_type->getNumElements()) + "]";
@@ -714,12 +718,12 @@ ReprResult repr(llvm::Value* value, ValueSet seen) {
 
   if (auto arg = llvm::dyn_cast< llvm::Argument >(value)) {
     // Check for llvm.dbg.declare and llvm.dbg.addr
-    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
-        llvm::FindDbgAddrUses(arg);
+    llvm::TinyPtrVector< llvm::DbgDeclareInst* > dbg_addrs =
+        llvm::findDbgDeclares(arg);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgVariableIntrinsic* dbg) {
+                     [](llvm::DbgDeclareInst* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 
@@ -748,12 +752,12 @@ ReprResult repr(llvm::Value* value, ValueSet seen) {
   if (auto inst = llvm::dyn_cast< llvm::Instruction >(value)) {
     if (auto alloca = llvm::dyn_cast< llvm::AllocaInst >(inst)) {
       // Check for llvm.dbg.declare and llvm.dbg.addr
-      llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
-          llvm::FindDbgAddrUses(alloca);
+      llvm::TinyPtrVector< llvm::DbgDeclareInst* > dbg_addrs =
+          llvm::findDbgDeclares(alloca);
       auto dbg_addr =
           std::find_if(dbg_addrs.begin(),
                        dbg_addrs.end(),
-                       [](llvm::DbgVariableIntrinsic* dbg) {
+                       [](llvm::DbgDeclareInst* dbg) {
                          return dbg->getExpression()->getNumElements() == 0;
                        });
 
@@ -1057,12 +1061,12 @@ struct OperandReprVisitor {
     auto alloca = llvm::cast< llvm::AllocaInst >(value);
 
     // Check for llvm.dbg.declare and llvm.dbg.addr
-    llvm::TinyPtrVector< llvm::DbgVariableIntrinsic* > dbg_addrs =
-        llvm::FindDbgAddrUses(alloca);
+    llvm::TinyPtrVector< llvm::DbgDeclareInst* > dbg_addrs =
+        llvm::findDbgDeclares(alloca);
     auto dbg_addr =
         std::find_if(dbg_addrs.begin(),
                      dbg_addrs.end(),
-                     [](llvm::DbgVariableIntrinsic* dbg) {
+                     [](llvm::DbgDeclareInst* dbg) {
                        return dbg->getExpression()->getNumElements() == 0;
                      });
 

@@ -133,7 +133,7 @@ AssertProverChecker::CheckResult AssertProverChecker::check_assert(
   }
 }
 
-llvm::Optional< LogMessage > AssertProverChecker::display_assert_check(
+std::optional< LogMessage > AssertProverChecker::display_assert_check(
     Result result, ar::IntrinsicCall* call) const {
   auto msg = this->display_check(result, call);
   if (msg) {

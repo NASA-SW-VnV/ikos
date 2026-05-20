@@ -50,8 +50,8 @@ namespace import {
 static ar::DataLayoutInfo translate_data_layout_info(
     const llvm::DataLayout& data_layout, llvm::Type* type) {
   uint64_t bit_width = type->getPrimitiveSizeInBits();
-  uint64_t abi_alignment = data_layout.getABITypeAlignment(type);
-  uint64_t pref_alignment = data_layout.getPrefTypeAlignment(type);
+  uint64_t abi_alignment = data_layout.getABITypeAlign(type).value();
+  uint64_t pref_alignment = data_layout.getPrefTypeAlign(type).value();
   return {bit_width, abi_alignment, pref_alignment};
 }
 
