@@ -735,6 +735,32 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
     }
     return ar::OpaqueType::create(this->_context);
   }
+  if (auto sub = llvm::dyn_cast< llvm::DISubroutineType >(di_type)) {
+    // Build an ar::FunctionType from the subroutine's DI type array. The
+    // first element is the return type (or null = void); the rest are
+    // parameters. With opaque pointers we no longer have the LLVM function
+    // type to validate against, so this is best-effort.
+    llvm::DITypeRefArray di_params = sub->getTypeArray();
+    ar::Type* ar_ret_ty = ar::VoidType::get(this->_context);
+    ar::FunctionType::ParamTypes ar_params;
+    bool first = true;
+    for (auto it = di_params.begin(), et = di_params.end(); it != et; ++it) {
+      llvm::DIType* di_param = *it;
+      if (first) {
+        ar_ret_ty = (di_param == nullptr)
+                        ? static_cast< ar::Type* >(
+                              ar::VoidType::get(this->_context))
+                        : this->translate_di_only(di_param);
+        first = false;
+      } else {
+        ar_params.push_back(this->translate_di_only(di_param));
+      }
+    }
+    return ar::FunctionType::get(this->_context,
+                                 ar_ret_ty,
+                                 ar_params,
+                                 /*is_var_arg=*/false);
+  }
   return ar::OpaqueType::create(this->_context);
 }
 

@@ -2156,7 +2156,17 @@ template < typename CallInstType >
 FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_call_helper(
     llvm::Use& use, CallInstType* call) {
   if (use.getOperandNo() >= call->arg_size()) {
-    // Called function pointer
+    // Called operand. Under opaque pointers the function-pointer SSA value
+    // would otherwise fall back to `Ptr<si8>`, leaving the call site without
+    // a FunctionType pointee. Synthesize the hint from the call's signature,
+    // which LLVM 18 still attaches to the CallInst.
+    if (auto* fun_ty = call->getFunctionType()) {
+      ar::Type* ar_fun_ty =
+          _ctx.type_imp->translate_type(fun_ty, ar::Signed);
+      ar::Type* ar_ptr_ty =
+          ar::PointerType::get(this->_context, ar_fun_ty);
+      return {ar_ptr_ty, 100};
+    }
     return {};
   }
 
