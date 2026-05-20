@@ -67,6 +67,10 @@ namespace ikos {
 namespace frontend {
 namespace import {
 
+// Defined later in this translation unit; forward-declared so
+// translate_call_helper can consult it when picking the call's result type.
+static bool is_valid_bitcast(ar::Type* from, ar::Type* to);
+
 ar::Code* FunctionImporter::translate_body() {
   // Translate parameters
   this->translate_parameters();
@@ -704,13 +708,22 @@ void FunctionImporter::translate_call_helper(
   ikos_assert(call->getType()->isVoidTy() ==
               fun_type->return_type()->is_void());
 
-  // Translate result variable
+  // Translate result variable. With opaque pointers a call may return an
+  // ABI-coerced aggregate (e.g. [2 x i64] for a 16-byte struct), while
+  // infer_type often guesses the source-level struct from use hints. AR's
+  // bitcast cannot bridge aggregates of different shape, so fall back to
+  // the function's actual return type whenever bitcasting wouldn't be valid.
   ar::InternalVariable* var = nullptr;
   if (has_return_value) {
-    var = ar::InternalVariable::create(this->_body,
-                                       force_return_cast
-                                           ? this->infer_type(call)
-                                           : fun_type->return_type());
+    ar::Type* var_type = fun_type->return_type();
+    if (force_return_cast) {
+      ar::Type* inferred = this->infer_type(call);
+      if (inferred == var_type ||
+          is_valid_bitcast(var_type, inferred)) {
+        var_type = inferred;
+      }
+    }
+    var = ar::InternalVariable::create(this->_body, var_type);
     this->mark_variable_mapping(call, var);
   }
 
