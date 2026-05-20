@@ -53,6 +53,7 @@
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/InlineAsm.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Utils/Local.h>
 
 #include <ikos/frontend/llvm/import/exception.hpp>
@@ -1770,8 +1771,22 @@ ar::InternalVariable* FunctionImporter::add_bitcast(
   if (!is_valid_bitcast(operand->type(), result->type())) {
     std::ostringstream buf;
     buf << "invalid ar bitcast: from kind="
-        << static_cast< int >(operand->type()->kind())
-        << " to kind=" << static_cast< int >(result->type()->kind());
+        << static_cast< int >(operand->type()->kind());
+    if (operand->type()->is_primitive()) {
+      buf << "(bits=" << operand->type()->primitive_bit_width() << ")";
+    }
+    buf << " to kind=" << static_cast< int >(result->type()->kind());
+    if (result->type()->is_primitive()) {
+      buf << "(bits=" << result->type()->primitive_bit_width() << ")";
+    }
+    if (operand->has_frontend()) {
+      auto* lv = operand->frontend< llvm::Value >();
+      std::string lty;
+      llvm::raw_string_ostream lty_os(lty);
+      lv->getType()->print(lty_os);
+      buf << " [llvm operand: " << lv->getName().str()
+          << " : " << lty_os.str() << "]";
+    }
     throw ImportError(buf.str());
   }
 
@@ -2078,14 +2093,29 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_store(
     TypeHint hint = this->infer_type_hint_operand(store->getPointerOperand());
     if (!hint.ignore()) {
       hint.type = ar::cast< ar::PointerType >(hint.type)->pointee();
-      // With opaque pointers, the pointer's pointee may not match the value's
-      // actual LLVM type (type-punned store). Drop the hint when the kinds
-      // disagree, otherwise we'd later try to bitcast e.g. an i32 to a struct.
+      // With opaque pointers, the AR pointer pointee no longer reflects the
+      // value's actual LLVM type: an opaque LLVM pointer falls back to
+      // `ar::Ptr<si8>` upstream, and that si8 pointee must not be propagated
+      // as a hint for the unrelated stored value. Drop the hint whenever the
+      // LLVM value's shape disagrees with the hint:
+      //   - scalar value vs non-primitive hint, or different bit-widths
+      //   - pointer value vs non-pointer hint
+      //   - aggregate value (struct/array/vector) vs scalar/pointer hint
       llvm::Type* val_ty = store->getValueOperand()->getType();
       bool val_scalar = val_ty->isIntegerTy() || val_ty->isFloatingPointTy();
       bool val_ptr = val_ty->isPointerTy();
-      if ((val_scalar && !hint.type->is_primitive()) ||
-          (val_ptr && !hint.type->is_pointer())) {
+      if (val_scalar) {
+        if (!hint.type->is_primitive() ||
+            hint.type->primitive_bit_width() !=
+                val_ty->getPrimitiveSizeInBits()) {
+          return {};
+        }
+      } else if (val_ptr) {
+        if (!hint.type->is_pointer()) {
+          return {};
+        }
+      } else if (hint.type->is_primitive() || hint.type->is_pointer()) {
+        // Aggregate LLVM value with a primitive/pointer hint - mismatch.
         return {};
       }
     }
