@@ -18,6 +18,6 @@ int main(int argc, char** argv) {
   a[x] = y;
 
   uint16_t* test;
-  test = a[x] + y + 1;
+  test = (uint16_t*)(uintptr_t)(a[x] + y + 1);
   return *test;
 }
