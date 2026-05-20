@@ -43,24 +43,20 @@ bb_3:                                             ; preds = %bb_2
 
 bb_4:                                             ; preds = %bb_2, %bb_1
 ; CHECK-LABEL: bb_4:
-; CHECK:  %0 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.6, i32 0, i32 0
 ; CHECK:  br label %bb_5
   br label %bb_5
 
 bb_5:                                             ; preds = %bb_4, %bb_3
 ; CHECK-LABEL: bb_5:
-; CHECK:  %_16 = phi i8* [ %_15, %bb_3 ], [ %0, %bb_4 ]
-; CHECK:  store i8* %_16, i8** %_5, align 8
-; CHECK:  %_17 = getelementptr inbounds [55 x i8], [55 x i8]* %_6, i32 0, i32 0
-; CHECK:  %1 = getelementptr inbounds [33 x i8], [33 x i8]* @.str.7, i32 0, i32 0
-; CHECK:  %_18 = call i8* @__strcpy_chk(i8* %_17, i8* %1, i64 55)
-; CHECK:  %_19 = getelementptr inbounds [55 x i8], [55 x i8]* %_6, i32 0, i32 0
-; CHECK:  %_20 = load i8*, i8** %_5, align 8
-; CHECK:  %_21 = call i8* @__strcat_chk(i8* %_19, i8* %_20, i64 55)
-; CHECK:  %_22 = getelementptr inbounds [55 x i8], [55 x i8]* %_6, i32 0, i32 0
-; CHECK:  %2 = getelementptr inbounds [22 x i8], [22 x i8]* @.str.8, i32 0, i32 0
-; CHECK:  %3 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.9, i32 0, i32 0
-; CHECK:  call void (i32, i8*, i32, i8*, ...) @util_log(i32 1, i8* %2, i32 356, i8* %_22, i8* %3)
+; CHECK:  %_16 = phi ptr [ %_15, %bb_3 ], [ @.str.6, %bb_4 ]
+; CHECK:  store ptr %_16, ptr %_5, align 8
+; CHECK:  %_17 = getelementptr inbounds [55 x i8], ptr %_6, i32 0, i32 0
+; CHECK:  %_18 = call ptr @__strcpy_chk(ptr %_17, ptr @.str.7, i64 55)
+; CHECK:  %_19 = getelementptr inbounds [55 x i8], ptr %_6, i32 0, i32 0
+; CHECK:  %_20 = load ptr, ptr %_5, align 8
+; CHECK:  %_21 = call ptr @__strcat_chk(ptr %_19, ptr %_20, i64 55)
+; CHECK:  %_22 = getelementptr inbounds [55 x i8], ptr %_6, i32 0, i32 0
+; CHECK:  call void (i32, ptr, i32, ptr, ...) @util_log(i32 1, ptr @.str.8, i32 356, ptr %_22, ptr @.str.9)
 ; CHECK:  ret i32 0
   %_16 = phi i8* [ %_15, %bb_3 ], [ getelementptr inbounds ([8 x i8], [8 x i8]* @.str.6, i32 0, i32 0), %bb_4 ]
   store i8* %_16, i8** %_5, align 8

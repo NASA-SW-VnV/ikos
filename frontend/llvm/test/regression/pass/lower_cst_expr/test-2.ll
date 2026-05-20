@@ -67,16 +67,15 @@ bb_10:                                            ; preds = %bb_12, %bb_9
 
 bb_11:                                            ; preds = %bb_10
 ; CHECK-LABEL: bb_11:
-; CHECK:   %_24 = load i32, i32* %_4, align 4
-; CHECK:   %_25 = sext i32 %_24 to i64
-; CHECK:   %_26 = getelementptr inbounds [10 x [10 x i32]], [10 x [10 x i32]]* %_6, i64 0, i64 %_25
-; CHECK:   %_27 = load i32, i32* %_4, align 4
-; CHECK:   %_28 = sext i32 %_27 to i64
-; CHECK:   %_29 = getelementptr inbounds [10 x i32], [10 x i32]* %_26, i64 0, i64 %_28
-; CHECK:   %_30 = load i32, i32* %_29, align 4
-; CHECK:   %0 = getelementptr inbounds [4 x i8], [4 x i8]* @.str, i32 0, i32 0
-; CHECK:   %_31 = call i32 (i8*, ...) @printf(i8* %0, i32 %_30)
-; CHECK:   br label %bb_12
+; CHECK:  %_24 = load i32, ptr %_4, align 4
+; CHECK:  %_25 = sext i32 %_24 to i64
+; CHECK:  %_26 = getelementptr inbounds [10 x [10 x i32]], ptr %_6, i64 0, i64 %_25
+; CHECK:  %_27 = load i32, ptr %_4, align 4
+; CHECK:  %_28 = sext i32 %_27 to i64
+; CHECK:  %_29 = getelementptr inbounds [10 x i32], ptr %_26, i64 0, i64 %_28
+; CHECK:  %_30 = load i32, ptr %_29, align 4
+; CHECK:  %_31 = call i32 (ptr, ...) @printf(ptr @.str, i32 %_30)
+; CHECK:  br label %bb_12
   %_24 = load i32, i32* %_4, align 4
   %_25 = sext i32 %_24 to i64
   %_26 = getelementptr inbounds [10 x [10 x i32]], [10 x [10 x i32]]* %_6, i64 0, i64 %_25

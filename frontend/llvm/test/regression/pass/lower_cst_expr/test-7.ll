@@ -10,12 +10,10 @@ define i32 @main() {
 bb_1:
 ; CHECK-LABEL: bb_1:
 ; CHECK:  %_1 = alloca i32, align 4
-; CHECK:  store i32 0, i32* %_1, align 4
-; CHECK:  %0 = getelementptr inbounds %union.anon, %union.anon* @regs, i32 0, i32 0, i32 0
-; CHECK:  store i16 5, i16* %0, align 2
-; CHECK:  %1 = bitcast %union.anon* @regs to %struct.anon*
-; CHECK:  %2 = getelementptr inbounds %struct.anon, %struct.anon* %1, i32 0, i32 1
-; CHECK:  %_2 = load i8, i8* %2, align 1
+; CHECK:  store i32 0, ptr %_1, align 4
+; CHECK:  store i16 5, ptr @regs, align 2
+; CHECK:  %0 = getelementptr inbounds %struct.anon, ptr @regs, i32 0, i32 1
+; CHECK:  %_2 = load i8, ptr %0, align 1
 ; CHECK:  %_3 = icmp ne i8 %_2, 0
 ; CHECK:  br i1 %_3, label %bb_3, label %bb_2
   %_1 = alloca i32, align 4
@@ -27,12 +25,9 @@ bb_1:
 
 bb_2:                                             ; preds = %bb_1
 ; CHECK-LABEL: bb_2:
-; CHECK:  %3 = bitcast %union.anon* @regs to %struct.anon*
-; CHECK:  %4 = getelementptr inbounds %struct.anon, %struct.anon* %3, i32 0, i32 0
-; CHECK:  %_4 = load i8, i8* %4, align 2
-; CHECK:  %5 = bitcast %union.anon* @regs to %struct.anon*
-; CHECK:  %6 = getelementptr inbounds %struct.anon, %struct.anon* %5, i32 0, i32 2
-; CHECK:  store i8 %_4, i8* %6, align 2
+; CHECK:  %_4 = load i8, ptr @regs, align 2
+; CHECK:  %1 = getelementptr inbounds %struct.anon, ptr @regs, i32 0, i32 2
+; CHECK:  store i8 %_4, ptr %1, align 2
 ; CHECK:  br label %bb_4
   %_4 = load i8, i8* getelementptr inbounds (%struct.anon, %struct.anon* bitcast (%union.anon* @regs to %struct.anon*), i32 0, i32 0), align 2
   store i8 %_4, i8* getelementptr inbounds (%struct.anon, %struct.anon* bitcast (%union.anon* @regs to %struct.anon*), i32 0, i32 2), align 2
@@ -40,12 +35,9 @@ bb_2:                                             ; preds = %bb_1
 
 bb_3:                                             ; preds = %bb_1
 ; CHECK-LABEL: bb_3:
-; CHECK:  %7 = bitcast %union.anon* @regs to %struct.anon*
-; CHECK:  %8 = getelementptr inbounds %struct.anon, %struct.anon* %7, i32 0, i32 0
-; CHECK:  %_5 = load i8, i8* %8, align 2
-; CHECK:  %9 = bitcast %union.anon* @regs to %struct.anon*
-; CHECK:  %10 = getelementptr inbounds %struct.anon, %struct.anon* %9, i32 0, i32 3
-; CHECK:  store i8 %_5, i8* %10, align 1
+; CHECK:  %_5 = load i8, ptr @regs, align 2
+; CHECK:  %2 = getelementptr inbounds %struct.anon, ptr @regs, i32 0, i32 3
+; CHECK:  store i8 %_5, ptr %2, align 1
 ; CHECK:  br label %bb_4
   %_5 = load i8, i8* getelementptr inbounds (%struct.anon, %struct.anon* bitcast (%union.anon* @regs to %struct.anon*), i32 0, i32 0), align 2
   store i8 %_5, i8* getelementptr inbounds (%struct.anon, %struct.anon* bitcast (%union.anon* @regs to %struct.anon*), i32 0, i32 3), align 1
@@ -53,14 +45,13 @@ bb_3:                                             ; preds = %bb_1
 
 bb_4:                                             ; preds = %bb_3, %bb_2
 ; CHECK-LABEL: bb_4:
-; CHECK:  %11 = getelementptr inbounds %union.anon, %union.anon* @regs, i32 0, i32 0, i32 0
-; CHECK:  %_6 = load i16, i16* %11, align 2
+; CHECK:  %_6 = load i16, ptr @regs, align 2
 ; CHECK:  %_7 = zext i16 %_6 to i32
 ; CHECK:  %_8 = icmp eq i32 %_7, 5
 ; CHECK:  %_9 = zext i1 %_8 to i32
 ; CHECK:  call void @__ikos_assert(i32 %_9)
-; CHECK:  %12 = getelementptr inbounds %union.anon, %union.anon* @regs, i32 0, i32 0, i32 1
-; CHECK:  %_10 = load i16, i16* %12, align 2
+; CHECK:  %3 = getelementptr inbounds %union.anon, ptr @regs, i32 0, i32 0, i32 1
+; CHECK:  %_10 = load i16, ptr %3, align 2
 ; CHECK:  %_11 = zext i16 %_10 to i32
 ; CHECK:  %_12 = icmp eq i32 %_11, 5
 ; CHECK:  %_13 = zext i1 %_12 to i32

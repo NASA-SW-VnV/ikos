@@ -69,12 +69,11 @@ bb_6:                                             ; preds = %bb_4
 
 bb_7:                                             ; preds = %bb_6, %bb_5
 ; CHECK-LABEL: bb_7:
-; CHECK:  %_29 = phi i8** [ %_23, %bb_5 ], [ %_27, %bb_6 ]
-; CHECK:  %_30 = load i8*, i8** %_29, align 8
-; CHECK:  store i8* %_30, i8** %_5, align 8
-; CHECK:  %_31 = load i8*, i8** %_5, align 8
-; CHECK:  %0 = getelementptr inbounds [11 x i8], [11 x i8]* @.str, i32 0, i32 0
-; CHECK:  %_32 = call i32 (i8*, ...) @printf(i8* %0, i8* %_31)
+; CHECK:  %_29 = phi ptr [ %_23, %bb_5 ], [ %_27, %bb_6 ]
+; CHECK:  %_30 = load ptr, ptr %_29, align 8
+; CHECK:  store ptr %_30, ptr %_5, align 8
+; CHECK:  %_31 = load ptr, ptr %_5, align 8
+; CHECK:  %_32 = call i32 (ptr, ...) @printf(ptr @.str, ptr %_31)
 ; CHECK:  br label %bb_21
   %_29 = phi i8** [ %_23, %bb_5 ], [ %_27, %bb_6 ]
   %_30 = load i8*, i8** %_29, align 8
@@ -109,12 +108,11 @@ bb_10:                                            ; preds = %bb_8
 
 bb_11:                                            ; preds = %bb_10, %bb_9
 ; CHECK-LABEL: bb_11:
-; CHECK:  %_46 = phi i32* [ %_40, %bb_9 ], [ %_44, %bb_10 ]
-; CHECK:  %_47 = load i32, i32* %_46, align 4
-; CHECK:  store i32 %_47, i32* %_3, align 4
-; CHECK:  %_48 = load i32, i32* %_3, align 4
-; CHECK:  %1 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.1, i32 0, i32 0
-; CHECK:  %_49 = call i32 (i8*, ...) @printf(i8* %1, i32 %_48)
+; CHECK:  %_46 = phi ptr [ %_40, %bb_9 ], [ %_44, %bb_10 ]
+; CHECK:  %_47 = load i32, ptr %_46, align 4
+; CHECK:  store i32 %_47, ptr %_3, align 4
+; CHECK:  %_48 = load i32, ptr %_3, align 4
+; CHECK:  %_49 = call i32 (ptr, ...) @printf(ptr @.str.1, i32 %_48)
 ; CHECK:  br label %bb_21
   %_46 = phi i32* [ %_40, %bb_9 ], [ %_44, %bb_10 ]
   %_47 = load i32, i32* %_46, align 4
@@ -149,14 +147,13 @@ bb_14:                                            ; preds = %bb_12
 
 bb_15:                                            ; preds = %bb_14, %bb_13
 ; CHECK-LABEL: bb_15:
-; CHECK:  %_63 = phi i32* [ %_57, %bb_13 ], [ %_61, %bb_14 ]
-; CHECK:  %_64 = load i32, i32* %_63, align 4
+; CHECK:  %_63 = phi ptr [ %_57, %bb_13 ], [ %_61, %bb_14 ]
+; CHECK:  %_64 = load i32, ptr %_63, align 4
 ; CHECK:  %_65 = trunc i32 %_64 to i8
-; CHECK:  store i8 %_65, i8* %_4, align 1
-; CHECK:  %_66 = load i8, i8* %_4, align 1
+; CHECK:  store i8 %_65, ptr %_4, align 1
+; CHECK:  %_66 = load i8, ptr %_4, align 1
 ; CHECK:  %_67 = sext i8 %_66 to i32
-; CHECK:  %2 = getelementptr inbounds [9 x i8], [9 x i8]* @.str.2, i32 0, i32 0
-; CHECK:  %_68 = call i32 (i8*, ...) @printf(i8* %2, i32 %_67)
+; CHECK:  %_68 = call i32 (ptr, ...) @printf(ptr @.str.2, i32 %_67)
 ; CHECK:  br label %bb_21
   %_63 = phi i32* [ %_57, %bb_13 ], [ %_61, %bb_14 ]
   %_64 = load i32, i32* %_63, align 4
@@ -193,12 +190,11 @@ bb_18:                                            ; preds = %bb_16
 
 bb_19:                                            ; preds = %bb_18, %bb_17
 ; CHECK-LABEL: bb_19:
-; CHECK:  %_82 = phi double* [ %_76, %bb_17 ], [ %_80, %bb_18 ]
-; CHECK:  %_83 = load double, double* %_82, align 8
-; CHECK:  store double %_83, double* %_6, align 8
-; CHECK:  %_84 = load double, double* %_6, align 8
-; CHECK:  %3 = getelementptr inbounds [11 x i8], [11 x i8]* @.str.3, i32 0, i32 0
-; CHECK:  %_85 = call i32 (i8*, ...) @printf(i8* %3, double %_84)
+; CHECK:  %_82 = phi ptr [ %_76, %bb_17 ], [ %_80, %bb_18 ]
+; CHECK:  %_83 = load double, ptr %_82, align 8
+; CHECK:  store double %_83, ptr %_6, align 8
+; CHECK:  %_84 = load double, ptr %_6, align 8
+; CHECK:  %_85 = call i32 (ptr, ...) @printf(ptr @.str.3, double %_84)
 ; CHECK:  br label %bb_21
   %_82 = phi double* [ %_76, %bb_17 ], [ %_80, %bb_18 ]
   %_83 = load double, double* %_82, align 8
@@ -236,10 +232,8 @@ define i32 @main() #0 {
 bb_1:
 ; CHECK-LABEL: @main(
 ; CHECK:  %_1 = alloca i32, align 4
-; CHECK:  store i32 0, i32* %_1, align 4
-; CHECK:  %0 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.4, i32 0, i32 0
-; CHECK:  %1 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.5, i32 0, i32 0
-; CHECK:  call void (i8*, ...) @foo(i8* %0, i8* %1, i32 1, i32 97, i32 3, double 1.123000e+00)
+; CHECK:  store i32 0, ptr %_1, align 4
+; CHECK:  call void (ptr, ...) @foo(ptr @.str.4, ptr @.str.5, i32 1, i32 97, i32 3, double 1.123000e+00)
 ; CHECK:  ret i32 0
   %_1 = alloca i32, align 4
   store i32 0, i32* %_1, align 4

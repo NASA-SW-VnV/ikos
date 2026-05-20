@@ -9,19 +9,18 @@ define i32 @main() {
 bb_1:
 ; CHECK-LABEL: bb_1:
 ; CHECK:  %_1 = alloca i32, align 4
-; CHECK:  store i32 0, i32* %_1, align 4
-; CHECK:  %0 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 0
-; CHECK:  store i8 5, i8* %0, align 8
-; CHECK:  %1 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 1
-; CHECK:  store i64 2000, i64* %1, align 8
-; CHECK:  %2 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 2
-; CHECK:  store i8 10, i8* %2, align 8
-; CHECK:  %3 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 3, i32 0
-; CHECK:  store i32 32, i32* %3, align 4
-; CHECK:  %4 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 3, i32 1
-; CHECK:  store i8 5, i8* %4, align 4
-; CHECK:  %5 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 3, i32 0
-; CHECK:  %_2 = load i32, i32* %5, align 4
+; CHECK:  store i32 0, ptr %_1, align 4
+; CHECK:  store i8 5, ptr @x, align 8
+; CHECK:  %0 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 1
+; CHECK:  store i64 2000, ptr %0, align 8
+; CHECK:  %1 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 2
+; CHECK:  store i8 10, ptr %1, align 8
+; CHECK:  %2 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 3, i32 0
+; CHECK:  store i32 32, ptr %2, align 4
+; CHECK:  %3 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 3, i32 1
+; CHECK:  store i8 5, ptr %3, align 4
+; CHECK:  %4 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 3, i32 0
+; CHECK:  %_2 = load i32, ptr %4, align 4
 ; CHECK:  %_3 = icmp sgt i32 %_2, 0
 ; CHECK:  br i1 %_3, label %bb_2, label %bb_3
   %_1 = alloca i32, align 4
@@ -37,10 +36,10 @@ bb_1:
 
 bb_2:                                             ; preds = %bb_1
 ; CHECK-LABEL: bb_2:
-; CHECK:  %6 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 3, i32 0
-; CHECK:  %_4 = load i32, i32* %6, align 4
-; CHECK:  %7 = getelementptr inbounds %struct.foo, %struct.foo* @x, i32 0, i32 2
-; CHECK:  %_5 = load i8, i8* %7, align 8
+; CHECK:  %5 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 3, i32 0
+; CHECK:  %_4 = load i32, ptr %5, align 4
+; CHECK:  %6 = getelementptr inbounds %struct.foo, ptr @x, i32 0, i32 2
+; CHECK:  %_5 = load i8, ptr %6, align 8
 ; CHECK:  %_6 = zext i8 %_5 to i32
 ; CHECK:  %_7 = add nsw i32 %_4, %_6
 ; CHECK:  %_8 = icmp eq i32 %_7, 42
