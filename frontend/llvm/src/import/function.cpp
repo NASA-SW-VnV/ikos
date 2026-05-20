@@ -243,24 +243,8 @@ void FunctionImporter::link_basic_block(BasicBlockTranslation* bb_translation) {
 }
 
 void FunctionImporter::unify_exit_blocks() {
-  // Check that there is at most one LLVM return block
-  llvm::SmallVector< llvm::BasicBlock*, 1 > llvm_return_blocks;
-
-  for (llvm::BasicBlock& bb : *this->_llvm_fun) {
-    if (llvm::isa< llvm::ReturnInst >(bb.getTerminator())) {
-      llvm_return_blocks.push_back(&bb);
-    }
-  }
-
-  if (llvm_return_blocks.size() > 1) {
-    // This should not happen if the 'mergereturn' pass was used
-    std::ostringstream buf;
-    buf << "llvm function " << this->_ar_fun->name()
-        << " has more than one return block";
-    throw ImportError(buf.str());
-  }
-
-  // Check that there is at most one AR return block
+  // Merge return blocks first. The inliner records a single return statement
+  // for a callee, so multiple AR returns must become one shared return path.
   llvm::SmallVector< ar::BasicBlock*, 1 > ar_return_blocks;
 
   for (ar::BasicBlock* bb : *this->_body) {
@@ -270,10 +254,35 @@ void FunctionImporter::unify_exit_blocks() {
   }
 
   if (ar_return_blocks.size() > 1) {
-    std::ostringstream buf;
-    buf << "ar function " << this->_ar_fun->name()
-        << " has more than one return block";
-    throw ImportError(buf.str());
+    ar::BasicBlock* unified_return = ar::BasicBlock::create(this->_body);
+    unified_return->set_name("unified-return");
+
+    ar::InternalVariable* return_var = nullptr;
+    if (!this->_ar_fun->type()->return_type()->is_void()) {
+      return_var = ar::InternalVariable::create(
+          this->_body, this->_ar_fun->type()->return_type());
+    }
+
+    auto unified_return_stmt = ar::ReturnValue::create(return_var);
+
+    for (ar::BasicBlock* bb : ar_return_blocks) {
+      auto old_return_stmt = bb->pop_back();
+      auto ret = ar::cast< ar::ReturnValue >(old_return_stmt.get());
+
+      if (return_var != nullptr) {
+        auto assign = ar::Assignment::create(return_var, ret->operand());
+        assign->set_frontend(*ret);
+        bb->push_back(std::move(assign));
+      }
+
+      if (!unified_return_stmt->has_frontend() && ret->has_frontend()) {
+        unified_return_stmt->set_frontend(*ret);
+      }
+
+      bb->add_successor(unified_return);
+    }
+
+    unified_return->push_back(std::move(unified_return_stmt));
   }
 
   // Merge all the exit blocks
@@ -920,7 +929,8 @@ void FunctionImporter::translate_getelementptr(
                       std::numeric_limits< unsigned >::max());
       auto uint_value = static_cast< unsigned >(value.getZExtValue());
       uint64_t offset = this->_llvm_data_layout.getStructLayout(struct_type)
-                            ->getElementOffset(uint_value);
+                            ->getElementOffset(uint_value)
+                            .getFixedValue();
 
       ar::IntegerConstant* ar_op =
           ar::IntegerConstant::get(this->_context,
@@ -935,7 +945,8 @@ void FunctionImporter::translate_getelementptr(
     } else {
       // Shift in a sequential type
       uint64_t size =
-          this->_llvm_data_layout.getTypeAllocSize(it.getIndexedType());
+          this->_llvm_data_layout.getTypeAllocSize(it.getIndexedType())
+              .getFixedValue();
       ar::Type* preferred_type =
           llvm::isa< llvm::Constant >(op)
               ? _ctx.type_imp->translate_type(op->getType(), ar::Signed)

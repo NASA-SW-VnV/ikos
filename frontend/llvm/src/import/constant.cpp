@@ -495,7 +495,8 @@ std::unique_ptr< ar::PointerShift > ConstantImporter::translate_getelementptr(
                       std::numeric_limits< unsigned >::max());
       auto uint_value = static_cast< unsigned >(value.getZExtValue());
       uint64_t offset = this->_llvm_data_layout.getStructLayout(struct_type)
-                            ->getElementOffset(uint_value);
+                            ->getElementOffset(uint_value)
+                            .getFixedValue();
 
       ar::IntegerConstant* ar_op =
           ar::IntegerConstant::get(this->_context,
@@ -510,7 +511,8 @@ std::unique_ptr< ar::PointerShift > ConstantImporter::translate_getelementptr(
     } else {
       // Shift in a sequential type
       uint64_t size =
-          this->_llvm_data_layout.getTypeAllocSize(it.getIndexedType());
+          this->_llvm_data_layout.getTypeAllocSize(it.getIndexedType())
+              .getFixedValue();
       ar::Value* ar_op = this->translate_constant(op, nullptr, bb, exprs);
       terms.emplace_back(ar::MachineInt(size,
                                         size_type->bit_width(),

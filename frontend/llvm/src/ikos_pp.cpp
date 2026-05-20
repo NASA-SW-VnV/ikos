@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
     pass_manager.add(ikos_pp::create_lower_select_pass());
 
     // UnifyFunctionExitNodes is no longer exposed by the legacy pass manager
-    // as of LLVM 18; ikos-pp consumers tolerate multiple exit nodes.
+    // as of LLVM 18; the importer unifies AR exit blocks instead.
   } else if (OptLevel == Basic) {
     // SSA (opt -mem2reg)
     pass_manager.add(llvm::createPromoteMemoryToRegisterPass());

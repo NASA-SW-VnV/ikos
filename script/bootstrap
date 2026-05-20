@@ -69,17 +69,17 @@
 progname=$(basename "$0")
 
 # Version settings
-ikos_version="3.1"
-gcc_required_version="4.9.2"
-clang_required_version="3.4"
-apple_clang_required_version="3.4"
+ikos_version="3.5"
+gcc_required_version="7"
+clang_required_version="5"
+apple_clang_required_version="5"
 gcc_install_version="9.2.0"
 gcc_gmp_install_version="6.1.0"
 gcc_mpfr_install_version="3.1.4"
 gcc_mpc_install_version="1.0.3"
 gcc_isl_install_version="0.18"
-cmake_required_version="3.4.3"
-cmake_install_version="3.15.2"
+cmake_required_version="3.20.0"
+cmake_install_version="3.20.6"
 zlib_install_version="1.2.11"
 ncurses_install_version="6.1"
 libedit_install_version="2.11"
@@ -172,7 +172,7 @@ function short_help() {
 
 function version() {
     echo "ikos $ikos_version"
-    echo "Copyright (c) 2011-2019 United States Government as represented by the"
+    echo "Copyright (c) 2011-2023 United States Government as represented by the"
     echo "Administrator of the National Aeronautics and Space Administration."
     echo "All Rights Reserved."
 }
@@ -2302,14 +2302,8 @@ if (( ! found_llvm )); then
     else
         progress "Installing ${cgreen}llvm $llvm_install_version"
 
-        download_extract "https://releases.llvm.org/$llvm_install_version/llvm-$llvm_install_version.src.tar.xz" \
+        download_extract "https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_install_version/llvm-project-$llvm_install_version.src.tar.xz" \
             "$build_dir/llvm-$llvm_install_version"
-        download_extract "https://releases.llvm.org/$llvm_install_version/cfe-$llvm_install_version.src.tar.xz" \
-            "$build_dir/llvm-$llvm_install_version/tools/clang"
-        download_extract "https://releases.llvm.org/$llvm_install_version/clang-tools-extra-$llvm_install_version.src.tar.xz" \
-            "$build_dir/llvm-$llvm_install_version/tools/clang/tools/extra"
-        download_extract "https://releases.llvm.org/$llvm_install_version/compiler-rt-$llvm_install_version.src.tar.xz" \
-            "$build_dir/llvm-$llvm_install_version/projects/compiler-rt"
 
         cd "$build_dir/llvm-$llvm_install_version"
 
@@ -2331,12 +2325,13 @@ if (( ! found_llvm )); then
             -DCMAKE_INSTALL_PREFIX="$install_dir/llvm-$llvm_install_version" \
             -DCMAKE_BUILD_TYPE=Release \
             -DLLVM_TARGETS_TO_BUILD=all \
+            -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
+            -DLLVM_ENABLE_RUNTIMES=compiler-rt \
             -DLLVM_INSTALL_UTILS=ON \
             -DLLVM_ENABLE_RTTI=ON \
             -DLLVM_ENABLE_EH=ON \
-            -DLLVM_ENABLE_CXX1Y=ON \
             "${cmake_extra_args[@]}" \
-            .. || error_configure llvm
+            ../llvm || error_configure llvm
 
         progress_run make || error_make llvm
 

@@ -1562,7 +1562,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
       split_struct_elements.push_back(param_type);
       split_struct = llvm::StructType::create(split_struct_elements);
 
-      if (this->_llvm_data_layout.getTypeSizeInBits(split_struct) >=
+      if (this->_llvm_data_layout.getTypeSizeInBits(split_struct)
+              .getFixedValue() >=
           di_param_type->getSizeInBits()) {
         split_struct = nullptr;
         split_struct_elements.clear();
@@ -1597,7 +1598,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_subroutine_di_type(
               this->_type_sign_imp.translate_type(param_type, ar::Signed);
           ar_params.push_back(ar_param);
 
-          if (this->_llvm_data_layout.getTypeSizeInBits(param_type) >=
+          if (this->_llvm_data_layout.getTypeSizeInBits(param_type)
+                  .getFixedValue() >=
               di_param_type->getSizeInBits()) {
             ++di_param_it;
           } else {
