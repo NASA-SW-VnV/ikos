@@ -643,43 +643,14 @@ std::unique_ptr< ar::BinaryOperation > ConstantImporter::
     element_type = ar::cast< ar::VectorType >(type)->element_type();
   }
 
-  // Derive signedness from the opcode, mirroring the instruction-side
-  // policy in FunctionImporter::translate_binary_operator. The result
-  // variable's sign is only consulted for sign-agnostic opcodes, since
-  // both operands are constants and we cannot fall back to the
-  // "first non-constant operand" heuristic used in the instruction path.
-  ar::Signedness sign;
-  switch (inst->getOpcode()) {
-    case llvm::Instruction::Add:
-    case llvm::Instruction::Sub:
-    case llvm::Instruction::Mul:
-      if (inst->hasNoUnsignedWrap() && !inst->hasNoSignedWrap()) {
-        sign = ar::Unsigned;
-      } else if (inst->hasNoSignedWrap()) {
-        sign = ar::Signed;
-      } else {
-        sign = ar::Unsigned;
-      }
-      break;
-    case llvm::Instruction::UDiv:
-    case llvm::Instruction::URem:
-      sign = ar::Unsigned;
-      break;
-    case llvm::Instruction::SDiv:
-    case llvm::Instruction::SRem:
-      sign = ar::Signed;
-      break;
-    case llvm::Instruction::Shl:
-    case llvm::Instruction::LShr:
-    case llvm::Instruction::AShr:
-    case llvm::Instruction::And:
-    case llvm::Instruction::Or:
-    case llvm::Instruction::Xor:
-      sign = ar::cast< ar::IntegerType >(element_type)->sign();
-      break;
-    default:
-      throw ImportError("unsupported llvm constant binary operator");
-  }
+  // Derive signedness from the result variable's element type. Unlike
+  // FunctionImporter::translate_binary_operator, this path returns a single
+  // statement to the caller and cannot emit a temporary + bitcast pair, so
+  // the AR operator's sign must agree with the result variable's sign.
+  // convert_constant_int_bin_op throws when the LLVM opcode requires the
+  // opposite sign (e.g. UDiv reached with a Signed result), which surfaces
+  // the mismatch instead of silently emitting wrong arithmetic.
+  ar::Signedness sign = ar::cast< ar::IntegerType >(element_type)->sign();
 
   ar::Value* left = this->translate_constant(
       llvm::cast< llvm::Constant >(inst->getOperand(0)), type, bb, exprs);
