@@ -416,6 +416,21 @@ void FunctionImporter::translate_alloca(BasicBlockTranslation* bb_translation,
   auto var_type = ar::cast< ar::PointerType >(this->infer_type(alloca));
   ar::Type* allocated_type = var_type->pointee();
 
+  // infer_type can fall back to OpaqueType under opaque pointers for
+  // compiler-generated allocas (no llvm.dbg.declare) whose only use-hints
+  // come from callees whose own parameter types resolved to ptr-to-opaque
+  // (translate_di_only failing to find a templated C++ struct by name).
+  // The LLVM-side allocated type is authoritative from the IR, so prefer
+  // it when the inferred pointee is opaque.
+  if (allocated_type->is_opaque()) {
+    ar::Type* fallback_pointee =
+        _ctx.type_imp->translate_type(alloca->getAllocatedType(), ar::Signed);
+    if (!fallback_pointee->is_opaque()) {
+      allocated_type = fallback_pointee;
+      var_type = ar::PointerType::get(this->_context, allocated_type);
+    }
+  }
+
   // Translate local variable
   ar::LocalVariable* var =
       ar::LocalVariable::create(this->_ar_fun,

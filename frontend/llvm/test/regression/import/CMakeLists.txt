@@ -31,12 +31,14 @@ function(add_import_test test_name test_directory)
 endfunction()
 
 # Disabled while opaque-pointer type recovery in the LLVM 18 importer is
-# incomplete. The import tests embed expected AR output as ; CHECK: lines, and
-# many currently fail because infer_type cannot recover struct / scalar element
-# types from opaque-pointer allocas in all cases (e.g. aggregate-in-reg-1.ll
-# expects {0:float,4:float,8:float}* for an alloca, but the importer emits
-# si8*). Re-enable once the importer covers the remaining cases and the
-# baselines are regenerated.
+# incomplete. The import tests embed expected AR output as ; CHECK: lines.
+# Alloca pointee recovery is now wired (translate_alloca falls back to the
+# LLVM-side allocated type when infer_type returns ptr-to-opaque), but other
+# paths (e.g. GEP/ptrshift results, function-parameter pointee recovery
+# through translate_di_only) still produce ar::OpaqueType for templated C++
+# struct pointers because lookup_struct_by_di does not yet walk the DI scope
+# chain to build namespace-qualified LLVM struct names. Re-enable once those
+# paths are covered and the baselines are regenerated for opaque pointers.
 add_import_test(no-optimization no_optimization)
 add_import_test(basic-optimization basic_optimization)
 add_import_test(aggressive-optimization aggressive_optimization)
