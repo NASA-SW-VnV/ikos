@@ -263,6 +263,13 @@ private:
       ar::BasicBlock* bb,
       ConstantExpressionList& exprs);
 
+  /// \brief Translate a llvm::ConstantExpr into an ar::BinaryOperation
+  std::unique_ptr< ar::BinaryOperation > translate_binary_operator(
+      ar::InternalVariable* result,
+      llvm::BinaryOperator* inst,
+      ar::BasicBlock* bb,
+      ConstantExpressionList& exprs);
+
 public:
   /// \brief Translate an integer llvm::Constant into an ar::Value and cast it
   /// to the given ar::IntegerType

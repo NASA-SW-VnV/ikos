@@ -438,6 +438,9 @@ std::unique_ptr< ar::Statement > ConstantImporter::
     } else if (auto ptrtoint =
                    llvm::dyn_cast< llvm::PtrToIntInst >(inst.get())) {
       return this->translate_ptrtoint(result, ptrtoint, bb, exprs);
+    } else if (auto binary_op =
+                   llvm::dyn_cast< llvm::BinaryOperator >(inst.get())) {
+      return this->translate_binary_operator(result, binary_op, bb, exprs);
     } else {
       throw ImportError("unexpected llvm constant expression");
     }
@@ -562,6 +565,149 @@ std::unique_ptr< ar::UnaryOperation > ConstantImporter::translate_ptrtoint(
                                         : ar::UnaryOperation::PtrToUI,
                                     result,
                                     ar_op);
+}
+
+static ar::BinaryOperation::Operator convert_constant_int_bin_op(
+    llvm::Instruction::BinaryOps op, ar::Signedness sign) {
+  if (sign == ar::Unsigned) {
+    switch (op) {
+      case llvm::Instruction::Add:
+        return ar::BinaryOperation::UAdd;
+      case llvm::Instruction::Sub:
+        return ar::BinaryOperation::USub;
+      case llvm::Instruction::Mul:
+        return ar::BinaryOperation::UMul;
+      case llvm::Instruction::UDiv:
+        return ar::BinaryOperation::UDiv;
+      case llvm::Instruction::URem:
+        return ar::BinaryOperation::URem;
+      case llvm::Instruction::Shl:
+        return ar::BinaryOperation::UShl;
+      case llvm::Instruction::LShr:
+        return ar::BinaryOperation::ULShr;
+      case llvm::Instruction::AShr:
+        return ar::BinaryOperation::UAShr;
+      case llvm::Instruction::And:
+        return ar::BinaryOperation::UAnd;
+      case llvm::Instruction::Or:
+        return ar::BinaryOperation::UOr;
+      case llvm::Instruction::Xor:
+        return ar::BinaryOperation::UXor;
+      default:
+        break;
+    }
+  } else {
+    switch (op) {
+      case llvm::Instruction::Add:
+        return ar::BinaryOperation::SAdd;
+      case llvm::Instruction::Sub:
+        return ar::BinaryOperation::SSub;
+      case llvm::Instruction::Mul:
+        return ar::BinaryOperation::SMul;
+      case llvm::Instruction::SDiv:
+        return ar::BinaryOperation::SDiv;
+      case llvm::Instruction::SRem:
+        return ar::BinaryOperation::SRem;
+      case llvm::Instruction::Shl:
+        return ar::BinaryOperation::SShl;
+      case llvm::Instruction::LShr:
+        return ar::BinaryOperation::SLShr;
+      case llvm::Instruction::AShr:
+        return ar::BinaryOperation::SAShr;
+      case llvm::Instruction::And:
+        return ar::BinaryOperation::SAnd;
+      case llvm::Instruction::Or:
+        return ar::BinaryOperation::SOr;
+      case llvm::Instruction::Xor:
+        return ar::BinaryOperation::SXor;
+      default:
+        break;
+    }
+  }
+
+  throw ImportError("unsupported llvm constant binary operator");
+}
+
+std::unique_ptr< ar::BinaryOperation > ConstantImporter::
+    translate_binary_operator(ar::InternalVariable* result,
+                              llvm::BinaryOperator* inst,
+                              ar::BasicBlock* bb,
+                              ConstantExpressionList& exprs) {
+  if (!inst->getType()->isIntOrIntVectorTy()) {
+    throw ImportError("unsupported llvm constant binary operator type");
+  }
+
+  ar::Type* type = result->type();
+  ar::Type* element_type = type;
+  if (type->is_vector()) {
+    element_type = ar::cast< ar::VectorType >(type)->element_type();
+  }
+
+  // Derive signedness from the opcode, mirroring the instruction-side
+  // policy in FunctionImporter::translate_binary_operator. The result
+  // variable's sign is only consulted for sign-agnostic opcodes, since
+  // both operands are constants and we cannot fall back to the
+  // "first non-constant operand" heuristic used in the instruction path.
+  ar::Signedness sign;
+  switch (inst->getOpcode()) {
+    case llvm::Instruction::Add:
+    case llvm::Instruction::Sub:
+    case llvm::Instruction::Mul:
+      if (inst->hasNoUnsignedWrap() && !inst->hasNoSignedWrap()) {
+        sign = ar::Unsigned;
+      } else if (inst->hasNoSignedWrap()) {
+        sign = ar::Signed;
+      } else {
+        sign = ar::Unsigned;
+      }
+      break;
+    case llvm::Instruction::UDiv:
+    case llvm::Instruction::URem:
+      sign = ar::Unsigned;
+      break;
+    case llvm::Instruction::SDiv:
+    case llvm::Instruction::SRem:
+      sign = ar::Signed;
+      break;
+    case llvm::Instruction::Shl:
+    case llvm::Instruction::LShr:
+    case llvm::Instruction::AShr:
+    case llvm::Instruction::And:
+    case llvm::Instruction::Or:
+    case llvm::Instruction::Xor:
+      sign = ar::cast< ar::IntegerType >(element_type)->sign();
+      break;
+    default:
+      throw ImportError("unsupported llvm constant binary operator");
+  }
+
+  ar::Value* left = this->translate_constant(
+      llvm::cast< llvm::Constant >(inst->getOperand(0)), type, bb, exprs);
+  ar::Value* right = this->translate_constant(
+      llvm::cast< llvm::Constant >(inst->getOperand(1)), type, bb, exprs);
+
+  // hasNoSignedWrap / hasNoUnsignedWrap / isExact unconditionally cast
+  // 'this' to OverflowingBinaryOperator / PossiblyExactOperator inside
+  // LLVM, so they must be gated by dyn_cast on the generic BinaryOperator.
+  bool no_wrap = false;
+  if (auto wrapping_inst =
+          llvm::dyn_cast< llvm::OverflowingBinaryOperator >(inst)) {
+    no_wrap = wrapping_inst->hasNoSignedWrap() ||
+              wrapping_inst->hasNoUnsignedWrap();
+  }
+
+  bool exact = false;
+  if (auto exact_inst = llvm::dyn_cast< llvm::PossiblyExactOperator >(inst)) {
+    exact = exact_inst->isExact();
+  }
+
+  return ar::BinaryOperation::create(
+      convert_constant_int_bin_op(inst->getOpcode(), sign),
+      result,
+      left,
+      right,
+      no_wrap,
+      exact);
 }
 
 ar::Value* ConstantImporter::translate_cast_integer_constant(
