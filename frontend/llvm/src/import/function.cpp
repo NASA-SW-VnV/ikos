@@ -1776,9 +1776,15 @@ ar::Value* FunctionImporter::translate_value(
 
 ar::InlineAssemblyConstant* FunctionImporter::translate_inline_asm(
     llvm::InlineAsm* inline_asm, ar::Type* type) {
-  // If no specific type is needed, just use translate_type(cst->getType())
+  // Build a pointer-to-function type from the InlineAsm's function type.
+  // Under opaque pointers inline_asm->getType() is just 'ptr', so the
+  // generic translate_type would recover si8* and the AR type checker
+  // would reject it as a Call's called value ("not a function pointer").
   if (type == nullptr) {
-    type = _ctx.type_imp->translate_type(inline_asm->getType(), ar::Signed);
+    ar::Type* fun_ty =
+        _ctx.type_imp->translate_type(inline_asm->getFunctionType(),
+                                      ar::Signed);
+    type = ar::PointerType::get(this->_context, fun_ty);
   }
 
   return ar::InlineAssemblyConstant::get(this->_context,
