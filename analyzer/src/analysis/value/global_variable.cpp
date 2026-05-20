@@ -78,6 +78,44 @@ bool is_initialized(ar::GlobalVariable* gv, GlobalsInitPolicy policy) {
   }
 }
 
+/// \brief Look through a chain of bitcasts in the init block back to a
+/// FunctionPointerConstant operand, if any. Returns nullptr if \p value is not
+/// a function pointer (directly or via bitcasts).
+///
+/// Under opaque pointers the importer often wraps function pointers placed
+/// into typed-erased slots (e.g. the ptr fields of llvm.global_ctors) in a
+/// bitcast, so the second field of each global_ctors entry can be an
+/// InternalVariable rather than a direct FunctionPointerConstant.
+static ar::Function* resolve_function_pointer(
+    ar::Value* value, ar::BasicBlock* init_block) {
+  while (true) {
+    if (auto* fp = dyn_cast< ar::FunctionPointerConstant >(value)) {
+      return fp->function();
+    }
+    auto* var = dyn_cast< ar::InternalVariable >(value);
+    if (var == nullptr) {
+      return nullptr;
+    }
+
+    // Find the bitcast in the init block that produces `var`.
+    ar::Value* operand = nullptr;
+    for (ar::Statement* s : *init_block) {
+      auto* unary = dyn_cast< ar::UnaryOperation >(s);
+      if (unary == nullptr || unary->op() != ar::UnaryOperation::Bitcast ||
+          unary->result() != var) {
+        continue;
+      }
+      operand = unary->operand();
+      break;
+    }
+
+    if (operand == nullptr) {
+      return nullptr;
+    }
+    value = operand;
+  }
+}
+
 /// \brief Return the list of pair (function, priority) for arrays
 /// ar.global_ctors or ar.global_dtors, given the global variable
 static std::vector< std::pair< ar::Function*, MachineInt > > global_cdtors(
@@ -117,13 +155,15 @@ static std::vector< std::pair< ar::Function*, MachineInt > > global_cdtors(
     ++it;
     ar::Value* snd = it->value;
 
-    if (!isa< ar::IntegerConstant >(fst) ||
-        !isa< ar::FunctionPointerConstant >(snd)) {
+    if (!isa< ar::IntegerConstant >(fst)) {
+      continue;
+    }
+    ar::Function* fun = resolve_function_pointer(snd, bb);
+    if (fun == nullptr) {
       continue;
     }
 
     const MachineInt& priority = cast< ar::IntegerConstant >(fst)->value();
-    ar::Function* fun = cast< ar::FunctionPointerConstant >(snd)->function();
     entries.emplace_back(fun, priority);
   }
 
