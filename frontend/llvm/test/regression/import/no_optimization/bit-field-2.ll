@@ -3,19 +3,9 @@ source_filename = "bit-field-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.anon = type { i8, i32 }
 
 @b = global <{ [1 x { [4 x i8], i32 }], [1 x %struct.anon], [1 x %struct.anon], [1 x %struct.anon], [1 x %struct.anon], [1 x %struct.anon] }> <{ [1 x { [4 x i8], i32 }] [{ [4 x i8], i32 } { [4 x i8] undef, i32 0 }], [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer, [1 x %struct.anon] zeroinitializer }>, align 16, !dbg !0
-; CHECK: define <{0: [1 x {0: [4 x si8], 4: si32}], 8: [1 x {0: si8, 4: si32}], 16: [1 x {0: si8, 4: si32}], 24: [1 x {0: si8, 4: si32}], 32: [1 x {0: si8, 4: si32}], 40: [1 x {0: si8, 4: si32}]}>* @b, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @b, {0: [{0: undef, 4: 0}], 8: aggregate_zero, 16: aggregate_zero, 24: aggregate_zero, 32: aggregate_zero, 40: aggregate_zero}, align 1
-; CHECK: }
-; CHECK: }
 
 !llvm.dbg.cu = !{!2}
 !llvm.module.flags = !{!14, !15, !16, !17}
@@ -40,3 +30,14 @@ target triple = "x86_64-apple-macosx10.14.0"
 !16 = !{i32 1, !"wchar_size", i32 4}
 !17 = !{i32 7, !"PIC Level", i32 2}
 !18 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define <{0: [1 x {0: [4 x si8], 4: si32}], 8: [1 x {0: si8, 4: si32}], 16: [1 x {0: si8, 4: si32}], 24: [1 x {0: si8, 4: si32}], 32: [1 x {0: si8, 4: si32}], 40: [1 x {0: si8, 4: si32}]}>* @b, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @b, {0: [{0: undef, 4: 0}], 8: aggregate_zero, 16: aggregate_zero, 24: aggregate_zero, 32: aggregate_zero, 40: aggregate_zero}, align 1
+; CHECK: }
+; CHECK: }
