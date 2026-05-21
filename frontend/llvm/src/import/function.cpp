@@ -71,6 +71,10 @@ namespace import {
 // translate_call_helper can consult it when picking the call's result type.
 static bool is_valid_bitcast(ar::Type* from, ar::Type* to);
 
+static uint64_t alignment_value(llvm::MaybeAlign align) {
+  return align ? align->value() : 0;
+}
+
 ar::Code* FunctionImporter::translate_body() {
   // Translate parameters
   this->translate_parameters();
@@ -558,8 +562,8 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
-                                       memcpy->getDestAlignment(),
-                                       memcpy->getSourceAlignment(),
+                                       alignment_value(memcpy->getDestAlign()),
+                                       alignment_value(memcpy->getSourceAlign()),
                                        memcpy->isVolatile());
     stmt->set_frontend< llvm::Value >(memcpy);
     bb_translation->add_statement(std::move(stmt));
@@ -579,8 +583,8 @@ void FunctionImporter::translate_intrinsic_call(
                                        dest,
                                        src,
                                        length,
-                                       memmove->getDestAlignment(),
-                                       memmove->getSourceAlignment(),
+                                       alignment_value(memmove->getDestAlign()),
+                                       alignment_value(memmove->getSourceAlign()),
                                        memmove->isVolatile());
     stmt->set_frontend< llvm::Value >(memmove);
     bb_translation->add_statement(std::move(stmt));
@@ -599,7 +603,7 @@ void FunctionImporter::translate_intrinsic_call(
                                       dest,
                                       value,
                                       length,
-                                      memset->getDestAlignment(),
+                                      alignment_value(memset->getDestAlign()),
                                       memset->isVolatile());
     stmt->set_frontend< llvm::Value >(memset);
     bb_translation->add_statement(std::move(stmt));
@@ -2106,6 +2110,14 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use(
     return this->infer_type_hint_use_binary_operator(use, binary_op);
   } else if (auto cmp = llvm::dyn_cast< llvm::CmpInst >(user)) {
     return this->infer_type_hint_use_cmp(use, cmp);
+  } else if (llvm::isa< llvm::VAArgInst >(user)) {
+    if (use.getOperandNo() == 0) {
+      ar::IntegerType* si8_ty = ar::IntegerType::si8(this->_context);
+      ar::PointerType* void_ptr_ty = ar::PointerType::get(this->_context,
+                                                          si8_ty);
+      return {void_ptr_ty, 5};
+    }
+    throw ImportError("unexpected operand to llvm va_arg");
   } else if (auto br = llvm::dyn_cast< llvm::BranchInst >(user)) {
     return this->infer_type_hint_use_branch(use, br);
   } else if (auto ret = llvm::dyn_cast< llvm::ReturnInst >(user)) {
@@ -2186,14 +2198,14 @@ FunctionImporter::TypeHint FunctionImporter::infer_type_hint_use_store(
         return {};
       }
     }
-    return hint;
+    return {hint.type, hint.score};
   } else if (use.getOperandNo() == 1) {
     // value is the pointer operand
     TypeHint hint = this->infer_type_hint_operand(store->getValueOperand());
     if (!hint.ignore()) {
       hint.type = ar::PointerType::get(this->_context, hint.type);
     }
-    return hint;
+    return {hint.type, hint.score};
   } else {
     throw ImportError("unexpected operand to llvm store");
   }

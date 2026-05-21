@@ -215,6 +215,9 @@ private:
                                   Result if_null,
                                   const value::AbstractDomain& inv);
 
+  /// \brief Check a va_arg read for buffer overflow
+  CheckResult check_var_arg_get(ar::VarArgGet* stmt);
+
   /// \brief Check a `va_list` access (read/write) for buffer overflow
   ///
   /// \returns The analysis check result (Ok, Warning, Error, Unreachable)

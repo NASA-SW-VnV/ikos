@@ -38,7 +38,7 @@
 #
 #*****************************************************************************/
 
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
@@ -88,7 +88,7 @@ if (CUSTOM_BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS TRUE)
 endif()
 
-find_package(Boost 1.55.0 REQUIRED
+find_package(Boost 1.74.0 REQUIRED
              COMPONENTS filesystem thread)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
@@ -108,7 +108,8 @@ if (APRON_FOUND)
   add_definitions("-DHAS_APRON")
 endif()
 
-find_package(PythonInterp REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
 
 find_package(Core REQUIRED)
 include_directories(${CORE_INCLUDE_DIR})

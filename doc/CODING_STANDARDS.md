@@ -6,7 +6,7 @@ This document describes a few coding standards that are used in IKOS.
 C++ Standard Version
 --------------------
 
-IKOS is currently written in C++14.
+IKOS is currently written in C++17.
 
 Source Code Formatting
 ----------------------

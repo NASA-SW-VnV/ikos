@@ -743,6 +743,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
     llvm::DITypeRefArray di_params = sub->getTypeArray();
     ar::Type* ar_ret_ty = ar::VoidType::get(this->_context);
     ar::FunctionType::ParamTypes ar_params;
+    bool is_var_arg = false;
     bool first = true;
     for (auto it = di_params.begin(), et = di_params.end(); it != et; ++it) {
       llvm::DIType* di_param = *it;
@@ -752,6 +753,9 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
                               ar::VoidType::get(this->_context))
                         : this->translate_di_only(di_param);
         first = false;
+      } else if (di_param == nullptr) {
+        is_var_arg = true;
+        break;
       } else {
         ar_params.push_back(this->translate_di_only(di_param));
       }
@@ -759,7 +763,7 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
     return ar::FunctionType::get(this->_context,
                                  ar_ret_ty,
                                  ar_params,
-                                 /*is_var_arg=*/false);
+                                 is_var_arg);
   }
   return ar::OpaqueType::create(this->_context);
 }

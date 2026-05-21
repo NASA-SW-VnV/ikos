@@ -56,9 +56,9 @@ IKOS Analyzer can be installed independently from the other components, but we r
 To build and run the analyzer, you will need the following dependencies:
 
 * A C++ compiler that supports C++17 (gcc >= 7 or clang >= 5)
-* CMake >= 3.5
+* CMake >= 3.20
 * GMP >= 4.3.1
-* Boost >= 1.55
+* Boost >= 1.74
 * Python >= 3.3
 * SQLite >= 3.6.20
 * TBB >= 2

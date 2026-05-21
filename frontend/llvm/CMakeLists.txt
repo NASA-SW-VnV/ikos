@@ -38,7 +38,7 @@
 #
 #*****************************************************************************/
 
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
@@ -86,7 +86,7 @@ if (CUSTOM_BOOST_ROOT)
   set(Boost_NO_SYSTEM_PATHS TRUE)
 endif()
 
-find_package(Boost 1.55.0 REQUIRED
+find_package(Boost 1.74.0 REQUIRED
              COMPONENTS filesystem)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 

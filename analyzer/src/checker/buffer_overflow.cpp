@@ -256,9 +256,11 @@ std::vector< BufferOverflowChecker::CheckResult > BufferOverflowChecker::
                                      inv)};
     }
     case ar::Intrinsic::VarArgStart:
-    case ar::Intrinsic::VarArgEnd:
-    case ar::Intrinsic::VarArgGet: {
+    case ar::Intrinsic::VarArgEnd: {
       return {this->check_va_list_access(call, call->argument(0), inv)};
+    }
+    case ar::Intrinsic::VarArgGet: {
+      return {this->check_var_arg_get(ar::cast< ar::VarArgGet >(call))};
     }
     case ar::Intrinsic::VarArgCopy: {
       return {this->check_va_list_access(call, call->argument(0), inv),
@@ -1234,6 +1236,15 @@ BufferOverflowChecker::CheckResult BufferOverflowChecker::check_string_access(
   /// TODO(marthaud): Improve checks for strings.
   ikos_ignore(max_access_size);
   return this->check_mem_access(stmt, pointer, this->_size_one, if_null, inv);
+}
+
+BufferOverflowChecker::CheckResult BufferOverflowChecker::check_var_arg_get(
+    ar::VarArgGet* stmt) {
+  ar::IntegerConstant* access_size = this->store_size(stmt->result()->type());
+  return {CheckKind::BufferOverflow,
+          Result::Warning,
+          {stmt->operand(), access_size},
+          {}};
 }
 
 BufferOverflowChecker::CheckResult BufferOverflowChecker::check_va_list_access(

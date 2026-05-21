@@ -18,9 +18,9 @@ IKOS Abstract Representation is a C++ library. It can be installed independently
 To build IKOS AR, you will need the following dependencies:
 
 * A C++ compiler that supports C++17 (gcc >= 7 or clang >= 5)
-* CMake >= 3.5
+* CMake >= 3.20
 * GMP >= 4.3.1
-* Boost >= 1.55
+* Boost >= 1.74
 * IKOS Core
 
 ### Build and Install
