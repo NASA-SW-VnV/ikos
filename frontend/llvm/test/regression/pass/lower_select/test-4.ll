@@ -12,11 +12,11 @@ bb_2:                                             ; preds = %bb_1
 
 bb_3:                                             ; preds = %bb_1
 ; CHECK-LABEL: bb_3:
-; CHECK:  %_3 = bitcast i8* %_1 to i32*
-; CHECK:  store i32 9, i32* %_3, align 4
-; CHECK:  %_4 = getelementptr inbounds i8, i8* %_1, i64 4
-; CHECK:  %_5 = bitcast i8* %_4 to i32*
-; CHECK:  store i32 20, i32* %_5, align 4
+; CHECK:  %_3 = bitcast ptr %_1 to ptr
+; CHECK:  store i32 9, ptr %_3, align 4
+; CHECK:  %_4 = getelementptr inbounds i8, ptr %_1, i64 4
+; CHECK:  %_5 = bitcast ptr %_4 to ptr
+; CHECK:  store i32 20, ptr %_5, align 4
 ; CHECK:  %_6 = call i32 (...) @__ikos_unknown()
 ; CHECK:  %_7 = icmp ne i32 %_6, 0
 ; CHECK:  br i1 %_7, label %bb_3.TrueSelect, label %bb_3.FalseSelect
@@ -47,9 +47,9 @@ bb_3:                                             ; preds = %bb_1
 ; CHECK:   br label %bb_3.AfterSelect
 
 ; CHECK: bb_3.AfterSelect:                                 ; preds = %bb_3.FalseSelect, %bb_3.TrueSelect
-; CHECK:   %.sink.phi = phi i32* [ %_3, %bb_3.TrueSelect ], [ %_5, %bb_3.FalseSelect ]
-; CHECK:   %_8 = load i32, i32* %.sink.phi, align 4
-; CHECK:   %_9 = load i32, i32* %_5, align 4
+; CHECK:   %.sink.phi = phi ptr [ %_3, %bb_3.TrueSelect ], [ %_5, %bb_3.FalseSelect ]
+; CHECK:   %_8 = load i32, ptr %.sink.phi, align 4
+; CHECK:   %_9 = load i32, ptr %_5, align 4
 ; CHECK:   %.off = add i32 %_8, -9
 ; CHECK:   %_10 = icmp ult i32 %.off, 12
 ; CHECK:   %_11 = zext i1 %_10 to i32

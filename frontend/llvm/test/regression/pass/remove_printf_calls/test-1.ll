@@ -36,11 +36,11 @@ bb_4:                                             ; preds = %bb_3
 
 bb_5:                                             ; preds = %bb_2
 ; CHECK-LABEL: bb_5:
-; CHECK:  %_14 = load i32, i32* %_4, align 4
+; CHECK:  %_14 = load i32, ptr %_4, align 4
 ; CHECK:  %_15 = sub nsw i32 %_14, 1
 ; CHECK:  %_16 = sext i32 %_15 to i64
-; CHECK:  %_17 = getelementptr inbounds [10 x i32], [10 x i32]* %_5, i64 0, i64 %_16
-; CHECK:  %_18 = load i32, i32* %_17, align 4
+; CHECK:  %_17 = getelementptr inbounds [10 x i32], ptr %_5, i64 0, i64 %_16
+; CHECK:  %_18 = load i32, ptr %_17, align 4
 ; CHECK:  ret i32 0
   %_14 = load i32, i32* %_4, align 4
   %_15 = sub nsw i32 %_14, 1

@@ -49,10 +49,10 @@ bb_6:                                             ; preds = %bb_5
 
 bb_7:                                             ; preds = %bb_4
 ; CHECK-LABEL: bb_7:
-; CHECK:  %_19 = load i32*, i32** %_4, align 8
-; CHECK:  %_20 = getelementptr inbounds i32, i32* %_19, i64 9
-; CHECK:  %_21 = load i32, i32* %_20, align 4
-; CHECK:  store i32 0, i32* %_1, align 4
+; CHECK:  %_19 = load ptr, ptr %_4, align 8
+; CHECK:  %_20 = getelementptr inbounds i32, ptr %_19, i64 9
+; CHECK:  %_21 = load i32, ptr %_20, align 4
+; CHECK:  store i32 0, ptr %_1, align 4
 ; CHECK:  br label %bb_8
   %_19 = load i32*, i32** %_4, align 8
   %_20 = getelementptr inbounds i32, i32* %_19, i64 9

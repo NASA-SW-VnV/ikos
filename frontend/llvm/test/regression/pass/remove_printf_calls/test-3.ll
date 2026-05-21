@@ -107,18 +107,18 @@ bb_14:                                            ; preds = %bb_16, %bb_13
 
 bb_15:                                            ; preds = %bb_14
 ; CHECK-LABEL: b_15:
-; CHECK:  %_46 = getelementptr inbounds %struct.foo, %struct.foo* %_7, i32 0, i32 2
-; CHECK:  %_47 = load i32, i32* %_4, align 4
+; CHECK:  %_46 = getelementptr inbounds %struct.foo, ptr %_7, i32 0, i32 2
+; CHECK:  %_47 = load i32, ptr %_4, align 4
 ; CHECK:  %_48 = sext i32 %_47 to i64
-; CHECK:  %_49 = getelementptr inbounds [10 x [10 x [9 x i32]]], [10 x [10 x [9 x i32]]]* %_46, i64 0, i64 %_48
-; CHECK:  %_50 = load i32, i32* %_4, align 4
+; CHECK:  %_49 = getelementptr inbounds [10 x [10 x [9 x i32]]], ptr %_46, i64 0, i64 %_48
+; CHECK:  %_50 = load i32, ptr %_4, align 4
 ; CHECK:  %_51 = sext i32 %_50 to i64
-; CHECK:  %_52 = getelementptr inbounds [10 x [9 x i32]], [10 x [9 x i32]]* %_49, i64 0, i64 %_51
-; CHECK:  %_53 = load i32, i32* %_4, align 4
+; CHECK:  %_52 = getelementptr inbounds [10 x [9 x i32]], ptr %_49, i64 0, i64 %_51
+; CHECK:  %_53 = load i32, ptr %_4, align 4
 ; CHECK:  %_54 = sub nsw i32 %_53, 1
 ; CHECK:  %_55 = sext i32 %_54 to i64
-; CHECK:  %_56 = getelementptr inbounds [9 x i32], [9 x i32]* %_52, i64 0, i64 %_55
-; CHECK:  %_57 = load i32, i32* %_56, align 4
+; CHECK:  %_56 = getelementptr inbounds [9 x i32], ptr %_52, i64 0, i64 %_55
+; CHECK:  %_57 = load i32, ptr %_56, align 4
 ; CHECK:  br label %bb_16
   %_46 = getelementptr inbounds %struct.foo, %struct.foo* %_7, i32 0, i32 2
   %_47 = load i32, i32* %_4, align 4

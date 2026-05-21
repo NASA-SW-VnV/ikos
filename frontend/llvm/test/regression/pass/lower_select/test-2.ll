@@ -28,18 +28,18 @@ bb_1:
 ; CHECK:   br label %bb_1.AfterSelect
 
 ; CHECK: bb_1.AfterSelect:                                 ; preds = %bb_1.FalseSelect, %bb_1.TrueSelect
-; CHECK:   %malloc.my_malloc.phi = phi i8* (i64)* [ @malloc, %bb_1.TrueSelect ], [ @my_malloc, %bb_1.FalseSelect ]
-; CHECK:   %_3 = call i8* %malloc.my_malloc.phi(i64 8)
-; CHECK:   %_4 = icmp eq i8* %_3, null
+; CHECK:   %malloc.my_malloc.phi = phi ptr [ @malloc, %bb_1.TrueSelect ], [ @my_malloc, %bb_1.FalseSelect ]
+; CHECK:   %_3 = call ptr %malloc.my_malloc.phi(i64 8)
+; CHECK:   %_4 = icmp eq ptr %_3, null
 ; CHECK:   br i1 %_4, label %bb_3, label %bb_2
 
 bb_2:                                             ; preds = %bb_1
 ; CHECK-LABEL: bb_2:                                             ; preds = %bb_1.AfterSelect
-; CHECK:   %_5 = bitcast i8* %_3 to i32*
-; CHECK:   store i32 1, i32* %_5, align 4
-; CHECK:   %_6 = getelementptr inbounds i8, i8* %_3, i64 4
-; CHECK:   %_7 = bitcast i8* %_6 to i32*
-; CHECK:   store i32 2, i32* %_7, align 4
+; CHECK:   %_5 = bitcast ptr %_3 to ptr
+; CHECK:   store i32 1, ptr %_5, align 4
+; CHECK:   %_6 = getelementptr inbounds i8, ptr %_3, i64 4
+; CHECK:   %_7 = bitcast ptr %_6 to ptr
+; CHECK:   store i32 2, ptr %_7, align 4
 ; CHECK:   br label %bb_3
   %_5 = bitcast i8* %_3 to i32*
   store i32 1, i32* %_5, align 4

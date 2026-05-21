@@ -3,11 +3,11 @@ target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 define internal fastcc i32 @foo(i32* %arg_1, i32* %arg_2, i32* %arg_3) unnamed_addr {
 bb_1:
 ; CHECK-LABEL: bb_1:
-; CHECK:  %_1 = getelementptr inbounds i32, i32* %arg_1, i64 1
-; CHECK:  %_2 = getelementptr inbounds i32, i32* %arg_2, i64 2
-; CHECK:  %_3 = icmp eq i32* %_1, %_2
-; CHECK:  %_4 = getelementptr inbounds i32, i32* %arg_2, i64 -8
-; CHECK:  %_5 = getelementptr inbounds i32, i32* %arg_1, i64 43
+; CHECK:  %_1 = getelementptr inbounds i32, ptr %arg_1, i64 1
+; CHECK:  %_2 = getelementptr inbounds i32, ptr %arg_2, i64 2
+; CHECK:  %_3 = icmp eq ptr %_1, %_2
+; CHECK:  %_4 = getelementptr inbounds i32, ptr %arg_2, i64 -8
+; CHECK:  %_5 = getelementptr inbounds i32, ptr %arg_1, i64 43
 ; CHECK:  br i1 %_3, label %bb_1.TrueSelect, label %bb_1.FalseSelect
   %_1 = getelementptr inbounds i32, i32* %arg_1, i64 1
   %_2 = getelementptr inbounds i32, i32* %arg_2, i64 2
@@ -40,7 +40,7 @@ bb_1:
 ; CHECK:   br label %bb_1.AfterSelect
 
 ; CHECK: bb_1.AfterSelect:                                 ; preds = %bb_1.FalseSelect, %bb_1.TrueSelect
-; CHECK:   %.01.phi = phi i32* [ %_5, %bb_1.TrueSelect ], [ %_1, %bb_1.FalseSelect ]
+; CHECK:   %.01.phi = phi ptr [ %_5, %bb_1.TrueSelect ], [ %_1, %bb_1.FalseSelect ]
 ; CHECK:   br i1 %_3, label %bb_1.AfterSelect.TrueSelect, label %bb_1.AfterSelect.FalseSelect
 
 ; CHECK: bb_1.AfterSelect.TrueSelect:                      ; preds = %bb_1.AfterSelect
@@ -50,22 +50,22 @@ bb_1:
 ; CHECK:   br label %bb_1.AfterSelect.AfterSelect
 
 ; CHECK: bb_1.AfterSelect.AfterSelect:                     ; preds = %bb_1.AfterSelect.FalseSelect, %bb_1.AfterSelect.TrueSelect
-; CHECK:   %.0.phi = phi i32* [ %_4, %bb_1.AfterSelect.TrueSelect ], [ %_2, %bb_1.AfterSelect.FalseSelect ]
-; CHECK:   %_6 = load i32, i32* %.01.phi, align 4
+; CHECK:   %.0.phi = phi ptr [ %_4, %bb_1.AfterSelect.TrueSelect ], [ %_2, %bb_1.AfterSelect.FalseSelect ]
+; CHECK:   %_6 = load i32, ptr %.01.phi, align 4
 ; CHECK:   %_7 = icmp eq i32 %_6, 3
 ; CHECK:   %_8 = zext i1 %_7 to i32
 ; CHECK:   call void @__ikos_assert(i32 %_8)
-; CHECK:   %_9 = load i32, i32* %.0.phi, align 4
+; CHECK:   %_9 = load i32, ptr %.0.phi, align 4
 ; CHECK:   %_10 = icmp eq i32 %_9, 6
 ; CHECK:   %_11 = zext i1 %_10 to i32
 ; CHECK:   call void @__ikos_assert(i32 %_11)
-; CHECK:   %_12 = load i32, i32* %.01.phi, align 4
-; CHECK:   %_13 = load i32, i32* %.0.phi, align 4
+; CHECK:   %_12 = load i32, ptr %.01.phi, align 4
+; CHECK:   %_13 = load i32, ptr %.0.phi, align 4
 ; CHECK:   %_14 = add nsw i32 %_12, %_13
 ; CHECK:   %_15 = sext i32 %_14 to i64
-; CHECK:   %_16 = getelementptr inbounds i32, i32* %arg_3, i64 %_15
-; CHECK:   %_17 = load i32, i32* %_16, align 4
-; CHECK:   store i32 555, i32* %_16, align 4
+; CHECK:   %_16 = getelementptr inbounds i32, ptr %arg_3, i64 %_15
+; CHECK:   %_17 = load i32, ptr %_16, align 4
+; CHECK:   store i32 555, ptr %_16, align 4
 ; CHECK:   ret i32 %_17
 }
 

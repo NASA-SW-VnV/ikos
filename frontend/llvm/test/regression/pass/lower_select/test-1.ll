@@ -10,8 +10,8 @@ bb_1:
 bb_2:                                             ; preds = %bb_1
 ; CHECK-LABEL: bb_2:
 ; CHECK:  %_4 = sext i32 %_1 to i64
-; CHECK:  %_5 = getelementptr inbounds float, float* %arg_1, i64 %_4
-; CHECK:  %_6 = load float, float* %_5, align 4
+; CHECK:  %_5 = getelementptr inbounds float, ptr %arg_1, i64 %_4
+; CHECK:  %_6 = load float, ptr %_5, align 4
 ; CHECK:  %_7 = fcmp ole float %_6, %arg_3
 ; CHECK:  %_8 = add nsw i32 %arg_2, -2
 ; CHECK:  br i1 %_7, label %bb_2.TrueSelect, label %bb_2.FalseSelect
