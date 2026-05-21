@@ -3,20 +3,9 @@ source_filename = "asm.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @.str = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-; CHECK: define [4 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [37, 100, 10, 0], align 1
-; CHECK: }
-; CHECK: }
 
 declare i32 @printf(i8*, ...) #1
-; CHECK: declare si32 @ar.libc.printf(si8*, ...)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !8 {
@@ -27,15 +16,6 @@ define i32 @main() #0 !dbg !8 {
   %3 = call i32 (i8*, ...) @printf(i8* %2, i32 %1), !dbg !17
   ret i32 %1, !dbg !18
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 %1 = call asm "mov $1, $0
-; CHECK: 	add $$1, $0"(1)
-; CHECK:   si8* %2 = ptrshift @.str, 4 * 0, 1 * 0
-; CHECK:   si32 %3 = call @ar.libc.printf(%2, %1)
-; CHECK:   return %1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #2
@@ -68,3 +48,24 @@ attributes #3 = { nounwind readnone }
 !16 = !DILocalVariable(name: "dst", scope: !8, file: !1, line: 5, type: !11)
 !17 = !DILocation(line: 12, column: 3, scope: !8)
 !18 = !DILocation(line: 13, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [4 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [37, 100, 10, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.printf(si8*, ...)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32 %1 = call asm "mov $1, $0
+; CHECK: 	add $$1, $0"(1)
+; CHECK:   si8* %2 = ptrshift @.str, 4 * 0, 1 * 0
+; CHECK:   si32 %3 = call @ar.libc.printf(%2, %1)
+; CHECK:   return %1
+; CHECK: }
+; CHECK: }

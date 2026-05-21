@@ -3,14 +3,8 @@ source_filename = "undef.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: cold noreturn nounwind
 declare void @llvm.trap() #2
-; CHECK: declare void @ar.trap()
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
@@ -19,12 +13,6 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   call void @llvm.trap(), !dbg !18
   unreachable, !dbg !18
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @ar.trap()
-; CHECK:   unreachable
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -56,3 +44,16 @@ attributes #2 = { cold noreturn nounwind }
 !16 = !DILocation(line: 0, scope: !8)
 !17 = !DILocalVariable(name: "argv", arg: 2, scope: !8, file: !1, line: 3, type: !12)
 !18 = !DILocation(line: 5, column: 17, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: declare void @ar.trap()
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @ar.trap()
+; CHECK:   unreachable
+; CHECK: }
+; CHECK: }

@@ -3,14 +3,8 @@ source_filename = "non-term-1.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noreturn
 declare void @exit(i32) local_unnamed_addr #1
-; CHECK: declare void @ar.libc.exit(si32)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
@@ -20,12 +14,6 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   call void @exit(i32 1) #3, !dbg !19
   unreachable, !dbg !19
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @ar.libc.exit(1)
-; CHECK:   unreachable
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #2
@@ -61,3 +49,16 @@ attributes #3 = { noreturn nounwind }
 !19 = !DILocation(line: 7, column: 7, scope: !20)
 !20 = distinct !DILexicalBlock(scope: !21, file: !1, line: 6, column: 9)
 !21 = distinct !DILexicalBlock(scope: !8, file: !1, line: 5, column: 13)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: declare void @ar.libc.exit(si32)
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @ar.libc.exit(1)
+; CHECK:   unreachable
+; CHECK: }
+; CHECK: }

@@ -3,25 +3,13 @@ source_filename = "local-array-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @.str = private unnamed_addr constant [34 x i8] c"This is string.h library function\00", align 1
-; CHECK: define [34 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [84, 104, 105, 115, 32, 105, 115, 32, 115, 116, 114, 105, 110, 103, 46, 104, 32, 108, 105, 98, 114, 97, 114, 121, 32, 102, 117, 110, 99, 116, 105, 111, 110, 0], align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg) #2
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #2
-; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc i8* @foo(i8*, i32) unnamed_addr #0 !dbg !8 {
@@ -47,26 +35,6 @@ define internal fastcc i8* @foo(i8*, i32) unnamed_addr #0 !dbg !8 {
 9:                                                ; preds = %3
   ret i8* %0, !dbg !30
 }
-; CHECK: define si8* @foo(si8* %1, si32 %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   si32 %.0 = 0
-; CHECK: }
-; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#2} {
-; CHECK:   %.0 silt %2
-; CHECK:   ui32 %3 = bitcast %.0
-; CHECK:   ui64 %4 = zext %3
-; CHECK:   si8* %5 = ptrshift %1, 1 * %4
-; CHECK:   store %5, 65, align 1
-; CHECK:   si32 %6 = %.0 sadd.nw 1
-; CHECK:   si32 %.0 = %6
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %.0 sige %2
-; CHECK:   return %1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() local_unnamed_addr #0 !dbg !31 {
@@ -86,21 +54,6 @@ define i32 @main() local_unnamed_addr #0 !dbg !31 {
   call void @llvm.dbg.value(metadata i8* %7, metadata !52, metadata !DIExpression()), !dbg !44
   ret i32 0, !dbg !53
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   [50 x si8]* $1 = allocate [50 x si8], 1, align 16
-; CHECK:   [10 x si8]* $2 = allocate [10 x si8], 1, align 1
-; CHECK:   si8* %3 = ptrshift $1, 50 * 0, 1 * 0
-; CHECK:   si8* %4 = ptrshift @.str, 34 * 0, 1 * 0
-; CHECK:   call @ar.memcpy(%3, %4, 34, 16, 1, 0)
-; CHECK:   call @ar.memset(%3, 36, 50, 16, 0)
-; CHECK:   si8* %5 = call @foo(%3, 10)
-; CHECK:   si8* %6 = ptrshift $2, 10 * 0, 1 * 0
-; CHECK:   call @ar.memcpy(%6, %5, 10, 1, 1, 0)
-; CHECK:   si8* %7 = call @foo(%6, 10)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -170,3 +123,51 @@ attributes #2 = { argmemonly nounwind }
 !51 = !DILocation(line: 22, column: 13, scope: !31)
 !52 = !DILocalVariable(name: "C", scope: !31, file: !1, line: 22, type: !11)
 !53 = !DILocation(line: 24, column: 3, scope: !31)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [34 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [84, 104, 105, 115, 32, 105, 115, 32, 115, 116, 114, 105, 110, 103, 46, 104, 32, 108, 105, 98, 114, 97, 114, 121, 32, 102, 117, 110, 99, 116, 105, 111, 110, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
+; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
+; CHECK: define si8* @foo(si8* %1, si32 %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   si32 %.0 = 0
+; CHECK: }
+; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#2} {
+; CHECK:   %.0 silt %2
+; CHECK:   ui32 %3 = bitcast %.0
+; CHECK:   ui64 %4 = zext %3
+; CHECK:   si8* %5 = ptrshift %1, 1 * %4
+; CHECK:   store %5, 65, align 1
+; CHECK:   si32 %6 = %.0 sadd.nw 1
+; CHECK:   si32 %.0 = %6
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %.0 sige %2
+; CHECK:   return %1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   [50 x si8]* $1 = allocate [50 x si8], 1, align 16
+; CHECK:   [10 x si8]* $2 = allocate [10 x si8], 1, align 1
+; CHECK:   si8* %3 = ptrshift $1, 50 * 0, 1 * 0
+; CHECK:   si8* %4 = ptrshift @.str, 34 * 0, 1 * 0
+; CHECK:   call @ar.memcpy(%3, %4, 34, 16, 1, 0)
+; CHECK:   call @ar.memset(%3, 36, 50, 16, 0)
+; CHECK:   si8* %5 = call @foo(%3, 10)
+; CHECK:   si8* %6 = ptrshift $2, 10 * 0, 1 * 0
+; CHECK:   call @ar.memcpy(%6, %5, 10, 1, 1, 0)
+; CHECK:   si8* %7 = call @foo(%6, 10)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

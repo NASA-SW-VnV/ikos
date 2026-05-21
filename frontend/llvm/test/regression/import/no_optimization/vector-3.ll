@@ -3,31 +3,11 @@ source_filename = "vector-3.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @a = common global <4 x i32> zeroinitializer, align 16, !dbg !0
-; CHECK: define <4 x si32>* @a, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @a, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 @b = common global <4 x i32> zeroinitializer, align 16, !dbg !6
-; CHECK: define <4 x si32>* @b, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @b, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 @c = common global <4 x i32> zeroinitializer, align 16, !dbg !13
-; CHECK: define <4 x si32>* @c, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @c, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !20 {
@@ -39,20 +19,6 @@ define i32 @main() #0 !dbg !20 {
   store <4 x i32> %4, <4 x i32>* @c, align 16, !dbg !26
   ret i32 0, !dbg !27
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   store $1, 0, align 4
-; CHECK:   <4 x ui32>* %2 = bitcast @a
-; CHECK:   <4 x ui32> %3 = load %2, align 16
-; CHECK:   <4 x ui32>* %4 = bitcast @b
-; CHECK:   <4 x ui32> %5 = load %4, align 16
-; CHECK:   <4 x ui32> %6 = %3 uadd %5
-; CHECK:   <4 x si32> %7 = bitcast %6
-; CHECK:   store @c, %7, align 16
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
@@ -88,3 +54,39 @@ attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-f
 !25 = !DILocation(line: 6, column: 9, scope: !20)
 !26 = !DILocation(line: 6, column: 5, scope: !20)
 !27 = !DILocation(line: 7, column: 3, scope: !20)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define <4 x si32>* @a, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @a, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define <4 x si32>* @b, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @b, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define <4 x si32>* @c, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @c, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   si32* %2 = bitcast $1
+; CHECK:   store %2, 0, align 4
+; CHECK:   <4 x ui32>* %3 = bitcast @a
+; CHECK:   <4 x ui32> %4 = load %3, align 16
+; CHECK:   <4 x ui32>* %5 = bitcast @b
+; CHECK:   <4 x ui32> %6 = load %5, align 16
+; CHECK:   <4 x ui32> %7 = %4 uadd %6
+; CHECK:   <4 x si32> %8 = bitcast %7
+; CHECK:   store @c, %8, align 16
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

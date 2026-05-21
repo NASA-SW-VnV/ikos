@@ -3,11 +3,6 @@ source_filename = "aggregate-in-reg-1.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %class.Foo = type { %class.Vector3 }
 %class.Vector3 = type { float, float, float }
 
@@ -26,21 +21,6 @@ define linkonce_odr { <2 x float>, float } @_ZN3Foo9get_coordEv(%class.Foo*) #3 
   %9 = load { <2 x float>, float }, { <2 x float>, float }* %3, align 8, !dbg !59
   ret { <2 x float>, float } %9, !dbg !59
 }
-; CHECK: define {0: <2 x float>, 8: float} @_ZN3Foo9get_coordEv({0: {0: float, 4: float, 8: float}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: float, 4: float, 8: float}* $2 = allocate {0: float, 4: float, 8: float}, 1, align 4
-; CHECK:   {0: <2 x float>, 8: float}* $3 = allocate {0: <2 x float>, 8: float}, 1, align 8
-; CHECK:   {0: float, 4: float, 8: float}* %4 = ptrshift %1, 12 * 0, 1 * 0
-; CHECK:   si8* %5 = bitcast $2
-; CHECK:   si8* %6 = bitcast %4
-; CHECK:   call @ar.memcpy(%5, %6, 12, 4, 4, 0)
-; CHECK:   si8* %7 = bitcast $3
-; CHECK:   si8* %8 = bitcast $2
-; CHECK:   call @ar.memcpy(%7, %8, 12, 8, 4, 0)
-; CHECK:   {0: <2 x float>, 8: float} %9 = load $3, align 8
-; CHECK:   return %9
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN3FooC1Efff(%class.Foo*, float, float, float) unnamed_addr #2 align 2 !dbg !46 {
@@ -51,12 +31,6 @@ define linkonce_odr void @_ZN3FooC1Efff(%class.Foo*, float, float, float) unname
   call void @_ZN3FooC2Efff(%class.Foo* %0, float %1, float %2, float %3), !dbg !53
   ret void, !dbg !54
 }
-; CHECK: define void @_ZN3FooC1Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @_ZN3FooC2Efff(%1, %2, %3, %4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN3FooC2Efff(%class.Foo*, float, float, float) unnamed_addr #2 align 2 !dbg !60 {
@@ -68,13 +42,6 @@ define linkonce_odr void @_ZN3FooC2Efff(%class.Foo*, float, float, float) unname
   call void @_ZN7Vector3IfEC1Efff(%class.Vector3* %5, float %1, float %2, float %3), !dbg !67
   ret void, !dbg !68
 }
-; CHECK: define void @_ZN3FooC2Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: float, 4: float, 8: float}* %5 = ptrshift %1, 12 * 0, 1 * 0
-; CHECK:   call @_ZN7Vector3IfEC1Efff(%5, %2, %3, %4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN7Vector3IfEC1Efff(%class.Vector3*, float, float, float) unnamed_addr #2 align 2 !dbg !69 {
@@ -85,12 +52,6 @@ define linkonce_odr void @_ZN7Vector3IfEC1Efff(%class.Vector3*, float, float, fl
   call void @_ZN7Vector3IfEC2Efff(%class.Vector3* %0, float %1, float %2, float %3), !dbg !76
   ret void, !dbg !77
 }
-; CHECK: define void @_ZN7Vector3IfEC1Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @_ZN7Vector3IfEC2Efff(%1, %2, %3, %4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float, float) unnamed_addr #3 align 2 !dbg !78 {
@@ -106,21 +67,9 @@ define linkonce_odr void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float, fl
   store float %3, float* %7, align 4, !dbg !86
   ret void, !dbg !87
 }
-; CHECK: define void @_ZN7Vector3IfEC2Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   float* %5 = ptrshift %1, 12 * 0, 1 * 0
-; CHECK:   store %5, %2, align 4
-; CHECK:   float* %6 = ptrshift %1, 12 * 0, 1 * 4
-; CHECK:   store %6, %3, align 4
-; CHECK:   float* %7 = ptrshift %1, 12 * 0, 1 * 8
-; CHECK:   store %7, %4, align 4
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg) #4
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !8 {
@@ -139,20 +88,6 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 4 %8, i8* align 8 %7, i64 12, i1 false), !dbg !44
   ret i32 0, !dbg !45
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float, 8: float}}* $3 = allocate {0: {0: float, 4: float, 8: float}}, 1, align 4
-; CHECK:   {0: float, 4: float, 8: float}* $4 = allocate {0: float, 4: float, 8: float}, 1, align 4
-; CHECK:   {0: <2 x float>, 8: float}* $5 = allocate {0: <2 x float>, 8: float}, 1, align 8
-; CHECK:   call @_ZN3FooC1Efff($3, 1.0E+0, 2.0E+0, 3.0E+0)
-; CHECK:   {0: <2 x float>, 8: float} %6 = call @_ZN3Foo9get_coordEv($3)
-; CHECK:   store $5, %6, align 8
-; CHECK:   si8* %7 = bitcast $5
-; CHECK:   si8* %8 = bitcast $4
-; CHECK:   call @ar.memcpy(%8, %7, 12, 4, 8, 0)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -258,3 +193,70 @@ attributes #4 = { argmemonly nounwind }
 !85 = !DILocation(line: 7, column: 40, scope: !78)
 !86 = !DILocation(line: 7, column: 47, scope: !78)
 !87 = !DILocation(line: 7, column: 54, scope: !78)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: <2 x float>, 8: float} @_ZN3Foo9get_coordEv({0: {0: float, 4: float, 8: float}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $2 = allocate si8, 1, align 4
+; CHECK:   si8* $3 = allocate si8, 1, align 8
+; CHECK:   si8* %4 = ptrshift %1, 12 * 0, 1 * 0
+; CHECK:   si8* %5 = bitcast $2
+; CHECK:   si8* %6 = bitcast %4
+; CHECK:   call @ar.memcpy(%5, %6, 12, 4, 4, 0)
+; CHECK:   si8* %7 = bitcast $3
+; CHECK:   si8* %8 = bitcast $2
+; CHECK:   call @ar.memcpy(%7, %8, 12, 8, 4, 0)
+; CHECK:   {0: <2 x float>, 8: float}* %9 = bitcast $3
+; CHECK:   {0: <2 x float>, 8: float} %10 = load %9, align 8
+; CHECK:   return %10
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN3FooC1Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @_ZN3FooC2Efff(%1, %2, %3, %4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN3FooC2Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: float, 4: float, 8: float}* %5 = ptrshift %1, 12 * 0, 1 * 0
+; CHECK:   call @_ZN7Vector3IfEC1Efff(%5, %2, %3, %4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN7Vector3IfEC1Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @_ZN7Vector3IfEC2Efff(%1, %2, %3, %4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN7Vector3IfEC2Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   float* %5 = ptrshift %1, 12 * 0, 1 * 0
+; CHECK:   store %5, %2, align 4
+; CHECK:   float* %6 = ptrshift %1, 12 * 0, 1 * 4
+; CHECK:   store %6, %3, align 4
+; CHECK:   float* %7 = ptrshift %1, 12 * 0, 1 * 8
+; CHECK:   store %7, %4, align 4
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: {0: float, 4: float, 8: float}}* $3 = allocate {0: {0: float, 4: float, 8: float}}, 1, align 4
+; CHECK:   {0: float, 4: float, 8: float}* $4 = allocate {0: float, 4: float, 8: float}, 1, align 4
+; CHECK:   {0: <2 x float>, 8: float}* $5 = allocate {0: <2 x float>, 8: float}, 1, align 8
+; CHECK:   call @_ZN3FooC1Efff($3, 1.0E+0, 2.0E+0, 3.0E+0)
+; CHECK:   {0: <2 x float>, 8: float} %6 = call @_ZN3Foo9get_coordEv($3)
+; CHECK:   store $5, %6, align 8
+; CHECK:   si8* %7 = bitcast $5
+; CHECK:   si8* %8 = bitcast $4
+; CHECK:   call @ar.memcpy(%8, %7, 12, 4, 8, 0)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

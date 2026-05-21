@@ -3,11 +3,6 @@ source_filename = "shufflevector.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !16 {
   %3 = alloca float, align 4
@@ -46,48 +41,11 @@ define i32 @main(i32, i8**) #0 !dbg !16 {
   call void @printv(<4 x float> %23), !dbg !33
   ret i32 0, !dbg !34
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   float* $3 = allocate float, 1, align 4
-; CHECK:   float* $4 = allocate float, 1, align 4
-; CHECK:   float* $5 = allocate float, 1, align 4
-; CHECK:   float* $6 = allocate float, 1, align 4
-; CHECK:   <4 x float>* $7 = allocate <4 x float>, 1, align 16
-; CHECK:   si32* $8 = allocate si32, 1, align 4
-; CHECK:   si8*** $9 = allocate si8**, 1, align 8
-; CHECK:   <4 x float>* $10 = allocate <4 x float>, 1, align 16
-; CHECK:   store $8, %1, align 4
-; CHECK:   store $9, %2, align 8
-; CHECK:   store $3, 4.0E+0, align 4
-; CHECK:   store $4, 3.0E+0, align 4
-; CHECK:   store $5, 2.0E+0, align 4
-; CHECK:   store $6, 1.0E+0, align 4
-; CHECK:   float %11 = load $6, align 4
-; CHECK:   <4 x float> %12 = insertelement undef, 0, %11
-; CHECK:   float %13 = load $5, align 4
-; CHECK:   <4 x float> %14 = insertelement %12, 4, %13
-; CHECK:   float %15 = load $4, align 4
-; CHECK:   <4 x float> %16 = insertelement %14, 8, %15
-; CHECK:   float %17 = load $3, align 4
-; CHECK:   <4 x float> %18 = insertelement %16, 12, %17
-; CHECK:   store $7, %18, align 16
-; CHECK:   <4 x float> %19 = load $7, align 16
-; CHECK:   store $10, %19, align 16
-; CHECK:   <4 x float> %20 = load $10, align 16
-; CHECK:   <4 x float> %21 = load $10, align 16
-; CHECK:   <4 x float> %22 = shufflevector %20, %21
-; CHECK:   store $10, %22, align 16
-; CHECK:   <4 x float> %23 = load $10, align 16
-; CHECK:   call @printv(%23)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
 
 declare void @printv(<4 x float>) #2
-; CHECK: declare void @printv(<4 x float>)
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="128" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
@@ -132,3 +90,56 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !32 = !DILocation(line: 8, column: 10, scope: !16)
 !33 = !DILocation(line: 8, column: 3, scope: !16)
 !34 = !DILocation(line: 9, column: 1, scope: !16)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $3 = allocate si8, 1, align 4
+; CHECK:   si8* $4 = allocate si8, 1, align 4
+; CHECK:   si8* $5 = allocate si8, 1, align 4
+; CHECK:   si8* $6 = allocate si8, 1, align 4
+; CHECK:   si8* $7 = allocate si8, 1, align 16
+; CHECK:   si32* $8 = allocate si32, 1, align 4
+; CHECK:   si8*** $9 = allocate si8**, 1, align 8
+; CHECK:   <4 x float>* $10 = allocate <4 x float>, 1, align 16
+; CHECK:   store $8, %1, align 4
+; CHECK:   store $9, %2, align 8
+; CHECK:   float* %11 = bitcast $3
+; CHECK:   store %11, 4.0E+0, align 4
+; CHECK:   float* %12 = bitcast $4
+; CHECK:   store %12, 3.0E+0, align 4
+; CHECK:   float* %13 = bitcast $5
+; CHECK:   store %13, 2.0E+0, align 4
+; CHECK:   float* %14 = bitcast $6
+; CHECK:   store %14, 1.0E+0, align 4
+; CHECK:   float* %15 = bitcast $6
+; CHECK:   float %16 = load %15, align 4
+; CHECK:   <4 x float> %17 = insertelement undef, 0, %16
+; CHECK:   float* %18 = bitcast $5
+; CHECK:   float %19 = load %18, align 4
+; CHECK:   <4 x float> %20 = insertelement %17, 4, %19
+; CHECK:   float* %21 = bitcast $4
+; CHECK:   float %22 = load %21, align 4
+; CHECK:   <4 x float> %23 = insertelement %20, 8, %22
+; CHECK:   float* %24 = bitcast $3
+; CHECK:   float %25 = load %24, align 4
+; CHECK:   <4 x float> %26 = insertelement %23, 12, %25
+; CHECK:   <4 x float>* %27 = bitcast $7
+; CHECK:   store %27, %26, align 16
+; CHECK:   <4 x float>* %28 = bitcast $7
+; CHECK:   <4 x float> %29 = load %28, align 16
+; CHECK:   store $10, %29, align 16
+; CHECK:   <4 x float> %30 = load $10, align 16
+; CHECK:   <4 x float> %31 = load $10, align 16
+; CHECK:   <4 x float> %32 = shufflevector %30, %31
+; CHECK:   store $10, %32, align 16
+; CHECK:   <4 x float> %33 = load $10, align 16
+; CHECK:   call @printv(%33)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }
+; CHECK: declare void @printv(<4 x float>)

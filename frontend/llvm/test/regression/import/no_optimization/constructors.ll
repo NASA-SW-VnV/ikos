@@ -3,11 +3,6 @@ source_filename = "constructors.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %class.Vector = type { i32, i32, i32 }
 %class.Master = type { %class.Vector*, i32* }
 
@@ -21,17 +16,6 @@ define i32 @_Z1fP6Vector(%class.Vector*) #0 !dbg !8 {
   %5 = load i32, i32* %4, align 4, !dbg !25
   ret i32 %5, !dbg !26
 }
-; CHECK: define si32 @_Z1fP6Vector({0: si32, 4: si32, 8: si32}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: si32, 4: si32, 8: si32}** $2 = allocate {0: si32, 4: si32, 8: si32}*, 1, align 8
-; CHECK:   store $2, %1, align 8
-; CHECK:   {0: si32, 4: si32, 8: si32}** %3 = bitcast $2
-; CHECK:   {0: si32, 4: si32, 8: si32}* %4 = load %3, align 8
-; CHECK:   si32* %5 = ptrshift %4, 12 * 0, 1 * 4
-; CHECK:   si32 %6 = load %5, align 4
-; CHECK:   return %6
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN6MasterC1Ev(%class.Master*) unnamed_addr #3 align 2 !dbg !42 {
@@ -42,15 +26,6 @@ define linkonce_odr void @_ZN6MasterC1Ev(%class.Master*) unnamed_addr #3 align 2
   call void @_ZN6MasterC2Ev(%class.Master* %3), !dbg !46
   ret void, !dbg !47
 }
-; CHECK: define void @_ZN6MasterC1Ev({0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}** $2 = allocate {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}*, 1, align 8
-; CHECK:   store $2, %1, align 8
-; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %3 = load $2, align 8
-; CHECK:   call @_ZN6MasterC2Ev(%3)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define linkonce_odr void @_ZN6MasterC2Ev(%class.Master*) unnamed_addr #3 align 2 !dbg !48 {
@@ -76,41 +51,6 @@ define linkonce_odr void @_ZN6MasterC2Ev(%class.Master*) unnamed_addr #3 align 2
   call void @__ikos_assert(i32 %14), !dbg !62
   ret void, !dbg !63
 }
-; CHECK: define void @_ZN6MasterC2Ev({0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %1) {
-; CHECK: #1 !entry successors={#2, #3} {
-; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}** $2 = allocate {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}*, 1, align 8
-; CHECK:   store $2, %1, align 8
-; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}** %3 = bitcast $2
-; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %4 = load %3, align 8
-; CHECK:   si8* %5 = call @ar.libcpp.new(12)
-; CHECK:   {0: si32, 4: si32, 8: si32}* %6 = bitcast %5
-; CHECK:   call @_ZN6VectorC1Eiii(%6, 1, 2, 3)
-; CHECK:   {0: si32, 4: si32, 8: si32}** %7 = ptrshift %4, 16 * 0, 1 * 0
-; CHECK:   store %7, %6, align 8
-; CHECK:   si8* %8 = call @ar.libcpp.new(4)
-; CHECK:   si32* %9 = bitcast %8
-; CHECK:   store %9, 4, align 4
-; CHECK:   si32** %10 = ptrshift %4, 16 * 0, 1 * 8
-; CHECK:   store %10, %9, align 8
-; CHECK:   {0: si32, 4: si32, 8: si32}** %11 = ptrshift %4, 16 * 0, 1 * 0
-; CHECK:   {0: si32, 4: si32, 8: si32}** %12 = bitcast %11
-; CHECK:   {0: si32, 4: si32, 8: si32}* %13 = load %12, align 8
-; CHECK:   si32 %14 = call @_Z1fP6Vector(%13)
-; CHECK: }
-; CHECK: #2 predecessors={#1} successors={#4} {
-; CHECK:   %14 sieq 2
-; CHECK:   ui1 %15 = 1
-; CHECK: }
-; CHECK: #3 predecessors={#1} successors={#4} {
-; CHECK:   %14 sine 2
-; CHECK:   ui1 %15 = 0
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2, #3} {
-; CHECK:   ui32 %16 = zext %15
-; CHECK:   call @ar.ikos.assert(%16)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN6VectorC1Eiii(%class.Vector*, i32, i32, i32) unnamed_addr #0 align 2 !dbg !64 {
@@ -133,24 +73,6 @@ define linkonce_odr void @_ZN6VectorC1Eiii(%class.Vector*, i32, i32, i32) unname
   call void @_ZN6VectorC2Eiii(%class.Vector* %9, i32 %10, i32 %11, i32 %12) #7, !dbg !73
   ret void, !dbg !74
 }
-; CHECK: define void @_ZN6VectorC1Eiii({0: si32, 4: si32, 8: si32}* %1, si32 %2, si32 %3, si32 %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: si32, 4: si32, 8: si32}** $5 = allocate {0: si32, 4: si32, 8: si32}*, 1, align 8
-; CHECK:   si32* $6 = allocate si32, 1, align 4
-; CHECK:   si32* $7 = allocate si32, 1, align 4
-; CHECK:   si32* $8 = allocate si32, 1, align 4
-; CHECK:   store $5, %1, align 8
-; CHECK:   store $6, %2, align 4
-; CHECK:   store $7, %3, align 4
-; CHECK:   store $8, %4, align 4
-; CHECK:   {0: si32, 4: si32, 8: si32}* %9 = load $5, align 8
-; CHECK:   si32 %10 = load $6, align 4
-; CHECK:   si32 %11 = load $7, align 4
-; CHECK:   si32 %12 = load $8, align 4
-; CHECK:   call @_ZN6VectorC2Eiii(%9, %10, %11, %12)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN6VectorC2Eiii(%class.Vector*, i32, i32, i32) unnamed_addr #0 align 2 !dbg !75 {
@@ -178,37 +100,11 @@ define linkonce_odr void @_ZN6VectorC2Eiii(%class.Vector*, i32, i32, i32) unname
   store i32 %15, i32* %14, align 4, !dbg !88
   ret void, !dbg !90
 }
-; CHECK: define void @_ZN6VectorC2Eiii({0: si32, 4: si32, 8: si32}* %1, si32 %2, si32 %3, si32 %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: si32, 4: si32, 8: si32}** $5 = allocate {0: si32, 4: si32, 8: si32}*, 1, align 8
-; CHECK:   si32* $6 = allocate si32, 1, align 4
-; CHECK:   si32* $7 = allocate si32, 1, align 4
-; CHECK:   si32* $8 = allocate si32, 1, align 4
-; CHECK:   store $5, %1, align 8
-; CHECK:   store $6, %2, align 4
-; CHECK:   store $7, %3, align 4
-; CHECK:   store $8, %4, align 4
-; CHECK:   {0: si32, 4: si32, 8: si32}** %9 = bitcast $5
-; CHECK:   {0: si32, 4: si32, 8: si32}* %10 = load %9, align 8
-; CHECK:   si32* %11 = ptrshift %10, 12 * 0, 1 * 0
-; CHECK:   si32 %12 = load $6, align 4
-; CHECK:   store %11, %12, align 4
-; CHECK:   si32* %13 = ptrshift %10, 12 * 0, 1 * 4
-; CHECK:   si32 %14 = load $7, align 4
-; CHECK:   store %13, %14, align 4
-; CHECK:   si32* %15 = ptrshift %10, 12 * 0, 1 * 8
-; CHECK:   si32 %16 = load $8, align 4
-; CHECK:   store %15, %16, align 4
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 declare void @__ikos_assert(i32) #5
-; CHECK: declare void @ar.ikos.assert(ui32)
 
 ; Function Attrs: nobuiltin
 declare noalias i8* @_Znwm(i64) #4
-; CHECK: declare si8* @ar.libcpp.new(ui64)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() #2 !dbg !27 {
@@ -219,15 +115,6 @@ define i32 @main() #2 !dbg !27 {
   call void @_ZN6MasterC1Ev(%class.Master* %2), !dbg !40
   ret i32 0, !dbg !41
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* $2 = allocate {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}, 1, align 8
-; CHECK:   store $1, 0, align 4
-; CHECK:   call @_ZN6MasterC1Ev($2)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -336,3 +223,123 @@ attributes #7 = { nounwind }
 !88 = !DILocation(line: 11, column: 56, scope: !75)
 !89 = !DILocation(line: 11, column: 59, scope: !75)
 !90 = !DILocation(line: 11, column: 63, scope: !75)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @_Z1fP6Vector({0: si32, 4: si32, 8: si32}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: si32, 4: si32, 8: si32}** $2 = allocate {0: si32, 4: si32, 8: si32}*, 1, align 8
+; CHECK:   store $2, %1, align 8
+; CHECK:   si8** %3 = bitcast $2
+; CHECK:   si8* %4 = load %3, align 8
+; CHECK:   si8* %5 = ptrshift %4, 12 * 0, 1 * 4
+; CHECK:   si32* %6 = bitcast %5
+; CHECK:   si32 %7 = load %6, align 4
+; CHECK:   return %7
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN6MasterC1Ev({0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}** $2 = allocate {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}*, 1, align 8
+; CHECK:   store $2, %1, align 8
+; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %3 = load $2, align 8
+; CHECK:   call @_ZN6MasterC2Ev(%3)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN6MasterC2Ev({0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* %1) {
+; CHECK: #1 !entry successors={#2, #3} {
+; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}** $2 = allocate {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}*, 1, align 8
+; CHECK:   store $2, %1, align 8
+; CHECK:   si8** %3 = bitcast $2
+; CHECK:   si8* %4 = load %3, align 8
+; CHECK:   si8* %5 = call @ar.libcpp.new(12)
+; CHECK:   {0: si32, 4: si32, 8: si32}* %6 = bitcast %5
+; CHECK:   call @_ZN6VectorC1Eiii(%6, 1, 2, 3)
+; CHECK:   {0: si32, 4: si32, 8: si32}** %7 = ptrshift %4, 16 * 0, 1 * 0
+; CHECK:   store %7, %6, align 8
+; CHECK:   si8* %8 = call @ar.libcpp.new(4)
+; CHECK:   si8* %9 = bitcast %8
+; CHECK:   si32* %10 = bitcast %9
+; CHECK:   store %10, 4, align 4
+; CHECK:   si8** %11 = ptrshift %4, 16 * 0, 1 * 8
+; CHECK:   store %11, %9, align 8
+; CHECK:   si8* %12 = ptrshift %4, 16 * 0, 1 * 0
+; CHECK:   {0: si32, 4: si32, 8: si32}** %13 = bitcast %12
+; CHECK:   {0: si32, 4: si32, 8: si32}* %14 = load %13, align 8
+; CHECK:   si32 %15 = call @_Z1fP6Vector(%14)
+; CHECK: }
+; CHECK: #2 predecessors={#1} successors={#4} {
+; CHECK:   %15 sieq 2
+; CHECK:   ui1 %16 = 1
+; CHECK: }
+; CHECK: #3 predecessors={#1} successors={#4} {
+; CHECK:   %15 sine 2
+; CHECK:   ui1 %16 = 0
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2, #3} {
+; CHECK:   ui32 %17 = zext %16
+; CHECK:   call @ar.ikos.assert(%17)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN6VectorC1Eiii({0: si32, 4: si32, 8: si32}* %1, si32 %2, si32 %3, si32 %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: si32, 4: si32, 8: si32}** $5 = allocate {0: si32, 4: si32, 8: si32}*, 1, align 8
+; CHECK:   si32* $6 = allocate si32, 1, align 4
+; CHECK:   si32* $7 = allocate si32, 1, align 4
+; CHECK:   si32* $8 = allocate si32, 1, align 4
+; CHECK:   store $5, %1, align 8
+; CHECK:   store $6, %2, align 4
+; CHECK:   store $7, %3, align 4
+; CHECK:   store $8, %4, align 4
+; CHECK:   {0: si32, 4: si32, 8: si32}* %9 = load $5, align 8
+; CHECK:   si32 %10 = load $6, align 4
+; CHECK:   si32 %11 = load $7, align 4
+; CHECK:   si32 %12 = load $8, align 4
+; CHECK:   call @_ZN6VectorC2Eiii(%9, %10, %11, %12)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN6VectorC2Eiii({0: si32, 4: si32, 8: si32}* %1, si32 %2, si32 %3, si32 %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: si32, 4: si32, 8: si32}** $5 = allocate {0: si32, 4: si32, 8: si32}*, 1, align 8
+; CHECK:   si32* $6 = allocate si32, 1, align 4
+; CHECK:   si32* $7 = allocate si32, 1, align 4
+; CHECK:   si32* $8 = allocate si32, 1, align 4
+; CHECK:   store $5, %1, align 8
+; CHECK:   store $6, %2, align 4
+; CHECK:   store $7, %3, align 4
+; CHECK:   store $8, %4, align 4
+; CHECK:   si8** %9 = bitcast $5
+; CHECK:   si8* %10 = load %9, align 8
+; CHECK:   si8* %11 = ptrshift %10, 12 * 0, 1 * 0
+; CHECK:   si32 %12 = load $6, align 4
+; CHECK:   si32* %13 = bitcast %11
+; CHECK:   store %13, %12, align 4
+; CHECK:   si8* %14 = ptrshift %10, 12 * 0, 1 * 4
+; CHECK:   si32 %15 = load $7, align 4
+; CHECK:   si32* %16 = bitcast %14
+; CHECK:   store %16, %15, align 4
+; CHECK:   si8* %17 = ptrshift %10, 12 * 0, 1 * 8
+; CHECK:   si32 %18 = load $8, align 4
+; CHECK:   si32* %19 = bitcast %17
+; CHECK:   store %19, %18, align 4
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: declare void @ar.ikos.assert(ui32)
+; CHECK: declare si8* @ar.libcpp.new(ui64)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}* $2 = allocate {0: {0: si32, 4: si32, 8: si32}*, 8: si32*}, 1, align 8
+; CHECK:   si32* %3 = bitcast $1
+; CHECK:   store %3, 0, align 4
+; CHECK:   call @_ZN6MasterC1Ev($2)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

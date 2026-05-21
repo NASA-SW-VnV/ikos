@@ -3,11 +3,6 @@ source_filename = "virtual-inheritance.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.E = type { i32 (...)**, %struct.B, %struct.C, i32, %struct.A }
 %struct.B = type { i8* }
 %struct.C = type { i8 }
@@ -20,239 +15,56 @@ target triple = "x86_64-apple-macosx10.14.0"
 %struct.G.base = type { i32 (...)**, i8* }
 
 @_ZTC1H0_1F = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 32 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*)] }, align 8
-; CHECK: define {0: [3 x si8*]}* @_ZTC1H0_1F, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZTI1F
-; CHECK:   si8* %2 = sitoptr 32
-; CHECK:   store @_ZTC1H0_1F, {0: [%2, null, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTC1H16_1G = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 16 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*)] }, align 8
-; CHECK: define {0: [3 x si8*]}* @_ZTC1H16_1G, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZTI1G
-; CHECK:   si8* %2 = sitoptr 16
-; CHECK:   store @_ZTC1H16_1G, {0: [%2, null, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1A = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1A, i32 0, i32 0) }, align 8
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1A, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = ptrshift @_ZTS1A, 3 * 0, 1 * 0
-; CHECK:   si8* %3 = bitcast %1
-; CHECK:   store @_ZTI1A, {0: %3, 8: %2}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1B = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1B, i32 0, i32 0) }, align 8
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1B, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = ptrshift @_ZTS1B, 3 * 0, 1 * 0
-; CHECK:   si8* %3 = bitcast %1
-; CHECK:   store @_ZTI1B, {0: %3, 8: %2}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1C = linkonce_odr constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1C, i32 0, i32 0) }, align 8
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1C, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = ptrshift @_ZTS1C, 3 * 0, 1 * 0
-; CHECK:   si8* %3 = bitcast %1
-; CHECK:   store @_ZTI1C, {0: %3, 8: %2}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1D = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1D, i32 0, i32 0), i32 0, i32 3, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141, i8* bitcast ({ i8*, i8* }* @_ZTI1B to i8*), i64 -8189, i8* bitcast ({ i8*, i8* }* @_ZTI1C to i8*), i64 2050 }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1D, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1C
-; CHECK:   si8* %3 = bitcast @_ZTI1B
-; CHECK:   si8* %4 = bitcast @_ZTI1A
-; CHECK:   si8* %5 = ptrshift @_ZTS1D, 3 * 0, 1 * 0
-; CHECK:   si8* %6 = bitcast %1
-; CHECK:   store @_ZTI1D, {0: %6, 8: %5, 16: 0, 20: 3, 24: %4, 32: -6141, 40: %3, 48: -8189, 56: %2, 64: 2050}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1E = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1E, i32 0, i32 0), i32 0, i32 3, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141, i8* bitcast ({ i8*, i8* }* @_ZTI1B to i8*), i64 2050, i8* bitcast ({ i8*, i8* }* @_ZTI1C to i8*), i64 4098 }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1E, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1C
-; CHECK:   si8* %3 = bitcast @_ZTI1B
-; CHECK:   si8* %4 = bitcast @_ZTI1A
-; CHECK:   si8* %5 = ptrshift @_ZTS1E, 3 * 0, 1 * 0
-; CHECK:   si8* %6 = bitcast %1
-; CHECK:   store @_ZTI1E, {0: %6, 8: %5, 16: 0, 20: 3, 24: %4, 32: -6141, 40: %3, 48: 2050, 56: %2, 64: 4098}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1F = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1F, i32 0, i32 0), i32 0, i32 1, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141 }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1F, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1A
-; CHECK:   si8* %3 = ptrshift @_ZTS1F, 3 * 0, 1 * 0
-; CHECK:   si8* %4 = bitcast %1
-; CHECK:   store @_ZTI1F, {0: %4, 8: %3, 16: 0, 20: 1, 24: %2, 32: -6141}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1G = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1G, i32 0, i32 0), i32 0, i32 1, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i64 -6141 }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1G, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1A
-; CHECK:   si8* %3 = ptrshift @_ZTS1G, 3 * 0, 1 * 0
-; CHECK:   si8* %4 = bitcast %1
-; CHECK:   store @_ZTI1G, {0: %4, 8: %3, 16: 0, 20: 1, 24: %2, 32: -6141}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1H = linkonce_odr constant { i8*, i8*, i32, i32, i8*, i64, i8*, i64 } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1H, i32 0, i32 0), i32 2, i32 2, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*), i64 2, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*), i64 4098 }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64}* @_ZTI1H, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1G
-; CHECK:   si8* %3 = bitcast @_ZTI1F
-; CHECK:   si8* %4 = ptrshift @_ZTS1H, 3 * 0, 1 * 0
-; CHECK:   si8* %5 = bitcast %1
-; CHECK:   store @_ZTI1H, {0: %5, 8: %4, 16: 2, 20: 2, 24: %3, 32: 2, 40: %2, 48: 4098}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1A = linkonce_odr constant [3 x i8] c"1A\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1A, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1A, [49, 65, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1B = linkonce_odr constant [3 x i8] c"1B\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1B, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1B, [49, 66, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1C = linkonce_odr constant [3 x i8] c"1C\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1C, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1C, [49, 67, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1D = linkonce_odr constant [3 x i8] c"1D\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1D, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1D, [49, 68, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1E = linkonce_odr constant [3 x i8] c"1E\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1E, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1E, [49, 69, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1F = linkonce_odr constant [3 x i8] c"1F\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1F, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1F, [49, 70, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1G = linkonce_odr constant [3 x i8] c"1G\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1G, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1G, [49, 71, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1H = linkonce_odr constant [3 x i8] c"1H\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1H, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1H, [49, 72, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTT1H = linkonce_odr unnamed_addr constant [4 x i8*] [i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*], [3 x i8*] }, { [3 x i8*], [3 x i8*] }* @_ZTV1H, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTC1H0_1F, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*] }, { [3 x i8*] }* @_ZTC1H16_1G, i32 0, inrange i32 0, i32 3) to i8*), i8* bitcast (i8** getelementptr inbounds ({ [3 x i8*], [3 x i8*] }, { [3 x i8*], [3 x i8*] }* @_ZTV1H, i32 0, inrange i32 1, i32 3) to i8*)], align 8
-; CHECK: define [4 x si8*]* @_ZTT1H, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTV1H, 48 * 0, 1 * 24, 8 * 3
-; CHECK:   si8** %2 = ptrshift @_ZTC1H16_1G, 24 * 0, 1 * 0, 8 * 3
-; CHECK:   si8** %3 = ptrshift @_ZTC1H0_1F, 24 * 0, 1 * 0, 8 * 3
-; CHECK:   si8** %4 = ptrshift @_ZTV1H, 48 * 0, 1 * 0, 8 * 3
-; CHECK:   si8* %5 = bitcast %1
-; CHECK:   si8* %6 = bitcast %2
-; CHECK:   si8* %7 = bitcast %3
-; CHECK:   si8* %8 = bitcast %4
-; CHECK:   store @_ZTT1H, [%8, %7, %6, %5], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1D = linkonce_odr unnamed_addr constant { [4 x i8*] } { [4 x i8*] [i8* inttoptr (i64 24 to i8*), i8* inttoptr (i64 16 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 }* @_ZTI1D to i8*)] }, align 8
-; CHECK: define {0: [4 x si8*]}* @_ZTV1D, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZTI1D
-; CHECK:   si8* %2 = sitoptr 16
-; CHECK:   si8* %3 = sitoptr 24
-; CHECK:   store @_ZTV1D, {0: [%3, %2, null, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1E = linkonce_odr unnamed_addr constant { [4 x i8*] } { [4 x i8*] [i8* inttoptr (i64 24 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64, i8*, i64, i8*, i64 }* @_ZTI1E to i8*), i8* bitcast (void (%struct.E*)* @_ZN1E1fEv to i8*)] }, align 8
-; CHECK: define {0: [4 x si8*]}* @_ZTV1E, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZN1E1fEv
-; CHECK:   si8* %2 = bitcast @_ZTI1E
-; CHECK:   si8* %3 = sitoptr 24
-; CHECK:   store @_ZTV1E, {0: [%3, null, %2, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1F = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 12 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1F to i8*)] }, align 8
-; CHECK: define {0: [3 x si8*]}* @_ZTV1F, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZTI1F
-; CHECK:   si8* %2 = sitoptr 12
-; CHECK:   store @_ZTV1F, {0: [%2, null, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1G = linkonce_odr unnamed_addr constant { [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 16 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64 }* @_ZTI1G to i8*)] }, align 8
-; CHECK: define {0: [3 x si8*]}* @_ZTV1G, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZTI1G
-; CHECK:   si8* %2 = sitoptr 16
-; CHECK:   store @_ZTV1G, {0: [%2, null, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1H = linkonce_odr unnamed_addr constant { [3 x i8*], [3 x i8*] } { [3 x i8*] [i8* inttoptr (i64 32 to i8*), i8* null, i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64, i8*, i64 }* @_ZTI1H to i8*)], [3 x i8*] [i8* inttoptr (i64 16 to i8*), i8* inttoptr (i64 -16 to i8*), i8* bitcast ({ i8*, i8*, i32, i32, i8*, i64, i8*, i64 }* @_ZTI1H to i8*)] }, align 8
-; CHECK: define {0: [3 x si8*], 24: [3 x si8*]}* @_ZTV1H, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZTI1H
-; CHECK:   si8* %2 = sitoptr -16
-; CHECK:   si8* %3 = sitoptr 16
-; CHECK:   si8* %4 = bitcast @_ZTI1H
-; CHECK:   si8* %5 = sitoptr 32
-; CHECK:   store @_ZTV1H, {0: [%5, null, %4], 24: [%3, %2, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTVN10__cxxabiv117__class_type_infoE = external global i8*
-; CHECK: declare si8** @_ZTVN10__cxxabiv117__class_type_infoE
 
 @_ZTVN10__cxxabiv121__vmi_class_type_infoE = external global i8*
-; CHECK: declare si8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1DC1Ev(%struct.D*) unnamed_addr #2 align 2 !dbg !76 {
@@ -263,26 +75,12 @@ define linkonce_odr void @_ZN1DC1Ev(%struct.D*) unnamed_addr #2 align 2 !dbg !76
   store i32 (...)** %4, i32 (...)*** %2, align 8, !dbg !84
   ret void, !dbg !84
 }
-; CHECK: define void @_ZN1DC1Ev({0: si32 (...)**, 8: {0: ui8}, 12: float, 16: {0: si32}, 24: {0: si8*}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 (...)*** %2 = bitcast %1
-; CHECK:   si8** %3 = ptrshift @_ZTV1D, 32 * 0, 1 * 0, 8 * 4
-; CHECK:   si32 (...)** %4 = bitcast %3
-; CHECK:   store %2, %4, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1E1fEv(%struct.E*) unnamed_addr #2 align 2 !dbg !112 {
   call void @llvm.dbg.value(metadata %struct.E* %0, metadata !113, metadata !DIExpression()), !dbg !114
   ret void, !dbg !115
 }
-; CHECK: define void @_ZN1E1fEv({0: si32 (...)**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1EC1Ev(%struct.E*) unnamed_addr #2 align 2 !dbg !70 {
@@ -293,15 +91,6 @@ define linkonce_odr void @_ZN1EC1Ev(%struct.E*) unnamed_addr #2 align 2 !dbg !70
   store i32 (...)** %4, i32 (...)*** %2, align 8, !dbg !75
   ret void, !dbg !75
 }
-; CHECK: define void @_ZN1EC1Ev({0: si32 (...)**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 (...)*** %2 = bitcast %1
-; CHECK:   si8** %3 = ptrshift @_ZTV1E, 32 * 0, 1 * 0, 8 * 3
-; CHECK:   si32 (...)** %4 = bitcast %3
-; CHECK:   store %2, %4, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1FC1Ev(%struct.F*) unnamed_addr #2 align 2 !dbg !85 {
@@ -312,15 +101,6 @@ define linkonce_odr void @_ZN1FC1Ev(%struct.F*) unnamed_addr #2 align 2 !dbg !85
   store i32 (...)** %4, i32 (...)*** %2, align 8, !dbg !93
   ret void, !dbg !93
 }
-; CHECK: define void @_ZN1FC1Ev(<{0: si32 (...)**, 8: si32, 12: {0: si32}}>* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 (...)*** %2 = bitcast %1
-; CHECK:   si8** %3 = ptrshift @_ZTV1F, 24 * 0, 1 * 0, 8 * 3
-; CHECK:   si32 (...)** %4 = bitcast %3
-; CHECK:   store %2, %4, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1FC2Ev(%struct.F*, i8**) unnamed_addr #2 align 2 !dbg !116 {
@@ -332,15 +112,6 @@ define linkonce_odr void @_ZN1FC2Ev(%struct.F*, i8**) unnamed_addr #2 align 2 !d
   store i32 (...)** %5, i32 (...)*** %4, align 8, !dbg !122
   ret void, !dbg !122
 }
-; CHECK: define void @_ZN1FC2Ev(<{0: si32 (...)**, 8: si32, 12: {0: si32}}>* %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %3 = load %2, align 8
-; CHECK:   si32 (...)*** %4 = bitcast %1
-; CHECK:   si32 (...)** %5 = bitcast %3
-; CHECK:   store %4, %5, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1GC1Ev(%struct.G*) unnamed_addr #2 align 2 !dbg !94 {
@@ -351,15 +122,6 @@ define linkonce_odr void @_ZN1GC1Ev(%struct.G*) unnamed_addr #2 align 2 !dbg !94
   store i32 (...)** %4, i32 (...)*** %2, align 8, !dbg !102
   ret void, !dbg !102
 }
-; CHECK: define void @_ZN1GC1Ev({0: si32 (...)**, 8: si8*, 16: {0: si32}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 (...)*** %2 = bitcast %1
-; CHECK:   si8** %3 = ptrshift @_ZTV1G, 24 * 0, 1 * 0, 8 * 3
-; CHECK:   si32 (...)** %4 = bitcast %3
-; CHECK:   store %2, %4, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1GC2Ev(%struct.G*, i8**) unnamed_addr #2 align 2 !dbg !123 {
@@ -371,15 +133,6 @@ define linkonce_odr void @_ZN1GC2Ev(%struct.G*, i8**) unnamed_addr #2 align 2 !d
   store i32 (...)** %5, i32 (...)*** %4, align 8, !dbg !127
   ret void, !dbg !127
 }
-; CHECK: define void @_ZN1GC2Ev({0: si32 (...)**, 8: si8*, 16: {0: si32}}* %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %3 = load %2, align 8
-; CHECK:   si32 (...)*** %4 = bitcast %1
-; CHECK:   si32 (...)** %5 = bitcast %3
-; CHECK:   store %4, %5, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define linkonce_odr void @_ZN1HC1Ev(%struct.H*) unnamed_addr #2 align 2 !dbg !103 {
@@ -404,29 +157,6 @@ define linkonce_odr void @_ZN1HC1Ev(%struct.H*) unnamed_addr #2 align 2 !dbg !10
   store i32 (...)** %15, i32 (...)*** %13, align 8, !dbg !111
   ret void, !dbg !111
 }
-; CHECK: define void @_ZN1HC1Ev({0: <{0: si32 (...)**, 8: si32}>, 16: {0: si32 (...)**, 8: si8*}, 32: {0: si32}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   <{0: si32 (...)**, 8: si32, 12: {0: si32}}>* %2 = bitcast %1
-; CHECK:   si8** %3 = ptrshift @_ZTT1H, 32 * 0, 8 * 1
-; CHECK:   call @_ZN1FC2Ev(%2, %3)
-; CHECK:   si8* %4 = bitcast %1
-; CHECK:   si8* %5 = ptrshift %4, 1 * 16
-; CHECK:   {0: si32 (...)**, 8: si8*, 16: {0: si32}}* %6 = bitcast %5
-; CHECK:   si8** %7 = ptrshift @_ZTT1H, 32 * 0, 8 * 2
-; CHECK:   call @_ZN1GC2Ev(%6, %7)
-; CHECK:   si32 (...)*** %8 = bitcast %1
-; CHECK:   si8** %9 = ptrshift @_ZTV1H, 48 * 0, 1 * 0, 8 * 3
-; CHECK:   si32 (...)** %10 = bitcast %9
-; CHECK:   store %8, %10, align 8
-; CHECK:   si8* %11 = bitcast %1
-; CHECK:   si8* %12 = ptrshift %11, 1 * 16
-; CHECK:   si32 (...)*** %13 = bitcast %12
-; CHECK:   si8** %14 = ptrshift @_ZTV1H, 48 * 0, 1 * 24, 8 * 3
-; CHECK:   si32 (...)** %15 = bitcast %14
-; CHECK:   store %13, %15, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline norecurse nounwind ssp uwtable
 define i32 @main() #0 !dbg !8 {
@@ -447,21 +177,6 @@ define i32 @main() #0 !dbg !8 {
   call void @_ZN1HC1Ev(%struct.H* %5) #3, !dbg !68
   ret i32 0, !dbg !69
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: si32 (...)**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}* $1 = allocate {0: si32 (...)**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}, 1, align 8
-; CHECK:   {0: si32 (...)**, 8: {0: ui8}, 12: float, 16: {0: si32}, 24: {0: si8*}}* $2 = allocate {0: si32 (...)**, 8: {0: ui8}, 12: float, 16: {0: si32}, 24: {0: si8*}}, 1, align 8
-; CHECK:   <{0: si32 (...)**, 8: si32, 12: {0: si32}}>* $3 = allocate <{0: si32 (...)**, 8: si32, 12: {0: si32}}>, 1, align 8
-; CHECK:   {0: si32 (...)**, 8: si8*, 16: {0: si32}}* $4 = allocate {0: si32 (...)**, 8: si8*, 16: {0: si32}}, 1, align 8
-; CHECK:   {0: <{0: si32 (...)**, 8: si32}>, 16: {0: si32 (...)**, 8: si8*}, 32: {0: si32}}* $5 = allocate {0: <{0: si32 (...)**, 8: si32}>, 16: {0: si32 (...)**, 8: si8*}, 32: {0: si32}}, 1, align 8
-; CHECK:   call @_ZN1EC1Ev($1)
-; CHECK:   call @_ZN1DC1Ev($2)
-; CHECK:   call @_ZN1FC1Ev($3)
-; CHECK:   call @_ZN1GC1Ev($4)
-; CHECK:   call @_ZN1HC1Ev($5)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -606,3 +321,287 @@ attributes #3 = { nounwind }
 !125 = !DILocation(line: 0, scope: !123)
 !126 = !DILocalVariable(name: "vtt", arg: 2, scope: !123, type: !120, flags: DIFlagArtificial)
 !127 = !DILocation(line: 27, column: 8, scope: !123)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: [3 x si8*]}* @_ZTC1H0_1F, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1F
+; CHECK:   si8* %2 = sitoptr 32
+; CHECK:   store @_ZTC1H0_1F, {0: [%2, null, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [3 x si8*]}* @_ZTC1H16_1G, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1G
+; CHECK:   si8* %2 = sitoptr 16
+; CHECK:   store @_ZTC1H16_1G, {0: [%2, null, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1A, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTS1A
+; CHECK:   si8* %2 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1A, {0: %2, 8: %1}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1B, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTS1B
+; CHECK:   si8* %2 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1B, {0: %2, 8: %1}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1C, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTS1C
+; CHECK:   si8* %2 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1C, {0: %2, 8: %1}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1D, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1C
+; CHECK:   si8* %2 = bitcast @_ZTI1B
+; CHECK:   si8* %3 = bitcast @_ZTI1A
+; CHECK:   si8* %4 = bitcast @_ZTS1D
+; CHECK:   si8* %5 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1D, {0: %5, 8: %4, 16: 0, 20: 3, 24: %3, 32: -6141, 40: %2, 48: -8189, 56: %1, 64: 2050}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64, 56: si8*, 64: si64}* @_ZTI1E, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1C
+; CHECK:   si8* %2 = bitcast @_ZTI1B
+; CHECK:   si8* %3 = bitcast @_ZTI1A
+; CHECK:   si8* %4 = bitcast @_ZTS1E
+; CHECK:   si8* %5 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1E, {0: %5, 8: %4, 16: 0, 20: 3, 24: %3, 32: -6141, 40: %2, 48: 2050, 56: %1, 64: 4098}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1F, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1A
+; CHECK:   si8* %2 = bitcast @_ZTS1F
+; CHECK:   si8* %3 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1F, {0: %3, 8: %2, 16: 0, 20: 1, 24: %1, 32: -6141}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64}* @_ZTI1G, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1A
+; CHECK:   si8* %2 = bitcast @_ZTS1G
+; CHECK:   si8* %3 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1G, {0: %3, 8: %2, 16: 0, 20: 1, 24: %1, 32: -6141}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si32, 20: si32, 24: si8*, 32: si64, 40: si8*, 48: si64}* @_ZTI1H, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1G
+; CHECK:   si8* %2 = bitcast @_ZTI1F
+; CHECK:   si8* %3 = bitcast @_ZTS1H
+; CHECK:   si8* %4 = ptrshift @_ZTVN10__cxxabiv121__vmi_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1H, {0: %4, 8: %3, 16: 2, 20: 2, 24: %2, 32: 2, 40: %1, 48: 4098}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1A, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1A, [49, 65, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1B, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1B, [49, 66, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1C, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1C, [49, 67, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1D, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1D, [49, 68, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1E, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1E, [49, 69, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1F, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1F, [49, 70, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1G, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1G, [49, 71, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1H, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1H, [49, 72, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [4 x si8*]* @_ZTT1H, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = ptrshift @_ZTV1H, 48 * 0, 1 * 24, 8 * 3
+; CHECK:   si8* %2 = ptrshift @_ZTC1H16_1G, 24 * 0, 1 * 0, 8 * 3
+; CHECK:   si8* %3 = ptrshift @_ZTC1H0_1F, 24 * 0, 1 * 0, 8 * 3
+; CHECK:   si8* %4 = ptrshift @_ZTV1H, 48 * 0, 1 * 0, 8 * 3
+; CHECK:   store @_ZTT1H, [%4, %3, %2, %1], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [4 x si8*]}* @_ZTV1D, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1D
+; CHECK:   si8* %2 = sitoptr 16
+; CHECK:   si8* %3 = sitoptr 24
+; CHECK:   store @_ZTV1D, {0: [%3, %2, null, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [4 x si8*]}* @_ZTV1E, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZN1E1fEv
+; CHECK:   si8* %2 = bitcast @_ZTI1E
+; CHECK:   si8* %3 = sitoptr 24
+; CHECK:   store @_ZTV1E, {0: [%3, null, %2, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [3 x si8*]}* @_ZTV1F, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1F
+; CHECK:   si8* %2 = sitoptr 12
+; CHECK:   store @_ZTV1F, {0: [%2, null, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [3 x si8*]}* @_ZTV1G, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1G
+; CHECK:   si8* %2 = sitoptr 16
+; CHECK:   store @_ZTV1G, {0: [%2, null, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [3 x si8*], 24: [3 x si8*]}* @_ZTV1H, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1H
+; CHECK:   si8* %2 = sitoptr -16
+; CHECK:   si8* %3 = sitoptr 16
+; CHECK:   si8* %4 = bitcast @_ZTI1H
+; CHECK:   si8* %5 = sitoptr 32
+; CHECK:   store @_ZTV1H, {0: [%5, null, %4], 24: [%3, %2, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si8** @_ZTVN10__cxxabiv117__class_type_infoE
+; CHECK: declare si8** @_ZTVN10__cxxabiv121__vmi_class_type_infoE
+; CHECK: define void @_ZN1DC1Ev({0: si32 ()**, 8: {0: ui8}, 12: float, 16: {0: si32}, 24: {0: si8*}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %2 = bitcast %1
+; CHECK:   si8* %3 = ptrshift @_ZTV1D, 32 * 0, 1 * 0, 8 * 4
+; CHECK:   si8* %4 = bitcast %3
+; CHECK:   si8** %5 = bitcast %2
+; CHECK:   store %5, %4, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1E1fEv({0: si32 ()**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1EC1Ev({0: si32 ()**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %2 = bitcast %1
+; CHECK:   si8* %3 = ptrshift @_ZTV1E, 32 * 0, 1 * 0, 8 * 3
+; CHECK:   si8* %4 = bitcast %3
+; CHECK:   si8** %5 = bitcast %2
+; CHECK:   store %5, %4, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1FC1Ev(<{0: si32 ()**, 8: si32, 12: {0: si32}}>* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %2 = bitcast %1
+; CHECK:   si8* %3 = ptrshift @_ZTV1F, 24 * 0, 1 * 0, 8 * 3
+; CHECK:   si8* %4 = bitcast %3
+; CHECK:   si8** %5 = bitcast %2
+; CHECK:   store %5, %4, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1FC2Ev(<{0: si32 ()**, 8: si32, 12: {0: si32}}>* %1, si8* %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8** %3 = bitcast %2
+; CHECK:   si8* %4 = load %3, align 8
+; CHECK:   si8* %5 = bitcast %1
+; CHECK:   si8* %6 = bitcast %4
+; CHECK:   si8** %7 = bitcast %5
+; CHECK:   store %7, %6, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1GC1Ev({0: si32 ()**, 8: si8*, 16: {0: si32}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %2 = bitcast %1
+; CHECK:   si8* %3 = ptrshift @_ZTV1G, 24 * 0, 1 * 0, 8 * 3
+; CHECK:   si8* %4 = bitcast %3
+; CHECK:   si8** %5 = bitcast %2
+; CHECK:   store %5, %4, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1GC2Ev({0: si32 ()**, 8: si8*, 16: {0: si32}}* %1, si8* %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8** %3 = bitcast %2
+; CHECK:   si8* %4 = load %3, align 8
+; CHECK:   si8* %5 = bitcast %1
+; CHECK:   si8* %6 = bitcast %4
+; CHECK:   si8** %7 = bitcast %5
+; CHECK:   store %7, %6, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1HC1Ev({0: <{0: si8*, 8: si32}>, 16: {0: si8*, 8: si8*}, 32: {0: si32}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   <{0: si32 ()**, 8: si32, 12: {0: si32}}>* %2 = bitcast %1
+; CHECK:   si8* %3 = ptrshift @_ZTT1H, 32 * 0, 8 * 1
+; CHECK:   call @_ZN1FC2Ev(%2, %3)
+; CHECK:   si8* %4 = bitcast %1
+; CHECK:   si8* %5 = ptrshift %4, 1 * 16
+; CHECK:   {0: si32 ()**, 8: si8*, 16: {0: si32}}* %6 = bitcast %5
+; CHECK:   si8* %7 = ptrshift @_ZTT1H, 32 * 0, 8 * 2
+; CHECK:   call @_ZN1GC2Ev(%6, %7)
+; CHECK:   si8* %8 = bitcast %1
+; CHECK:   si8* %9 = ptrshift @_ZTV1H, 48 * 0, 1 * 0, 8 * 3
+; CHECK:   si8* %10 = bitcast %9
+; CHECK:   si8** %11 = bitcast %8
+; CHECK:   store %11, %10, align 8
+; CHECK:   si8* %12 = bitcast %1
+; CHECK:   si8* %13 = ptrshift %12, 1 * 16
+; CHECK:   si8* %14 = bitcast %13
+; CHECK:   si8* %15 = ptrshift @_ZTV1H, 48 * 0, 1 * 24, 8 * 3
+; CHECK:   si8* %16 = bitcast %15
+; CHECK:   si8** %17 = bitcast %14
+; CHECK:   store %17, %16, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: si32 ()**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}* $1 = allocate {0: si32 ()**, 8: {0: si8*}, 16: {0: ui8}, 20: si32, 24: {0: si32}}, 1, align 8
+; CHECK:   {0: si32 ()**, 8: {0: ui8}, 12: float, 16: {0: si32}, 24: {0: si8*}}* $2 = allocate {0: si32 ()**, 8: {0: ui8}, 12: float, 16: {0: si32}, 24: {0: si8*}}, 1, align 8
+; CHECK:   <{0: si32 ()**, 8: si32, 12: {0: si32}}>* $3 = allocate <{0: si32 ()**, 8: si32, 12: {0: si32}}>, 1, align 8
+; CHECK:   {0: si32 ()**, 8: si8*, 16: {0: si32}}* $4 = allocate {0: si32 ()**, 8: si8*, 16: {0: si32}}, 1, align 8
+; CHECK:   {0: <{0: si8*, 8: si32}>, 16: {0: si8*, 8: si8*}, 32: {0: si32}}* $5 = allocate {0: <{0: si8*, 8: si32}>, 16: {0: si8*, 8: si8*}, 32: {0: si32}}, 1, align 8
+; CHECK:   call @_ZN1EC1Ev($1)
+; CHECK:   call @_ZN1DC1Ev($2)
+; CHECK:   call @_ZN1FC1Ev($3)
+; CHECK:   call @_ZN1GC1Ev($4)
+; CHECK:   call @_ZN1HC1Ev($5)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

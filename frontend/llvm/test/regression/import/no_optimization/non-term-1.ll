@@ -3,14 +3,8 @@ source_filename = "non-term-1.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noreturn
 declare void @exit(i32) #2
-; CHECK: declare void @ar.libc.exit(si32)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !8 {
@@ -41,31 +35,6 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
   store i32 %13, i32* %6, align 4, !dbg !28
   br label %7, !dbg !21, !llvm.loop !29
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   si32* $4 = allocate si32, 1, align 4
-; CHECK:   si8*** $5 = allocate si8**, 1, align 8
-; CHECK:   si32* $6 = allocate si32, 1, align 4
-; CHECK:   store $3, 0, align 4
-; CHECK:   store $4, %1, align 4
-; CHECK:   store $5, %2, align 8
-; CHECK: }
-; CHECK: #2 predecessors={#1, #4} successors={#3, #4} {
-; CHECK:   si32 %7 = load $6, align 4
-; CHECK: }
-; CHECK: #3 !exit predecessors={#2} {
-; CHECK:   %7 sieq 0
-; CHECK:   call @ar.libc.exit(1)
-; CHECK:   unreachable
-; CHECK: }
-; CHECK: #4 predecessors={#2} successors={#2} {
-; CHECK:   %7 sine 0
-; CHECK:   si32 %8 = load $6, align 4
-; CHECK:   si32 %9 = %8 sadd.nw 1
-; CHECK:   store $6, %9, align 4
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -110,3 +79,36 @@ attributes #3 = { noreturn }
 !28 = !DILocation(line: 8, column: 6, scope: !24)
 !29 = distinct !{!29, !21, !30}
 !30 = !DILocation(line: 9, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: declare void @ar.libc.exit(si32)
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   si8* $3 = allocate si8, 1, align 4
+; CHECK:   si32* $4 = allocate si32, 1, align 4
+; CHECK:   si8*** $5 = allocate si8**, 1, align 8
+; CHECK:   si32* $6 = allocate si32, 1, align 4
+; CHECK:   si32* %7 = bitcast $3
+; CHECK:   store %7, 0, align 4
+; CHECK:   store $4, %1, align 4
+; CHECK:   store $5, %2, align 8
+; CHECK: }
+; CHECK: #2 predecessors={#1, #4} successors={#3, #4} {
+; CHECK:   si32 %8 = load $6, align 4
+; CHECK: }
+; CHECK: #3 !exit predecessors={#2} {
+; CHECK:   %8 sieq 0
+; CHECK:   call @ar.libc.exit(1)
+; CHECK:   unreachable
+; CHECK: }
+; CHECK: #4 predecessors={#2} successors={#2} {
+; CHECK:   %8 sine 0
+; CHECK:   si32 %9 = load $6, align 4
+; CHECK:   si32 %10 = %9 sadd.nw 1
+; CHECK:   store $6, %10, align 4
+; CHECK: }
+; CHECK: }

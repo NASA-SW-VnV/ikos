@@ -3,19 +3,9 @@ source_filename = "var-args.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.__va_list_tag = type { i32, i32, i8*, i8* }
 
 @.str = private unnamed_addr constant [6 x i8] c"[%d] \00", align 1
-; CHECK: define [6 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [91, 37, 100, 93, 32, 0], align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @PrintInts(i32, ...) #0 !dbg !11 {
@@ -118,133 +108,32 @@ define void @PrintInts(i32, ...) #0 !dbg !11 {
   call void @llvm.va_end(i8* %55), !dbg !75
   ret void, !dbg !76
 }
-; CHECK: define void @PrintInts(si32 %1, ...) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}]* $2 = allocate [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}], 1, align 16
-; CHECK:   [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}]* $3 = allocate [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}], 1, align 16
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %4 = ptrshift $2, 24 * 0, 24 * 0
-; CHECK:   si8* %5 = bitcast %4
-; CHECK:   call @ar.va_start(%5)
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %6 = ptrshift $3, 24 * 0, 24 * 0
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %7 = ptrshift $2, 24 * 0, 24 * 0
-; CHECK:   si8* %8 = bitcast %6
-; CHECK:   si8* %9 = bitcast %7
-; CHECK:   call @ar.va_copy(%8, %9)
-; CHECK:   si32 %.01 = 0
-; CHECK:   si32 %.0 = %1
-; CHECK: }
-; CHECK: #2 predecessors={#1, #8} successors={#3, #4} {
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#5, #6} {
-; CHECK:   %.0 sine 0
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %10 = ptrshift $3, 24 * 0, 24 * 0
-; CHECK:   si32* %11 = ptrshift %10, 24 * 0, 1 * 0
-; CHECK:   ui32* %12 = bitcast %11
-; CHECK:   ui32 %13 = load %12, align 16
-; CHECK: }
-; CHECK: #4 predecessors={#2} successors={#7} {
-; CHECK:   %.0 sieq 0
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %14 = ptrshift $3, 24 * 0, 24 * 0
-; CHECK:   si8* %15 = bitcast %14
-; CHECK:   call @ar.va_end(%15)
-; CHECK:   si8* %16 = ptrshift @.str, 6 * 0, 1 * 0
-; CHECK:   ui64 %17 = call @ar.libc.strlen(%16)
-; CHECK:   si64 %18 = sext %.01
-; CHECK:   ui64 %19 = bitcast %18
-; CHECK:   ui64 %20 = %17 umul %19
-; CHECK:   ui64 %21 = %20 uadd 1
-; CHECK:   si8* %22 = call @ar.libc.malloc(%21)
-; CHECK:   si8* %23 = ptrshift %22, 1 * 0
-; CHECK:   store %23, 0, align 1
-; CHECK:   si32 %.1 = %.01
-; CHECK: }
-; CHECK: #5 predecessors={#3} successors={#8} {
-; CHECK:   %13 uile 40
-; CHECK:   si8** %24 = ptrshift %10, 24 * 0, 1 * 16
-; CHECK:   si8* %25 = load %24, align 16
-; CHECK:   si8* %26 = ptrshift %25, 1 * %13
-; CHECK:   si32* %27 = bitcast %26
-; CHECK:   ui32 %28 = %13 uadd 8
-; CHECK:   si32 %29 = bitcast %28
-; CHECK:   store %11, %29, align 16
-; CHECK:   si32* %30 = %27
-; CHECK: }
-; CHECK: #6 predecessors={#3} successors={#8} {
-; CHECK:   %13 uigt 40
-; CHECK:   si8** %31 = ptrshift %10, 24 * 0, 1 * 8
-; CHECK:   si8* %32 = load %31, align 8
-; CHECK:   si32* %33 = bitcast %32
-; CHECK:   si8* %34 = ptrshift %32, 1 * 8
-; CHECK:   store %31, %34, align 8
-; CHECK:   si32* %30 = %33
-; CHECK: }
-; CHECK: #7 predecessors={#4, #9} successors={#9, #10} {
-; CHECK: }
-; CHECK: #9 predecessors={#7} successors={#7} {
-; CHECK:   %.1 sigt 0
-; CHECK:   si8* %37 = ptrshift @.str, 6 * 0, 1 * 0
-; CHECK:   si8* %38 = call @ar.libc.strcat(%22, %37)
-; CHECK:   si32 %39 = %.1 sadd.nw -1
-; CHECK:   si32 %.1 = %39
-; CHECK: }
-; CHECK: #10 !exit predecessors={#7} {
-; CHECK:   %.1 sile 0
-; CHECK:   si8* %40 = ptrshift @.str, 6 * 0, 1 * 0
-; CHECK:   si32 %41 = call @ar.libc.printf(%40, %1)
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %42 = ptrshift $2, 24 * 0, 24 * 0
-; CHECK:   si32 %43 = call @vprintf(%22, %42)
-; CHECK:   {0: si32, 4: si32, 8: si8*, 16: si8*}* %44 = ptrshift $2, 24 * 0, 24 * 0
-; CHECK:   si8* %45 = bitcast %44
-; CHECK:   call @ar.va_end(%45)
-; CHECK:   return
-; CHECK: }
-; CHECK: #8 predecessors={#5, #6} successors={#2} {
-; CHECK:   si32 %35 = load %30, align 4
-; CHECK:   si32 %36 = %.01 sadd.nw 1
-; CHECK:   si32 %.01 = %36
-; CHECK:   si32 %.0 = %35
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: allocsize(0)
 declare i8* @malloc(i64) #3
-; CHECK: declare si8* @ar.libc.malloc(ui64)
 
 declare i32 @printf(i8*, ...) #4
-; CHECK: declare si32 @ar.libc.printf(si8*, ...)
 
 declare i8* @strcat(i8*, i8*) #4
-; CHECK: declare si8* @ar.libc.strcat(si8*, si8*)
 
 declare i64 @strlen(i8*) #4
-; CHECK: declare ui64 @ar.libc.strlen(si8*)
 
 ; Function Attrs: nounwind
 declare void @llvm.va_copy(i8*, i8*) #2
-; CHECK: declare void @ar.va_copy(si8*, si8*)
 
 ; Function Attrs: nounwind
 declare void @llvm.va_end(i8*) #2
-; CHECK: declare void @ar.va_end(si8*)
 
 ; Function Attrs: nounwind
 declare void @llvm.va_start(i8*) #2
-; CHECK: declare void @ar.va_start(si8*)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !77 {
   call void (i32, ...) @PrintInts(i32 10, i32 20, i32 30, i32 40, i32 50, i32 0), !dbg !80
   ret i32 0, !dbg !81
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @PrintInts(10, 20, 30, 40, 50, 0)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 declare i32 @vprintf(i8*, %struct.__va_list_tag*) #4
-; CHECK: declare si32 @vprintf(si8*, {0: si32, 4: si32, 8: si8*, 16: si8*}*)
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -345,3 +234,119 @@ attributes #5 = { allocsize(0) }
 !79 = !{!14}
 !80 = !DILocation(line: 41, column: 3, scope: !77)
 !81 = !DILocation(line: 42, column: 3, scope: !77)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [6 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [91, 37, 100, 93, 32, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define void @PrintInts(si32 %1, ...) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}]* $2 = allocate [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}], 1, align 16
+; CHECK:   [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}]* $3 = allocate [1 x {0: ui32, 4: ui32, 8: si8*, 16: si8*}], 1, align 16
+; CHECK:   si8* %4 = ptrshift $2, 24 * 0, 24 * 0
+; CHECK:   si8* %5 = bitcast %4
+; CHECK:   call @ar.va_start(%5)
+; CHECK:   si8* %6 = ptrshift $3, 24 * 0, 24 * 0
+; CHECK:   si8* %7 = ptrshift $2, 24 * 0, 24 * 0
+; CHECK:   si8* %8 = bitcast %6
+; CHECK:   si8* %9 = bitcast %7
+; CHECK:   call @ar.va_copy(%8, %9)
+; CHECK:   si32 %.01 = 0
+; CHECK:   si32 %.0 = %1
+; CHECK: }
+; CHECK: #2 predecessors={#1, #8} successors={#3, #4} {
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#5, #6} {
+; CHECK:   %.0 sine 0
+; CHECK:   si8* %10 = ptrshift $3, 24 * 0, 24 * 0
+; CHECK:   si8* %11 = ptrshift %10, 24 * 0, 1 * 0
+; CHECK:   ui32* %12 = bitcast %11
+; CHECK:   ui32 %13 = load %12, align 16
+; CHECK: }
+; CHECK: #4 predecessors={#2} successors={#7} {
+; CHECK:   %.0 sieq 0
+; CHECK:   si8* %14 = ptrshift $3, 24 * 0, 24 * 0
+; CHECK:   si8* %15 = bitcast %14
+; CHECK:   call @ar.va_end(%15)
+; CHECK:   si8* %16 = ptrshift @.str, 6 * 0, 1 * 0
+; CHECK:   ui64 %17 = call @ar.libc.strlen(%16)
+; CHECK:   si64 %18 = sext %.01
+; CHECK:   ui64 %19 = bitcast %18
+; CHECK:   ui64 %20 = %17 umul %19
+; CHECK:   ui64 %21 = %20 uadd 1
+; CHECK:   si8* %22 = call @ar.libc.malloc(%21)
+; CHECK:   si8* %23 = ptrshift %22, 1 * 0
+; CHECK:   store %23, 0, align 1
+; CHECK:   si32 %.1 = %.01
+; CHECK: }
+; CHECK: #5 predecessors={#3} successors={#8} {
+; CHECK:   %13 uile 40
+; CHECK:   si8* %24 = ptrshift %10, 24 * 0, 1 * 16
+; CHECK:   si8** %25 = bitcast %24
+; CHECK:   si8* %26 = load %25, align 16
+; CHECK:   si8* %27 = ptrshift %26, 1 * %13
+; CHECK:   si8* %28 = bitcast %27
+; CHECK:   ui32 %29 = %13 uadd 8
+; CHECK:   si32 %30 = bitcast %29
+; CHECK:   si32* %31 = bitcast %11
+; CHECK:   store %31, %30, align 16
+; CHECK:   si32* %32 = bitcast %28
+; CHECK: }
+; CHECK: #6 predecessors={#3} successors={#8} {
+; CHECK:   %13 uigt 40
+; CHECK:   si8* %33 = ptrshift %10, 24 * 0, 1 * 8
+; CHECK:   si8** %34 = bitcast %33
+; CHECK:   si8* %35 = load %34, align 8
+; CHECK:   si8* %36 = bitcast %35
+; CHECK:   si8* %37 = ptrshift %35, 1 * 8
+; CHECK:   si8** %38 = bitcast %33
+; CHECK:   store %38, %37, align 8
+; CHECK:   si32* %32 = bitcast %36
+; CHECK: }
+; CHECK: #7 predecessors={#4, #9} successors={#9, #10} {
+; CHECK: }
+; CHECK: #9 predecessors={#7} successors={#7} {
+; CHECK:   %.1 sigt 0
+; CHECK:   si8* %41 = ptrshift @.str, 6 * 0, 1 * 0
+; CHECK:   si8* %42 = call @ar.libc.strcat(%22, %41)
+; CHECK:   si32 %43 = %.1 sadd.nw -1
+; CHECK:   si32 %.1 = %43
+; CHECK: }
+; CHECK: #10 !exit predecessors={#7} {
+; CHECK:   %.1 sile 0
+; CHECK:   si8* %44 = ptrshift @.str, 6 * 0, 1 * 0
+; CHECK:   si32 %45 = call @ar.libc.printf(%44, %1)
+; CHECK:   si8* %46 = ptrshift $2, 24 * 0, 24 * 0
+; CHECK:   si32 %47 = call @vprintf(%22, %46)
+; CHECK:   si8* %48 = ptrshift $2, 24 * 0, 24 * 0
+; CHECK:   si8* %49 = bitcast %48
+; CHECK:   call @ar.va_end(%49)
+; CHECK:   return
+; CHECK: }
+; CHECK: #8 predecessors={#5, #6} successors={#2} {
+; CHECK:   si32 %39 = load %32, align 4
+; CHECK:   si32 %40 = %.01 sadd.nw 1
+; CHECK:   si32 %.01 = %40
+; CHECK:   si32 %.0 = %39
+; CHECK: }
+; CHECK: }
+; CHECK: declare si8* @ar.libc.malloc(ui64)
+; CHECK: declare si32 @ar.libc.printf(si8*, ...)
+; CHECK: declare si8* @ar.libc.strcat(si8*, si8*)
+; CHECK: declare ui64 @ar.libc.strlen(si8*)
+; CHECK: declare void @ar.va_copy(si8*, si8*)
+; CHECK: declare void @ar.va_end(si8*)
+; CHECK: declare void @ar.va_start(si8*)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @PrintInts(10, 20, 30, 40, 50, 0)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @vprintf(si8*, si8*)

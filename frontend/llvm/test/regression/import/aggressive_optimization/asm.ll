@@ -3,11 +3,6 @@ source_filename = "asm.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() local_unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata i32 1, metadata !12, metadata !DIExpression()), !dbg !13
@@ -15,13 +10,6 @@ define i32 @main() local_unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata i32 %1, metadata !16, metadata !DIExpression()), !dbg !13
   ret i32 %1, !dbg !17
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 %1 = call asm "mov $1, $0
-; CHECK: 	add $$1, $0"(1)
-; CHECK:   return %1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -52,3 +40,16 @@ attributes #2 = { nounwind readnone }
 !15 = !{i32 68, i32 81}
 !16 = !DILocalVariable(name: "dst", scope: !8, file: !1, line: 5, type: !11)
 !17 = !DILocation(line: 13, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32 %1 = call asm "mov $1, $0
+; CHECK: 	add $$1, $0"(1)
+; CHECK:   return %1
+; CHECK: }
+; CHECK: }

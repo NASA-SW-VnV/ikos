@@ -3,31 +3,17 @@ source_filename = "local-array-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @.str = private unnamed_addr constant [34 x i8] c"This is string.h library function\00", align 1
-; CHECK: define [34 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [84, 104, 105, 115, 32, 105, 115, 32, 115, 116, 114, 105, 110, 103, 46, 104, 32, 108, 105, 98, 114, 97, 114, 121, 32, 102, 117, 110, 99, 116, 105, 111, 110, 0], align 1
-; CHECK: }
-; CHECK: }
 
 declare i32 @puts(i8*) #2
-; CHECK: declare si32 @ar.libc.puts(si8*)
 
 declare i8* @strcpy(i8*, i8*) #2
-; CHECK: declare si8* @ar.libc.strcpy(si8*, si8*)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1) #3
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1) #3
-; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i8* @foo(i8*, i32) #0 !dbg !8 {
@@ -66,36 +52,6 @@ define i8* @foo(i8*, i32) #0 !dbg !8 {
   %19 = load i8*, i8** %3, align 8, !dbg !35
   ret i8* %19, !dbg !36
 }
-; CHECK: define si8* @foo(si8* %1, si32 %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   si8** $3 = allocate si8*, 1, align 8
-; CHECK:   si32* $4 = allocate si32, 1, align 4
-; CHECK:   si32* $5 = allocate si32, 1, align 4
-; CHECK:   store $3, %1, align 8
-; CHECK:   store $4, %2, align 4
-; CHECK:   store $5, 0, align 4
-; CHECK: }
-; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
-; CHECK:   si32 %6 = load $5, align 4
-; CHECK:   si32 %7 = load $4, align 4
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#2} {
-; CHECK:   %6 silt %7
-; CHECK:   si8* %8 = load $3, align 8
-; CHECK:   si32 %9 = load $5, align 4
-; CHECK:   si64 %10 = sext %9
-; CHECK:   si8* %11 = ptrshift %8, 1 * %10
-; CHECK:   store %11, 65, align 1
-; CHECK:   si32 %12 = load $5, align 4
-; CHECK:   si32 %13 = %12 sadd.nw 1
-; CHECK:   store $5, %13, align 4
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %6 sige %7
-; CHECK:   si8* %14 = load $3, align 8
-; CHECK:   return %14
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -132,35 +88,6 @@ define i32 @main() #0 !dbg !37 {
   %19 = call i32 @puts(i8* %18), !dbg !66
   ret i32 0, !dbg !67
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   [50 x si8]* $2 = allocate [50 x si8], 1, align 16
-; CHECK:   si8** $3 = allocate si8*, 1, align 8
-; CHECK:   [10 x si8]* $4 = allocate [10 x si8], 1, align 1
-; CHECK:   si8** $5 = allocate si8*, 1, align 8
-; CHECK:   store $1, 0, align 4
-; CHECK:   si8* %6 = ptrshift $2, 50 * 0, 1 * 0
-; CHECK:   si8* %7 = ptrshift @.str, 34 * 0, 1 * 0
-; CHECK:   si8* %8 = call @ar.libc.strcpy(%6, %7)
-; CHECK:   si8* %9 = ptrshift $2, 50 * 0, 1 * 0
-; CHECK:   si32 %10 = call @ar.libc.puts(%9)
-; CHECK:   si8* %11 = ptrshift $2, 50 * 0, 1 * 0
-; CHECK:   call @ar.memset(%11, 36, 50, 16, 0)
-; CHECK:   si8* %12 = ptrshift $2, 50 * 0, 1 * 0
-; CHECK:   si8* %13 = call @foo(%12, 10)
-; CHECK:   store $3, %13, align 8
-; CHECK:   si8* %14 = ptrshift $4, 10 * 0, 1 * 0
-; CHECK:   si8* %15 = load $3, align 8
-; CHECK:   call @ar.memcpy(%14, %15, 10, 1, 1, 0)
-; CHECK:   si8* %16 = ptrshift $4, 10 * 0, 1 * 0
-; CHECK:   si8* %17 = call @foo(%16, 10)
-; CHECK:   store $5, %17, align 8
-; CHECK:   si8* %18 = load $5, align 8
-; CHECK:   si32 %19 = call @ar.libc.puts(%18)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
@@ -239,3 +166,78 @@ attributes #3 = { argmemonly nounwind }
 !65 = !DILocation(line: 23, column: 8, scope: !37)
 !66 = !DILocation(line: 23, column: 3, scope: !37)
 !67 = !DILocation(line: 24, column: 3, scope: !37)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [34 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [84, 104, 105, 115, 32, 105, 115, 32, 115, 116, 114, 105, 110, 103, 46, 104, 32, 108, 105, 98, 114, 97, 114, 121, 32, 102, 117, 110, 99, 116, 105, 111, 110, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.puts(si8*)
+; CHECK: declare si8* @ar.libc.strcpy(si8*, si8*)
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
+; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
+; CHECK: define si8* @foo(si8* %1, si32 %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   si8** $3 = allocate si8*, 1, align 8
+; CHECK:   si32* $4 = allocate si32, 1, align 4
+; CHECK:   si32* $5 = allocate si32, 1, align 4
+; CHECK:   store $3, %1, align 8
+; CHECK:   store $4, %2, align 4
+; CHECK:   store $5, 0, align 4
+; CHECK: }
+; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
+; CHECK:   si32 %6 = load $5, align 4
+; CHECK:   si32 %7 = load $4, align 4
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#2} {
+; CHECK:   %6 silt %7
+; CHECK:   si8* %8 = load $3, align 8
+; CHECK:   si32 %9 = load $5, align 4
+; CHECK:   si64 %10 = sext %9
+; CHECK:   si8* %11 = ptrshift %8, 1 * %10
+; CHECK:   store %11, 65, align 1
+; CHECK:   si32 %12 = load $5, align 4
+; CHECK:   si32 %13 = %12 sadd.nw 1
+; CHECK:   store $5, %13, align 4
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %6 sige %7
+; CHECK:   si8* %14 = load $3, align 8
+; CHECK:   return %14
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   [50 x si8]* $2 = allocate [50 x si8], 1, align 16
+; CHECK:   si8** $3 = allocate si8*, 1, align 8
+; CHECK:   [10 x si8]* $4 = allocate [10 x si8], 1, align 1
+; CHECK:   si8** $5 = allocate si8*, 1, align 8
+; CHECK:   si32* %6 = bitcast $1
+; CHECK:   store %6, 0, align 4
+; CHECK:   si8* %7 = ptrshift $2, 50 * 0, 1 * 0
+; CHECK:   si8* %8 = ptrshift @.str, 34 * 0, 1 * 0
+; CHECK:   si8* %9 = call @ar.libc.strcpy(%7, %8)
+; CHECK:   si8* %10 = ptrshift $2, 50 * 0, 1 * 0
+; CHECK:   si32 %11 = call @ar.libc.puts(%10)
+; CHECK:   si8* %12 = ptrshift $2, 50 * 0, 1 * 0
+; CHECK:   call @ar.memset(%12, 36, 50, 16, 0)
+; CHECK:   si8* %13 = ptrshift $2, 50 * 0, 1 * 0
+; CHECK:   si8* %14 = call @foo(%13, 10)
+; CHECK:   store $3, %14, align 8
+; CHECK:   si8* %15 = ptrshift $4, 10 * 0, 1 * 0
+; CHECK:   si8* %16 = load $3, align 8
+; CHECK:   call @ar.memcpy(%15, %16, 10, 1, 1, 0)
+; CHECK:   si8* %17 = ptrshift $4, 10 * 0, 1 * 0
+; CHECK:   si8* %18 = call @foo(%17, 10)
+; CHECK:   store $5, %18, align 8
+; CHECK:   si8* %19 = load $5, align 8
+; CHECK:   si32 %20 = call @ar.libc.puts(%19)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

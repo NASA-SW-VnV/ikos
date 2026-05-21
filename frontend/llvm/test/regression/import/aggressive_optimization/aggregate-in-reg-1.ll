@@ -3,11 +3,6 @@ source_filename = "aggregate-in-reg-1.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %class.Foo = type { %class.Vector3 }
 %class.Vector3 = type { float, float, float }
 
@@ -22,17 +17,6 @@ define internal fastcc { <2 x float>, float } @_ZN3Foo9get_coordEv(%class.Foo*) 
   %.fca.1.insert = insertvalue { <2 x float>, float } %.fca.0.insert, float %.sroa.23.0.copyload, 1, !dbg !58
   ret { <2 x float>, float } %.fca.1.insert, !dbg !58
 }
-; CHECK: define {0: <2 x float>, 8: float} @_ZN3Foo9get_coordEv({0: {0: float, 4: float, 8: float}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   <2 x float>* %.sroa.02.0..sroa_cast = bitcast %1
-; CHECK:   <2 x float> %.sroa.02.0.copyload = load %.sroa.02.0..sroa_cast, align 4
-; CHECK:   float* %.sroa.23.0..sroa_idx4 = ptrshift %1, 12 * 0, 1 * 0, 1 * 8
-; CHECK:   float %.sroa.23.0.copyload = load %.sroa.23.0..sroa_idx4, align 4
-; CHECK:   {0: <2 x float>, 8: float} %.fca.0.insert = insertelement undef, 0, %.sroa.02.0.copyload
-; CHECK:   {0: <2 x float>, 8: float} %.fca.1.insert = insertelement %.fca.0.insert, 8, %.sroa.23.0.copyload
-; CHECK:   return %.fca.1.insert
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define internal fastcc void @_ZN3FooC1Efff(%class.Foo*, float, float, float) unnamed_addr #1 align 2 !dbg !45 {
@@ -43,12 +27,6 @@ define internal fastcc void @_ZN3FooC1Efff(%class.Foo*, float, float, float) unn
   call fastcc void @_ZN3FooC2Efff(%class.Foo* %0, float %1, float %2, float %3), !dbg !52
   ret void, !dbg !53
 }
-; CHECK: define void @_ZN3FooC1Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @_ZN3FooC2Efff(%1, %2, %3, %4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define internal fastcc void @_ZN3FooC2Efff(%class.Foo*, float, float, float) unnamed_addr #1 align 2 !dbg !59 {
@@ -60,13 +38,6 @@ define internal fastcc void @_ZN3FooC2Efff(%class.Foo*, float, float, float) unn
   call fastcc void @_ZN7Vector3IfEC1Efff(%class.Vector3* %5, float %1, float %2, float %3), !dbg !66
   ret void, !dbg !67
 }
-; CHECK: define void @_ZN3FooC2Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: float, 4: float, 8: float}* %5 = ptrshift %1, 12 * 0, 1 * 0
-; CHECK:   call @_ZN7Vector3IfEC1Efff(%5, %2, %3, %4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define internal fastcc void @_ZN7Vector3IfEC1Efff(%class.Vector3*, float, float, float) unnamed_addr #1 align 2 !dbg !68 {
@@ -77,12 +48,6 @@ define internal fastcc void @_ZN7Vector3IfEC1Efff(%class.Vector3*, float, float,
   call fastcc void @_ZN7Vector3IfEC2Efff(%class.Vector3* %0, float %1, float %2, float %3), !dbg !75
   ret void, !dbg !76
 }
-; CHECK: define void @_ZN7Vector3IfEC1Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @_ZN7Vector3IfEC2Efff(%1, %2, %3, %4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float, float) unnamed_addr #2 align 2 !dbg !77 {
@@ -98,17 +63,6 @@ define internal fastcc void @_ZN7Vector3IfEC2Efff(%class.Vector3*, float, float,
   store float %3, float* %7, align 4, !dbg !85
   ret void, !dbg !86
 }
-; CHECK: define void @_ZN7Vector3IfEC2Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
-; CHECK: #1 !entry !exit {
-; CHECK:   float* %5 = ptrshift %1, 12 * 0, 1 * 0
-; CHECK:   store %5, %2, align 4
-; CHECK:   float* %6 = ptrshift %1, 12 * 0, 1 * 4
-; CHECK:   store %6, %3, align 4
-; CHECK:   float* %7 = ptrshift %1, 12 * 0, 1 * 8
-; CHECK:   store %7, %4, align 4
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
@@ -123,14 +77,6 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata float undef, metadata !43, metadata !DIExpression(DW_OP_LLVM_fragment, 64, 32)), !dbg !16
   ret i32 0, !dbg !44
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float, 8: float}}* $3 = allocate {0: {0: float, 4: float, 8: float}}, 1, align 4
-; CHECK:   call @_ZN3FooC1Efff($3, 1.0E+0, 2.0E+0, 3.0E+0)
-; CHECK:   {0: <2 x float>, 8: float} %4 = call @_ZN3Foo9get_coordEv($3)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #3
@@ -231,3 +177,60 @@ attributes #3 = { nounwind readnone speculatable }
 !84 = !DILocation(line: 7, column: 40, scope: !77)
 !85 = !DILocation(line: 7, column: 47, scope: !77)
 !86 = !DILocation(line: 7, column: 54, scope: !77)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: <2 x float>, 8: float} @_ZN3Foo9get_coordEv({0: {0: float, 4: float, 8: float}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %.sroa.02.0..sroa_cast = bitcast %1
+; CHECK:   <2 x float>* %2 = bitcast %.sroa.02.0..sroa_cast
+; CHECK:   <2 x float> %.sroa.02.0.copyload = load %2, align 4
+; CHECK:   si8* %.sroa.23.0..sroa_idx4 = ptrshift %1, 12 * 0, 1 * 0, 1 * 8
+; CHECK:   float* %3 = bitcast %.sroa.23.0..sroa_idx4
+; CHECK:   float %.sroa.23.0.copyload = load %3, align 4
+; CHECK:   {0: <2 x float>, 8: float} %.fca.0.insert = insertelement undef, 0, %.sroa.02.0.copyload
+; CHECK:   {0: <2 x float>, 8: float} %.fca.1.insert = insertelement %.fca.0.insert, 8, %.sroa.23.0.copyload
+; CHECK:   return %.fca.1.insert
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN3FooC1Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @_ZN3FooC2Efff(%1, %2, %3, %4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN3FooC2Efff({0: {0: float, 4: float, 8: float}}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: float, 4: float, 8: float}* %5 = ptrshift %1, 12 * 0, 1 * 0
+; CHECK:   call @_ZN7Vector3IfEC1Efff(%5, %2, %3, %4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN7Vector3IfEC1Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @_ZN7Vector3IfEC2Efff(%1, %2, %3, %4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN7Vector3IfEC2Efff({0: float, 4: float, 8: float}* %1, float %2, float %3, float %4) {
+; CHECK: #1 !entry !exit {
+; CHECK:   float* %5 = ptrshift %1, 12 * 0, 1 * 0
+; CHECK:   store %5, %2, align 4
+; CHECK:   float* %6 = ptrshift %1, 12 * 0, 1 * 4
+; CHECK:   store %6, %3, align 4
+; CHECK:   float* %7 = ptrshift %1, 12 * 0, 1 * 8
+; CHECK:   store %7, %4, align 4
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: {0: float, 4: float, 8: float}}* $3 = allocate {0: {0: float, 4: float, 8: float}}, 1, align 4
+; CHECK:   call @_ZN3FooC1Efff($3, 1.0E+0, 2.0E+0, 3.0E+0)
+; CHECK:   {0: <2 x float>, 8: float} %4 = call @_ZN3Foo9get_coordEv($3)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

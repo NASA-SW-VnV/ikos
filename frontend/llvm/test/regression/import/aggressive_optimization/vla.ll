@@ -3,20 +3,9 @@ source_filename = "vla.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @.str = private unnamed_addr constant [3 x i8] c"%d\00", align 1
-; CHECK: define [3 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [37, 100, 0], align 1
-; CHECK: }
-; CHECK: }
 
 declare i32 @scanf(i8*, ...) local_unnamed_addr #1
-; CHECK: declare si32 @ar.libc.scanf(si8*, ...)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @foo(i32) unnamed_addr #0 !dbg !8 {
@@ -27,11 +16,6 @@ define internal fastcc void @foo(i32) unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata i32 undef, metadata !17, metadata !DIExpression()), !dbg !13
   ret void, !dbg !21
 }
-; CHECK: define void @foo(si32 %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !22 {
@@ -46,16 +30,6 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !22 {
   call fastcc void @foo(i32 %6), !dbg !34
   ret i32 0, !dbg !35
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   si8* %4 = ptrshift @.str, 3 * 0, 1 * 0
-; CHECK:   si32 %5 = call @ar.libc.scanf(%4, $3)
-; CHECK:   si32 %6 = load $3, align 4
-; CHECK:   call @foo(%6)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #2
@@ -105,3 +79,30 @@ attributes #3 = { nounwind }
 !33 = !DILocation(line: 13, column: 7, scope: !22)
 !34 = !DILocation(line: 13, column: 3, scope: !22)
 !35 = !DILocation(line: 14, column: 3, scope: !22)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [3 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [37, 100, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.scanf(si8*, ...)
+; CHECK: define void @foo(si32 %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32* $3 = allocate si32, 1, align 4
+; CHECK:   si8* %4 = ptrshift @.str, 3 * 0, 1 * 0
+; CHECK:   si32 %5 = call @ar.libc.scanf(%4, $3)
+; CHECK:   si32 %6 = load $3, align 4
+; CHECK:   call @foo(%6)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

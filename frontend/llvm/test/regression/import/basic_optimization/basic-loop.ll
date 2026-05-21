@@ -3,17 +3,7 @@ source_filename = "basic-loop.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @a = common global [10 x double] zeroinitializer, align 16, !dbg !0
-; CHECK: define [10 x double]* @a, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @a, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !15 {
@@ -48,31 +38,6 @@ define i32 @main(i32, i8**) #0 !dbg !15 {
   store double %13, double* %15, align 8, !dbg !44
   ret i32 0, !dbg !45
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   si32 %.0 = 0
-; CHECK: }
-; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#2} {
-; CHECK:   %.0 silt 10
-; CHECK:   double %3 = sitofp %.0
-; CHECK:   double %4 = %3 fmul 8.8E-1
-; CHECK:   si64 %5 = sext %.0
-; CHECK:   double* %6 = ptrshift @a, 80 * 0, 8 * %5
-; CHECK:   store %6, %4, align 8
-; CHECK:   si32 %7 = %.0 sadd.nw 1
-; CHECK:   si32 %.0 = %7
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %.0 sige 10
-; CHECK:   double %8 = sitofp %.0
-; CHECK:   si64 %9 = sext %.0
-; CHECK:   double* %10 = ptrshift @a, 80 * 0, 8 * %9
-; CHECK:   store %10, %8, align 8
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -130,3 +95,39 @@ attributes #1 = { nounwind readnone speculatable }
 !43 = !DILocation(line: 8, column: 3, scope: !15)
 !44 = !DILocation(line: 8, column: 8, scope: !15)
 !45 = !DILocation(line: 9, column: 1, scope: !15)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [10 x double]* @a, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @a, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   si32 %.0 = 0
+; CHECK: }
+; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#2} {
+; CHECK:   %.0 silt 10
+; CHECK:   double %3 = sitofp %.0
+; CHECK:   double %4 = %3 fmul 8.8E-1
+; CHECK:   si64 %5 = sext %.0
+; CHECK:   double* %6 = ptrshift @a, 80 * 0, 8 * %5
+; CHECK:   store %6, %4, align 8
+; CHECK:   si32 %7 = %.0 sadd.nw 1
+; CHECK:   si32 %.0 = %7
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %.0 sige 10
+; CHECK:   double %8 = sitofp %.0
+; CHECK:   si64 %9 = sext %.0
+; CHECK:   double* %10 = ptrshift @a, 80 * 0, 8 * %9
+; CHECK:   store %10, %8, align 8
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

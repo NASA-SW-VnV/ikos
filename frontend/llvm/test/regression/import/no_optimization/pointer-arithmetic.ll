@@ -3,81 +3,28 @@ source_filename = "pointer-arithmetic.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.vector = type { i32, i32, i32 }
 
 @.str = private unnamed_addr constant [4 x i8] c"aaa\00", align 1
-; CHECK: define [4 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [97, 97, 97, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @.str.1 = private unnamed_addr constant [4 x i8] c"bbb\00", align 1
-; CHECK: define [4 x si8]* @.str.1, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str.1, [98, 98, 98, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-; CHECK: define [4 x si8]* @.str.2, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str.2, [37, 100, 10, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @ptr = global i32* bitcast (i8* getelementptr (i8, i8* bitcast ([2 x %struct.vector]* @v to i8*), i64 20) to i32*), align 8, !dbg !23
-; CHECK: define si32** @ptr, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @v
-; CHECK:   si8* %2 = ptrshift %1, 1 * 20
-; CHECK:   si32* %3 = bitcast %2
-; CHECK:   store @ptr, %3, align 1
-; CHECK: }
-; CHECK: }
 
 @ptr_fun = global i8* getelementptr (i8, i8* bitcast (i32 ()* @_Z1fv to i8*), i64 1), align 8, !dbg !0
-; CHECK: define ui8** @ptr_fun, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_Z1fv
-; CHECK:   ui8* %2 = ptrshift %1, 1 * 1
-; CHECK:   store @ptr_fun, %2, align 1
-; CHECK: }
-; CHECK: }
 
 @string_map = global [2 x i8*] [i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i32 0, i32 0), i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.1, i32 0, i32 0)], align 16, !dbg !6
-; CHECK: define [2 x si8*]* @string_map, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = ptrshift @.str.1, 4 * 0, 1 * 0
-; CHECK:   si8* %2 = ptrshift @.str, 4 * 0, 1 * 0
-; CHECK:   store @string_map, [%2, %1], align 1
-; CHECK: }
-; CHECK: }
 
 @v = global [2 x %struct.vector] [%struct.vector { i32 1, i32 2, i32 3 }, %struct.vector { i32 4, i32 5, i32 6 }], align 16, !dbg !14
-; CHECK: define [2 x {0: si32, 4: si32, 8: si32}]* @v, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @v, [{0: 1, 4: 2, 8: 3}, {0: 4, 4: 5, 8: 6}], align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @_Z1fv() #0 !dbg !33 {
   ret i32 6, !dbg !36
 }
-; CHECK: define si32 @_Z1fv() {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 6
-; CHECK: }
-; CHECK: }
 
 declare i32 @printf(i8*, ...) #2
-; CHECK: declare si32 @ar.libc.printf(si8*, ...)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() #1 !dbg !37 {
@@ -89,17 +36,6 @@ define i32 @main() #1 !dbg !37 {
   %5 = call i32 (i8*, ...) @printf(i8* %4, i32 %3), !dbg !39
   ret i32 %5, !dbg !40
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   store $1, 0, align 4
-; CHECK:   si32* %2 = ptrshift @v, 24 * 0, 12 * 1, 1 * 8
-; CHECK:   si32 %3 = load %2, align 4
-; CHECK:   si8* %4 = ptrshift @.str.2, 4 * 0, 1 * 0
-; CHECK:   si32 %5 = call @ar.libc.printf(%4, %3)
-; CHECK:   return %5
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { noinline norecurse ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
@@ -150,3 +86,67 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !38 = !DILocation(line: 22, column: 30, scope: !37)
 !39 = !DILocation(line: 22, column: 10, scope: !37)
 !40 = !DILocation(line: 22, column: 3, scope: !37)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [4 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [97, 97, 97, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [4 x si8]* @.str.1, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str.1, [98, 98, 98, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [4 x si8]* @.str.2, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str.2, [37, 100, 10, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32** @ptr, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32* %1 = ptrshift @v, 1 * 20
+; CHECK:   store @ptr, %1, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define ui8** @ptr_fun, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   ui8* %1 = ptrshift @_Z1fv, 1 * 1
+; CHECK:   store @ptr_fun, %1, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [2 x si8*]* @string_map, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @.str.1
+; CHECK:   si8* %2 = bitcast @.str
+; CHECK:   store @string_map, [%2, %1], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [2 x {0: si32, 4: si32, 8: si32}]* @v, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @v, [{0: 1, 4: 2, 8: 3}, {0: 4, 4: 5, 8: 6}], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @_Z1fv() {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 6
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.printf(si8*, ...)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   si32* %2 = bitcast $1
+; CHECK:   store %2, 0, align 4
+; CHECK:   si8* %3 = ptrshift @v, 24 * 0, 12 * 1, 1 * 8
+; CHECK:   si32* %4 = bitcast %3
+; CHECK:   si32 %5 = load %4, align 4
+; CHECK:   si8* %6 = ptrshift @.str.2, 4 * 0, 1 * 0
+; CHECK:   si32 %7 = call @ar.libc.printf(%6, %5)
+; CHECK:   return %7
+; CHECK: }
+; CHECK: }

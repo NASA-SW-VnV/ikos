@@ -3,11 +3,6 @@ source_filename = "local-array-1.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   %3 = alloca [10 x i32], align 16
@@ -35,28 +30,6 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata !2, metadata !23, metadata !DIExpression()), !dbg !16
   ret i32 0, !dbg !37
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   [10 x si32]* $3 = allocate [10 x si32], 1, align 16
-; CHECK:   si32 %.0 = 0
-; CHECK: }
-; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
-; CHECK:   ui32 %4 = bitcast %.0
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#2} {
-; CHECK:   %4 uilt 10
-; CHECK:   ui32 %5 = bitcast %.0
-; CHECK:   ui64 %6 = zext %5
-; CHECK:   si32* %7 = ptrshift $3, 40 * 0, 4 * %6
-; CHECK:   store %7, %.0, align 4
-; CHECK:   si32 %8 = %.0 sadd.nw 1
-; CHECK:   si32 %.0 = %8
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %4 uige 10
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -109,3 +82,31 @@ attributes #1 = { nounwind readnone speculatable }
 !35 = distinct !{!35, !29, !36}
 !36 = !DILocation(line: 11, column: 3, scope: !25)
 !37 = !DILocation(line: 13, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   [10 x si32]* $3 = allocate [10 x si32], 1, align 16
+; CHECK:   si32 %.0 = 0
+; CHECK: }
+; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
+; CHECK:   ui32 %4 = bitcast %.0
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#2} {
+; CHECK:   %4 uilt 10
+; CHECK:   ui32 %5 = bitcast %.0
+; CHECK:   ui64 %6 = zext %5
+; CHECK:   si32* %7 = ptrshift $3, 40 * 0, 4 * %6
+; CHECK:   store %7, %.0, align 4
+; CHECK:   si32 %8 = %.0 sadd.nw 1
+; CHECK:   si32 %.0 = %8
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %4 uige 10
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

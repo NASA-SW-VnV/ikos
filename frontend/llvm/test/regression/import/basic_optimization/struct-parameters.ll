@@ -3,16 +3,10 @@ source_filename = "struct-parameters.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.my_struct = type { [10 x i8], [10 x i8], [10 x i8] }
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg) #2
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @f(%struct.my_struct* noalias sret(%struct.my_struct), %struct.my_struct*) #0 !dbg !8 {
@@ -22,14 +16,6 @@ define void @f(%struct.my_struct* noalias sret(%struct.my_struct), %struct.my_st
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %3, i8* align 1 %4, i64 30, i1 false), !dbg !24
   ret void, !dbg !25
 }
-; CHECK: define void @f({0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %1, {0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %3 = bitcast %1
-; CHECK:   si8* %4 = bitcast %2
-; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 1, 0)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @g(%struct.my_struct* noalias sret(%struct.my_struct), %struct.my_struct* byval(%struct.my_struct) align 8) #0 !dbg !26 {
@@ -39,24 +25,11 @@ define void @g(%struct.my_struct* noalias sret(%struct.my_struct), %struct.my_st
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* align 1 %3, i8* align 8 %4, i64 30, i1 false), !dbg !31
   ret void, !dbg !32
 }
-; CHECK: define void @g({0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %1, {0: [10 x si8], 10: [10 x si8], 20: [10 x si8]}* %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %3 = bitcast %1
-; CHECK:   si8* %4 = bitcast %2
-; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 8, 0)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !33 {
   ret i32 0, !dbg !37
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -110,3 +83,31 @@ attributes #2 = { argmemonly nounwind }
 !35 = !{!36}
 !36 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !37 = !DILocation(line: 18, column: 3, scope: !33)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
+; CHECK: define void @f(opaque* %1, opaque* %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %3 = bitcast %1
+; CHECK:   si8* %4 = bitcast %2
+; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 1, 0)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @g(opaque* %1, opaque* %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %3 = bitcast %1
+; CHECK:   si8* %4 = bitcast %2
+; CHECK:   call @ar.memcpy(%3, %4, 30, 1, 8, 0)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

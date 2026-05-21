@@ -3,11 +3,6 @@ source_filename = "empty-array-1.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 !llvm.dbg.cu = !{!0}
 !llvm.module.flags = !{!18, !19, !20, !21}
 !llvm.ident = !{!22}
@@ -35,3 +30,9 @@ target triple = "x86_64-apple-macosx10.14.0"
 !20 = !{i32 1, !"wchar_size", i32 4}
 !21 = !{i32 7, !"PIC Level", i32 2}
 !22 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0

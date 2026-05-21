@@ -3,11 +3,6 @@ source_filename = "gv-init.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !24 {
   call void @llvm.dbg.value(metadata i32 %0, metadata !30, metadata !DIExpression()), !dbg !31
@@ -45,37 +40,6 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !24 {
 10:                                               ; preds = %3
   ret i32 0, !dbg !53
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   si32 %.01 = 0
-; CHECK:   si32 %.0 = 0
-; CHECK: }
-; CHECK: #2 predecessors={#1, #6} successors={#3, #4} {
-; CHECK:   ui32 %3 = bitcast %.01
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#.preheader} {
-; CHECK:   %3 uilt 100
-; CHECK:   si32 %.1 = %.0
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %3 uige 100
-; CHECK:   return 0
-; CHECK: }
-; CHECK: #.preheader predecessors={#3, #5} successors={#5, #6} {
-; CHECK: }
-; CHECK: #5 predecessors={#.preheader} successors={#.preheader} {
-; CHECK:   %.1 silt 100
-; CHECK:   si32 %4 = %.1 sadd.nw 1
-; CHECK:   si32 %.1 = %4
-; CHECK: }
-; CHECK: #6 predecessors={#.preheader} successors={#2} {
-; CHECK:   %.1 sige 100
-; CHECK:   si32 %.1.lcssa = %.1
-; CHECK:   si32 %5 = %.01 sadd.nw 1
-; CHECK:   si32 %.01 = %5
-; CHECK:   si32 %.0 = %.1.lcssa
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -141,3 +105,40 @@ attributes #1 = { nounwind readnone speculatable }
 !51 = distinct !{!51, !40, !52}
 !52 = !DILocation(line: 14, column: 30, scope: !39)
 !53 = !DILocation(line: 15, column: 3, scope: !24)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   si32 %.01 = 0
+; CHECK:   si32 %.0 = 0
+; CHECK: }
+; CHECK: #2 predecessors={#1, #6} successors={#3, #4} {
+; CHECK:   ui32 %3 = bitcast %.01
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#.preheader} {
+; CHECK:   %3 uilt 100
+; CHECK:   si32 %.1 = %.0
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %3 uige 100
+; CHECK:   return 0
+; CHECK: }
+; CHECK: #.preheader predecessors={#3, #5} successors={#5, #6} {
+; CHECK: }
+; CHECK: #5 predecessors={#.preheader} successors={#.preheader} {
+; CHECK:   %.1 silt 100
+; CHECK:   si32 %4 = %.1 sadd.nw 1
+; CHECK:   si32 %.1 = %4
+; CHECK: }
+; CHECK: #6 predecessors={#.preheader} successors={#2} {
+; CHECK:   %.1 sige 100
+; CHECK:   si32 %.1.lcssa = %.1
+; CHECK:   si32 %5 = %.01 sadd.nw 1
+; CHECK:   si32 %.01 = %5
+; CHECK:   si32 %.0 = %.1.lcssa
+; CHECK: }
+; CHECK: }

@@ -3,11 +3,6 @@ source_filename = "phi-4.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline norecurse nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !8 {
   %3 = alloca i32, align 4
@@ -72,71 +67,6 @@ define i32 @main(i32, i8**) #0 !dbg !8 {
 35:                                               ; preds = %13
   ret i32 0, !dbg !57
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry successors={#2, #3} {
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   si32* $4 = allocate si32, 1, align 4
-; CHECK:   si8*** $5 = allocate si8**, 1, align 8
-; CHECK:   si32* $6 = allocate si32, 1, align 4
-; CHECK:   [10 x si32]* $7 = allocate [10 x si32], 1, align 16
-; CHECK:   ui8* $8 = allocate ui8, 1, align 1
-; CHECK:   store $3, 0, align 4
-; CHECK:   store $4, %1, align 4
-; CHECK:   store $5, %2, align 8
-; CHECK:   store $6, 0, align 4
-; CHECK:   si32 %9 = load $4, align 4
-; CHECK:   si32 %10 = %9 srem 5
-; CHECK: }
-; CHECK: #2 predecessors={#1} successors={#4} {
-; CHECK:   %10 sieq 0
-; CHECK:   ui1 %11 = 1
-; CHECK: }
-; CHECK: #3 predecessors={#1} successors={#4} {
-; CHECK:   %10 sine 0
-; CHECK:   ui1 %11 = 0
-; CHECK: }
-; CHECK: #4 predecessors={#2, #3} successors={#5} {
-; CHECK:   ui8 %12 = zext %11
-; CHECK:   store $8, %12, align 1
-; CHECK: }
-; CHECK: #5 predecessors={#4, #10} successors={#6, #7} {
-; CHECK:   si32 %13 = load $6, align 4
-; CHECK: }
-; CHECK: #6 predecessors={#5} successors={#8, #9} {
-; CHECK:   %13 silt 10
-; CHECK:   si8* %14 = bitcast $8
-; CHECK:   si8 %15 = load %14, align 1
-; CHECK:   ui8 %16 = bitcast %15
-; CHECK:   ui1 %17 = utrunc %16
-; CHECK: }
-; CHECK: #7 !exit predecessors={#5} {
-; CHECK:   %13 sige 10
-; CHECK:   return 0
-; CHECK: }
-; CHECK: #8 predecessors={#6} successors={#10} {
-; CHECK:   ui32* %18 = bitcast $6
-; CHECK:   ui32 %19 = load %18, align 4
-; CHECK:   ui32 %20 = %19 uxor 2
-; CHECK:   si32 %21 = bitcast %20
-; CHECK:   si32 %22 = load $6, align 4
-; CHECK:   si64 %23 = sext %22
-; CHECK:   si32* %24 = ptrshift $7, 40 * 0, 4 * %23
-; CHECK:   store %24, %21, align 4
-; CHECK: }
-; CHECK: #9 predecessors={#6} successors={#10} {
-; CHECK:   si32 %25 = load $6, align 4
-; CHECK:   si32 %26 = %25 smul.nw 2
-; CHECK:   si32 %27 = load $6, align 4
-; CHECK:   si64 %28 = sext %27
-; CHECK:   si32* %29 = ptrshift $7, 40 * 0, 4 * %28
-; CHECK:   store %29, %26, align 4
-; CHECK: }
-; CHECK: #10 predecessors={#8, #9} successors={#5} {
-; CHECK:   si32 %30 = load $6, align 4
-; CHECK:   si32 %31 = %30 sadd.nw 1
-; CHECK:   store $6, %31, align 4
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -206,3 +136,77 @@ attributes #1 = { nounwind readnone speculatable }
 !55 = distinct !{!55, !37, !56}
 !56 = !DILocation(line: 9, column: 3, scope: !35)
 !57 = !DILocation(line: 10, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry successors={#2, #3} {
+; CHECK:   si8* $3 = allocate si8, 1, align 4
+; CHECK:   si32* $4 = allocate si32, 1, align 4
+; CHECK:   si8*** $5 = allocate si8**, 1, align 8
+; CHECK:   si32* $6 = allocate si32, 1, align 4
+; CHECK:   [10 x si32]* $7 = allocate [10 x si32], 1, align 16
+; CHECK:   ui8* $8 = allocate ui8, 1, align 1
+; CHECK:   si32* %9 = bitcast $3
+; CHECK:   store %9, 0, align 4
+; CHECK:   store $4, %1, align 4
+; CHECK:   store $5, %2, align 8
+; CHECK:   store $6, 0, align 4
+; CHECK:   si32 %10 = load $4, align 4
+; CHECK:   si32 %11 = %10 srem 5
+; CHECK: }
+; CHECK: #2 predecessors={#1} successors={#4} {
+; CHECK:   %11 sieq 0
+; CHECK:   ui1 %12 = 1
+; CHECK: }
+; CHECK: #3 predecessors={#1} successors={#4} {
+; CHECK:   %11 sine 0
+; CHECK:   ui1 %12 = 0
+; CHECK: }
+; CHECK: #4 predecessors={#2, #3} successors={#5} {
+; CHECK:   ui8 %13 = zext %12
+; CHECK:   store $8, %13, align 1
+; CHECK: }
+; CHECK: #5 predecessors={#4, #10} successors={#6, #7} {
+; CHECK:   si32 %14 = load $6, align 4
+; CHECK: }
+; CHECK: #6 predecessors={#5} successors={#8, #9} {
+; CHECK:   %14 silt 10
+; CHECK:   si8* %15 = bitcast $8
+; CHECK:   si8 %16 = load %15, align 1
+; CHECK:   ui8 %17 = bitcast %16
+; CHECK:   ui1 %18 = utrunc %17
+; CHECK: }
+; CHECK: #7 !exit predecessors={#5} {
+; CHECK:   %14 sige 10
+; CHECK:   return 0
+; CHECK: }
+; CHECK: #8 predecessors={#6} successors={#10} {
+; CHECK:   %18 uieq 1
+; CHECK:   ui32* %19 = bitcast $6
+; CHECK:   ui32 %20 = load %19, align 4
+; CHECK:   ui32 %21 = %20 uxor 2
+; CHECK:   si32 %22 = bitcast %21
+; CHECK:   si32 %23 = load $6, align 4
+; CHECK:   si64 %24 = sext %23
+; CHECK:   si32* %25 = ptrshift $7, 40 * 0, 4 * %24
+; CHECK:   store %25, %22, align 4
+; CHECK: }
+; CHECK: #9 predecessors={#6} successors={#10} {
+; CHECK:   %18 uieq 0
+; CHECK:   si32 %26 = load $6, align 4
+; CHECK:   si32 %27 = %26 smul.nw 2
+; CHECK:   si32 %28 = load $6, align 4
+; CHECK:   si64 %29 = sext %28
+; CHECK:   si32* %30 = ptrshift $7, 40 * 0, 4 * %29
+; CHECK:   store %30, %27, align 4
+; CHECK: }
+; CHECK: #10 predecessors={#8, #9} successors={#5} {
+; CHECK:   si32 %31 = load $6, align 4
+; CHECK:   si32 %32 = %31 sadd.nw 1
+; CHECK:   store $6, %32, align 4
+; CHECK: }
+; CHECK: }

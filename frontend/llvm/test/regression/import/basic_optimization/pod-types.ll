@@ -3,73 +3,27 @@ source_filename = "pod-types.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @b = common global i8 0, align 1, !dbg !19
-; CHECK: define ui8* @b, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @b, 0, align 1
-; CHECK: }
-; CHECK: }
 
 @d = common global double 0.000000e+00, align 8, !dbg !9
-; CHECK: define double* @d, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @d, 0.0E+0, align 1
-; CHECK: }
-; CHECK: }
 
 @f = common global float 0.000000e+00, align 4, !dbg !6
-; CHECK: define float* @f, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @f, 0.0E+0, align 1
-; CHECK: }
-; CHECK: }
 
 @i = common global i32 0, align 4, !dbg !0
-; CHECK: define ui32* @i, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @i, 0, align 1
-; CHECK: }
-; CHECK: }
 
 @p = common global i8* null, align 8, !dbg !12
-; CHECK: define si8** @p, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @p, null, align 1
-; CHECK: }
-; CHECK: }
 
 @q = common global i32* null, align 8, !dbg !15
-; CHECK: define si32** @q, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @q, null, align 1
-; CHECK: }
-; CHECK: }
 
 @tab = common global [10 x [12 x i16]] zeroinitializer, align 16, !dbg !22
-; CHECK: define [10 x [12 x si16]]* @tab, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @tab, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #2
-; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @fun() #0 !dbg !35 {
   ret void, !dbg !38
 }
-; CHECK: define void @fun() {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !39 {
@@ -90,23 +44,6 @@ define i32 @main(i32, i8**) #0 !dbg !39 {
   store i32 42, i32* %9, align 4, !dbg !51
   ret i32 0, !dbg !52
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   [10 x si32]* $3 = allocate [10 x si32], 1, align 16
-; CHECK:   si8* %4 = bitcast $3
-; CHECK:   call @ar.memset(%4, 0, 40, 16, 0)
-; CHECK:   [10 x si32]* %5 = bitcast %4
-; CHECK:   si32* %6 = ptrshift %5, 40 * 0, 4 * 0
-; CHECK:   store %6, 1, align 16
-; CHECK:   si32* %7 = ptrshift %5, 40 * 0, 4 * 1
-; CHECK:   store %7, -1, align 4
-; CHECK:   si32* %8 = ptrshift %5, 40 * 0, 4 * 2
-; CHECK:   store %8, 255, align 8
-; CHECK:   si32* %9 = ptrshift %5, 40 * 0, 4 * 3
-; CHECK:   store %9, 42, align 4
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -175,3 +112,71 @@ attributes #2 = { argmemonly nounwind }
 !50 = !{!27}
 !51 = !DILocation(line: 18, column: 7, scope: !39)
 !52 = !DILocation(line: 19, column: 3, scope: !39)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define ui8* @b, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @b, 0, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define double* @d, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @d, 0.0E+0, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define float* @f, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @f, 0.0E+0, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define ui32* @i, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @i, 0, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si8** @p, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @p, null, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32** @q, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @q, null, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [10 x [12 x si16]]* @tab, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @tab, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
+; CHECK: define void @fun() {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   [10 x si32]* $3 = allocate [10 x si32], 1, align 16
+; CHECK:   si8* %4 = bitcast $3
+; CHECK:   call @ar.memset(%4, 0, 40, 16, 0)
+; CHECK:   si8* %5 = bitcast %4
+; CHECK:   si8* %6 = ptrshift %5, 40 * 0, 4 * 0
+; CHECK:   si32* %7 = bitcast %6
+; CHECK:   store %7, 1, align 16
+; CHECK:   si8* %8 = ptrshift %5, 40 * 0, 4 * 1
+; CHECK:   si32* %9 = bitcast %8
+; CHECK:   store %9, -1, align 4
+; CHECK:   si8* %10 = ptrshift %5, 40 * 0, 4 * 2
+; CHECK:   si32* %11 = bitcast %10
+; CHECK:   store %11, 255, align 8
+; CHECK:   si8* %12 = ptrshift %5, 40 * 0, 4 * 3
+; CHECK:   si32* %13 = bitcast %12
+; CHECK:   store %13, 42, align 4
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

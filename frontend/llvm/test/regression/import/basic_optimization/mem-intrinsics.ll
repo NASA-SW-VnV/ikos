@@ -3,33 +3,20 @@ source_filename = "mem-intrinsics.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg) #1
-; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memmove.p0i8.p0i8.i64(i8* nocapture, i8* nocapture readonly, i64, i1 immarg) #1
-; CHECK: declare void @ar.memmove(si8*, si8*, ui64, ui32, ui32, ui1)
 
 ; Function Attrs: argmemonly nounwind
 declare void @llvm.memset.p0i8.i64(i8* nocapture writeonly, i8, i64, i1 immarg) #1
-; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @cst() #0 !dbg !11 {
   call void @llvm.dbg.value(metadata i32 10, metadata !14, metadata !DIExpression()), !dbg !15
   ret i32 10, !dbg !16
 }
-; CHECK: define si32 @cst() {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 10
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !17 {
@@ -46,19 +33,6 @@ define i32 @main() #0 !dbg !17 {
   call void @llvm.dbg.value(metadata i8* %5, metadata !19, metadata !DIExpression()), !dbg !20
   ret i32 0, !dbg !23
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast undef
-; CHECK:   si8* %2 = bitcast undef
-; CHECK:   call @ar.memcpy(%1, %2, 10, 4, 4, 0)
-; CHECK:   si8* %3 = bitcast undef
-; CHECK:   si8* %4 = bitcast undef
-; CHECK:   call @ar.memmove(%3, %4, 50, 4, 4, 0)
-; CHECK:   si8* %5 = bitcast undef
-; CHECK:   call @ar.memset(%5, 1, 50, 4, 0)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #2
@@ -95,3 +69,33 @@ attributes #2 = { nounwind readnone speculatable }
 !21 = !DILocation(line: 11, column: 13, scope: !17)
 !22 = !DILocation(line: 12, column: 13, scope: !17)
 !23 = !DILocation(line: 13, column: 1, scope: !17)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: declare void @ar.memcpy(si8*, si8*, ui64, ui32, ui32, ui1)
+; CHECK: declare void @ar.memmove(si8*, si8*, ui64, ui32, ui32, ui1)
+; CHECK: declare void @ar.memset(si8*, si8, ui64, ui32, ui1)
+; CHECK: define si32 @cst() {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 10
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32* %1 = bitcast undef
+; CHECK:   si8* %2 = bitcast undef
+; CHECK:   si8* %3 = bitcast %1
+; CHECK:   call @ar.memcpy(%3, %2, 10, 4, 4, 0)
+; CHECK:   si32* %4 = bitcast undef
+; CHECK:   si8* %5 = bitcast undef
+; CHECK:   si8* %6 = bitcast %4
+; CHECK:   call @ar.memmove(%6, %5, 50, 4, 4, 0)
+; CHECK:   si32* %7 = bitcast undef
+; CHECK:   si8* %8 = bitcast %7
+; CHECK:   call @ar.memset(%8, 1, 50, 4, 0)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

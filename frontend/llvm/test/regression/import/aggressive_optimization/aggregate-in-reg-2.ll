@@ -3,11 +3,6 @@ source_filename = "aggregate-in-reg-2.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc { <2 x float>, <2 x float> } @_Z1ff(float) unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata float %0, metadata !22, metadata !DIExpression()), !dbg !23
@@ -16,26 +11,12 @@ define internal fastcc { <2 x float>, <2 x float> } @_Z1ff(float) unnamed_addr #
   %.fca.1.insert = insertvalue { <2 x float>, <2 x float> } %.fca.0.insert, <2 x float> <float 2.000000e+00, float 0.000000e+00>, 1, !dbg !25
   ret { <2 x float>, <2 x float> } %.fca.1.insert, !dbg !25
 }
-; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   <2 x float> %.sroa.0.4.vec.insert = insertelement <0.0E+0, undef>, 4, %1
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %.fca.0.insert = insertelement undef, 0, %.sroa.0.4.vec.insert
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %.fca.1.insert = insertelement %.fca.0.insert, 8, <2.0E+0, 0.0E+0>
-; CHECK:   return %.fca.1.insert
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() local_unnamed_addr #1 !dbg !26 {
   %1 = call fastcc { <2 x float>, <2 x float> } @_Z1ff(float 2.000000e+00), !dbg !30
   ret i32 0, !dbg !31
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %1 = call @_Z1ff(2.0E+0)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #2
@@ -80,3 +61,23 @@ attributes #2 = { nounwind readnone speculatable }
 !29 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !30 = !DILocation(line: 17, column: 18, scope: !26)
 !31 = !DILocation(line: 18, column: 3, scope: !26)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   <2 x float> %.sroa.0.4.vec.insert = insertelement <0.0E+0, undef>, 4, %1
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %.fca.0.insert = insertelement undef, 0, %.sroa.0.4.vec.insert
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %.fca.1.insert = insertelement %.fca.0.insert, 8, <2.0E+0, 0.0E+0>
+; CHECK:   return %.fca.1.insert
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %1 = call @_Z1ff(2.0E+0)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

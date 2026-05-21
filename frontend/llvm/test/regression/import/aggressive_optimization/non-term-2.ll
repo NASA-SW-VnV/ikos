@@ -3,11 +3,6 @@ source_filename = "non-term-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() local_unnamed_addr #0 !dbg !8 {
   br label %1, !dbg !12
@@ -15,12 +10,6 @@ define i32 @main() local_unnamed_addr #0 !dbg !8 {
 1:                                                ; preds = %0, %1
   br label %1, !dbg !12, !llvm.loop !13
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry successors={#2} {
-; CHECK: }
-; CHECK: #2 predecessors={#1, #2} successors={#2} {
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
@@ -43,3 +32,15 @@ attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-f
 !12 = !DILocation(line: 4, column: 3, scope: !8)
 !13 = distinct !{!13, !12, !14}
 !14 = !DILocation(line: 6, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry successors={#2} {
+; CHECK: }
+; CHECK: #2 predecessors={#1, #2} successors={#2} {
+; CHECK: }
+; CHECK: }

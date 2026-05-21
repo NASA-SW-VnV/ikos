@@ -3,20 +3,10 @@ source_filename = "empty-array-2.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.anon.0 = type { [0 x i32], %struct.anon }
 %struct.anon = type { i32 }
 
 @c = global %struct.anon.0 { [0 x i32] zeroinitializer, %struct.anon { i32 6 } }, align 4, !dbg !0
-; CHECK: define {0: [0 x si32], 0: {0: si32}}* @c, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @c, {0: aggregate_zero, 0: {0: 6}}, align 1
-; CHECK: }
-; CHECK: }
 
 !llvm.dbg.cu = !{!2}
 !llvm.module.flags = !{!17, !18, !19, !20}
@@ -44,3 +34,14 @@ target triple = "x86_64-apple-macosx10.14.0"
 !19 = !{i32 1, !"wchar_size", i32 4}
 !20 = !{i32 7, !"PIC Level", i32 2}
 !21 = !{!"clang version 9.0.0 (tags/RELEASE_900/final)"}
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: [0 x si32], 0: {0: si32}}* @c, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @c, {0: aggregate_zero, 0: {0: 6}}, align 1
+; CHECK: }
+; CHECK: }

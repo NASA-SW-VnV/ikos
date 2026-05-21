@@ -3,11 +3,6 @@ source_filename = "nullptr.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @_Z1fDn(i8*) #0 !dbg !8 {
   %2 = alloca i8*, align 8
@@ -15,13 +10,6 @@ define i32 @_Z1fDn(i8*) #0 !dbg !8 {
   call void @llvm.dbg.declare(metadata i8** %2, metadata !13, metadata !DIExpression()), !dbg !14
   ret i32 1, !dbg !15
 }
-; CHECK: define si32 @_Z1fDn(si8* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** $2 = allocate si8*, 1, align 8
-; CHECK:   store $2, %1, align 8
-; CHECK:   return 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline norecurse nounwind ssp uwtable
 define i32 @main() #2 !dbg !16 {
@@ -30,14 +18,6 @@ define i32 @main() #2 !dbg !16 {
   %2 = call i32 @_Z1fDn(i8* null), !dbg !19
   ret i32 %2, !dbg !20
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   store $1, 0, align 4
-; CHECK:   si32 %2 = call @_Z1fDn(null)
-; CHECK:   return %2
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -71,3 +51,25 @@ attributes #2 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-div
 !18 = !{!11}
 !19 = !DILocation(line: 6, column: 10, scope: !16)
 !20 = !DILocation(line: 6, column: 3, scope: !16)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @_Z1fDn(si8* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8** $2 = allocate si8*, 1, align 8
+; CHECK:   store $2, %1, align 8
+; CHECK:   return 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   si32* %2 = bitcast $1
+; CHECK:   store %2, 0, align 4
+; CHECK:   si32 %3 = call @_Z1fDn(null)
+; CHECK:   return %3
+; CHECK: }
+; CHECK: }

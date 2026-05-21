@@ -3,11 +3,6 @@ source_filename = "bitwise-cond-1.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @foo(i32, i32, i32) #0 !dbg !8 {
   call void @llvm.dbg.value(metadata i32 %0, metadata !12, metadata !DIExpression()), !dbg !13
@@ -46,42 +41,6 @@ define i32 @foo(i32, i32, i32) #0 !dbg !8 {
   %18 = phi i32 [ %0, %15 ], [ %1, %16 ], !dbg !26
   ret i32 %18, !dbg !27
 }
-; CHECK: define si32 @foo(si32 %1, si32 %2, si32 %3) {
-; CHECK: #1 !entry successors={#2, #3} {
-; CHECK:   si32 %4 = %1 ssub.nw %2
-; CHECK: }
-; CHECK: #2 predecessors={#1} successors={#4, #5} {
-; CHECK:   %3 sieq 0
-; CHECK: }
-; CHECK: #3 predecessors={#1} successors={#6} {
-; CHECK:   %3 sine 0
-; CHECK: }
-; CHECK: #4 predecessors={#2} successors={#7} {
-; CHECK:   %4 sine 0
-; CHECK:   si32 %5 = %1 sadd.nw %2
-; CHECK:   si32 %6 = %5
-; CHECK: }
-; CHECK: #5 predecessors={#2} successors={#6} {
-; CHECK:   %4 sieq 0
-; CHECK: }
-; CHECK: #6 predecessors={#3, #5} successors={#7} {
-; CHECK:   si32 %7 = %2 sadd.nw %3
-; CHECK:   si32 %6 = %7
-; CHECK: }
-; CHECK: #7 predecessors={#4, #6} successors={#8, #9} {
-; CHECK: }
-; CHECK: #8 predecessors={#7} successors={#10} {
-; CHECK:   %4 sigt %6
-; CHECK:   si32 %8 = %1
-; CHECK: }
-; CHECK: #9 predecessors={#7} successors={#10} {
-; CHECK:   %4 sile %6
-; CHECK:   si32 %8 = %2
-; CHECK: }
-; CHECK: #10 !exit predecessors={#8, #9} {
-; CHECK:   return %8
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -121,3 +80,45 @@ attributes #1 = { nounwind readnone speculatable }
 !25 = !DILocation(line: 4, column: 13, scope: !8)
 !26 = !DILocation(line: 4, column: 10, scope: !8)
 !27 = !DILocation(line: 4, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @foo(si32 %1, si32 %2, si32 %3) {
+; CHECK: #1 !entry successors={#2, #3} {
+; CHECK:   si32 %4 = %1 ssub.nw %2
+; CHECK: }
+; CHECK: #2 predecessors={#1} successors={#4, #5} {
+; CHECK:   %3 sieq 0
+; CHECK: }
+; CHECK: #3 predecessors={#1} successors={#6} {
+; CHECK:   %3 sine 0
+; CHECK: }
+; CHECK: #4 predecessors={#2} successors={#7} {
+; CHECK:   %4 sine 0
+; CHECK:   si32 %5 = %1 sadd.nw %2
+; CHECK:   si32 %6 = %5
+; CHECK: }
+; CHECK: #5 predecessors={#2} successors={#6} {
+; CHECK:   %4 sieq 0
+; CHECK: }
+; CHECK: #6 predecessors={#3, #5} successors={#7} {
+; CHECK:   si32 %7 = %2 sadd.nw %3
+; CHECK:   si32 %6 = %7
+; CHECK: }
+; CHECK: #7 predecessors={#4, #6} successors={#8, #9} {
+; CHECK: }
+; CHECK: #8 predecessors={#7} successors={#10} {
+; CHECK:   %4 sigt %6
+; CHECK:   si32 %8 = %1
+; CHECK: }
+; CHECK: #9 predecessors={#7} successors={#10} {
+; CHECK:   %4 sile %6
+; CHECK:   si32 %8 = %2
+; CHECK: }
+; CHECK: #10 !exit predecessors={#8, #9} {
+; CHECK:   return %8
+; CHECK: }
+; CHECK: }

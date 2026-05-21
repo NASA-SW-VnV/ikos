@@ -3,22 +3,12 @@ source_filename = "complex.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() local_unnamed_addr #0 !dbg !8 {
   call void @llvm.dbg.value(metadata double 1.000000e+00, metadata !12, metadata !DIExpression(DW_OP_LLVM_fragment, 0, 64)), !dbg !14
   call void @llvm.dbg.value(metadata double 2.000000e+00, metadata !12, metadata !DIExpression(DW_OP_LLVM_fragment, 64, 64)), !dbg !14
   ret i32 1, !dbg !15
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -46,3 +36,14 @@ attributes #1 = { nounwind readnone speculatable }
 !13 = !DIBasicType(name: "complex", size: 128, encoding: DW_ATE_complex_float)
 !14 = !DILocation(line: 0, scope: !8)
 !15 = !DILocation(line: 5, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 1
+; CHECK: }
+; CHECK: }

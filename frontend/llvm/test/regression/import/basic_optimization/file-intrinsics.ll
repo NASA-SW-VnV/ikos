@@ -3,66 +3,33 @@ source_filename = "file-intrinsics.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.__sFILE = type { i8*, i32, i32, i16, i16, %struct.__sbuf, i32, i8*, i32 (i8*)*, i32 (i8*, i8*, i32)*, i64 (i8*, i64, i32)*, i32 (i8*, i8*, i32)*, %struct.__sbuf, %struct.__sFILEX*, i32, [3 x i8], [1 x i8], %struct.__sbuf, i32, i64 }
 %struct.__sFILEX = type opaque
 %struct.__sbuf = type { i8*, i32 }
 
 @.str = private unnamed_addr constant [10 x i8] c"/tmp/test\00", align 1
-; CHECK: define [10 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [47, 116, 109, 112, 47, 116, 101, 115, 116, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @.str.1 = private unnamed_addr constant [3 x i8] c"rw\00", align 1
-; CHECK: define [3 x si8]* @.str.1, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str.1, [114, 119, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @.str.2 = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
-; CHECK: define [12 x si8]* @.str.2, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str.2, [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @.str.3 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
-; CHECK: define [3 x si8]* @.str.3, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str.3, [37, 100, 0], align 1
-; CHECK: }
-; CHECK: }
 
 declare i32 @fclose(%struct.__sFILE*) #2
-; CHECK: declare si32 @ar.libc.fclose(opaque*)
 
 declare i32 @fflush(%struct.__sFILE*) #2
-; CHECK: declare si32 @ar.libc.fflush(opaque*)
 
 declare i32 @fgetc(%struct.__sFILE*) #2
-; CHECK: declare si32 @ar.libc.fgetc(opaque*)
 
 declare i8* @fgets(i8*, i32, %struct.__sFILE*) #2
-; CHECK: declare si8* @ar.libc.fgets(si8*, si32, opaque*)
 
 declare %struct.__sFILE* @"\01_fopen"(i8*, i8*) #2
-; CHECK: declare opaque* @ar.libc.fopen(si8*, si8*)
 
 declare i32 @fprintf(%struct.__sFILE*, i8*, ...) #2
-; CHECK: declare si32 @ar.libc.fprintf(opaque*, si8*, ...)
 
 declare i32 @"\01_fputs"(i8*, %struct.__sFILE*) #2
-; CHECK: declare si32 @ar.libc.fputs(si8*, opaque*)
 
 declare i32 @fscanf(%struct.__sFILE*, i8*, ...) #2
-; CHECK: declare si32 @ar.libc.fscanf(opaque*, si8*, ...)
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !8 {
@@ -87,35 +54,6 @@ define i32 @main() #0 !dbg !8 {
   %16 = call i32 @fclose(%struct.__sFILE* %5), !dbg !92
   ret i32 0, !dbg !93
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   [1025 x si8]* $1 = allocate [1025 x si8], 1, align 16
-; CHECK:   si32* $2 = allocate si32, 1, align 4
-; CHECK:   si8* %3 = ptrshift @.str, 10 * 0, 1 * 0
-; CHECK:   si8* %4 = ptrshift @.str.1, 3 * 0, 1 * 0
-; CHECK:   opaque* %5 = call @ar.libc.fopen(%3, %4)
-; CHECK:   {0: ui8*, 8: si32, 12: si32, 16: si16, 18: si16, 24: {0: ui8*, 8: si32}, 40: si32, 48: si8*, 56: si32 (si8*)*, 64: si32 (si8*, si8*, si32)*, 72: si64 (si8*, si64, si32)*, 80: si32 (si8*, si8*, si32)*, 88: {0: ui8*, 8: si32}, 104: opaque*, 112: si32, 116: [3 x ui8], 119: [1 x ui8], 120: {0: ui8*, 8: si32}, 136: si32, 144: si64}* %6 = bitcast %5
-; CHECK:   si8* %7 = ptrshift $1, 1025 * 0, 1 * 0
-; CHECK:   opaque* %8 = bitcast %6
-; CHECK:   si8* %9 = call @ar.libc.fgets(%7, 1024, %8)
-; CHECK:   opaque* %10 = bitcast %6
-; CHECK:   si32 %11 = call @ar.libc.fgetc(%10)
-; CHECK:   si8* %12 = ptrshift @.str.2, 12 * 0, 1 * 0
-; CHECK:   opaque* %13 = bitcast %6
-; CHECK:   si32 %14 = call @ar.libc.fputs(%12, %13)
-; CHECK:   si8* %15 = ptrshift @.str.3, 3 * 0, 1 * 0
-; CHECK:   opaque* %16 = bitcast %6
-; CHECK:   si32 %17 = call @ar.libc.fprintf(%16, %15, 1)
-; CHECK:   si8* %18 = ptrshift @.str.3, 3 * 0, 1 * 0
-; CHECK:   opaque* %19 = bitcast %6
-; CHECK:   si32 %20 = call @ar.libc.fscanf(%19, %18, $2)
-; CHECK:   opaque* %21 = bitcast %6
-; CHECK:   si32 %22 = call @ar.libc.fflush(%21)
-; CHECK:   opaque* %23 = bitcast %6
-; CHECK:   si32 %24 = call @ar.libc.fclose(%23)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -225,3 +163,66 @@ attributes #2 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !91 = !DILocation(line: 12, column: 3, scope: !8)
 !92 = !DILocation(line: 13, column: 3, scope: !8)
 !93 = !DILocation(line: 14, column: 1, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [10 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [47, 116, 109, 112, 47, 116, 101, 115, 116, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @.str.1, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str.1, [114, 119, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [12 x si8]* @.str.2, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str.2, [104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @.str.3, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str.3, [37, 100, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.fclose(opaque*)
+; CHECK: declare si32 @ar.libc.fflush(opaque*)
+; CHECK: declare si32 @ar.libc.fgetc(opaque*)
+; CHECK: declare si8* @ar.libc.fgets(si8*, si32, opaque*)
+; CHECK: declare opaque* @ar.libc.fopen(si8*, si8*)
+; CHECK: declare si32 @ar.libc.fprintf(opaque*, si8*, ...)
+; CHECK: declare si32 @ar.libc.fputs(si8*, opaque*)
+; CHECK: declare si32 @ar.libc.fscanf(opaque*, si8*, ...)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   [1025 x si8]* $1 = allocate [1025 x si8], 1, align 16
+; CHECK:   si32* $2 = allocate si32, 1, align 4
+; CHECK:   si8* %3 = ptrshift @.str, 10 * 0, 1 * 0
+; CHECK:   si8* %4 = ptrshift @.str.1, 3 * 0, 1 * 0
+; CHECK:   opaque* %5 = call @ar.libc.fopen(%3, %4)
+; CHECK:   {0: ui8*, 8: si32, 12: si32, 16: si16, 18: si16, 24: {0: ui8*, 8: si32}, 40: si32, 48: si8*, 56: si32 (si8*)*, 64: si32 (si8*, si8*, si32)*, 72: si64 (si8*, si64, si32)*, 80: si32 (si8*, si8*, si32)*, 88: {0: ui8*, 8: si32}, 104: opaque*, 112: si32, 116: [3 x ui8], 119: [1 x ui8], 120: {0: ui8*, 8: si32}, 136: si32, 144: si64}* %6 = bitcast %5
+; CHECK:   si8* %7 = ptrshift $1, 1025 * 0, 1 * 0
+; CHECK:   opaque* %8 = bitcast %6
+; CHECK:   si8* %9 = call @ar.libc.fgets(%7, 1024, %8)
+; CHECK:   opaque* %10 = bitcast %6
+; CHECK:   si32 %11 = call @ar.libc.fgetc(%10)
+; CHECK:   si8* %12 = ptrshift @.str.2, 12 * 0, 1 * 0
+; CHECK:   opaque* %13 = bitcast %6
+; CHECK:   si32 %14 = call @ar.libc.fputs(%12, %13)
+; CHECK:   si8* %15 = ptrshift @.str.3, 3 * 0, 1 * 0
+; CHECK:   opaque* %16 = bitcast %6
+; CHECK:   si32 %17 = call @ar.libc.fprintf(%16, %15, 1)
+; CHECK:   si8* %18 = ptrshift @.str.3, 3 * 0, 1 * 0
+; CHECK:   opaque* %19 = bitcast %6
+; CHECK:   si32 %20 = call @ar.libc.fscanf(%19, %18, $2)
+; CHECK:   opaque* %21 = bitcast %6
+; CHECK:   si32 %22 = call @ar.libc.fflush(%21)
+; CHECK:   opaque* %23 = bitcast %6
+; CHECK:   si32 %24 = call @ar.libc.fclose(%23)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

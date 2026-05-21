@@ -3,17 +3,7 @@ source_filename = "bool-op-select.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @a = global i32 0, align 4, !dbg !0
-; CHECK: define si32* @a, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @a, 0, align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline norecurse nounwind ssp uwtable
 define i32 @main() #0 !dbg !12 {
@@ -31,22 +21,6 @@ define i32 @main() #0 !dbg !12 {
   %6 = phi i32 [ 123, %3 ], [ 321, %4 ], !dbg !15
   ret i32 %6, !dbg !17
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry successors={#2, #3} {
-; CHECK:   si32 %1 = load @a, align 4
-; CHECK: }
-; CHECK: #2 predecessors={#1} successors={#4} {
-; CHECK:   %1 sigt 0
-; CHECK:   si32 %2 = 123
-; CHECK: }
-; CHECK: #3 predecessors={#1} successors={#4} {
-; CHECK:   %1 sile 0
-; CHECK:   si32 %2 = 321
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2, #3} {
-; CHECK:   return %2
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
@@ -72,3 +46,30 @@ attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-div
 !15 = !DILocation(line: 11, column: 10, scope: !12)
 !16 = !DILocation(line: 11, column: 12, scope: !12)
 !17 = !DILocation(line: 11, column: 3, scope: !12)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32* @a, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @a, 0, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry successors={#2, #3} {
+; CHECK:   si32 %1 = load @a, align 4
+; CHECK: }
+; CHECK: #2 predecessors={#1} successors={#4} {
+; CHECK:   %1 sigt 0
+; CHECK:   si32 %2 = 123
+; CHECK: }
+; CHECK: #3 predecessors={#1} successors={#4} {
+; CHECK:   %1 sile 0
+; CHECK:   si32 %2 = 321
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2, #3} {
+; CHECK:   return %2
+; CHECK: }
+; CHECK: }

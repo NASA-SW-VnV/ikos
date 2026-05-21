@@ -3,20 +3,10 @@ source_filename = "aggregate-in-reg-2.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.line_t = type { %struct.pos_t, %struct.pos_t }
 %struct.pos_t = type { float, float }
 
 @.str = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
-; CHECK: define [4 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [37, 102, 10, 0], align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define { <2 x float>, <2 x float> } @_Z1ff(float) #0 !dbg !8 {
@@ -36,27 +26,8 @@ define { <2 x float>, <2 x float> } @_Z1ff(float) #0 !dbg !8 {
   %10 = load { <2 x float>, <2 x float> }, { <2 x float>, <2 x float> }* %9, align 4, !dbg !27
   ret { <2 x float>, <2 x float> } %10, !dbg !27
 }
-; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float}, 8: {0: float, 4: float}}* $2 = allocate {0: {0: float, 4: float}, 8: {0: float, 4: float}}, 1, align 4
-; CHECK:   {0: float, 4: float}* %3 = ptrshift $2, 16 * 0, 1 * 0
-; CHECK:   float* %4 = ptrshift %3, 8 * 0, 1 * 0
-; CHECK:   store %4, 0.0E+0, align 4
-; CHECK:   float* %5 = ptrshift %3, 8 * 0, 1 * 4
-; CHECK:   store %5, %1, align 4
-; CHECK:   {0: float, 4: float}* %6 = ptrshift $2, 16 * 0, 1 * 8
-; CHECK:   float* %7 = ptrshift %6, 8 * 0, 1 * 0
-; CHECK:   store %7, 2.0E+0, align 4
-; CHECK:   float* %8 = ptrshift %6, 8 * 0, 1 * 4
-; CHECK:   store %8, 0.0E+0, align 4
-; CHECK:   {0: <2 x float>, 8: <2 x float>}* %9 = bitcast $2
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %10 = load %9, align 4
-; CHECK:   return %10
-; CHECK: }
-; CHECK: }
 
 declare i32 @printf(i8*, ...) #2
-; CHECK: declare si32 @ar.libc.printf(si8*, ...)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() #1 !dbg !28 {
@@ -77,26 +48,6 @@ define i32 @main() #1 !dbg !28 {
   %13 = call i32 (i8*, ...) @printf(i8* %12, double %11), !dbg !35
   ret i32 0, !dbg !36
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float}, 8: {0: float, 4: float}}* $1 = allocate {0: {0: float, 4: float}, 8: {0: float, 4: float}}, 1, align 4
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %2 = call @_Z1ff(2.0E+0)
-; CHECK:   {0: <2 x float>, 8: <2 x float>}* %3 = bitcast $1
-; CHECK:   <2 x float>* %4 = ptrshift %3, 16 * 0, 1 * 0
-; CHECK:   <2 x float> %5 = extractelement %2, 0
-; CHECK:   store %4, %5, align 4
-; CHECK:   <2 x float>* %6 = ptrshift %3, 16 * 0, 1 * 8
-; CHECK:   <2 x float> %7 = extractelement %2, 8
-; CHECK:   store %6, %7, align 4
-; CHECK:   {0: float, 4: float}* %8 = ptrshift $1, 16 * 0, 1 * 0
-; CHECK:   float* %9 = ptrshift %8, 8 * 0, 1 * 4
-; CHECK:   float %10 = load %9, align 4
-; CHECK:   double %11 = fpext %10
-; CHECK:   si8* %12 = ptrshift @.str, 4 * 0, 1 * 0
-; CHECK:   si32 %13 = call @ar.libc.printf(%12, %11)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #3
@@ -147,3 +98,60 @@ attributes #3 = { nounwind readnone speculatable }
 !34 = !DILocation(line: 17, column: 31, scope: !28)
 !35 = !DILocation(line: 17, column: 3, scope: !28)
 !36 = !DILocation(line: 18, column: 3, scope: !28)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [4 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [37, 102, 10, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $2 = allocate si8, 1, align 4
+; CHECK:   si8* %3 = ptrshift $2, 16 * 0, 1 * 0
+; CHECK:   si8* %4 = ptrshift %3, 8 * 0, 1 * 0
+; CHECK:   float* %5 = bitcast %4
+; CHECK:   store %5, 0.0E+0, align 4
+; CHECK:   float* %6 = ptrshift %3, 8 * 0, 1 * 4
+; CHECK:   store %6, %1, align 4
+; CHECK:   si8* %7 = ptrshift $2, 16 * 0, 1 * 8
+; CHECK:   si8* %8 = ptrshift %7, 8 * 0, 1 * 0
+; CHECK:   float* %9 = bitcast %8
+; CHECK:   store %9, 2.0E+0, align 4
+; CHECK:   si8* %10 = ptrshift %7, 8 * 0, 1 * 4
+; CHECK:   float* %11 = bitcast %10
+; CHECK:   store %11, 0.0E+0, align 4
+; CHECK:   si8* %12 = bitcast $2
+; CHECK:   {0: <2 x float>, 8: <2 x float>}* %13 = bitcast %12
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %14 = load %13, align 4
+; CHECK:   return %14
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.printf(si8*, ...)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %2 = call @_Z1ff(2.0E+0)
+; CHECK:   si8* %3 = bitcast $1
+; CHECK:   si8* %4 = ptrshift %3, 16 * 0, 1 * 0
+; CHECK:   <2 x float> %5 = extractelement %2, 0
+; CHECK:   <2 x float>* %6 = bitcast %4
+; CHECK:   store %6, %5, align 4
+; CHECK:   si8* %7 = ptrshift %3, 16 * 0, 1 * 8
+; CHECK:   <2 x float> %8 = extractelement %2, 8
+; CHECK:   <2 x float>* %9 = bitcast %7
+; CHECK:   store %9, %8, align 4
+; CHECK:   si8* %10 = ptrshift $1, 16 * 0, 1 * 0
+; CHECK:   si8* %11 = ptrshift %10, 8 * 0, 1 * 4
+; CHECK:   float* %12 = bitcast %11
+; CHECK:   float %13 = load %12, align 4
+; CHECK:   double %14 = fpext %13
+; CHECK:   si8* %15 = ptrshift @.str, 4 * 0, 1 * 0
+; CHECK:   si32 %16 = call @ar.libc.printf(%15, %14)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

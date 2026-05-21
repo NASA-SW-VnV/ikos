@@ -3,41 +3,15 @@ source_filename = "gv-init.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @a = common global [100 x [100 x i32]] zeroinitializer, align 16, !dbg !9
-; CHECK: define [100 x [100 x si32]]* @a, align 16, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @a, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 @b = global [2 x i32] [i32 1, i32 2], align 4, !dbg !0
-; CHECK: define [2 x si32]* @b, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @b, [1, 2], align 1
-; CHECK: }
-; CHECK: }
 
 @c = common global i32 0, align 4, !dbg !14
-; CHECK: define si32* @c, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @c, 0, align 1
-; CHECK: }
-; CHECK: }
 
 @d = global i32 5, align 4, !dbg !6
-; CHECK: define si32* @d, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @d, 5, align 1
-; CHECK: }
-; CHECK: }
 
 @e = external global i32, align 4
-; CHECK: declare si32* @e, align 4
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !24 {
@@ -129,81 +103,6 @@ define i32 @main(i32, i8**) #0 !dbg !24 {
 53:                                               ; preds = %8
   ret i32 0, !dbg !82
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   si32* $4 = allocate si32, 1, align 4
-; CHECK:   si8*** $5 = allocate si8**, 1, align 8
-; CHECK:   si32* $6 = allocate si32, 1, align 4
-; CHECK:   si32* $7 = allocate si32, 1, align 4
-; CHECK:   store $3, 0, align 4
-; CHECK:   store $4, %1, align 4
-; CHECK:   store $5, %2, align 8
-; CHECK:   store $6, 0, align 4
-; CHECK:   store $7, 0, align 4
-; CHECK: }
-; CHECK: #2 predecessors={#1, #7} successors={#3, #4} {
-; CHECK:   si32 %8 = load $6, align 4
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#5} {
-; CHECK:   %8 silt 100
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %8 sige 100
-; CHECK:   return 0
-; CHECK: }
-; CHECK: #5 predecessors={#3, #10} successors={#6, #7} {
-; CHECK:   si32 %9 = load $7, align 4
-; CHECK: }
-; CHECK: #6 predecessors={#5} successors={#8, #9} {
-; CHECK:   %9 silt 100
-; CHECK:   si32 %10 = load $6, align 4
-; CHECK:   si32 %11 = %10 srem 2
-; CHECK: }
-; CHECK: #7 predecessors={#5} successors={#2} {
-; CHECK:   %9 sige 100
-; CHECK:   si32 %12 = load $6, align 4
-; CHECK:   si32 %13 = %12 sadd.nw 1
-; CHECK:   store $6, %13, align 4
-; CHECK: }
-; CHECK: #8 predecessors={#6} successors={#10} {
-; CHECK:   %11 sieq 0
-; CHECK:   si32* %14 = ptrshift @b, 8 * 0, 4 * 0
-; CHECK:   si32 %15 = load %14, align 4
-; CHECK:   si32 %16 = load @c, align 4
-; CHECK:   si32 %17 = %15 sadd.nw %16
-; CHECK:   si32 %18 = load @e, align 4
-; CHECK:   si32 %19 = %17 ssub.nw %18
-; CHECK:   si32 %20 = load $6, align 4
-; CHECK:   si64 %21 = sext %20
-; CHECK:   [100 x si32]* %22 = ptrshift @a, 40000 * 0, 400 * %21
-; CHECK:   si32 %23 = load $7, align 4
-; CHECK:   si64 %24 = sext %23
-; CHECK:   si32* %25 = ptrshift %22, 400 * 0, 4 * %24
-; CHECK:   store %25, %19, align 4
-; CHECK: }
-; CHECK: #9 predecessors={#6} successors={#10} {
-; CHECK:   %11 sine 0
-; CHECK:   si32* %26 = ptrshift @b, 8 * 0, 4 * 1
-; CHECK:   si32 %27 = load %26, align 4
-; CHECK:   si32 %28 = load @d, align 4
-; CHECK:   si32 %29 = %27 sadd.nw %28
-; CHECK:   si32 %30 = load @e, align 4
-; CHECK:   si32 %31 = %29 ssub.nw %30
-; CHECK:   si32 %32 = load $6, align 4
-; CHECK:   si64 %33 = sext %32
-; CHECK:   [100 x si32]* %34 = ptrshift @a, 40000 * 0, 400 * %33
-; CHECK:   si32 %35 = load $7, align 4
-; CHECK:   si64 %36 = sext %35
-; CHECK:   si32* %37 = ptrshift %34, 400 * 0, 4 * %36
-; CHECK:   store %37, %31, align 4
-; CHECK: }
-; CHECK: #10 predecessors={#8, #9} successors={#5} {
-; CHECK:   si32 %38 = load $7, align 4
-; CHECK:   si32 %39 = %38 sadd.nw 1
-; CHECK:   store $7, %39, align 4
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -298,3 +197,108 @@ attributes #1 = { nounwind readnone speculatable }
 !80 = distinct !{!80, !43, !81}
 !81 = !DILocation(line: 14, column: 30, scope: !41)
 !82 = !DILocation(line: 15, column: 3, scope: !24)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [100 x [100 x si32]]* @a, align 16, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @a, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [2 x si32]* @b, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @b, [1, 2], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32* @c, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @c, 0, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32* @d, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @d, 5, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32* @e, align 4
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   si8* $3 = allocate si8, 1, align 4
+; CHECK:   si32* $4 = allocate si32, 1, align 4
+; CHECK:   si8*** $5 = allocate si8**, 1, align 8
+; CHECK:   si32* $6 = allocate si32, 1, align 4
+; CHECK:   si32* $7 = allocate si32, 1, align 4
+; CHECK:   si32* %8 = bitcast $3
+; CHECK:   store %8, 0, align 4
+; CHECK:   store $4, %1, align 4
+; CHECK:   store $5, %2, align 8
+; CHECK:   store $6, 0, align 4
+; CHECK:   store $7, 0, align 4
+; CHECK: }
+; CHECK: #2 predecessors={#1, #7} successors={#3, #4} {
+; CHECK:   si32 %9 = load $6, align 4
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#5} {
+; CHECK:   %9 silt 100
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %9 sige 100
+; CHECK:   return 0
+; CHECK: }
+; CHECK: #5 predecessors={#3, #10} successors={#6, #7} {
+; CHECK:   si32 %10 = load $7, align 4
+; CHECK: }
+; CHECK: #6 predecessors={#5} successors={#8, #9} {
+; CHECK:   %10 silt 100
+; CHECK:   si32 %11 = load $6, align 4
+; CHECK:   si32 %12 = %11 srem 2
+; CHECK: }
+; CHECK: #7 predecessors={#5} successors={#2} {
+; CHECK:   %10 sige 100
+; CHECK:   si32 %13 = load $6, align 4
+; CHECK:   si32 %14 = %13 sadd.nw 1
+; CHECK:   store $6, %14, align 4
+; CHECK: }
+; CHECK: #8 predecessors={#6} successors={#10} {
+; CHECK:   %12 sieq 0
+; CHECK:   si8* %15 = ptrshift @b, 8 * 0, 4 * 0
+; CHECK:   si32* %16 = bitcast %15
+; CHECK:   si32 %17 = load %16, align 4
+; CHECK:   si32 %18 = load @c, align 4
+; CHECK:   si32 %19 = %17 sadd.nw %18
+; CHECK:   si32 %20 = load @e, align 4
+; CHECK:   si32 %21 = %19 ssub.nw %20
+; CHECK:   si32 %22 = load $6, align 4
+; CHECK:   si64 %23 = sext %22
+; CHECK:   si8* %24 = ptrshift @a, 40000 * 0, 400 * %23
+; CHECK:   si32 %25 = load $7, align 4
+; CHECK:   si64 %26 = sext %25
+; CHECK:   si32* %27 = ptrshift %24, 400 * 0, 4 * %26
+; CHECK:   store %27, %21, align 4
+; CHECK: }
+; CHECK: #9 predecessors={#6} successors={#10} {
+; CHECK:   %12 sine 0
+; CHECK:   si8* %28 = ptrshift @b, 8 * 0, 4 * 1
+; CHECK:   si32* %29 = bitcast %28
+; CHECK:   si32 %30 = load %29, align 4
+; CHECK:   si32 %31 = load @d, align 4
+; CHECK:   si32 %32 = %30 sadd.nw %31
+; CHECK:   si32 %33 = load @e, align 4
+; CHECK:   si32 %34 = %32 ssub.nw %33
+; CHECK:   si32 %35 = load $6, align 4
+; CHECK:   si64 %36 = sext %35
+; CHECK:   si8* %37 = ptrshift @a, 40000 * 0, 400 * %36
+; CHECK:   si32 %38 = load $7, align 4
+; CHECK:   si64 %39 = sext %38
+; CHECK:   si32* %40 = ptrshift %37, 400 * 0, 4 * %39
+; CHECK:   store %40, %34, align 4
+; CHECK: }
+; CHECK: #10 predecessors={#8, #9} successors={#5} {
+; CHECK:   si32 %41 = load $7, align 4
+; CHECK:   si32 %42 = %41 sadd.nw 1
+; CHECK:   store $7, %42, align 4
+; CHECK: }
+; CHECK: }

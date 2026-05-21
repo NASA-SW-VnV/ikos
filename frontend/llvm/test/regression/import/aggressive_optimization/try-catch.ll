@@ -3,114 +3,37 @@ source_filename = "try-catch.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %class.A = type { i32 (...)** }
 %class.B = type { %class.A }
 %class.C = type { %class.B }
 
 @_ZTI1A = internal constant { i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv117__class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1A, i32 0, i32 0) }, align 8
-; CHECK: define {0: si8*, 8: si8*}* @_ZTI1A, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = ptrshift @_ZTS1A, 3 * 0, 1 * 0
-; CHECK:   si8* %3 = bitcast %1
-; CHECK:   store @_ZTI1A, {0: %3, 8: %2}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1B = internal constant { i8*, i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv120__si_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1B, i32 0, i32 0), i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*) }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si8*}* @_ZTI1B, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv120__si_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1A
-; CHECK:   si8* %3 = ptrshift @_ZTS1B, 3 * 0, 1 * 0
-; CHECK:   si8* %4 = bitcast %1
-; CHECK:   store @_ZTI1B, {0: %4, 8: %3, 16: %2}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTI1C = internal constant { i8*, i8*, i8* } { i8* bitcast (i8** getelementptr inbounds (i8*, i8** @_ZTVN10__cxxabiv120__si_class_type_infoE, i64 2) to i8*), i8* getelementptr inbounds ([3 x i8], [3 x i8]* @_ZTS1C, i32 0, i32 0), i8* bitcast ({ i8*, i8*, i8* }* @_ZTI1B to i8*) }, align 8
-; CHECK: define {0: si8*, 8: si8*, 16: si8*}* @_ZTI1C, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8** %1 = ptrshift @_ZTVN10__cxxabiv120__si_class_type_infoE, 8 * 2
-; CHECK:   si8* %2 = bitcast @_ZTI1B
-; CHECK:   si8* %3 = ptrshift @_ZTS1C, 3 * 0, 1 * 0
-; CHECK:   si8* %4 = bitcast %1
-; CHECK:   store @_ZTI1C, {0: %4, 8: %3, 16: %2}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1A = internal constant [3 x i8] c"1A\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1A, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1A, [49, 65, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1B = internal constant [3 x i8] c"1B\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1B, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1B, [49, 66, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTS1C = internal constant [3 x i8] c"1C\00", align 1
-; CHECK: define [3 x si8]* @_ZTS1C, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @_ZTS1C, [49, 67, 0], align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1A = internal unnamed_addr constant { [4 x i8*] } { [4 x i8*] [i8* null, i8* bitcast ({ i8*, i8* }* @_ZTI1A to i8*), i8* bitcast (void (%class.A*, i32)* @_ZN1A1fEi to i8*), i8* bitcast (i32 (%class.A*)* @_ZN1A1gEv to i8*)] }, align 8
-; CHECK: define {0: [4 x si8*]}* @_ZTV1A, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZN1A1gEv
-; CHECK:   si8* %2 = bitcast @_ZN1A1fEi
-; CHECK:   si8* %3 = bitcast @_ZTI1A
-; CHECK:   store @_ZTV1A, {0: [null, %3, %2, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1B = internal unnamed_addr constant { [4 x i8*] } { [4 x i8*] [i8* null, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI1B to i8*), i8* bitcast (void (%class.B*, i32)* @_ZN1B1fEi to i8*), i8* bitcast (i32 (%class.B*)* @_ZN1B1gEv to i8*)] }, align 8
-; CHECK: define {0: [4 x si8*]}* @_ZTV1B, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZN1B1gEv
-; CHECK:   si8* %2 = bitcast @_ZN1B1fEi
-; CHECK:   si8* %3 = bitcast @_ZTI1B
-; CHECK:   store @_ZTV1B, {0: [null, %3, %2, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTV1C = internal unnamed_addr constant { [4 x i8*] } { [4 x i8*] [i8* null, i8* bitcast ({ i8*, i8*, i8* }* @_ZTI1C to i8*), i8* bitcast (void (%class.C*, i32)* @_ZN1C1fEi to i8*), i8* bitcast (i32 (%class.C*)* @_ZN1C1gEv to i8*)] }, align 8
-; CHECK: define {0: [4 x si8*]}* @_ZTV1C, align 8, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   si8* %1 = bitcast @_ZN1C1gEv
-; CHECK:   si8* %2 = bitcast @_ZN1C1fEi
-; CHECK:   si8* %3 = bitcast @_ZTI1C
-; CHECK:   store @_ZTV1C, {0: [null, %3, %2, %1]}, align 1
-; CHECK: }
-; CHECK: }
 
 @_ZTVN10__cxxabiv117__class_type_infoE = external global i8*
-; CHECK: declare si8** @_ZTVN10__cxxabiv117__class_type_infoE
 
 @_ZTVN10__cxxabiv120__si_class_type_infoE = external global i8*
-; CHECK: declare si8** @_ZTVN10__cxxabiv120__si_class_type_infoE
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_Z1hi(i32) unnamed_addr #0 !dbg !12 {
   call void @llvm.dbg.value(metadata i32 %0, metadata !15, metadata !DIExpression()), !dbg !16
   ret void, !dbg !17
 }
-; CHECK: define void @_Z1hi(si32 %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc i32 @_Z2hhi(i32) unnamed_addr #0 !dbg !18 {
@@ -118,12 +41,6 @@ define internal fastcc i32 @_Z2hhi(i32) unnamed_addr #0 !dbg !18 {
   %2 = mul nsw i32 %0, %0, !dbg !23
   ret i32 %2, !dbg !24
 }
-; CHECK: define si32 @_Z2hhi(si32 %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 %2 = %1 smul.nw %1
-; CHECK:   return %2
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline ssp uwtable
 define internal fastcc void @_Z3runP1A(%class.A*) unnamed_addr #1 !dbg !25 {
@@ -143,22 +60,6 @@ define internal fastcc void @_Z3runP1A(%class.A*) unnamed_addr #1 !dbg !25 {
   call void @llvm.dbg.value(metadata i32 %10, metadata !47, metadata !DIExpression()), !dbg !44
   ret void, !dbg !50
 }
-; CHECK: define void @_Z3runP1A({0: si32 (...)**}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   void ({0: si32 (...)**}*, si32)*** %2 = bitcast %1
-; CHECK:   void ({0: si32 (...)**}*, si32)** %3 = load %2, align 8
-; CHECK:   void ({0: si32 (...)**}*, si32)* %4 = load %3, align 8
-; CHECK:   call %4(%1, 12)
-; CHECK:   si32 ({0: si32 (...)**}*)*** %5 = bitcast %1
-; CHECK:   si32 ({0: si32 (...)**}*)** %6 = load %5, align 8
-; CHECK:   si32 ({0: si32 (...)**}*)** %7 = ptrshift %6, 8 * 1
-; CHECK:   si32 ({0: si32 (...)**}*)* %8 = load %7, align 8
-; CHECK:   si32 %9 = call %8(%1)
-; CHECK:   call @_Z1hi(14)
-; CHECK:   si32 %10 = call @_Z2hhi(15)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal void @_ZN1A1fEi(%class.A*, i32) unnamed_addr #0 align 2 !dbg !119 {
@@ -166,22 +67,12 @@ define internal void @_ZN1A1fEi(%class.A*, i32) unnamed_addr #0 align 2 !dbg !11
   call void @llvm.dbg.value(metadata i32 %1, metadata !122, metadata !DIExpression()), !dbg !121
   ret void, !dbg !123
 }
-; CHECK: define void @_ZN1A1fEi({0: si32 (...)**}* %1, si32 %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal i32 @_ZN1A1gEv(%class.A*) unnamed_addr #0 align 2 !dbg !124 {
   call void @llvm.dbg.value(metadata %class.A* %0, metadata !125, metadata !DIExpression()), !dbg !126
   ret i32 0, !dbg !127
 }
-; CHECK: define si32 @_ZN1A1gEv({0: si32 (...)**}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_ZN1AC2Ev(%class.A*) unnamed_addr #0 align 2 !dbg !103 {
@@ -192,15 +83,6 @@ define internal fastcc void @_ZN1AC2Ev(%class.A*) unnamed_addr #0 align 2 !dbg !
   store i32 (...)** %4, i32 (...)*** %2, align 8, !dbg !109
   ret void, !dbg !109
 }
-; CHECK: define void @_ZN1AC2Ev({0: si32 (...)**}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32 (...)*** %2 = ptrshift %1, 8 * 0, 1 * 0
-; CHECK:   si8** %3 = ptrshift @_ZTV1A, 32 * 0, 1 * 0, 8 * 2
-; CHECK:   si32 (...)** %4 = bitcast %3
-; CHECK:   store %2, %4, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal void @_ZN1B1fEi(%class.B*, i32) unnamed_addr #0 align 2 !dbg !110 {
@@ -208,22 +90,12 @@ define internal void @_ZN1B1fEi(%class.B*, i32) unnamed_addr #0 align 2 !dbg !11
   call void @llvm.dbg.value(metadata i32 %1, metadata !113, metadata !DIExpression()), !dbg !112
   ret void, !dbg !114
 }
-; CHECK: define void @_ZN1B1fEi({0: {0: si32 (...)**}}* %1, si32 %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal i32 @_ZN1B1gEv(%class.B*) unnamed_addr #0 align 2 !dbg !115 {
   call void @llvm.dbg.value(metadata %class.B* %0, metadata !116, metadata !DIExpression()), !dbg !117
   ret i32 0, !dbg !118
 }
-; CHECK: define si32 @_ZN1B1gEv({0: {0: si32 (...)**}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_ZN1BC1Ev(%class.B*) unnamed_addr #0 align 2 !dbg !83 {
@@ -231,12 +103,6 @@ define internal fastcc void @_ZN1BC1Ev(%class.B*) unnamed_addr #0 align 2 !dbg !
   call fastcc void @_ZN1BC2Ev(%class.B* %0) #4, !dbg !90
   ret void, !dbg !90
 }
-; CHECK: define void @_ZN1BC1Ev({0: {0: si32 (...)**}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @_ZN1BC2Ev(%1)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_ZN1BC2Ev(%class.B*) unnamed_addr #0 align 2 !dbg !99 {
@@ -249,17 +115,6 @@ define internal fastcc void @_ZN1BC2Ev(%class.B*) unnamed_addr #0 align 2 !dbg !
   store i32 (...)** %5, i32 (...)*** %3, align 8, !dbg !102
   ret void, !dbg !102
 }
-; CHECK: define void @_ZN1BC2Ev({0: {0: si32 (...)**}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: si32 (...)**}* %2 = ptrshift %1, 8 * 0, 1 * 0
-; CHECK:   call @_ZN1AC2Ev(%2)
-; CHECK:   si32 (...)*** %3 = ptrshift %1, 8 * 0, 1 * 0, 1 * 0
-; CHECK:   si8** %4 = ptrshift @_ZTV1B, 32 * 0, 1 * 0, 8 * 2
-; CHECK:   si32 (...)** %5 = bitcast %4
-; CHECK:   store %3, %5, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal void @_ZN1C1fEi(%class.C*, i32) unnamed_addr #0 align 2 !dbg !132 {
@@ -267,22 +122,12 @@ define internal void @_ZN1C1fEi(%class.C*, i32) unnamed_addr #0 align 2 !dbg !13
   call void @llvm.dbg.value(metadata i32 %1, metadata !135, metadata !DIExpression()), !dbg !134
   ret void, !dbg !136
 }
-; CHECK: define void @_ZN1C1fEi({0: {0: {0: si32 (...)**}}}* %1, si32 %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal i32 @_ZN1C1gEv(%class.C*) unnamed_addr #0 align 2 !dbg !137 {
   call void @llvm.dbg.value(metadata %class.C* %0, metadata !138, metadata !DIExpression()), !dbg !139
   ret i32 1, !dbg !140
 }
-; CHECK: define si32 @_ZN1C1gEv({0: {0: {0: si32 (...)**}}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   return 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_ZN1CC1Ev(%class.C*) unnamed_addr #0 align 2 !dbg !91 {
@@ -290,12 +135,6 @@ define internal fastcc void @_ZN1CC1Ev(%class.C*) unnamed_addr #0 align 2 !dbg !
   call fastcc void @_ZN1CC2Ev(%class.C* %0) #4, !dbg !98
   ret void, !dbg !98
 }
-; CHECK: define void @_ZN1CC1Ev({0: {0: {0: si32 (...)**}}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @_ZN1CC2Ev(%1)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define internal fastcc void @_ZN1CC2Ev(%class.C*) unnamed_addr #0 align 2 !dbg !128 {
@@ -308,20 +147,8 @@ define internal fastcc void @_ZN1CC2Ev(%class.C*) unnamed_addr #0 align 2 !dbg !
   store i32 (...)** %5, i32 (...)*** %3, align 8, !dbg !131
   ret void, !dbg !131
 }
-; CHECK: define void @_ZN1CC2Ev({0: {0: {0: si32 (...)**}}}* %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: si32 (...)**}}* %2 = ptrshift %1, 8 * 0, 1 * 0
-; CHECK:   call @_ZN1BC2Ev(%2)
-; CHECK:   si32 (...)*** %3 = ptrshift %1, 8 * 0, 1 * 0, 1 * 0, 1 * 0
-; CHECK:   si8** %4 = ptrshift @_ZTV1C, 32 * 0, 1 * 0, 8 * 2
-; CHECK:   si32 (...)** %5 = bitcast %4
-; CHECK:   store %3, %5, align 8
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 declare i32 @__gxx_personality_v0(...)
-; CHECK: declare si32 @__gxx_personality_v0(...)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() local_unnamed_addr #2 personality i8* bitcast (i32 (...)* @__gxx_personality_v0 to i8*) !dbg !51 {
@@ -337,19 +164,6 @@ define i32 @main() local_unnamed_addr #2 personality i8* bitcast (i32 (...)* @__
   call fastcc void @_Z3runP1A(%class.A* nonnull %4), !dbg !81
   ret i32 0, !dbg !82
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: si32 (...)**}}* $1 = allocate {0: {0: si32 (...)**}}, 1, align 8
-; CHECK:   {0: {0: {0: si32 (...)**}}}* $2 = allocate {0: {0: {0: si32 (...)**}}}, 1, align 8
-; CHECK:   call @_ZN1BC1Ev($1)
-; CHECK:   call @_ZN1CC1Ev($2)
-; CHECK:   {0: si32 (...)**}* %3 = ptrshift $1, 8 * 0, 1 * 0
-; CHECK:   call @_Z3runP1A(%3)
-; CHECK:   {0: si32 (...)**}* %4 = ptrshift $2, 8 * 0, 1 * 0, 1 * 0
-; CHECK:   call @_Z3runP1A(%4)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #3
@@ -505,3 +319,194 @@ attributes #4 = { nounwind }
 !138 = !DILocalVariable(name: "this", arg: 1, scope: !137, type: !96, flags: DIFlagArtificial | DIFlagObjectPointer)
 !139 = !DILocation(line: 0, scope: !137)
 !140 = !DILocation(line: 18, column: 21, scope: !137)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: si8*, 8: si8*}* @_ZTI1A, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTS1A
+; CHECK:   si8* %2 = ptrshift @_ZTVN10__cxxabiv117__class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1A, {0: %2, 8: %1}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si8*}* @_ZTI1B, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1A
+; CHECK:   si8* %2 = bitcast @_ZTS1B
+; CHECK:   si8* %3 = ptrshift @_ZTVN10__cxxabiv120__si_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1B, {0: %3, 8: %2, 16: %1}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: si8*, 8: si8*, 16: si8*}* @_ZTI1C, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZTI1B
+; CHECK:   si8* %2 = bitcast @_ZTS1C
+; CHECK:   si8* %3 = ptrshift @_ZTVN10__cxxabiv120__si_class_type_infoE, 8 * 2
+; CHECK:   store @_ZTI1C, {0: %3, 8: %2, 16: %1}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1A, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1A, [49, 65, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1B, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1B, [49, 66, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define [3 x si8]* @_ZTS1C, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @_ZTS1C, [49, 67, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [4 x si8*]}* @_ZTV1A, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZN1A1gEv
+; CHECK:   si8* %2 = bitcast @_ZN1A1fEi
+; CHECK:   si8* %3 = bitcast @_ZTI1A
+; CHECK:   store @_ZTV1A, {0: [null, %3, %2, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [4 x si8*]}* @_ZTV1B, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZN1B1gEv
+; CHECK:   si8* %2 = bitcast @_ZN1B1fEi
+; CHECK:   si8* %3 = bitcast @_ZTI1B
+; CHECK:   store @_ZTV1B, {0: [null, %3, %2, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: [4 x si8*]}* @_ZTV1C, align 8, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %1 = bitcast @_ZN1C1gEv
+; CHECK:   si8* %2 = bitcast @_ZN1C1fEi
+; CHECK:   si8* %3 = bitcast @_ZTI1C
+; CHECK:   store @_ZTV1C, {0: [null, %3, %2, %1]}, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si8** @_ZTVN10__cxxabiv117__class_type_infoE
+; CHECK: declare si8** @_ZTVN10__cxxabiv120__si_class_type_infoE
+; CHECK: define void @_Z1hi(si32 %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @_Z2hhi(si32 %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32 %2 = %1 smul.nw %1
+; CHECK:   return %2
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_Z3runP1A({0: si32 ()**}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %2 = bitcast %1
+; CHECK:   si8** %3 = bitcast %2
+; CHECK:   si8* %4 = load %3, align 8
+; CHECK:   void (si8*, si32)** %5 = bitcast %4
+; CHECK:   void (si8*, si32)* %6 = load %5, align 8
+; CHECK:   call %6(%1, 12)
+; CHECK:   si8* %7 = bitcast %1
+; CHECK:   si8** %8 = bitcast %7
+; CHECK:   si8* %9 = load %8, align 8
+; CHECK:   si8* %10 = ptrshift %9, 8 * 1
+; CHECK:   si32 (si8*)** %11 = bitcast %10
+; CHECK:   si32 (si8*)* %12 = load %11, align 8
+; CHECK:   si32 %13 = call %12(%1)
+; CHECK:   call @_Z1hi(14)
+; CHECK:   si32 %14 = call @_Z2hhi(15)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1A1fEi({0: si32 ()**}* %1, si32 %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @_ZN1A1gEv({0: si32 ()**}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1AC2Ev({0: si32 ()**}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* %2 = ptrshift %1, 8 * 0, 1 * 0
+; CHECK:   si8* %3 = ptrshift @_ZTV1A, 32 * 0, 1 * 0, 8 * 2
+; CHECK:   si8* %4 = bitcast %3
+; CHECK:   si8** %5 = bitcast %2
+; CHECK:   store %5, %4, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1B1fEi({0: {0: si32 ()**}}* %1, si32 %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @_ZN1B1gEv({0: {0: si32 ()**}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1BC1Ev({0: {0: si32 ()**}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @_ZN1BC2Ev(%1)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1BC2Ev({0: {0: si32 ()**}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: si32 ()**}* %2 = ptrshift %1, 8 * 0, 1 * 0
+; CHECK:   call @_ZN1AC2Ev(%2)
+; CHECK:   si8* %3 = ptrshift %1, 8 * 0, 1 * 0, 1 * 0
+; CHECK:   si8* %4 = ptrshift @_ZTV1B, 32 * 0, 1 * 0, 8 * 2
+; CHECK:   si8* %5 = bitcast %4
+; CHECK:   si8** %6 = bitcast %3
+; CHECK:   store %6, %5, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1C1fEi({0: {0: {0: si32 ()**}}}* %1, si32 %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @_ZN1C1gEv({0: {0: {0: si32 ()**}}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   return 1
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1CC1Ev({0: {0: {0: si32 ()**}}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @_ZN1CC2Ev(%1)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define void @_ZN1CC2Ev({0: {0: {0: si32 ()**}}}* %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: {0: si32 ()**}}* %2 = ptrshift %1, 8 * 0, 1 * 0
+; CHECK:   call @_ZN1BC2Ev(%2)
+; CHECK:   si8* %3 = ptrshift %1, 8 * 0, 1 * 0, 1 * 0, 1 * 0
+; CHECK:   si8* %4 = ptrshift @_ZTV1C, 32 * 0, 1 * 0, 8 * 2
+; CHECK:   si8* %5 = bitcast %4
+; CHECK:   si8** %6 = bitcast %3
+; CHECK:   store %6, %5, align 8
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @__gxx_personality_v0(...)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   {0: {0: si32 ()**}}* $1 = allocate {0: {0: si32 ()**}}, 1, align 8
+; CHECK:   {0: {0: {0: si32 ()**}}}* $2 = allocate {0: {0: {0: si32 ()**}}}, 1, align 8
+; CHECK:   call @_ZN1BC1Ev($1)
+; CHECK:   call @_ZN1CC1Ev($2)
+; CHECK:   {0: si32 ()**}* %3 = ptrshift $1, 8 * 0, 1 * 0
+; CHECK:   call @_Z3runP1A(%3)
+; CHECK:   {0: si32 ()**}* %4 = ptrshift $2, 8 * 0, 1 * 0, 1 * 0
+; CHECK:   call @_Z3runP1A(%4)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

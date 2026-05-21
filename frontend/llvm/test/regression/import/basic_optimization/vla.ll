@@ -3,28 +3,15 @@ source_filename = "vla.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 @.str = private unnamed_addr constant [3 x i8] c"%d\00", align 1
-; CHECK: define [3 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [37, 100, 0], align 1
-; CHECK: }
-; CHECK: }
 
 declare i32 @scanf(i8*, ...) #3
-; CHECK: declare si32 @ar.libc.scanf(si8*, ...)
 
 ; Function Attrs: nounwind
 declare void @llvm.stackrestore(i8*) #2
-; CHECK: declare void @ar.stackrestore(si8*)
 
 ; Function Attrs: nounwind
 declare i8* @llvm.stacksave() #2
-; CHECK: declare si8* @ar.stacksave()
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define void @foo(i32) #0 !dbg !8 {
@@ -63,35 +50,6 @@ define void @foo(i32) #0 !dbg !8 {
   call void @llvm.stackrestore(i8* %3), !dbg !41
   ret void, !dbg !41
 }
-; CHECK: define void @foo(si32 %1) {
-; CHECK: #1 !entry successors={#2} {
-; CHECK:   ui32 %2 = bitcast %1
-; CHECK:   ui64 %3 = zext %2
-; CHECK:   si8* %4 = call @ar.stacksave()
-; CHECK:   si32* $5 = allocate si32, %3, align 16
-; CHECK:   si32 %.0 = 0
-; CHECK: }
-; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
-; CHECK: }
-; CHECK: #3 predecessors={#2} successors={#2} {
-; CHECK:   %.0 silt %1
-; CHECK:   si32 %6 = %.0 smul.nw %.0
-; CHECK:   si64 %7 = sext %.0
-; CHECK:   si32* %8 = ptrshift $5, 4 * %7
-; CHECK:   store %8, %6, align 4
-; CHECK:   si32 %9 = %.0 sadd.nw 1
-; CHECK:   si32 %.0 = %9
-; CHECK: }
-; CHECK: #4 !exit predecessors={#2} {
-; CHECK:   %.0 sige %1
-; CHECK:   si32 %10 = %1 smul.nw %1
-; CHECK:   si64 %11 = sext %1
-; CHECK:   si32* %12 = ptrshift $5, 4 * %11
-; CHECK:   store %12, %10, align 4
-; CHECK:   call @ar.stackrestore(%4)
-; CHECK:   return
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) #0 !dbg !42 {
@@ -105,16 +63,6 @@ define i32 @main(i32, i8**) #0 !dbg !42 {
   call void @foo(i32 %6), !dbg !55
   ret i32 0, !dbg !56
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   si8* %4 = ptrshift @.str, 3 * 0, 1 * 0
-; CHECK:   si32 %5 = call @ar.libc.scanf(%4, $3)
-; CHECK:   si32 %6 = load $3, align 4
-; CHECK:   call @foo(%6)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -188,3 +136,56 @@ attributes #3 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !54 = !DILocation(line: 13, column: 7, scope: !42)
 !55 = !DILocation(line: 13, column: 3, scope: !42)
 !56 = !DILocation(line: 14, column: 3, scope: !42)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [3 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [37, 100, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.scanf(si8*, ...)
+; CHECK: declare void @ar.stackrestore(si8*)
+; CHECK: declare si8* @ar.stacksave()
+; CHECK: define void @foo(si32 %1) {
+; CHECK: #1 !entry successors={#2} {
+; CHECK:   ui32 %2 = bitcast %1
+; CHECK:   ui64 %3 = zext %2
+; CHECK:   si8* %4 = call @ar.stacksave()
+; CHECK:   si32* $5 = allocate si32, %3, align 16
+; CHECK:   si32 %.0 = 0
+; CHECK: }
+; CHECK: #2 predecessors={#1, #3} successors={#3, #4} {
+; CHECK: }
+; CHECK: #3 predecessors={#2} successors={#2} {
+; CHECK:   %.0 silt %1
+; CHECK:   si32 %6 = %.0 smul.nw %.0
+; CHECK:   si64 %7 = sext %.0
+; CHECK:   si32* %8 = ptrshift $5, 4 * %7
+; CHECK:   store %8, %6, align 4
+; CHECK:   si32 %9 = %.0 sadd.nw 1
+; CHECK:   si32 %.0 = %9
+; CHECK: }
+; CHECK: #4 !exit predecessors={#2} {
+; CHECK:   %.0 sige %1
+; CHECK:   si32 %10 = %1 smul.nw %1
+; CHECK:   si64 %11 = sext %1
+; CHECK:   si32* %12 = ptrshift $5, 4 * %11
+; CHECK:   store %12, %10, align 4
+; CHECK:   call @ar.stackrestore(%4)
+; CHECK:   return
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32* $3 = allocate si32, 1, align 4
+; CHECK:   si8* %4 = ptrshift @.str, 3 * 0, 1 * 0
+; CHECK:   si32 %5 = call @ar.libc.scanf(%4, $3)
+; CHECK:   si32 %6 = load $3, align 4
+; CHECK:   call @foo(%6)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

@@ -3,20 +3,10 @@ source_filename = "aggregate-in-reg-2.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %struct.line_t = type { %struct.pos_t, %struct.pos_t }
 %struct.pos_t = type { float, float }
 
 @.str = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 1
-; CHECK: define [4 x si8]* @.str, align 1, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @.str, [37, 102, 10, 0], align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline nounwind ssp uwtable
 define { <2 x float>, <2 x float> } @_Z1ff(float) #0 !dbg !8 {
@@ -39,30 +29,8 @@ define { <2 x float>, <2 x float> } @_Z1ff(float) #0 !dbg !8 {
   %12 = load { <2 x float>, <2 x float> }, { <2 x float>, <2 x float> }* %11, align 4, !dbg !28
   ret { <2 x float>, <2 x float> } %12, !dbg !28
 }
-; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   {0: {0: float, 4: float}, 8: {0: float, 4: float}}* $2 = allocate {0: {0: float, 4: float}, 8: {0: float, 4: float}}, 1, align 4
-; CHECK:   float* $3 = allocate float, 1, align 4
-; CHECK:   store $3, %1, align 4
-; CHECK:   {0: float, 4: float}* %4 = ptrshift $2, 16 * 0, 1 * 0
-; CHECK:   float* %5 = ptrshift %4, 8 * 0, 1 * 0
-; CHECK:   store %5, 0.0E+0, align 4
-; CHECK:   float* %6 = ptrshift %4, 8 * 0, 1 * 4
-; CHECK:   float %7 = load $3, align 4
-; CHECK:   store %6, %7, align 4
-; CHECK:   {0: float, 4: float}* %8 = ptrshift $2, 16 * 0, 1 * 8
-; CHECK:   float* %9 = ptrshift %8, 8 * 0, 1 * 0
-; CHECK:   store %9, 2.0E+0, align 4
-; CHECK:   float* %10 = ptrshift %8, 8 * 0, 1 * 4
-; CHECK:   store %10, 0.0E+0, align 4
-; CHECK:   {0: <2 x float>, 8: <2 x float>}* %11 = bitcast $2
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %12 = load %11, align 4
-; CHECK:   return %12
-; CHECK: }
-; CHECK: }
 
 declare i32 @printf(i8*, ...) #3
-; CHECK: declare si32 @ar.libc.printf(si8*, ...)
 
 ; Function Attrs: noinline norecurse ssp uwtable
 define i32 @main() #2 !dbg !29 {
@@ -85,28 +53,6 @@ define i32 @main() #2 !dbg !29 {
   %14 = call i32 (i8*, ...) @printf(i8* %13, double %12), !dbg !36
   ret i32 0, !dbg !37
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   {0: {0: float, 4: float}, 8: {0: float, 4: float}}* $2 = allocate {0: {0: float, 4: float}, 8: {0: float, 4: float}}, 1, align 4
-; CHECK:   store $1, 0, align 4
-; CHECK:   {0: <2 x float>, 8: <2 x float>} %3 = call @_Z1ff(2.0E+0)
-; CHECK:   {0: <2 x float>, 8: <2 x float>}* %4 = bitcast $2
-; CHECK:   <2 x float>* %5 = ptrshift %4, 16 * 0, 1 * 0
-; CHECK:   <2 x float> %6 = extractelement %3, 0
-; CHECK:   store %5, %6, align 4
-; CHECK:   <2 x float>* %7 = ptrshift %4, 16 * 0, 1 * 8
-; CHECK:   <2 x float> %8 = extractelement %3, 8
-; CHECK:   store %7, %8, align 4
-; CHECK:   {0: float, 4: float}* %9 = ptrshift $2, 16 * 0, 1 * 0
-; CHECK:   float* %10 = ptrshift %9, 8 * 0, 1 * 4
-; CHECK:   float %11 = load %10, align 4
-; CHECK:   double %12 = fpext %11
-; CHECK:   si8* %13 = ptrshift @.str, 4 * 0, 1 * 0
-; CHECK:   si32 %14 = call @ar.libc.printf(%13, %12)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -158,3 +104,67 @@ attributes #3 = { "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-
 !35 = !DILocation(line: 17, column: 31, scope: !29)
 !36 = !DILocation(line: 17, column: 3, scope: !29)
 !37 = !DILocation(line: 18, column: 3, scope: !29)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define [4 x si8]* @.str, align 1, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @.str, [37, 102, 10, 0], align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define {0: <2 x float>, 8: <2 x float>} @_Z1ff(float %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $2 = allocate si8, 1, align 4
+; CHECK:   float* $3 = allocate float, 1, align 4
+; CHECK:   store $3, %1, align 4
+; CHECK:   si8* %4 = ptrshift $2, 16 * 0, 1 * 0
+; CHECK:   si8* %5 = ptrshift %4, 8 * 0, 1 * 0
+; CHECK:   float* %6 = bitcast %5
+; CHECK:   store %6, 0.0E+0, align 4
+; CHECK:   si8* %7 = ptrshift %4, 8 * 0, 1 * 4
+; CHECK:   float %8 = load $3, align 4
+; CHECK:   float* %9 = bitcast %7
+; CHECK:   store %9, %8, align 4
+; CHECK:   si8* %10 = ptrshift $2, 16 * 0, 1 * 8
+; CHECK:   si8* %11 = ptrshift %10, 8 * 0, 1 * 0
+; CHECK:   float* %12 = bitcast %11
+; CHECK:   store %12, 2.0E+0, align 4
+; CHECK:   si8* %13 = ptrshift %10, 8 * 0, 1 * 4
+; CHECK:   float* %14 = bitcast %13
+; CHECK:   store %14, 0.0E+0, align 4
+; CHECK:   si8* %15 = bitcast $2
+; CHECK:   {0: <2 x float>, 8: <2 x float>}* %16 = bitcast %15
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %17 = load %16, align 4
+; CHECK:   return %17
+; CHECK: }
+; CHECK: }
+; CHECK: declare si32 @ar.libc.printf(si8*, ...)
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   si8* $2 = allocate si8, 1, align 4
+; CHECK:   si32* %3 = bitcast $1
+; CHECK:   store %3, 0, align 4
+; CHECK:   {0: <2 x float>, 8: <2 x float>} %4 = call @_Z1ff(2.0E+0)
+; CHECK:   si8* %5 = bitcast $2
+; CHECK:   si8* %6 = ptrshift %5, 16 * 0, 1 * 0
+; CHECK:   <2 x float> %7 = extractelement %4, 0
+; CHECK:   <2 x float>* %8 = bitcast %6
+; CHECK:   store %8, %7, align 4
+; CHECK:   si8* %9 = ptrshift %5, 16 * 0, 1 * 8
+; CHECK:   <2 x float> %10 = extractelement %4, 8
+; CHECK:   <2 x float>* %11 = bitcast %9
+; CHECK:   store %11, %10, align 4
+; CHECK:   si8* %12 = ptrshift $2, 16 * 0, 1 * 0
+; CHECK:   si8* %13 = ptrshift %12, 8 * 0, 1 * 4
+; CHECK:   float* %14 = bitcast %13
+; CHECK:   float %15 = load %14, align 4
+; CHECK:   double %16 = fpext %15
+; CHECK:   si8* %17 = ptrshift @.str, 4 * 0, 1 * 0
+; CHECK:   si32 %18 = call @ar.libc.printf(%17, %16)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

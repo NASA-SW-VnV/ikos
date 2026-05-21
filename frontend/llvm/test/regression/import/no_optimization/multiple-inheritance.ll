@@ -3,21 +3,11 @@ source_filename = "multiple-inheritance.cpp"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 %class.Child = type { %class.Base, %struct.Mixin, [10 x i32] }
 %class.Base = type { i32, i32 }
 %struct.Mixin = type { i32 }
 
 @c = global %class.Child zeroinitializer, align 4, !dbg !0
-; CHECK: define {0: {0: si32, 4: si32}, 8: {0: ui32}, 12: [10 x si32]}* @c, align 4, init {
-; CHECK: #1 !entry !exit {
-; CHECK:   store @c, aggregate_zero, align 1
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: noinline norecurse nounwind ssp uwtable
 define i32 @main() #0 !dbg !35 {
@@ -25,13 +15,6 @@ define i32 @main() #0 !dbg !35 {
   store i32 0, i32* %1, align 4
   ret i32 0, !dbg !38
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   store $1, 0, align 4
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 
@@ -78,3 +61,22 @@ attributes #0 = { noinline norecurse nounwind ssp uwtable "correctly-rounded-div
 !36 = !DISubroutineType(types: !37)
 !37 = !{!12}
 !38 = !DILocation(line: 24, column: 3, scope: !35)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define {0: {0: si32, 4: si32}, 8: {0: ui32}, 12: [10 x si32]}* @c, align 4, init {
+; CHECK: #1 !entry !exit {
+; CHECK:   store @c, aggregate_zero, align 1
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $1 = allocate si8, 1, align 4
+; CHECK:   si32* %2 = bitcast $1
+; CHECK:   store %2, 0, align 4
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

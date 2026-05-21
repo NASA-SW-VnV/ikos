@@ -3,11 +3,6 @@ source_filename = "vector-4.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define <2 x i64> @f(<2 x i64>) #0 !dbg !8 {
   call void @llvm.dbg.value(metadata <2 x i64> %0, metadata !16, metadata !DIExpression()), !dbg !17
@@ -16,14 +11,6 @@ define <2 x i64> @f(<2 x i64>) #0 !dbg !8 {
   %4 = bitcast <4 x i32> %3 to <2 x i64>, !dbg !19
   ret <2 x i64> %4, !dbg !20
 }
-; CHECK: define <2 x si64> @f(<2 x si64> %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   <4 x si32> %2 = bitcast %1
-; CHECK:   <4 x si32> %3 = shufflevector %2, undef
-; CHECK:   <2 x si64> %4 = bitcast %3
-; CHECK:   return %4
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #1
@@ -56,3 +43,17 @@ attributes #1 = { nounwind readnone speculatable }
 !18 = !DILocation(line: 4, column: 32, scope: !8)
 !19 = !DILocation(line: 4, column: 10, scope: !8)
 !20 = !DILocation(line: 4, column: 3, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define <2 x si64> @f(<2 x si64> %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   <4 x si32> %2 = bitcast %1
+; CHECK:   <4 x si32> %3 = shufflevector %2, undef
+; CHECK:   <2 x si64> %4 = bitcast %3
+; CHECK:   return %4
+; CHECK: }
+; CHECK: }

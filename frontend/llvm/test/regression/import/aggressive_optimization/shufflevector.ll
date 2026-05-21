@@ -3,11 +3,6 @@ source_filename = "shufflevector.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !16 {
   call void @llvm.dbg.value(metadata i32 %0, metadata !23, metadata !DIExpression()), !dbg !24
@@ -17,15 +12,8 @@ define i32 @main(i32, i8**) local_unnamed_addr #0 !dbg !16 {
   call void @printv(<4 x float> <float 4.000000e+00, float 3.000000e+00, float 2.000000e+00, float 1.000000e+00>) #3, !dbg !27
   ret i32 0, !dbg !28
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   call @printv(<4.0E+0, 3.0E+0, 2.0E+0, 1.0E+0>)
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 declare void @printv(<4 x float>) local_unnamed_addr #1
-; CHECK: declare void @printv(<4 x float>)
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.value(metadata, metadata, metadata) #2
@@ -68,3 +56,16 @@ attributes #3 = { nounwind }
 !26 = !DILocalVariable(name: "m", scope: !16, file: !1, line: 6, type: !4)
 !27 = !DILocation(line: 8, column: 3, scope: !16)
 !28 = !DILocation(line: 9, column: 1, scope: !16)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   call @printv(<4.0E+0, 3.0E+0, 2.0E+0, 1.0E+0>)
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }
+; CHECK: declare void @printv(<4 x float>)

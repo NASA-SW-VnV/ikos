@@ -3,11 +3,6 @@ source_filename = "call-args.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @foo(i32) #0 !dbg !8 {
   %2 = alloca i32, align 4
@@ -17,15 +12,6 @@ define i32 @foo(i32) #0 !dbg !8 {
   %4 = add nsw i32 %3, 1, !dbg !15
   ret i32 %4, !dbg !16
 }
-; CHECK: define si32 @foo(si32 %1) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $2 = allocate si32, 1, align 4
-; CHECK:   store $2, %1, align 4
-; CHECK:   si32 %3 = load $2, align 4
-; CHECK:   si32 %4 = %3 sadd.nw 1
-; CHECK:   return %4
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -44,19 +30,6 @@ define i32 @main(i32, i8**) #0 !dbg !17 {
   %7 = call i32 @foo(i32 %6), !dbg !28
   ret i32 %7, !dbg !29
 }
-; CHECK: define si32 @main(si32 %1, si8** %2) {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   si32* $4 = allocate si32, 1, align 4
-; CHECK:   si8*** $5 = allocate si8**, 1, align 8
-; CHECK:   store $3, 0, align 4
-; CHECK:   store $4, %1, align 4
-; CHECK:   store $5, %2, align 8
-; CHECK:   si32 %6 = load $4, align 4
-; CHECK:   si32 %7 = call @foo(%6)
-; CHECK:   return %7
-; CHECK: }
-; CHECK: }
 
 attributes #0 = { noinline nounwind ssp uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="penryn" "target-features"="+cx16,+cx8,+fxsr,+mmx,+sahf,+sse,+sse2,+sse3,+sse4.1,+ssse3,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
 attributes #1 = { nounwind readnone speculatable }
@@ -95,3 +68,32 @@ attributes #1 = { nounwind readnone speculatable }
 !27 = !DILocation(line: 6, column: 14, scope: !17)
 !28 = !DILocation(line: 6, column: 10, scope: !17)
 !29 = !DILocation(line: 6, column: 3, scope: !17)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @foo(si32 %1) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32* $2 = allocate si32, 1, align 4
+; CHECK:   store $2, %1, align 4
+; CHECK:   si32 %3 = load $2, align 4
+; CHECK:   si32 %4 = %3 sadd.nw 1
+; CHECK:   return %4
+; CHECK: }
+; CHECK: }
+; CHECK: define si32 @main(si32 %1, si8** %2) {
+; CHECK: #1 !entry !exit {
+; CHECK:   si8* $3 = allocate si8, 1, align 4
+; CHECK:   si32* $4 = allocate si32, 1, align 4
+; CHECK:   si8*** $5 = allocate si8**, 1, align 8
+; CHECK:   si32* %6 = bitcast $3
+; CHECK:   store %6, 0, align 4
+; CHECK:   store $4, %1, align 4
+; CHECK:   store $5, %2, align 8
+; CHECK:   si32 %7 = load $4, align 4
+; CHECK:   si32 %8 = call @foo(%7)
+; CHECK:   return %8
+; CHECK: }
+; CHECK: }

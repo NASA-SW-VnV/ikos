@@ -3,11 +3,6 @@ source_filename = "bitwise-op.c"
 target datalayout = "e-m:o-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-apple-macosx10.14.0"
 
-; CHECK-LABEL: Bundle
-; CHECK: target-endianness = little-endian
-; CHECK: target-pointer-size = 64 bits
-; CHECK: target-triple = x86_64-apple-macosx10.14.0
-
 ; Function Attrs: noinline nounwind ssp uwtable
 define i32 @main() #0 !dbg !8 {
   %1 = alloca i32, align 4
@@ -24,23 +19,6 @@ define i32 @main() #0 !dbg !8 {
   store i32 %6, i32* %3, align 4, !dbg !17
   ret i32 0, !dbg !21
 }
-; CHECK: define si32 @main() {
-; CHECK: #1 !entry !exit {
-; CHECK:   si32* $1 = allocate si32, 1, align 4
-; CHECK:   si32* $2 = allocate si32, 1, align 4
-; CHECK:   si32* $3 = allocate si32, 1, align 4
-; CHECK:   store $1, 3, align 4
-; CHECK:   store $2, 5, align 4
-; CHECK:   ui32* %4 = bitcast $1
-; CHECK:   ui32 %5 = load %4, align 4
-; CHECK:   ui32* %6 = bitcast $2
-; CHECK:   ui32 %7 = load %6, align 4
-; CHECK:   ui32 %8 = %5 uor %7
-; CHECK:   si32 %9 = bitcast %8
-; CHECK:   store $3, %9, align 4
-; CHECK:   return 0
-; CHECK: }
-; CHECK: }
 
 ; Function Attrs: nounwind readnone speculatable
 declare void @llvm.dbg.declare(metadata, metadata, metadata) #1
@@ -74,3 +52,26 @@ attributes #1 = { nounwind readnone speculatable }
 !19 = !DILocation(line: 3, column: 15, scope: !8)
 !20 = !DILocation(line: 3, column: 13, scope: !8)
 !21 = !DILocation(line: 4, column: 1, scope: !8)
+
+; ---- Auto-generated CHECK baseline ----
+; CHECK-LABEL: // Bundle
+; CHECK: target-endianness = little-endian
+; CHECK: target-pointer-size = 64 bits
+; CHECK: target-triple = x86_64-apple-macosx10.14.0
+; CHECK: define si32 @main() {
+; CHECK: #1 !entry !exit {
+; CHECK:   si32* $1 = allocate si32, 1, align 4
+; CHECK:   si32* $2 = allocate si32, 1, align 4
+; CHECK:   si32* $3 = allocate si32, 1, align 4
+; CHECK:   store $1, 3, align 4
+; CHECK:   store $2, 5, align 4
+; CHECK:   ui32* %4 = bitcast $1
+; CHECK:   ui32 %5 = load %4, align 4
+; CHECK:   ui32* %6 = bitcast $2
+; CHECK:   ui32 %7 = load %6, align 4
+; CHECK:   ui32 %8 = %5 uor %7
+; CHECK:   si32 %9 = bitcast %8
+; CHECK:   store $3, %9, align 4
+; CHECK:   return 0
+; CHECK: }
+; CHECK: }

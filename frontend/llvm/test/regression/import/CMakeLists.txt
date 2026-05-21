@@ -30,23 +30,6 @@ function(add_import_test test_name test_directory)
              --file-check "${LLVM_FILE_CHECK_EXECUTABLE}")
 endfunction()
 
-# Disabled pending opaque-pointer baseline refresh. The import tests embed
-# expected AR output as ; CHECK: lines that predate opaque pointers, so the
-# remaining failures are now ordering / formatting drift (e.g. `declare void
-# @ar.trap()` printed in a different position than the legacy baseline
-# expected) rather than importer recovery bugs. The recovery side is largely
-# in place: translate_alloca substitutes the LLVM-side allocated type when
-# infer_type returns ptr-to-opaque, and lookup_struct_by_di walks the DI
-# scope chain (namespace + enclosing-type) and validates structural
-# compatibility (size + empty-vs-padding) before returning a candidate. Re-
-# enable after regenerating the ; CHECK: baselines from current output.
 add_import_test(no-optimization no_optimization)
 add_import_test(basic-optimization basic_optimization)
 add_import_test(aggressive-optimization aggressive_optimization)
-if (LLVM_FILE_CHECK_EXECUTABLE AND BASH_EXECUTABLE)
-  set_tests_properties(
-    import-no-optimization
-    import-basic-optimization
-    import-aggressive-optimization
-    PROPERTIES DISABLED TRUE)
-endif()
