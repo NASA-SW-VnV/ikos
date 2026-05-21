@@ -106,7 +106,7 @@ bb_14:                                            ; preds = %bb_16, %bb_13
   br i1 %_45, label %bb_15, label %bb_17
 
 bb_15:                                            ; preds = %bb_14
-; CHECK-LABEL: b_15:
+; CHECK-LABEL: bb_15:
 ; CHECK:  %_46 = getelementptr inbounds %struct.foo, ptr %_7, i32 0, i32 2
 ; CHECK:  %_47 = load i32, ptr %_4, align 4
 ; CHECK:  %_48 = sext i32 %_47 to i64
