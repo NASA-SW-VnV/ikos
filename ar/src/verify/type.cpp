@@ -782,10 +782,23 @@ bool TypeVerifier::verify(BasicBlock* bb,
 }
 
 bool TypeVerifier::is_valid_call(ar::CallBase* call, ar::FunctionType* fun_ty) {
+  // VarArgGet declares a si8* return type (the lowest-common-denominator
+  // void* used by all callers) but the call site's result is the caller's
+  // actual va_arg target type (si32*, ui16*, etc). is_valid_statement skips
+  // the return-type equality check for VarArgGet for that reason; mirror the
+  // same bypass here, otherwise the inliner's is_valid_call gate rejects
+  // every va_arg call site and the inlining loop leaves post at bottom.
+  bool is_var_arg_get =
+      isa< FunctionPointerConstant >(call->called()) &&
+      cast< FunctionPointerConstant >(call->called())
+              ->function()
+              ->intrinsic_id() == Intrinsic::VarArgGet;
+
   // Check the result type
   if (fun_ty->return_type()->is_void() && call->has_result()) {
     return false;
-  } else if (!fun_ty->return_type()->is_void() && call->has_result() &&
+  } else if (!is_var_arg_get && !fun_ty->return_type()->is_void() &&
+             call->has_result() &&
              call->result()->type() != fun_ty->return_type()) {
     return false;
   }
