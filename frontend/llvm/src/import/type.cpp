@@ -764,7 +764,8 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
   return ar::OpaqueType::create(this->_context);
 }
 
-// Defined later -- used by lookup_struct_by_di to detect EBO-empty DI types.
+// Defined later -- used by lookup_struct_by_di and has_no_member to detect
+// EBO-empty DI composite types.
 static bool is_empty_composite(llvm::DICompositeType* di_type);
 
 /// \brief Strip the template-argument suffix (everything from '<' onward).
@@ -1119,9 +1120,6 @@ static llvm::DICompositeType* get_composite_parent(
 
   return di_parent;
 }
-
-// forward declaration
-static bool is_empty_composite(llvm::DICompositeType* di_type);
 
 /// \brief Return true if the given list has no non-static member field
 template < typename Iterator >
