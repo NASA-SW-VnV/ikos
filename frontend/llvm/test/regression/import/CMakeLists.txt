@@ -30,15 +30,16 @@ function(add_import_test test_name test_directory)
              --file-check "${LLVM_FILE_CHECK_EXECUTABLE}")
 endfunction()
 
-# Disabled while opaque-pointer type recovery in the LLVM 18 importer is
-# incomplete. The import tests embed expected AR output as ; CHECK: lines.
-# Alloca pointee recovery is now wired (translate_alloca falls back to the
-# LLVM-side allocated type when infer_type returns ptr-to-opaque), but other
-# paths (e.g. GEP/ptrshift results, function-parameter pointee recovery
-# through translate_di_only) still produce ar::OpaqueType for templated C++
-# struct pointers because lookup_struct_by_di does not yet walk the DI scope
-# chain to build namespace-qualified LLVM struct names. Re-enable once those
-# paths are covered and the baselines are regenerated for opaque pointers.
+# Disabled pending opaque-pointer baseline refresh. The import tests embed
+# expected AR output as ; CHECK: lines that predate opaque pointers, so the
+# remaining failures are now ordering / formatting drift (e.g. `declare void
+# @ar.trap()` printed in a different position than the legacy baseline
+# expected) rather than importer recovery bugs. The recovery side is largely
+# in place: translate_alloca substitutes the LLVM-side allocated type when
+# infer_type returns ptr-to-opaque, and lookup_struct_by_di walks the DI
+# scope chain (namespace + enclosing-type) and validates structural
+# compatibility (size + empty-vs-padding) before returning a candidate. Re-
+# enable after regenerating the ; CHECK: baselines from current output.
 add_import_test(no-optimization no_optimization)
 add_import_test(basic-optimization basic_optimization)
 add_import_test(aggressive-optimization aggressive_optimization)

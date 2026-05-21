@@ -764,6 +764,23 @@ ar::Type* TypeWithDebugInfoImporter::translate_di_only(
   return ar::OpaqueType::create(this->_context);
 }
 
+// Defined later -- used by lookup_struct_by_di to detect EBO-empty DI types.
+static bool is_empty_composite(llvm::DICompositeType* di_type);
+
+/// \brief Strip the template-argument suffix (everything from '<' onward).
+///
+/// Clang's LLVM struct names use the un-templated form (e.g.
+/// "class.std::__1::allocator"), while DI names carry the template
+/// instantiation (e.g. "allocator<bool>"). Stripping the template args yields
+/// a comparable base name.
+static llvm::StringRef strip_template_args(llvm::StringRef name) {
+  auto pos = name.find('<');
+  if (pos == llvm::StringRef::npos) {
+    return name;
+  }
+  return name.take_front(pos);
+}
+
 llvm::StructType* TypeWithDebugInfoImporter::lookup_struct_by_di(
     llvm::DICompositeType* di_type) const {
   llvm::StringRef name = di_type->getName();
@@ -771,12 +788,103 @@ llvm::StructType* TypeWithDebugInfoImporter::lookup_struct_by_di(
     return nullptr;
   }
   auto& llvm_ctx = this->_module.getContext();
-  for (const char* prefix : {"struct.", "class.", "union."}) {
-    std::string candidate = prefix + name.str();
-    if (auto* st = llvm::StructType::getTypeByName(llvm_ctx, candidate)) {
-      return st;
+
+  // Walk the DIScope chain to build the namespace / enclosing-type prefix.
+  // Clang qualifies LLVM struct names with their namespace path
+  // ("class.std::__1::allocator") but DI nodes carry only the bare name in
+  // di_type->getName(); the scope chain provides the rest.
+  std::string qualified_prefix;
+  for (llvm::DIScope* scope = di_type->getScope(); scope != nullptr;) {
+    if (auto* ns = llvm::dyn_cast< llvm::DINamespace >(scope)) {
+      llvm::StringRef ns_name = ns->getName();
+      if (!ns_name.empty()) {
+        qualified_prefix = ns_name.str() + "::" + qualified_prefix;
+      }
+      scope = ns->getScope();
+    } else if (auto* enclosing =
+                   llvm::dyn_cast< llvm::DICompositeType >(scope)) {
+      llvm::StringRef outer = strip_template_args(enclosing->getName());
+      if (!outer.empty()) {
+        qualified_prefix = outer.str() + "::" + qualified_prefix;
+      }
+      scope = enclosing->getScope();
+    } else {
+      // DIFile, DISubprogram, etc: no contribution, stop walking.
+      break;
     }
   }
+
+  llvm::StringRef bare = strip_template_args(name);
+
+  // Build base-name candidates in priority order: fully-qualified preferred,
+  // bare-name kept as a legacy fallback.
+  llvm::SmallVector< std::string, 4 > base_candidates;
+  auto push_unique = [&](std::string s) {
+    if (std::find(base_candidates.begin(), base_candidates.end(), s) ==
+        base_candidates.end()) {
+      base_candidates.push_back(std::move(s));
+    }
+  };
+  push_unique(qualified_prefix + bare.str());
+  push_unique(qualified_prefix + name.str());
+  push_unique(bare.str());
+  push_unique(name.str());
+
+  // A candidate LLVM struct must be structurally compatible with the DI.
+  // Two pitfalls under templated C++ types:
+  //   1. Different template instantiations can share a base name but differ
+  //      in layout; pick by bit-size compatibility, not by name alone.
+  //   2. EBO-empty bases (e.g. __compressed_pair_elem<X, 1, true>) often
+  //      have a DI entry but no LLVM struct of their own -- they were
+  //      elided. The unqualified name still resolves to the *non-empty*
+  //      instantiation's LLVM struct, and the alignTo()-based size check
+  //      from translate_struct_di_type happens to accept that mismatch
+  //      because empty C++ DI size (8 bits) rounds up to the larger
+  //      LLVM struct's alignment. Reject any non-padding LLVM field when
+  //      the DI is empty so translate_di_only falls back to OpaqueType.
+  const uint64_t di_size_bits = di_type->getSizeInBits();
+  const bool di_is_empty = is_empty_composite(di_type);
+  auto all_fields_are_padding = [](llvm::StructType* st) {
+    for (unsigned i = 0; i < st->getNumElements(); ++i) {
+      llvm::Type* ft = st->getElementType(i);
+      if (ft->isIntegerTy(8)) {
+        continue;
+      }
+      if (ft->isArrayTy() &&
+          llvm::cast< llvm::ArrayType >(ft)
+              ->getElementType()
+              ->isIntegerTy(8)) {
+        continue;
+      }
+      return false;
+    }
+    return true;
+  };
+  auto layout_matches = [&](llvm::StructType* st) {
+    if (!st->isSized()) {
+      return false;
+    }
+    if (di_is_empty && !all_fields_are_padding(st)) {
+      return false;
+    }
+    const llvm::StructLayout* sl = this->_llvm_data_layout.getStructLayout(st);
+    uint64_t st_bits = sl->getSizeInBits();
+    uint64_t align_bits =
+        static_cast< uint64_t >(sl->getAlignment().value()) * 8;
+    return llvm::alignTo(di_size_bits, align_bits) == st_bits;
+  };
+
+  for (const std::string& base : base_candidates) {
+    for (const char* prefix : {"struct.", "class.", "union."}) {
+      std::string candidate = prefix + base;
+      if (auto* st = llvm::StructType::getTypeByName(llvm_ctx, candidate)) {
+        if (layout_matches(st)) {
+          return st;
+        }
+      }
+    }
+  }
+
   // Fallback: Clang appends ".N" disambiguators for shadowed types
   // (e.g. struct.Foo.0). Scan identified structs and match on the suffix.
   for (llvm::StructType* st : this->_module.getIdentifiedStructTypes()) {
@@ -789,13 +897,13 @@ llvm::StructType* TypeWithDebugInfoImporter::lookup_struct_by_di(
         continue;
       }
       llvm::StringRef tail = st_name.drop_front(std::strlen(prefix));
-      // Accept exact match or "<name>.<digits>" disambiguator suffix.
-      if (tail == name) {
-        return st;
-      }
-      if (tail.starts_with(name) && tail.size() > name.size() &&
-          tail[name.size()] == '.') {
-        return st;
+      for (const std::string& base : base_candidates) {
+        bool name_match = (tail == base) ||
+                          (tail.starts_with(base) && tail.size() > base.size() &&
+                           tail[base.size()] == '.');
+        if (name_match && layout_matches(st)) {
+          return st;
+        }
       }
     }
   }
