@@ -167,7 +167,7 @@ public:
   /// \brief Assign a number
   GaugeBound& operator=(Number n) {
     this->_is_infinite = false;
-    this->_n = std::move(n);
+    this->_cst = std::move(n);
     this->_coeffs.clear();
     return *this;
   }
