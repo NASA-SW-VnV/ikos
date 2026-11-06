@@ -511,7 +511,7 @@ APRON Support
 
 IKOS provides a wrapper for APRON, allowing you to use any APRON abstract domain in the analyzer.
 
-To use APRON, first download, build and install it. Consider using the svn trunk. You will also need to build APRON with [Parma Polyhedra Library](http://bugseng.com/products/ppl/) enabled. Set `HAS_PPL = 1` and define `PPL_PREFIX` in your `Makefile.config`
+To use APRON, first download, build and install it. Consider using the svn trunk. You will also need to build APRON with [Parma Polyhedra Library](https://bugseng.com/ppl) enabled. Set `HAS_PPL = 1` and define `PPL_PREFIX` in your `Makefile.config`
 
 Now, to build IKOS with APRON support, just provide the option `-DAPRON_ROOT=/path/to/apron-install` when running cmake. For instance:
 
