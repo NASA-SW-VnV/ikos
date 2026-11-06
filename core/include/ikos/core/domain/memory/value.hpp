@@ -1822,7 +1822,7 @@ public:
 
     if (value.is_machine_int()) {
       value_intv = IntInterval(value.machine_int());
-    } else if (size.is_machine_int_var()) {
+    } else if (value.is_machine_int_var()) {
       value_intv = this->_scalar.int_to_interval(value.var());
     } else {
       ikos_unreachable("unexpected literal for value");
